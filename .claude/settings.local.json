@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(brew services:*)",
+      "Bash(psql:*)",
+      "Bash(pg_config:*)",
+      "Read(//opt/homebrew/**)",
+      "Bash(/opt/homebrew/Cellar/postgresql@17/17.6/bin/psql:*)",
+      "Bash(/opt/homebrew/Cellar/postgresql@17/17.6/bin/pg_config:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "WebSearch",
+      "Bash(git init:*)",
+      "Bash(chmod:*)",
+      "Bash(deno:*)",
+      "Bash(brew install:*)",
+      "Bash(grep:*)",
+      "WebFetch(domain:docs.trychroma.com)",
+      "WebFetch(domain:ollama.com)",
+      "Bash(docker:*)",
+      "Bash(open:*)",
+      "Bash(curl:*)"
+    ]
+  },
+  "outputStyle": "Learning"
+}
