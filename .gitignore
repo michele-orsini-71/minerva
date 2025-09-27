@@ -1,6 +1,9 @@
 # Bear backup files
 *.bear2bk
 
+# Prompts directory
+prompts/
+
 # Python cache files
 __pycache__/
 *.py[cod]
@@ -50,3 +53,8 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+chromadb_data/
+
+# Generated Bear notes JSON files
+*.json

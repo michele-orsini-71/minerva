@@ -19,7 +19,8 @@
       "WebFetch(domain:ollama.com)",
       "Bash(docker:*)",
       "Bash(open:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git rm:*)"
     ]
   },
   "outputStyle": "Learning"
