@@ -4,6 +4,9 @@
 # Prompts directory
 prompts/
 
+# Test data directory
+test_data/
+
 # Python cache files
 __pycache__/
 *.py[cod]
