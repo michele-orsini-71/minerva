@@ -20,7 +20,13 @@
       "Bash(docker:*)",
       "Bash(open:*)",
       "Bash(curl:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "WebFetch(domain:pypi.org)",
+      "Bash(source:*)",
+      "Bash(pip install:*)",
+      "Bash(python test-markdown-chunker.py:*)",
+      "Bash(python:*)",
+      "Bash(timeout 30 python embeddings_creator.py --chunk-size 1200 \"../test-data/Bear Notes 2025-09-20 at 08.49.json\")"
     ]
   },
   "outputStyle": "Learning"
