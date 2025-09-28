@@ -28,7 +28,8 @@
       "Bash(python:*)",
       "Bash(timeout 30 python embeddings_creator.py --chunk-size 1200 \"../test-data/Bear Notes 2025-09-20 at 08.49.json\")",
       "Bash(mv:*)",
-      "WebFetch(domain:python.langchain.com)"
+      "WebFetch(domain:python.langchain.com)",
+      "Bash(python3:*)"
     ]
   },
   "outputStyle": "Learning"
