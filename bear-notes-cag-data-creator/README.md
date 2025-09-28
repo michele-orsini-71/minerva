@@ -4,11 +4,11 @@ A high-performance data pipeline for creating semantic chunks from Bear notes JS
 
 ## Overview
 
-This tool processes Bear notes exported from the Bear Notes parser and creates semantic chunks using the `markdown-chunker` library. It's designed to be the first stage in a complete Bear Notes RAG pipeline.
+This tool processes Bear notes exported from the Bear Notes parser and creates semantic chunks using **LangChain text splitters**. It's designed to be the first stage in a complete Bear Notes RAG pipeline.
 
 ## Features
 
-- **Semantic Chunking**: Uses `markdown-chunker` library for intelligent markdown structure preservation
+- **Semantic Chunking**: Uses LangChain text splitters (`MarkdownHeaderTextSplitter` + `RecursiveCharacterTextSplitter`) for intelligent markdown structure preservation
 - **Optimized for Bear Notes**: Configured specifically for Bear's markdown format and content patterns
 - **High Performance**: Processes 1500+ notes efficiently with progress reporting
 - **Robust Error Handling**: Graceful handling of malformed notes with detailed error reporting
@@ -25,7 +25,7 @@ This tool processes Bear notes exported from the Bear Notes parser and creates s
 ### Dependencies
 
 ```bash
-pip install markdown-chunker
+pip install langchain-text-splitters
 ```
 
 ## Usage
@@ -65,8 +65,9 @@ python embeddings_creator.py --output enriched_notes.json notes.json
    - Validates Bear notes structure requirements
    - UTF-8 encoding support
 
-2. **`chunk_creator.py`** - Markdown chunking using markdown-chunker library
-   - Optimized configuration for Bear notes
+2. **`chunk_creator.py`** - Markdown chunking using LangChain text splitters
+   - Dual-stage approach: MarkdownHeaderTextSplitter + RecursiveCharacterTextSplitter
+   - Optimized configuration for Bear notes with overlap support
    - Stable ID generation for chunks and notes
    - Progress reporting and error handling
 
@@ -78,10 +79,10 @@ python embeddings_creator.py --output enriched_notes.json notes.json
 ### Data Flow
 
 ```
-Bear JSON → json_loader → chunk_creator → enriched_notes
-    ↓            ↓             ↓              ↓
-  Load &      Parse &      Create         Statistics
- Validate     Chunk      Metadata        & Output
+Bear JSON → json_loader → chunk_creator (LangChain) → enriched_notes
+    ↓            ↓             ↓                         ↓
+  Load &      Parse &    Header+Recursive            Statistics
+ Validate     Chunk      Splitting                   & Output
 ```
 
 ### Output Format
@@ -114,13 +115,13 @@ Each note is enriched with chunking metadata:
 
 ### Chunking Strategy
 
-The tool uses optimized settings for Bear notes:
+The tool uses LangChain text splitters with optimized settings for Bear notes:
 
-- **Target size**: 1200 characters (configurable)
-- **Maximum size**: 1.5x target (allows structure preservation)
-- **Minimum size**: 0.25x target
-- **Structure preservation**: Enabled for headings, code blocks, tables
-- **Metadata overhead**: Disabled for clean content
+- **Target size**: 1200 characters (configurable via `chunk_size` parameter)
+- **Overlap**: 200 characters (configurable via `chunk_overlap` parameter)
+- **Header processing**: MarkdownHeaderTextSplitter preserves heading structure and metadata
+- **Recursive splitting**: RecursiveCharacterTextSplitter handles large sections with intelligent separators
+- **Structure preservation**: Both splitters preserve code blocks, tables, and paragraph boundaries
 
 ### Performance
 
@@ -150,7 +151,7 @@ python embeddings_creator.py "../bear-notes-parser/Bear Notes 2025-09-20 at 08.4
 📖 Loading Bear notes JSON...
 ✅ Loaded 1552 notes from Bear Notes 2025-09-20 at 08.49.json
 ✂️  Creating semantic chunks...
-🔄 Processing 1552 notes with markdown-chunker...
+🔄 Processing 1552 notes with LangChain text splitters...
   Progress: 1552/1552 notes (100.0%) - 4247 chunks created
 ✅ Chunking complete:
   Successfully processed: 1552 notes
@@ -211,16 +212,16 @@ from chunk_creator import create_chunks_for_notes
 # Load notes
 notes = load_bear_notes_json("notes.json")
 
-# Create chunks
-enriched_notes = create_chunks_for_notes(notes, target_chars=1200)
+# Create chunks using LangChain with custom parameters
+enriched_notes = create_chunks_for_notes(notes, target_chars=1200, overlap_chars=200)
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-**"markdown-chunker library not installed"**
-- Run: `pip install markdown-chunker`
+**"langchain-text-splitters library not installed"**
+- Run: `pip install langchain-text-splitters`
 
 **"JSON file must contain an array of notes"**
 - Ensure input file is valid Bear notes JSON from bear-notes-parser
