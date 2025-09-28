@@ -10,10 +10,10 @@
 - **PRD updated** - Reflects LangChain implementation approach with Future Enhancements section
 - **Header metadata storage** - Already implemented and tested, chunks include `header_metadata` field with hierarchical header information
 - `embedding.py` - Embedding generation module using Ollama and mxbai-embed-large with L2 normalization, batch processing, service discovery, and retry logic
+- `storage.py` - ChromaDB storage operations with metadata management, batch insertion, collection configuration with HNSW index and cosine similarity
 
 ### To Be Implemented
 - `embedding_test.py` - Embedding generation and normalization tests
-- `storage.py` - ChromaDB storage operations with metadata management
 - `storage_test.py` - ChromaDB integration tests
 
 ### Notes
@@ -40,15 +40,15 @@
   - [x] 2.3 Add batch processing capabilities for efficient embedding generation
   - [x] 2.4 Implement service discovery and clear error handling for unavailable Ollama service
   - [x] 2.5 Add embedding consistency validation and retry logic for failed requests
-- [ ] 3.0 Build ChromaDB storage layer with metadata management
-  - [ ] 3.1 Create storage.py module with ChromaDB persistent client setup
-  - [ ] 3.2 Implement collection configuration with HNSW index and cosine distance metric
+- [x] 3.0 Build ChromaDB storage layer with metadata management
+  - [x] 3.1 Create storage.py module with ChromaDB persistent client setup
+  - [x] 3.2 Implement collection configuration with HNSW index and cosine distance metric
   - [x] 3.3 Add stable chunk ID generation using SHA256(note_id|modificationDate|chunk_index)
   - [x] 3.4 Implement note_id generation using SHA1(title + creationDate) for uniqueness
   - [x] 3.5 Add comprehensive metadata storage (note_id, title, dates, size, chunk_index, header_metadata)
-  - [ ] 3.6 Implement collection reset/wipe functionality for clean rebuilds (delete existing collection before processing)
-  - [ ] 3.7 Implement batch insertion with configurable batch size (default 64 chunks)
-  - [ ] 3.8 Implement custom ChromaDB path support with default ../chromadb_data/bear_notes_embeddings
+  - [x] 3.6 Implement collection reset/wipe functionality for clean rebuilds (delete existing collection before processing)
+  - [x] 3.7 Implement batch insertion with configurable batch size (default 64 chunks)
+  - [x] 3.8 Implement custom ChromaDB path support with default ../chromadb_data/bear_notes_embeddings
 - [x] 4.0 Develop command-line interface with progress reporting (implemented in Task 1.0)
   - [x] 4.1 Create embeddings_creator.py main CLI script with argument parsing
   - [x] 4.2 Add required JSON file input argument and optional configuration flags
