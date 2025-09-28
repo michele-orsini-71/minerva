@@ -46,8 +46,8 @@
   - [x] 3.3 Add stable chunk ID generation using SHA256(note_id|modificationDate|chunk_index)
   - [x] 3.4 Implement note_id generation using SHA1(title + creationDate) for uniqueness
   - [x] 3.5 Add comprehensive metadata storage (note_id, title, dates, size, chunk_index, header_metadata)
-  - [ ] 3.6 Implement batch insertion with configurable batch size (default 64 chunks)
-  - [ ] 3.7 Add incremental processing support with conflict resolution (create/append/update logic)
+  - [ ] 3.6 Implement collection reset/wipe functionality for clean rebuilds (delete existing collection before processing)
+  - [ ] 3.7 Implement batch insertion with configurable batch size (default 64 chunks)
   - [ ] 3.8 Implement custom ChromaDB path support with default ../chromadb_data/bear_notes_embeddings
 - [x] 4.0 Develop command-line interface with progress reporting (implemented in Task 1.0)
   - [x] 4.1 Create embeddings_creator.py main CLI script with argument parsing
@@ -75,3 +75,9 @@
   - [ ] 6.3 Implement context-aware generation enhancement using header metadata in prompts
   - [ ] 6.4 Create hybrid search and re-ranking combining vector similarity with metadata relevance
   - [ ] 6.5 Add dynamic filter generation for automatic query intent routing
+- [ ] 7.0 Future Enhancement: Smart Incremental Processing (post-MVP)
+  - [ ] 7.1 Implement differential note detection (compare modificationDate against existing chunks)
+  - [ ] 7.2 Add selective chunk replacement logic (update only changed chunks within a note)
+  - [ ] 7.3 Implement conflict resolution strategies (append/merge/replace options)
+  - [ ] 7.4 Add incremental processing CLI mode (--incremental flag vs. current full rebuild)
+  - [ ] 7.5 Optimize batch operations for mixed create/update scenarios

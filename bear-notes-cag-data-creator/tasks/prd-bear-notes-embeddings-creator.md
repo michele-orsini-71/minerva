@@ -47,7 +47,7 @@ This tool addresses the problem of finding relevant information across large col
    - Persistent client (folder-based storage)
    - **Default storage path**: `../chromadb_data/bear_notes_embeddings`
    - **Collection name**: `bear_notes_chunks`
-   - **Conflict resolution**: Create if missing, append/update if exists (incremental processing)
+   - **Processing mode**: Full collection rebuild (delete existing collection before processing)
    - **CLI override**: `--chromadb-path` option for custom storage location
    - Stable chunk IDs using SHA256(note_id | modificationDate | chunk_index)
    - Complete metadata including note_id, title, modificationDate, creationDate, size, chunk_index
@@ -143,7 +143,7 @@ This tool addresses the problem of finding relevant information across large col
    - chunk_index within the note
    - Optional: char_start and char_end positions for provenance
 
-11. **Incremental Processing Preparation**: The system must use stable chunk IDs that enable future incremental updates (full rebuild initially, but architecture supports differential updates).
+11. **Processing Strategy**: The system implements full collection rebuild for MVP (deletes existing collection before processing). Stable chunk IDs enable future incremental updates as a post-MVP enhancement.
 
 12. **Chunk Size Optimization**: The system must implement a methodology to determine optimal chunk size:
    - **When to use**: During development phase only, not during regular tool execution
