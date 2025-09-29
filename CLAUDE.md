@@ -36,14 +36,33 @@ python cli.py "Bear Notes 2025-09-20 at 08.49.bear2bk"
 python -c "from bear_parser import parse_bear_backup; notes = parse_bear_backup('Bear Notes 2025-09-20 at 08.49.bear2bk'); print(f'Extracted {len(notes)} notes')"
 ```
 
+### Complete RAG Pipeline Operations
+```bash
+# Run complete pipeline: JSON → Chunks → Embeddings → ChromaDB
+cd bear-notes-cag-data-creator
+python full_pipeline.py --verbose "../test-data/Bear Notes 2025-09-20 at 08.49.json"
+
+# Custom chunk size and ChromaDB path
+python full_pipeline.py --chunk-size 1200 --chromadb-path ../chromadb_data --verbose "../test-data/Bear Notes 2025-09-20 at 08.49.json"
+
+# Quick pipeline test
+python full_pipeline.py "../test-data/sample.json"
+```
+
 ### Testing and Development
 ```bash
 # Test ChromaDB connection
 python test-files/test-connect.py
 
-# Test chunking and embedding pipeline
+# Test complete RAG pipeline
 cd bear-notes-cag-data-creator
-python ../test-files/test-chunking.py
+python full_pipeline.py --verbose ../test-data/sample.json
+
+# Test individual components
+python json_loader.py ../test-data/sample.json
+python chunk_creator.py
+python embedding.py  # Test Ollama connection
+python storage.py    # Test ChromaDB operations
 
 # Run Bear parser tests
 cd bear-notes-parser
@@ -65,10 +84,11 @@ The repository is organized into several specialized components:
 
 #### Core Components
 - **`bear-notes-parser/`**: Bear backup file parser and CLI utility
-- **`bear-notes-cag-data-creator/`**: RAG data pipeline and embedding generation
+- **`bear-notes-cag-data-creator/`**: Complete RAG pipeline (chunking + embeddings + storage)
 - **`chromadb_data/`**: Persistent vector database storage (ChromaDB)
 - **`test-files/`**: Example implementations and integration tests
 - **`.venv/`**: Shared Python virtual environment (Python 3.13)
+- **`chroma-peek/`**: Visual exploration tool for ChromaDB databases
 
 #### Auxiliary Components
 - **`bear-notes-mcp-server/`**: MCP server placeholder (future development)
@@ -83,7 +103,7 @@ The repository is organized into several specialized components:
 - **Persistent storage**: ChromaDB maintains vector database between sessions
 - **Self-contained**: Complete knowledge management system runs on local machine
 
-#### Multi-Stage Processing Pipeline
+#### Complete RAG Pipeline (`bear-notes-cag-data-creator/full_pipeline.py`)
 
 **Stage 1: Note Extraction (`bear-notes-parser/`)**
 - Processes Bear backup files (.bear2bk format - ZIP archives with TextBundle folders)
@@ -91,31 +111,40 @@ The repository is organized into several specialized components:
 - Normalizes timestamps to UTC ISO format
 - Outputs structured JSON with note metadata
 
-**Stage 2: Content Chunking (`test-files/test-chunking.py`)**
-- Semantic chunking that preserves markdown structure
+**Stage 2: Content Chunking (`chunk_creator.py`)**
+- LangChain-based semantic chunking that preserves markdown structure
 - Smart boundary detection (respects code blocks, headings, paragraphs)
-- Configurable chunk size (300 tokens default) with overlap (50 tokens)
+- Configurable chunk size (1200 characters default) with auto-calculated overlap
 - Maintains heading context for better retrieval accuracy
+- Stable SHA256-based chunk IDs for incremental updates
 
-**Stage 3: Embedding Generation**
+**Stage 3: Embedding Generation (`embedding.py`)**
 - Local AI embeddings using `mxbai-embed-large:latest` via Ollama
 - L2 normalization for cosine similarity compatibility
-- Batch processing with progress feedback
-- No external API dependencies
+- Batch processing with progress feedback and error handling
+- No external API dependencies - completely offline
 
-**Stage 4: Vector Storage (ChromaDB)**
-- HNSW index with cosine similarity metric
-- Stable chunk IDs for incremental updates
+**Stage 4: Vector Storage (`storage.py`)**
+- ChromaDB with HNSW index and cosine similarity metric
 - Rich metadata schema for provenance and filtering
-- Persistent file-based storage
+- Batch insertion with progress callbacks
+- Persistent file-based storage with efficient querying
+
+**Complete Pipeline Integration**
+- End-to-end processing in single command: `python full_pipeline.py notes.json`
+- Real-time progress tracking across all stages
+- Comprehensive error handling with graceful degradation
+- Performance metrics and statistics reporting
 
 ### Key Technical Decisions
 
 #### Chunking Strategy
-- **Token-based**: Uses tiktoken for accurate token counting (300-token target chunks)
-- **Structure-preserving**: Maintains code blocks as atomic units
+- **Character-based**: 1200 characters target chunks (configurable via `--chunk-size`)
+- **LangChain-powered**: Uses MarkdownHeaderTextSplitter + RecursiveCharacterTextSplitter
+- **Structure-preserving**: Maintains code blocks, tables, and markdown elements as atomic units
 - **Heading-aware**: Respects markdown heading hierarchy for semantic boundaries
-- **Overlap strategy**: 50-token overlap (10-20% ratio) for context continuity
+- **Smart overlap**: Auto-calculated overlap (typically 200 characters) for context continuity
+- **Stable IDs**: SHA256-based chunk identifiers enable incremental updates
 
 #### Vector Database Design
 - **Stable IDs**: SHA256-based chunk IDs enable incremental updates
@@ -131,6 +160,26 @@ The repository is organized into several specialized components:
 
 ### Integration Points
 
+#### Complete Pipeline Integration
+```python
+# Full pipeline programmatic usage
+from json_loader import load_bear_notes_json
+from chunk_creator import create_chunks_for_notes
+from embedding import generate_embeddings_batch
+from storage import initialize_chromadb_client, get_or_create_collection, insert_chunks_batch
+
+# Load and process
+notes = load_bear_notes_json("notes.json")
+enriched_notes = create_chunks_for_notes(notes, target_chars=1200)
+
+# Generate embeddings and store
+all_chunks = [chunk for note in enriched_notes for chunk in note['chunks']]
+embeddings = generate_embeddings_batch([chunk['content'] for chunk in all_chunks])
+client = initialize_chromadb_client("./chromadb_data")
+collection = get_or_create_collection(client)
+insert_chunks_batch(collection, chunks_with_embeddings)
+```
+
 #### Bear Notes Parser Integration
 ```python
 # Core function usage
@@ -144,7 +193,7 @@ notes = parse_bear_backup("backup.bear2bk", progress_callback=show_progress)
 # Vector database operations
 import chromadb
 client = chromadb.PersistentClient(path="chromadb_data")
-collection = client.get_or_create_collection("notes", metadata={"hnsw:space": "cosine"})
+collection = client.get_or_create_collection("bear_notes", metadata={"hnsw:space": "cosine"})
 ```
 
 #### Ollama AI Integration
@@ -156,10 +205,17 @@ embeddings = ollama_embeddings(model="mxbai-embed-large:latest", prompt=text)
 
 ### Development Workflow
 
-#### New Note Processing
+#### Complete RAG Pipeline Processing
 1. Extract notes using `bear-notes-parser/cli.py`
-2. Run chunking pipeline in `bear-notes-cag-data-creator/`
-3. Verify results with `test-files/test-chunking.py`
+2. Ensure Ollama is running with required models
+3. Run complete pipeline: `cd bear-notes-cag-data-creator && python full_pipeline.py --verbose notes.json`
+4. Verify ChromaDB results with `chroma-peek` tool
+
+#### Individual Component Testing
+1. Test chunking: `python chunk_creator.py`
+2. Test embeddings: `python embedding.py`
+3. Test storage: `python storage.py`
+4. Test complete integration: `python full_pipeline.py --verbose test_data.json`
 
 #### Model Management
 - Ensure Ollama service is running (`ollama serve`)

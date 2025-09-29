@@ -29,7 +29,12 @@
       "Bash(timeout 30 python embeddings_creator.py --chunk-size 1200 \"../test-data/Bear Notes 2025-09-20 at 08.49.json\")",
       "Bash(mv:*)",
       "WebFetch(domain:python.langchain.com)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(ollama list:*)",
+      "Bash(timeout 30 python:*)",
+      "Bash(git clone:*)",
+      "Bash(streamlit run:*)",
+      "Bash(export STREAMLIT_EMAIL=\"\")"
     ]
   },
   "outputStyle": "Learning"

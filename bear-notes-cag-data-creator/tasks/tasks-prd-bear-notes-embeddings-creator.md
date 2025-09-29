@@ -59,6 +59,9 @@
   - [x] 4.7 Create summary reporting with success/failure counts, processing time, and performance metrics
   - [ ] 4.8 Add optional --json flag for structured output format (basic --output implemented)
   - [x] 4.9 Implement proper exit codes for failures following Unix conventions
+
+These steps are not needed
+
 - [ ] 5.0 Create comprehensive test suite for all pipeline phases
   - [ ] 5.1 Create chunking_test.py with critical comprehensive coverage for LangChain chunking algorithm (MarkdownHeaderTextSplitter + RecursiveCharacterTextSplitter integration)
   - [ ] 5.2 Add embedding_test.py for embedding generation, normalization, and Ollama integration tests
