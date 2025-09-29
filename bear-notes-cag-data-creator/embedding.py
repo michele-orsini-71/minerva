@@ -15,6 +15,9 @@ import numpy as np
 from ollama import embeddings as ollama_embeddings
 import ollama
 
+# Import our immutable models
+from models import Chunk, ChunkWithEmbedding, ChunkList, ChunkWithEmbeddingList
+
 
 # Configuration constants
 EMBED_MODEL = "mxbai-embed-large:latest"
@@ -256,6 +259,108 @@ def initialize_embedding_service(model: str = EMBED_MODEL) -> Dict[str, Any]:
     status['ready'] = True
 
     return status
+
+
+def generate_embeddings(
+    chunks: ChunkList,
+    model: str = EMBED_MODEL,
+    max_retries: int = DEFAULT_MAX_RETRIES,
+    retry_delay: float = DEFAULT_RETRY_DELAY,
+    progress_callback: Optional[callable] = None
+) -> ChunkWithEmbeddingList:
+    """
+    Generate embeddings for Chunk objects and return ChunkWithEmbedding objects.
+
+    This is the new immutable API that takes Chunk objects and returns
+    ChunkWithEmbedding objects, eliminating data conversion between pipeline stages.
+
+    Args:
+        chunks: List of Chunk objects to embed
+        model: Ollama model name to use
+        max_retries: Maximum number of retry attempts per chunk
+        retry_delay: Initial delay between retries in seconds
+        progress_callback: Optional callback function(current, total) for progress updates
+
+    Returns:
+        List of immutable ChunkWithEmbedding objects ready for storage
+
+    Raises:
+        EmbeddingError: If any embedding generation fails after retries
+        OllamaServiceError: If Ollama service is not available
+    """
+    if not chunks:
+        return []
+
+    print(f"🧠 Generating embeddings for {len(chunks)} chunks using {model}...")
+
+    # Initialize service to fail fast if there are issues
+    try:
+        status = initialize_embedding_service(model)
+        print(f"✅ Ollama service ready: {status['model_name']}")
+    except OllamaServiceError as e:
+        raise EmbeddingError(f"Embedding service initialization failed: {e}")
+
+    chunks_with_embeddings = []
+    failed_chunks = []
+
+    for i, chunk in enumerate(chunks):
+        if progress_callback:
+            progress_callback(i, len(chunks))
+
+        try:
+            # Generate embedding for this chunk's content
+            embedding = generate_embedding(
+                text=chunk.content,
+                model=model,
+                max_retries=max_retries,
+                retry_delay=retry_delay
+            )
+
+            # Create immutable ChunkWithEmbedding object
+            chunk_with_embedding = ChunkWithEmbedding(
+                chunk=chunk,
+                embedding=embedding
+            )
+
+            chunks_with_embeddings.append(chunk_with_embedding)
+
+        except Exception as e:
+            failed_chunks.append({
+                'chunk_id': chunk.id,
+                'title': chunk.title,
+                'error': str(e)
+            })
+            print(f"⚠️  Failed to generate embedding for chunk {chunk.id}: {e}", file=sys.stderr)
+            continue
+
+        # Progress feedback every 25 chunks or at the end
+        if (i + 1) % 25 == 0 or i == len(chunks) - 1:
+            print(f"   📥 Progress: {i + 1}/{len(chunks)} chunks ({(i + 1) / len(chunks) * 100:.1f}%)")
+
+    if progress_callback:
+        progress_callback(len(chunks), len(chunks))
+
+    # Validate embedding consistency
+    if chunks_with_embeddings:
+        embeddings_only = [cwe.embedding for cwe in chunks_with_embeddings]
+        is_consistent = validate_embedding_consistency(embeddings_only)
+        if not is_consistent:
+            print("⚠️  Warning: Embedding consistency check failed", file=sys.stderr)
+
+    # Summary
+    print(f"✅ Embedding generation complete:")
+    print(f"  Successfully embedded: {len(chunks_with_embeddings)} chunks")
+    print(f"  Failed: {len(failed_chunks)} chunks")
+
+    if failed_chunks:
+        print(f"\n❌ Failed chunks:")
+        for failed in failed_chunks:
+            print(f"  - {failed['chunk_id']} ({failed['title']}): {failed['error']}")
+
+    if not chunks_with_embeddings:
+        raise EmbeddingError("No embeddings were successfully generated")
+
+    return chunks_with_embeddings
 
 
 if __name__ == "__main__":

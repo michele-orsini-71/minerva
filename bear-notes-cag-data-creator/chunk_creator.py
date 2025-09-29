@@ -10,6 +10,9 @@ import sys
 import hashlib
 from typing import List, Dict, Any
 
+# Import our immutable models
+from models import Chunk, ChunkList
+
 try:
     from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 except ImportError:
@@ -256,6 +259,106 @@ def create_chunks_for_notes(notes: List[Dict[str, Any]], target_chars: int = 120
         sys.exit(1)
 
     return enriched_notes
+
+
+def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 1200, overlap_chars: int = 200) -> ChunkList:
+    """
+    Create immutable Chunk objects from notes using LangChain text splitters.
+
+    This is the new immutable API that returns a flat list of Chunk objects
+    instead of the nested note structure. This eliminates data conversion
+    between pipeline stages.
+
+    Args:
+        notes: List of note dictionaries from Bear JSON
+        target_chars: Target chunk size in characters (default: 1200)
+        overlap_chars: Overlap size in characters (default: 200)
+
+    Returns:
+        Flat list of immutable Chunk objects ready for embedding generation
+    """
+    chunks = []
+    failed_notes = []
+
+    print(f"🔄 Processing {len(notes)} notes with LangChain text splitters...")
+    print(f"⚙️  Configuration: {target_chars} chars target, {overlap_chars} chars overlap")
+
+    for i, note in enumerate(notes):
+        try:
+            # Generate stable note ID
+            note_id = generate_note_id(note['title'], note.get('creationDate'))
+
+            # Create chunks using LangChain
+            chunk_data_list = chunk_markdown_content(
+                note['markdown'],
+                target_chars=target_chars,
+                overlap_chars=overlap_chars
+            )
+
+            # Build immutable Chunk objects
+            for chunk_index, chunk_data in enumerate(chunk_data_list):
+                chunk_id = generate_chunk_id(note_id, note['modificationDate'], chunk_index)
+
+                # Create immutable Chunk
+                chunk = Chunk(
+                    id=chunk_id,
+                    content=chunk_data['content'],
+                    note_id=note_id,
+                    title=note['title'],
+                    modificationDate=note['modificationDate'],
+                    creationDate=note.get('creationDate', ''),
+                    size=chunk_data['size'],
+                    chunk_index=chunk_index
+                )
+
+                chunks.append(chunk)
+
+            # Progress feedback
+            if (i + 1) % 50 == 0 or i == len(notes) - 1:
+                print(f"  Progress: {i + 1}/{len(notes)} notes ({(i + 1) / len(notes) * 100:.1f}%) - {len(chunks)} chunks created")
+
+        except Exception as e:
+            failed_notes.append({
+                'title': note.get('title', 'Unknown'),
+                'error': str(e)
+            })
+            print(f"⚠️  Failed to process note '{note.get('title', 'Unknown')}': {e}", file=sys.stderr)
+            continue
+
+    # Summary statistics
+    if chunks:
+        # Calculate chunk size statistics
+        all_chunk_sizes = [chunk.size for chunk in chunks]
+        avg_chunk_size = sum(all_chunk_sizes) / len(all_chunk_sizes)
+        min_chunk_size = min(all_chunk_sizes)
+        max_chunk_size = max(all_chunk_sizes)
+
+        # Calculate notes processed
+        unique_note_ids = len(set(chunk.note_id for chunk in chunks))
+        avg_chunks_per_note = len(chunks) / unique_note_ids if unique_note_ids else 0
+    else:
+        avg_chunk_size = min_chunk_size = max_chunk_size = 0
+        unique_note_ids = 0
+        avg_chunks_per_note = 0
+
+    print(f"✅ Chunking complete:")
+    print(f"  Successfully processed: {unique_note_ids} notes")
+    print(f"  Failed: {len(failed_notes)} notes")
+    print(f"  Total chunks created: {len(chunks)}")
+    print(f"  Average chunks per note: {avg_chunks_per_note:.1f}")
+    print(f"  Average chunk size: {avg_chunk_size:.0f} chars")
+    print(f"  Chunk size range: {min_chunk_size}-{max_chunk_size} chars")
+
+    if failed_notes:
+        print(f"\n❌ Failed notes:")
+        for failed in failed_notes:
+            print(f"  - {failed['title']}: {failed['error']}")
+
+    if not chunks:
+        print("Error: No chunks were successfully created", file=sys.stderr)
+        sys.exit(1)
+
+    return chunks
 
 
 if __name__ == "__main__":

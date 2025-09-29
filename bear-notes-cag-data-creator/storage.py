@@ -18,6 +18,9 @@ except ImportError:
     print("Error: chromadb library not installed. Run: pip install chromadb", file=sys.stderr)
     sys.exit(1)
 
+# Import our immutable models
+from models import ChunkWithEmbedding, ChunkWithEmbeddingList
+
 
 # Configuration constants
 DEFAULT_CHROMADB_PATH = "../chromadb_data/bear_notes_embeddings"
@@ -482,6 +485,105 @@ class BearNotesStorage:
 
         except Exception as e:
             raise StorageError(f"Query failed: {e}")
+
+
+def insert_chunks(
+    collection: chromadb.Collection,
+    chunks_with_embeddings: ChunkWithEmbeddingList,
+    batch_size: int = DEFAULT_BATCH_SIZE,
+    progress_callback: Optional[callable] = None
+) -> Dict[str, Any]:
+    """
+    Insert ChunkWithEmbedding objects into ChromaDB collection.
+
+    This is the new immutable API that takes ChunkWithEmbedding objects directly,
+    eliminating data conversion between pipeline stages.
+
+    Args:
+        collection: ChromaDB collection instance
+        chunks_with_embeddings: List of ChunkWithEmbedding objects
+        batch_size: Number of chunks per batch
+        progress_callback: Optional callback function(current, total) for progress updates
+
+    Returns:
+        Dictionary with insertion statistics
+
+    Raises:
+        StorageError: If batch insertion fails
+    """
+    if not chunks_with_embeddings:
+        return {"total_chunks": 0, "batches": 0, "successful": 0, "failed": 0}
+
+    print(f"🗄️  Storing {len(chunks_with_embeddings)} chunks in ChromaDB...")
+
+    stats = {
+        "total_chunks": len(chunks_with_embeddings),
+        "batches": 0,
+        "successful": 0,
+        "failed": 0,
+        "errors": []
+    }
+
+    try:
+        # Process chunks in batches
+        for i in range(0, len(chunks_with_embeddings), batch_size):
+            batch = chunks_with_embeddings[i:i + batch_size]
+            batch_num = stats["batches"] + 1
+
+            try:
+                # Convert ChunkWithEmbedding objects to ChromaDB format
+                ids = [chunk.id for chunk in batch]
+                documents = [chunk.content for chunk in batch]
+                embeddings = [chunk.embedding for chunk in batch]
+                metadatas = [
+                    {
+                        'note_id': chunk.note_id,
+                        'title': chunk.title,
+                        'modificationDate': chunk.modificationDate,
+                        'creationDate': chunk.creationDate,
+                        'size': chunk.size,
+                        'chunk_index': chunk.chunk_index
+                    }
+                    for chunk in batch
+                ]
+
+                # Insert batch into collection
+                collection.add(
+                    ids=ids,
+                    documents=documents,
+                    metadatas=metadatas,
+                    embeddings=embeddings
+                )
+
+                stats["successful"] += len(batch)
+                stats["batches"] += 1
+
+                # Progress callback
+                if progress_callback:
+                    progress_callback(min(i + batch_size, len(chunks_with_embeddings)), len(chunks_with_embeddings))
+
+            except Exception as e:
+                error_msg = f"Batch {batch_num} failed: {e}"
+                stats["errors"].append(error_msg)
+                stats["failed"] += len(batch)
+                print(f"⚠️  {error_msg}", file=sys.stderr)
+                continue
+
+        # Summary
+        print(f"✅ Storage complete:")
+        print(f"  Successfully stored: {stats['successful']} chunks")
+        print(f"  Failed: {stats['failed']} chunks")
+        print(f"  Batches processed: {stats['batches']}")
+
+        if stats["errors"]:
+            print(f"\n❌ Storage errors:")
+            for error in stats["errors"]:
+                print(f"  - {error}")
+
+        return stats
+
+    except Exception as e:
+        raise StorageError(f"Chunk storage failed: {e}")
 
 
 if __name__ == "__main__":

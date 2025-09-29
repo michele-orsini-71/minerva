@@ -11,9 +11,9 @@ from pathlib import Path
 
 # Import our modules
 from json_loader import load_bear_notes_json
-from chunk_creator import create_chunks_for_notes
-from embedding import generate_embeddings_batch, EmbeddingError
-from storage import initialize_chromadb_client, insert_chunks_batch, get_or_create_collection, DEFAULT_CHROMADB_PATH
+from chunk_creator import create_chunks_from_notes  # New immutable API
+from embedding import generate_embeddings, EmbeddingError  # New immutable API
+from storage import initialize_chromadb_client, insert_chunks, get_or_create_collection, DEFAULT_CHROMADB_PATH  # New immutable API
 
 
 def main():
@@ -88,66 +88,28 @@ generates embeddings using Ollama, and stores everything in ChromaDB.
             print(f"   📊 Average note size: {avg_chars:.0f} characters")
             print()
 
-        # Step 2: Create chunks
+        # Step 2: Create chunks (immutable)
         print("✂️  Creating semantic chunks...")
-        enriched_notes = create_chunks_for_notes(notes, target_chars=args.chunk_size)
-
-        total_chunks = sum(len(note['chunks']) for note in enriched_notes)
-        print(f"   ✅ Created {total_chunks} chunks from {len(enriched_notes)} notes")
+        chunks = create_chunks_from_notes(notes, target_chars=args.chunk_size)
+        print(f"   ✅ Created {len(chunks)} chunks from {len(notes)} notes")
         print()
 
-        # Step 3: Generate embeddings
+        # Step 3: Generate embeddings (immutable)
         print("🧠 Generating embeddings with Ollama...")
-
-        # Collect all chunks with metadata
-        all_chunks = []
-        for note in enriched_notes:
-            for chunk in note['chunks']:
-                chunk_data = {
-                    'text': chunk['content'],  # Fix: use 'content' field
-                    'metadata': {
-                        'note_id': chunk['note_id'],  # Use chunk's note_id
-                        'title': chunk['title'],      # Use chunk's title
-                        'modificationDate': chunk['modificationDate'],
-                        'creationDate': chunk['creationDate'],
-                        'size': chunk['size'],
-                        'chunk_index': chunk['chunk_index'],
-                        'chunk_id': chunk['id']       # Fix: use 'id' field
-                    }
-                }
-                all_chunks.append(chunk_data)
-
-        # Generate embeddings in batches
-        embeddings = generate_embeddings_batch([chunk['text'] for chunk in all_chunks])
-        print(f"   ✅ Generated {len(embeddings)} embeddings")
+        chunks_with_embeddings = generate_embeddings(chunks)
+        print(f"   ✅ Generated {len(chunks_with_embeddings)} embeddings")
         print()
 
-        # Step 4: Store in ChromaDB
+        # Step 4: Store in ChromaDB (immutable)
         print("🗄️  Storing in ChromaDB...")
         client = initialize_chromadb_client(args.chromadb_path)
-        collection = get_or_create_collection(client)
-
-        chunks_data = []
-        for i, chunk in enumerate(all_chunks):
-            # Flatten all metadata as direct fields (storage module extracts everything except content/embedding as metadata)
-            chunks_data.append({
-                'id': chunk['metadata']['chunk_id'],
-                'content': chunk['text'],
-                'embedding': embeddings[i],
-                # Metadata fields as direct properties
-                'note_id': chunk['metadata']['note_id'],
-                'title': chunk['metadata']['title'],
-                'modificationDate': chunk['metadata']['modificationDate'],
-                'creationDate': chunk['metadata']['creationDate'],
-                'size': chunk['metadata']['size'],
-                'chunk_index': chunk['metadata']['chunk_index']
-            })
+        collection = get_or_create_collection(client, reset_collection=True)  # Clean rebuild
 
         def progress_callback(current, total):
             if args.verbose:
                 print(f"   📥 Storing: {current}/{total} chunks ({current/total*100:.1f}%)")
 
-        stats = insert_chunks_batch(collection, chunks_data, progress_callback=progress_callback)
+        stats = insert_chunks(collection, chunks_with_embeddings, progress_callback=progress_callback)
         print(f"   ✅ Stored {stats['successful']} chunks in ChromaDB")
         if stats['failed'] > 0:
             print(f"   ⚠️  Failed to store {stats['failed']} chunks")
@@ -157,12 +119,12 @@ generates embeddings using Ollama, and stores everything in ChromaDB.
         processing_time = time.time() - start_time
         print("🎉 Pipeline completed successfully!")
         print("=" * 60)
-        print(f"📊 Notes processed: {len(enriched_notes)}")
-        print(f"📦 Chunks created: {total_chunks}")
-        print(f"🧠 Embeddings generated: {len(embeddings)}")
+        print(f"📊 Notes processed: {len(notes)}")
+        print(f"📦 Chunks created: {len(chunks)}")
+        print(f"🧠 Embeddings generated: {len(chunks_with_embeddings)}")
         print(f"🗄️  Chunks stored in ChromaDB: {stats['successful']}")
         print(f"⏱️  Total processing time: {processing_time:.1f} seconds")
-        print(f"🚀 Performance: {total_chunks / processing_time:.1f} chunks/second")
+        print(f"🚀 Performance: {len(chunks) / processing_time:.1f} chunks/second")
         print()
         print(f"💡 Database ready for RAG queries at: {args.chromadb_path}")
 
