@@ -22,7 +22,12 @@ import os
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 
-# Add parent directory to path for imports
+# Note: Since packages are now CLI-only, we need to import modules directly for testing
+# This is fine for development scripts that need to access internal functionality
+import sys
+import os
+
+# Add RAG data creator path for development/testing access to internal modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../bear-notes-cag-data-creator'))
 
 try:

@@ -34,7 +34,11 @@
       "Bash(timeout 30 python:*)",
       "Bash(git clone:*)",
       "Bash(streamlit run:*)",
-      "Bash(export STREAMLIT_EMAIL=\"\")"
+      "Bash(export STREAMLIT_EMAIL=\"\")",
+      "Read(///**)",
+      "Bash(bear-parser:*)",
+      "Bash(bear-rag-pipeline:*)",
+      "Read(//private/tmp/**)"
     ]
   },
   "outputStyle": "Explanatory"
