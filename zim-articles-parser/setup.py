@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-Setup script for bear-notes-parser package.
+Setup script for zim-articles-parser package.
 
-This package provides utilities for parsing Bear backup files (.bear2bk)
-and extracting structured note data for further processing.
+This package provides utilities for extracting articles from ZIM files
+(Kiwix/Wikipedia offline format) and outputting structured article data
+for further processing in RAG pipelines.
 """
 
 from setuptools import setup, find_packages
@@ -16,7 +17,7 @@ def read_long_description():
     if os.path.exists(readme_path):
         with open(readme_path, 'r', encoding='utf-8') as f:
             return f.read()
-    return "Bear Notes Parser - Extract and parse notes from Bear backup files"
+    return "ZIM Articles Parser - Extract articles from ZIM files"
 
 
 def read_version():
@@ -26,20 +27,21 @@ def read_version():
 
 
 setup(
-    name="bear-notes-parser",
+    name="zim-articles-parser",
     version=read_version(),
     author="Michele",
-    description="CLI tool for parsing Bear backup files and extracting note data",
+    description="CLI tool for extracting articles from ZIM files",
     long_description=read_long_description(),
     long_description_content_type="text/markdown",
 
     # Package discovery - CLI-only tool
     packages=find_packages(),
-    py_modules=["bear_parser", "cli"],  # Internal modules for CLI functionality
+    py_modules=["zim_parser", "zim_cli"],  # Internal modules for CLI functionality
 
-    # Dependencies - bear-notes-parser uses only standard library
+    # Dependencies for ZIM file processing
     install_requires=[
-        # No external dependencies - uses only Python standard library
+        "libzim>=3.0.0",  # ZIM file reading
+        "markdownify>=0.11.0",  # HTML to Markdown conversion
     ],
 
     # Optional dependencies for development
@@ -57,7 +59,7 @@ setup(
     # Console scripts for CLI entry points
     entry_points={
         "console_scripts": [
-            "bear-parser=cli:main",  # Makes 'bear-parser' command available
+            "extract-zim-articles=zim_cli:main",  # Makes 'extract-zim-articles' command available
         ],
     },
 
@@ -85,4 +87,7 @@ setup(
 
     # Zip safety
     zip_safe=False,
+
+    # Keywords for package discovery
+    keywords="zim kiwix wikipedia offline extraction markdown",
 )

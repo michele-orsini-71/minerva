@@ -38,7 +38,12 @@
       "Read(///**)",
       "Bash(bear-parser:*)",
       "Bash(bear-rag-pipeline:*)",
-      "Read(//private/tmp/**)"
+      "Read(//private/tmp/**)",
+      "Bash(pip uninstall:*)",
+      "Bash(extract-bear-notes:*)",
+      "Bash(create-cag-from-markdown-notes:*)",
+      "Bash(extract-zim-articles:*)",
+      "Bash(cat:*)"
     ]
   },
   "outputStyle": "Explanatory"

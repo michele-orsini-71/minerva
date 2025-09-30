@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Setup script for bear-notes-cag-data-creator package.
+Setup script for bear-notes-extractor package.
 
-This package provides a complete RAG (Retrieval-Augmented Generation) pipeline
-for Bear Notes, including chunking, embedding generation, and ChromaDB storage.
+This package provides utilities for extracting notes from Bear backup files (.bear2bk)
+and outputting structured note data for further processing.
 """
 
 from setuptools import setup, find_packages
@@ -16,7 +16,7 @@ def read_long_description():
     if os.path.exists(readme_path):
         with open(readme_path, 'r', encoding='utf-8') as f:
             return f.read()
-    return "Bear Notes CAG Data Creator - Complete RAG pipeline for Bear Notes"
+    return "Bear Notes Extractor - Extract notes from Bear backup files"
 
 
 def read_version():
@@ -26,56 +26,38 @@ def read_version():
 
 
 setup(
-    name="bear-notes-cag-data-creator",
+    name="bear-notes-extractor",
     version=read_version(),
     author="Michele",
-    description="CLI tool for Bear Notes RAG pipeline: chunking, embeddings, and ChromaDB storage",
+    description="CLI tool for extracting notes from Bear backup files",
     long_description=read_long_description(),
     long_description_content_type="text/markdown",
 
     # Package discovery - CLI-only tool
     packages=find_packages(),
-    py_modules=[
-        "full_pipeline",
-        "models",
-        "embedding",
-        "chunk_creator",
-        "storage",
-        "json_loader"
-    ],  # Internal modules for CLI functionality
+    py_modules=["bear_parser", "cli"],  # Internal modules for CLI functionality
 
-    # Dependencies for the RAG pipeline
+    # Dependencies - bear-notes-parser uses only standard library
     install_requires=[
-        "chromadb>=0.4.0",
-        "ollama>=0.1.0",
-        "numpy>=1.21.0",
-        "langchain>=0.1.0",
-        "langchain-text-splitters>=0.0.1",
-        "tiktoken>=0.4.0",
-        "nltk>=3.8",
+        # No external dependencies - uses only Python standard library
     ],
 
-    # Optional dependencies for development and testing
+    # Optional dependencies for development
     extras_require={
         "dev": [
             "pytest>=6.0",
             "black>=21.0",
             "flake8>=3.8",
-            "mypy>=0.910",
-        ],
-        "test": [
-            "pytest>=6.0",
-            "pytest-cov>=2.12",
         ]
     },
 
     # Python version requirement
-    python_requires=">=3.8",  # ChromaDB requires Python 3.8+
+    python_requires=">=3.6",
 
     # Console scripts for CLI entry points
     entry_points={
         "console_scripts": [
-            "bear-rag-pipeline=full_pipeline:main",  # Makes 'bear-rag-pipeline' command available
+            "extract-bear-notes=cli:main",  # Makes 'extract-bear-notes' command available
         ],
     },
 
@@ -85,6 +67,8 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -92,9 +76,8 @@ setup(
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
         "Topic :: Software Development :: Libraries :: Python Modules",
-        "Topic :: Scientific/Engineering :: Artificial Intelligence",
-        "Topic :: Text Processing :: Indexing",
-        "Topic :: Database",
+        "Topic :: Text Processing",
+        "Topic :: Utilities",
     ],
 
     # Include additional files
@@ -102,7 +85,4 @@ setup(
 
     # Zip safety
     zip_safe=False,
-
-    # Keywords for package discovery
-    keywords="bear-notes rag retrieval-augmented-generation embeddings chromadb ollama nlp",
 )
