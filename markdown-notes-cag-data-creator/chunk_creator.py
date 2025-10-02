@@ -303,12 +303,12 @@ def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 12
                 chunk = Chunk(
                     id=chunk_id,
                     content=chunk_data['content'],
-                    note_id=note_id,
+                    noteId=note_id,
                     title=note['title'],
                     modificationDate=note['modificationDate'],
                     creationDate=note.get('creationDate', ''),
                     size=chunk_data['size'],
-                    chunk_index=chunk_index
+                    chunkIndex=chunk_index
                 )
 
                 chunks.append(chunk)
@@ -334,7 +334,7 @@ def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 12
         max_chunk_size = max(all_chunk_sizes)
 
         # Calculate notes processed
-        unique_note_ids = len(set(chunk.note_id for chunk in chunks))
+        unique_note_ids = len(set(chunk.noteId for chunk in chunks))
         avg_chunks_per_note = len(chunks) / unique_note_ids if unique_note_ids else 0
     else:
         avg_chunk_size = min_chunk_size = max_chunk_size = 0

@@ -30,14 +30,14 @@ class Chunk:
     content: str
 
     # Metadata inherited from the parent note
-    note_id: str
+    noteId: str
     title: str
     modificationDate: str
     creationDate: str
     size: int
 
     # Position within the note (0-indexed)
-    chunk_index: int
+    chunkIndex: int
 
     def __post_init__(self):
         """Validate chunk data on creation."""
@@ -45,7 +45,7 @@ class Chunk:
             raise ValueError("Chunk ID cannot be empty")
         if not self.content.strip():
             raise ValueError("Chunk content cannot be empty")
-        if self.chunk_index < 0:
+        if self.chunkIndex < 0:
             raise ValueError("Chunk index must be non-negative")
 
 
@@ -83,9 +83,9 @@ class ChunkWithEmbedding:
         return self.chunk.content
 
     @property
-    def note_id(self) -> str:
+    def noteId(self) -> str:
         """Access note ID directly."""
-        return self.chunk.note_id
+        return self.chunk.noteId
 
     @property
     def title(self) -> str:
@@ -108,9 +108,9 @@ class ChunkWithEmbedding:
         return self.chunk.size
 
     @property
-    def chunk_index(self) -> int:
+    def chunkIndex(self) -> int:
         """Access chunk index directly."""
-        return self.chunk.chunk_index
+        return self.chunk.chunkIndex
 
     def to_storage_dict(self) -> dict:
         """
@@ -124,12 +124,12 @@ class ChunkWithEmbedding:
             'content': self.content,
             'embedding': self.embedding,
             # Metadata fields
-            'note_id': self.note_id,
+            'noteId': self.noteId,
             'title': self.title,
             'modificationDate': self.modificationDate,
             'creationDate': self.creationDate,
             'size': self.size,
-            'chunk_index': self.chunk_index
+            'chunkIndex': self.chunkIndex
         }
 
 

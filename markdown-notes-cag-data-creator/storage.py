@@ -537,12 +537,12 @@ def insert_chunks(
                 embeddings = [chunk.embedding for chunk in batch]
                 metadatas = [
                     {
-                        'note_id': chunk.note_id,
+                        'noteId': chunk.noteId,
                         'title': chunk.title,
                         'modificationDate': chunk.modificationDate,
                         'creationDate': chunk.creationDate,
                         'size': chunk.size,
-                        'chunk_index': chunk.chunk_index
+                        'chunkIndex': chunk.chunkIndex
                     }
                     for chunk in batch
                 ]
