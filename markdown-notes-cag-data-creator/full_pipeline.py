@@ -13,7 +13,9 @@ from pathlib import Path
 from json_loader import load_bear_notes_json
 from chunk_creator import create_chunks_from_notes  # New immutable API
 from embedding import generate_embeddings, EmbeddingError  # New immutable API
-from storage import initialize_chromadb_client, insert_chunks, get_or_create_collection, DEFAULT_CHROMADB_PATH  # New immutable API
+from storage import initialize_chromadb_client, insert_chunks, get_or_create_collection, DEFAULT_CHROMADB_PATH, StorageError  # New immutable API
+from config_loader import load_collection_config, ConfigError
+from validation import validate_collection_name, validate_description_hybrid, ValidationError
 
 
 def main():
@@ -23,18 +25,29 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s ../test-data/Bear\\ Notes\\ 2025-09-20\\ at\\ 08.49.json
-  %(prog)s --chunk-size 800 --verbose notes.json
-  %(prog)s --chromadb-path ./my_db notes.json
+  %(prog)s --config collections/bear_notes_config.json notes.json
+  %(prog)s --config collections/wikipedia_history_config.json --chunk-size 800 --verbose wiki.json
+  %(prog)s --config my_collection.json --chromadb-path ./my_db notes.json
 
-This tool runs the complete pipeline: loads Bear notes, creates chunks,
-generates embeddings using Ollama, and stores everything in ChromaDB.
+This tool runs the complete multi-collection pipeline:
+1. Loads and validates collection configuration
+2. Validates collection name and description (with optional AI quality check)
+3. Loads notes from JSON file
+4. Creates semantic chunks
+5. Generates embeddings using Ollama
+6. Stores everything in ChromaDB with collection metadata
         """
     )
 
     parser.add_argument(
         "json_file",
         help="Path to Bear notes JSON file"
+    )
+
+    parser.add_argument(
+        "--config",
+        required=True,
+        help="Path to collection configuration JSON file (defines collection name, description, etc.)"
     )
 
     parser.add_argument(
@@ -66,14 +79,58 @@ generates embeddings using Ollama, and stores everything in ChromaDB.
     # Start processing
     start_time = time.time()
 
-    print("🚀 Bear Notes Complete RAG Pipeline")
+    print("🚀 Markdown Notes Multi-Collection RAG Pipeline")
     print("=" * 60)
 
-    if args.verbose:
-        print(f"📁 Input file: {args.json_file}")
-        print(f"📏 Target chunk size: {args.chunk_size} characters")
-        print(f"🗄️  ChromaDB path: {args.chromadb_path}")
-        print()
+    try:
+        # Step 0: Load and validate configuration
+        print("⚙️  Loading collection configuration...")
+        try:
+            config = load_collection_config(args.config)
+            print(f"   ✅ Configuration loaded from: {args.config}")
+            print(f"   Collection name: {config.collection_name}")
+            print(f"   Description: {config.description[:80]}...")
+            print(f"   Force recreate: {config.force_recreate}")
+            print(f"   Skip AI validation: {config.skip_ai_validation}")
+            print()
+        except ConfigError as e:
+            print(f"\n❌ Configuration Error:\n{e}", file=sys.stderr)
+            print(f"\nConfiguration file: {args.config}", file=sys.stderr)
+            sys.exit(1)
+
+        # Step 0.5: Validate collection name and description
+        print("✅ Validating collection metadata...")
+        try:
+            # Validate collection name
+            validate_collection_name(config.collection_name)
+            print(f"   ✅ Collection name validated: {config.collection_name}")
+
+            # Validate description (hybrid: regex + optional AI)
+            validation_result = validate_description_hybrid(
+                config.description,
+                config.collection_name,
+                skip_ai_validation=config.skip_ai_validation
+            )
+            print(f"   ✅ Description validated successfully")
+            if validation_result:
+                print(f"   AI Quality Score: {validation_result['score']}/10")
+            print()
+        except ValidationError as e:
+            print(f"\n❌ Validation Error:\n{e}", file=sys.stderr)
+            print(f"\nConfiguration file: {args.config}", file=sys.stderr)
+            print(f"Collection name: {config.collection_name}", file=sys.stderr)
+            sys.exit(1)
+
+        if args.verbose:
+            print(f"📁 Input file: {args.json_file}")
+            print(f"📏 Target chunk size: {args.chunk_size} characters")
+            print(f"🗄️  ChromaDB path: {args.chromadb_path}")
+            print(f"📦 Collection: {config.collection_name}")
+            print()
+
+    except KeyboardInterrupt:
+        print("\n⚠️  Operation cancelled by user", file=sys.stderr)
+        sys.exit(130)
 
     try:
         # Step 1: Load JSON
@@ -101,32 +158,46 @@ generates embeddings using Ollama, and stores everything in ChromaDB.
         print()
 
         # Step 4: Store in ChromaDB (immutable)
-        print("🗄️  Storing in ChromaDB...")
-        client = initialize_chromadb_client(args.chromadb_path)
-        collection = get_or_create_collection(client, reset_collection=True)  # Clean rebuild
+        print(f"🗄️  Storing in ChromaDB collection '{config.collection_name}'...")
+        try:
+            client = initialize_chromadb_client(args.chromadb_path)
+            collection = get_or_create_collection(
+                client,
+                collection_name=config.collection_name,
+                description=config.description,
+                force_recreate=config.force_recreate
+            )
 
-        def progress_callback(current, total):
-            if args.verbose:
-                print(f"   📥 Storing: {current}/{total} chunks ({current/total*100:.1f}%)")
+            def progress_callback(current, total):
+                if args.verbose:
+                    print(f"   📥 Storing: {current}/{total} chunks ({current/total*100:.1f}%)")
 
-        stats = insert_chunks(collection, chunks_with_embeddings, progress_callback=progress_callback)
-        print(f"   ✅ Stored {stats['successful']} chunks in ChromaDB")
-        if stats['failed'] > 0:
-            print(f"   ⚠️  Failed to store {stats['failed']} chunks")
-        print()
+            stats = insert_chunks(collection, chunks_with_embeddings, progress_callback=progress_callback)
+            print(f"   ✅ Stored {stats['successful']} chunks in collection '{config.collection_name}'")
+            if stats['failed'] > 0:
+                print(f"   ⚠️  Failed to store {stats['failed']} chunks")
+            print()
+        except StorageError as e:
+            print(f"\n❌ Storage Error:\n{e}", file=sys.stderr)
+            print(f"\nCollection: {config.collection_name}", file=sys.stderr)
+            print(f"Configuration file: {args.config}", file=sys.stderr)
+            sys.exit(1)
 
         # Final summary
         processing_time = time.time() - start_time
         print("🎉 Pipeline completed successfully!")
         print("=" * 60)
+        print(f"📦 Collection: {config.collection_name}")
+        print(f"📝 Description: {config.description[:60]}...")
         print(f"📊 Notes processed: {len(notes)}")
-        print(f"📦 Chunks created: {len(chunks)}")
+        print(f"✂️  Chunks created: {len(chunks)}")
         print(f"🧠 Embeddings generated: {len(chunks_with_embeddings)}")
-        print(f"🗄️  Chunks stored in ChromaDB: {stats['successful']}")
-        print(f"⏱️  Total processing time: {processing_time:.1f} seconds")
+        print(f"🗄️  Chunks stored: {stats['successful']}")
+        print(f"⏱️  Processing time: {processing_time:.1f} seconds")
         print(f"🚀 Performance: {len(chunks) / processing_time:.1f} chunks/second")
         print()
-        print(f"💡 Database ready for RAG queries at: {args.chromadb_path}")
+        print(f"💡 Collection '{config.collection_name}' ready for RAG queries")
+        print(f"   Database location: {args.chromadb_path}")
 
     except KeyboardInterrupt:
         print("\n⚠️  Operation cancelled by user", file=sys.stderr)
