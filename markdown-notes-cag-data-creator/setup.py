@@ -1,17 +1,8 @@
-#!/usr/bin/env python3
-"""
-Setup script for markdown-notes-cag-data-creator package.
-
-This package provides a complete RAG (Retrieval-Augmented Generation) pipeline
-for markdown notes, including chunking, embedding generation, and ChromaDB storage.
-"""
-
 from setuptools import setup, find_packages
 import os
 
 
 def read_long_description():
-    """Read long description from README if it exists."""
     readme_path = os.path.join(os.path.dirname(__file__), 'README.md')
     if os.path.exists(readme_path):
         with open(readme_path, 'r', encoding='utf-8') as f:
@@ -20,7 +11,6 @@ def read_long_description():
 
 
 def read_version():
-    """Read version from module or default."""
     # You could also read from a __version__.py file if you create one
     return "1.0.0"
 

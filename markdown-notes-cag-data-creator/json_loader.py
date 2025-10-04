@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-"""
-JSON Loader module for Bear Notes data.
-
-Handles loading and parsing Bear notes JSON files with proper error handling.
-"""
-
 import json
 import sys
 from pathlib import Path
@@ -12,18 +5,6 @@ from typing import List, Dict, Any
 
 
 def load_json_notes(json_path: str) -> List[Dict[str, Any]]:
-    """
-    Load Bear notes from a JSON file.
-
-    Args:
-        json_path: Path to the Bear notes JSON file
-
-    Returns:
-        List of note dictionaries with keys: title, markdown, size, modificationDate, creationDate
-
-    Raises:
-        SystemExit: If file cannot be loaded or parsed
-    """
     try:
         # Convert to Path object for better path handling
         file_path = Path(json_path)
@@ -79,17 +60,3 @@ def load_json_notes(json_path: str) -> List[Dict[str, Any]]:
     except Exception as e:
         print(f"Error: Unexpected error loading {json_path}: {e}", file=sys.stderr)
         sys.exit(1)
-
-
-if __name__ == "__main__":
-    # Simple test when run directly
-    if len(sys.argv) != 2:
-        print("Usage: python json_loader.py <path_to_json>")
-        sys.exit(1)
-
-    notes = load_json_notes(sys.argv[1])
-    print(f"Successfully loaded {len(notes)} notes")
-
-    if notes:
-        print(f"First note: '{notes[0]['title']}'")
-        print(f"Content length: {len(notes[0]['markdown'])} characters")

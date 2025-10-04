@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""
-Chunk Creator module for Bear Notes.
-
-Uses LangChain text splitters to create semantic chunks from Bear notes markdown content
-with proper overlap and structure preservation.
-"""
-
 import sys
 import hashlib
 from typing import List, Dict, Any
@@ -21,16 +13,6 @@ except ImportError:
 
 
 def generate_note_id(title: str, creation_date: str = None) -> str:
-    """
-    Generate a stable note ID using SHA1 hash of title and creation date.
-
-    Args:
-        title: Note title
-        creation_date: Optional creation date for uniqueness
-
-    Returns:
-        SHA1 hex digest as note ID
-    """
     # Use title + creation date if available, otherwise just title
     id_source = title
     if creation_date:
@@ -40,32 +22,11 @@ def generate_note_id(title: str, creation_date: str = None) -> str:
 
 
 def generate_chunk_id(note_id: str, modification_date: str, chunk_index: int) -> str:
-    """
-    Generate a stable chunk ID using SHA256 hash.
-
-    Args:
-        note_id: Parent note ID
-        modification_date: Note modification date
-        chunk_index: Index of chunk within note
-
-    Returns:
-        SHA256 hex digest as chunk ID
-    """
     chunk_source = f"{note_id}|{modification_date}|{chunk_index}"
     return hashlib.sha256(chunk_source.encode('utf-8')).hexdigest()
 
 
 def create_langchain_chunker(target_chars: int = 1200, overlap_chars: int = 200):
-    """
-    Create configured LangChain text splitters for Bear notes.
-
-    Args:
-        target_chars: Target chunk size in characters
-        overlap_chars: Overlap size in characters
-
-    Returns:
-        Tuple of (header_splitter, recursive_splitter)
-    """
     # Configure header-based splitter
     headers_to_split_on = [
         ("#", "Header 1"),
@@ -99,17 +60,6 @@ def create_langchain_chunker(target_chars: int = 1200, overlap_chars: int = 200)
 
 
 def chunk_markdown_content(markdown: str, target_chars: int = 1200, overlap_chars: int = 200) -> List[Dict[str, Any]]:
-    """
-    Chunk markdown content using combined LangChain approach.
-
-    Args:
-        markdown: Markdown content to chunk
-        target_chars: Target chunk size in characters
-        overlap_chars: Overlap size in characters
-
-    Returns:
-        List of chunk dictionaries with content, metadata, and size
-    """
     header_splitter, recursive_splitter = create_langchain_chunker(target_chars, overlap_chars)
 
     # Step 1: Split by headers to preserve structure
@@ -150,17 +100,6 @@ def chunk_markdown_content(markdown: str, target_chars: int = 1200, overlap_char
 
 
 def create_chunks_for_notes(notes: List[Dict[str, Any]], target_chars: int = 1200, overlap_chars: int = 200) -> List[Dict[str, Any]]:
-    """
-    Create chunks for all notes using LangChain text splitters.
-
-    Args:
-        notes: List of note dictionaries from Bear JSON
-        target_chars: Target chunk size in characters (default: 1200)
-        overlap_chars: Overlap size in characters (default: 200)
-
-    Returns:
-        List of note dictionaries enriched with 'chunks' field containing chunk data
-    """
     enriched_notes = []
     failed_notes = []
 
@@ -262,21 +201,6 @@ def create_chunks_for_notes(notes: List[Dict[str, Any]], target_chars: int = 120
 
 
 def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 1200, overlap_chars: int = 200) -> ChunkList:
-    """
-    Create immutable Chunk objects from notes using LangChain text splitters.
-
-    This is the new immutable API that returns a flat list of Chunk objects
-    instead of the nested note structure. This eliminates data conversion
-    between pipeline stages.
-
-    Args:
-        notes: List of note dictionaries from Bear JSON
-        target_chars: Target chunk size in characters (default: 1200)
-        overlap_chars: Overlap size in characters (default: 200)
-
-    Returns:
-        Flat list of immutable Chunk objects ready for embedding generation
-    """
     chunks = []
     failed_notes = []
 
@@ -359,24 +283,3 @@ def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 12
         sys.exit(1)
 
     return chunks
-
-
-if __name__ == "__main__":
-    # Simple test when run directly
-    print("Chunk Creator module - use via embeddings_creator.py CLI")
-
-    # Example usage with LangChain
-    test_notes = [
-        {
-            "title": "Test Note",
-            "markdown": "# Test\n\nThis is a test note with some content.\n\n## Section\n\nMore content here that should be chunked properly with overlap.",
-            "size": 100,
-            "modificationDate": "2025-01-01T10:00:00Z"
-        }
-    ]
-
-    result = create_chunks_for_notes(test_notes, target_chars=50, overlap_chars=10)
-    print(f"Test result: {len(result[0]['chunks'])} chunks created")
-
-    for i, chunk in enumerate(result[0]['chunks']):
-        print(f"  Chunk {i+1}: {chunk['size']} chars - {chunk['content'][:50]}...")

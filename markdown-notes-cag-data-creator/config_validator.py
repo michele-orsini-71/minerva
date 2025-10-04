@@ -1,37 +1,9 @@
-#!/usr/bin/env python3
-"""
-Configuration loading and validation for the RAG pipeline.
-Centralizes configuration loading, validation, and error handling.
-"""
-
 import sys
 from config_loader import load_collection_config, ConfigError
 from validation import validate_collection_name, validate_description_hybrid, ValidationError
 
 
 def load_and_validate_config(config_path: str, verbose: bool = False):
-    """
-    Load and validate collection configuration.
-
-    This function performs a complete validation workflow:
-    1. Loads configuration from JSON file
-    2. Validates collection name format
-    3. Validates description (regex + optional AI quality check)
-
-    Args:
-        config_path: Path to collection configuration JSON file
-        verbose: Whether to print detailed validation information
-
-    Returns:
-        CollectionConfig: Validated configuration object with attributes:
-            - collection_name: Validated collection name
-            - description: Validated description
-            - force_recreate: Whether to force recreate the collection
-            - skip_ai_validation: Whether AI validation was skipped
-
-    Exits:
-        sys.exit(1) if configuration loading or validation fails
-    """
     # Step 1: Load configuration
     print("Loading collection configuration...")
     try:

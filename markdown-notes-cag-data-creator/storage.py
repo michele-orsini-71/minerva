@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""
-ChromaDB storage module for Bear Notes RAG system.
-
-Handles vector database operations including collection management, batch insertion,
-and metadata persistence. Configured for cosine similarity with HNSW index.
-"""
-
 import os
 import sys
 from typing import List, Dict, Any, Optional
@@ -21,7 +13,6 @@ except ImportError:
 # Import our immutable models
 from models import ChunkWithEmbedding, ChunkWithEmbeddingList
 
-
 # Configuration constants
 DEFAULT_CHROMADB_PATH = "../chromadb_data/bear_notes_embeddings"
 DEFAULT_COLLECTION_NAME = "bear_notes_chunks"
@@ -30,28 +21,14 @@ HNSW_SPACE = "cosine"  # Distance metric for HNSW index
 
 
 class StorageError(Exception):
-    """Exception raised when storage operations fail."""
     pass
 
 
 class ChromaDBConnectionError(Exception):
-    """Exception raised when ChromaDB connection fails."""
     pass
 
 
 def initialize_chromadb_client(db_path: str = DEFAULT_CHROMADB_PATH) -> chromadb.PersistentClient:
-    """
-    Initialize ChromaDB persistent client with proper configuration.
-
-    Args:
-        db_path: Path to ChromaDB data directory
-
-    Returns:
-        Configured ChromaDB persistent client
-
-    Raises:
-        ChromaDBConnectionError: If client initialization fails
-    """
     try:
         # Ensure path is absolute and create parent directories
         db_path = os.path.abspath(os.path.expanduser(db_path))
@@ -82,26 +59,6 @@ def get_or_create_collection(
     force_recreate: bool = False,
     reset_collection: bool = False  # Deprecated parameter kept for backward compatibility
 ) -> chromadb.Collection:
-    """
-    Get or create ChromaDB collection with configurable metadata.
-
-    Args:
-        client: ChromaDB client instance
-        collection_name: Name of the collection
-        description: Collection description for metadata (optional)
-        force_recreate: If True, delete and recreate collection if it exists (destructive!)
-        reset_collection: DEPRECATED - use force_recreate instead (kept for backward compatibility)
-
-    Returns:
-        Configured ChromaDB collection
-
-    Raises:
-        StorageError: If collection operations fail or already exists when force_recreate=False
-
-    Note:
-        force_recreate is destructive and will permanently delete existing data.
-        Use with caution!
-    """
     try:
         # Handle backward compatibility (reset_collection is deprecated)
         if reset_collection:
@@ -176,18 +133,6 @@ def get_or_create_collection(
 
 
 def prepare_batch_data(chunks: List[Dict[str, Any]]) -> Dict[str, List[Any]]:
-    """
-    Prepare chunk data for batch ChromaDB insertion.
-
-    Args:
-        chunks: List of chunk dictionaries with content, metadata, and embeddings
-
-    Returns:
-        Dictionary with formatted data for ChromaDB batch operations
-
-    Raises:
-        StorageError: If data preparation fails
-    """
     if not chunks:
         return {"ids": [], "documents": [], "metadatas": [], "embeddings": []}
 
@@ -241,21 +186,6 @@ def insert_chunks_batch(
     batch_size: int = DEFAULT_BATCH_SIZE,
     progress_callback: Optional[callable] = None
 ) -> Dict[str, Any]:
-    """
-    Insert chunks into ChromaDB collection in batches.
-
-    Args:
-        collection: ChromaDB collection instance
-        chunks: List of chunk dictionaries
-        batch_size: Number of chunks per batch
-        progress_callback: Optional callback function(current, total) for progress updates
-
-    Returns:
-        Dictionary with insertion statistics
-
-    Raises:
-        StorageError: If batch insertion fails
-    """
     if not chunks:
         return {"total_chunks": 0, "batches": 0, "successful": 0, "failed": 0}
 
@@ -314,18 +244,6 @@ def insert_chunks_batch(
 
 
 def get_collection_stats(collection: chromadb.Collection) -> Dict[str, Any]:
-    """
-    Get statistics about the ChromaDB collection.
-
-    Args:
-        collection: ChromaDB collection instance
-
-    Returns:
-        Dictionary with collection statistics
-
-    Raises:
-        StorageError: If stats retrieval fails
-    """
     try:
         # Get collection count
         count = collection.count()
@@ -363,19 +281,6 @@ def validate_storage_setup(
     db_path: str = DEFAULT_CHROMADB_PATH,
     collection_name: str = DEFAULT_COLLECTION_NAME
 ) -> Dict[str, Any]:
-    """
-    Validate ChromaDB storage setup and return status information.
-
-    Args:
-        db_path: Path to ChromaDB data directory
-        collection_name: Name of the collection to validate
-
-    Returns:
-        Dictionary with validation results
-
-    Raises:
-        ChromaDBConnectionError: If validation fails
-    """
     try:
         # Initialize client
         client = initialize_chromadb_client(db_path)
@@ -399,13 +304,6 @@ def validate_storage_setup(
 
 
 class BearNotesStorage:
-    """
-    High-level storage manager for Bear Notes ChromaDB operations.
-
-    Provides a clean interface for all storage operations with proper error handling
-    and resource management.
-    """
-
     def __init__(
         self,
         db_path: str = DEFAULT_CHROMADB_PATH,
@@ -427,18 +325,6 @@ class BearNotesStorage:
         self.collection = None
 
     def initialize(self, reset_collection: bool = False) -> Dict[str, Any]:
-        """
-        Initialize the storage system.
-
-        Args:
-            reset_collection: If True, delete existing collection
-
-        Returns:
-            Initialization status and statistics
-
-        Raises:
-            ChromaDBConnectionError: If initialization fails
-        """
         try:
             # Initialize client
             self.client = initialize_chromadb_client(self.db_path)
@@ -513,20 +399,6 @@ class BearNotesStorage:
         n_results: int = 10,
         metadata_filter: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
-        """
-        Query for similar chunks using embeddings.
-
-        Args:
-            query_embeddings: List of query embedding vectors
-            n_results: Number of results to return
-            metadata_filter: Optional metadata filter
-
-        Returns:
-            Query results from ChromaDB
-
-        Raises:
-            StorageError: If query fails
-        """
         if not self.collection:
             raise StorageError("Storage not initialized. Call initialize() first.")
 
@@ -548,24 +420,6 @@ def insert_chunks(
     batch_size: int = DEFAULT_BATCH_SIZE,
     progress_callback: Optional[callable] = None
 ) -> Dict[str, Any]:
-    """
-    Insert ChunkWithEmbedding objects into ChromaDB collection.
-
-    This is the new immutable API that takes ChunkWithEmbedding objects directly,
-    eliminating data conversion between pipeline stages.
-
-    Args:
-        collection: ChromaDB collection instance
-        chunks_with_embeddings: List of ChunkWithEmbedding objects
-        batch_size: Number of chunks per batch
-        progress_callback: Optional callback function(current, total) for progress updates
-
-    Returns:
-        Dictionary with insertion statistics
-
-    Raises:
-        StorageError: If batch insertion fails
-    """
     if not chunks_with_embeddings:
         return {"total_chunks": 0, "batches": 0, "successful": 0, "failed": 0}
 
@@ -639,33 +493,3 @@ def insert_chunks(
 
     except Exception as e:
         raise StorageError(f"Chunk storage failed: {e}")
-
-
-if __name__ == "__main__":
-    # Simple test when run directly
-    print("Testing storage.py module")
-    print("=" * 50)
-
-    try:
-        # Test storage validation
-        print("Validating storage setup...")
-        validation = validate_storage_setup()
-        print(f"   Storage validation: {validation}")
-        print()
-
-        # Test storage manager
-        print("Testing storage manager...")
-        storage = BearNotesStorage()
-
-        init_result = storage.initialize(reset_collection=True)
-        print(f"   Storage initialized: {init_result}")
-
-        stats = storage.get_stats()
-        print(f"   Collection stats: {stats}")
-        print()
-
-        print("All storage tests completed successfully!")
-
-    except Exception as e:
-        print(f"Storage test failed: {e}", file=sys.stderr)
-        sys.exit(1)

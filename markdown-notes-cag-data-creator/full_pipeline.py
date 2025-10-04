@@ -17,7 +17,6 @@ from storage import initialize_chromadb_client, insert_chunks, get_or_create_col
 
 
 def main():
-    """Main pipeline entry point."""
     args = parse_pipeline_args()
 
     # Start processing

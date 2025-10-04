@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-"""
-Embedding generation module for Bear Notes RAG system.
-
-Handles embedding generation using Ollama's mxbai-embed-large model with L2 normalization
-for ChromaDB cosine similarity compatibility. Includes service discovery, error handling,
-and retry logic for robust operation.
-"""
-
 import time
 from typing import List, Dict, Any, Optional
 import sys
@@ -26,22 +17,14 @@ DEFAULT_RETRY_DELAY = 1.0
 
 
 class EmbeddingError(Exception):
-    """Exception raised when embedding generation fails."""
     pass
 
 
 class OllamaServiceError(Exception):
-    """Exception raised when Ollama service is unavailable."""
     pass
 
 
 def check_ollama_service() -> bool:
-    """
-    Check if Ollama service is available and responsive.
-
-    Returns:
-        True if service is available, False otherwise
-    """
     try:
         # Try to get list of models as a health check
         ollama.list()
@@ -51,15 +34,6 @@ def check_ollama_service() -> bool:
 
 
 def check_model_availability(model_name: str = EMBED_MODEL) -> bool:
-    """
-    Check if the required embedding model is available locally.
-
-    Args:
-        model_name: Name of the model to check
-
-    Returns:
-        True if model is available, False otherwise
-    """
     try:
         models = ollama.list()
         model_names = [model.model for model in models.models]
@@ -69,15 +43,6 @@ def check_model_availability(model_name: str = EMBED_MODEL) -> bool:
 
 
 def l2_normalize(vectors: np.ndarray) -> np.ndarray:
-    """
-    Apply L2 normalization to vectors for cosine similarity compatibility.
-
-    Args:
-        vectors: Input vectors as numpy array (shape: [n_vectors, embedding_dim])
-
-    Returns:
-        L2-normalized vectors with same shape
-    """
     norms = np.linalg.norm(vectors, axis=1, keepdims=True)
     # Avoid division by zero for zero vectors
     norms[norms == 0] = 1.0
@@ -90,22 +55,6 @@ def generate_embedding(
     max_retries: int = DEFAULT_MAX_RETRIES,
     retry_delay: float = DEFAULT_RETRY_DELAY
 ) -> List[float]:
-    """
-    Generate embedding for a single text using Ollama.
-
-    Args:
-        text: Input text to embed
-        model: Ollama model name to use
-        max_retries: Maximum number of retry attempts
-        retry_delay: Delay between retries in seconds
-
-    Returns:
-        L2-normalized embedding vector as list of floats
-
-    Raises:
-        EmbeddingError: If embedding generation fails after retries
-        OllamaServiceError: If Ollama service is not available
-    """
     if not text.strip():
         # Return zero vector for empty text
         return [0.0] * 1024  # mxbai-embed-large has 1024 dimensions
@@ -147,23 +96,6 @@ def generate_embeddings_batch(
     retry_delay: float = DEFAULT_RETRY_DELAY,
     progress_callback: Optional[callable] = None
 ) -> List[List[float]]:
-    """
-    Generate embeddings for multiple texts with progress tracking.
-
-    Args:
-        texts: List of input texts to embed
-        model: Ollama model name to use
-        max_retries: Maximum number of retry attempts per text
-        retry_delay: Initial delay between retries in seconds
-        progress_callback: Optional callback function(current, total) for progress updates
-
-    Returns:
-        List of L2-normalized embedding vectors
-
-    Raises:
-        EmbeddingError: If any embedding generation fails after retries
-        OllamaServiceError: If Ollama service is not available
-    """
     if not texts:
         return []
 
@@ -188,15 +120,6 @@ def generate_embeddings_batch(
 
 
 def validate_embedding_consistency(embeddings: List[List[float]]) -> bool:
-    """
-    Validate that all embeddings have consistent dimensions and are properly normalized.
-
-    Args:
-        embeddings: List of embedding vectors to validate
-
-    Returns:
-        True if all embeddings are consistent, False otherwise
-    """
     if not embeddings:
         return True
 
@@ -218,18 +141,6 @@ def validate_embedding_consistency(embeddings: List[List[float]]) -> bool:
 
 
 def initialize_embedding_service(model: str = EMBED_MODEL) -> Dict[str, Any]:
-    """
-    Initialize and validate the embedding service.
-
-    Args:
-        model: Model name to validate
-
-    Returns:
-        Dictionary with service status information
-
-    Raises:
-        OllamaServiceError: If service initialization fails
-    """
     status = {
         'service_available': False,
         'model_available': False,
@@ -268,26 +179,6 @@ def generate_embeddings(
     retry_delay: float = DEFAULT_RETRY_DELAY,
     progress_callback: Optional[callable] = None
 ) -> ChunkWithEmbeddingList:
-    """
-    Generate embeddings for Chunk objects and return ChunkWithEmbedding objects.
-
-    This is the new immutable API that takes Chunk objects and returns
-    ChunkWithEmbedding objects, eliminating data conversion between pipeline stages.
-
-    Args:
-        chunks: List of Chunk objects to embed
-        model: Ollama model name to use
-        max_retries: Maximum number of retry attempts per chunk
-        retry_delay: Initial delay between retries in seconds
-        progress_callback: Optional callback function(current, total) for progress updates
-
-    Returns:
-        List of immutable ChunkWithEmbedding objects ready for storage
-
-    Raises:
-        EmbeddingError: If any embedding generation fails after retries
-        OllamaServiceError: If Ollama service is not available
-    """
     if not chunks:
         return []
 
@@ -361,51 +252,3 @@ def generate_embeddings(
         raise EmbeddingError("No embeddings were successfully generated")
 
     return chunks_with_embeddings
-
-
-if __name__ == "__main__":
-    # Simple test when run directly
-    print("🧪 Testing embedding.py module")
-    print("=" * 50)
-
-    try:
-        # Initialize service
-        print("Checking Ollama service...")
-        status = initialize_embedding_service()
-        print(f"   Service status: {status}")
-        print()
-
-        # Test single embedding
-        print("📝 Testing single embedding generation...")
-        test_text = "This is a test sentence for embedding generation."
-        embedding = generate_embedding(test_text)
-
-        print(f"   Generated embedding with {len(embedding)} dimensions")
-        print(f"   L2 norm: {np.linalg.norm(embedding):.4f}")
-        print()
-
-        # Test batch embeddings
-        print("Testing batch embedding generation...")
-        test_texts = [
-            "First test document for batch processing.",
-            "Second document with different content.",
-            "Third document to complete the batch test."
-        ]
-
-        def progress_cb(current, total):
-            print(f"   Progress: {current}/{total} ({current/total*100:.1f}%)")
-
-        embeddings = generate_embeddings_batch(test_texts, progress_callback=progress_cb)
-        print(f"   Generated {len(embeddings)} embeddings")
-
-        # Validate consistency
-        print("Validating embedding consistency...")
-        is_consistent = validate_embedding_consistency(embeddings)
-        print(f"   Consistency check: {'PASSED' if is_consistent else 'FAILED'}")
-
-        print()
-        print("🎉 All tests completed successfully!")
-
-    except Exception as e:
-        print(f"Test failed: {e}", file=sys.stderr)
-        sys.exit(1)

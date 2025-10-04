@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""
-Collection name and description validation module.
-
-Provides regex-based and AI-powered validation for collection configurations
-to ensure high-quality, unambiguous collection metadata.
-"""
-
 import re
 import sys
 from typing import Dict, Any, Optional, Tuple
@@ -83,21 +75,6 @@ Do not include any text before or after the JSON object."""
 
 
 def validate_collection_name(name: str) -> None:
-    """
-    Validate collection name using regex pattern.
-
-    Args:
-        name: Collection name to validate
-
-    Raises:
-        ValidationError: If name is invalid
-
-    Rules:
-        - Must start with alphanumeric character
-        - Can contain: letters, numbers, underscores, hyphens
-        - Maximum 63 characters
-        - Pattern: ^[a-zA-Z0-9][a-zA-Z0-9_-]*$
-    """
     if not name:
         raise ValidationError(
             "Collection name cannot be empty\n"
@@ -132,21 +109,6 @@ def validate_collection_name(name: str) -> None:
 
 
 def validate_description_regex(description: str, collection_name: str) -> None:
-    """
-    Validate description using mandatory regex checks.
-
-    Args:
-        description: Description text to validate
-        collection_name: Collection name (for error messages)
-
-    Raises:
-        ValidationError: If description fails mandatory checks
-
-    Mandatory checks:
-        - Minimum length: 50 characters
-        - Must contain at least one required phrase
-        - Must not be too vague (blacklist check)
-    """
     if not description:
         raise ValidationError(
             f"Description cannot be empty for collection '{collection_name}'\n"
@@ -202,15 +164,6 @@ def validate_description_regex(description: str, collection_name: str) -> None:
 
 
 def check_model_availability(model_name: str = AI_MODEL) -> bool:
-    """
-    Check if the specified Ollama model is available.
-
-    Args:
-        model_name: Name of the Ollama model to check
-
-    Returns:
-        True if model is available, False otherwise
-    """
     try:
         models_response = ollama_list()
         # Handle both dict and object responses from ollama
@@ -236,20 +189,6 @@ def check_model_availability(model_name: str = AI_MODEL) -> bool:
 
 
 def validate_with_ai(description: str, collection_name: str, model: str = AI_MODEL) -> Tuple[int, str, str]:
-    """
-    Validate description quality using AI model.
-
-    Args:
-        description: Description text to validate
-        collection_name: Collection name
-        model: Ollama model to use for validation
-
-    Returns:
-        Tuple of (score, reasoning, suggestions)
-
-    Raises:
-        ValidationError: If AI validation fails or score is below threshold
-    """
     # Check model availability first
     if not check_model_availability(model):
         raise ValidationError(
@@ -327,26 +266,6 @@ def validate_description_hybrid(
     skip_ai_validation: bool = False,
     model: str = AI_MODEL
 ) -> Optional[Dict[str, Any]]:
-    """
-    Validate description using hybrid approach (regex + optional AI).
-
-    Args:
-        description: Description text to validate
-        collection_name: Collection name
-        skip_ai_validation: If True, skip AI validation
-        model: Ollama model to use for AI validation
-
-    Returns:
-        Dictionary with validation results if AI validation was performed, None otherwise
-
-    Raises:
-        ValidationError: If validation fails
-
-    Process:
-        1. Run mandatory regex validation (always runs)
-        2. Run optional AI validation (if skip_ai_validation=False)
-        3. Check AI score against threshold
-    """
     # Step 1: Mandatory regex validation
     validate_description_regex(description, collection_name)
 

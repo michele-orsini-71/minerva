@@ -1,32 +1,10 @@
-#!/usr/bin/env python3
-"""
-Immutable data models for the Bear Notes RAG pipeline.
-
-This module defines the core data structures that flow through the pipeline:
-- Chunk: Immutable text chunk after content splitting
-- ChunkWithEmbedding: Immutable chunk with AI-generated embedding vector
-
-The design uses composition and immutability to ensure clean type transitions
-between pipeline stages without data conversion overhead.
-"""
-
 from dataclasses import dataclass
 from typing import List
 
 
 @dataclass(frozen=True)
 class Chunk:
-    """
-    Immutable chunk of text content from a Bear note.
-
-    Created by the chunking stage and flows through the embedding
-    and storage stages. All fields are immutable to ensure data
-    integrity throughout the pipeline.
-    """
-    # Unique identifier for this chunk
     id: str
-
-    # The actual text content of the chunk
     content: str
 
     # Metadata inherited from the parent note
@@ -51,13 +29,6 @@ class Chunk:
 
 @dataclass(frozen=True)
 class ChunkWithEmbedding:
-    """
-    Immutable chunk with AI-generated embedding vector.
-
-    Created by the embedding stage and consumed by the storage stage.
-    Uses composition to preserve the original Chunk data exactly,
-    while adding the embedding as new information.
-    """
     # Original chunk data (preserved exactly)
     chunk: Chunk
 
