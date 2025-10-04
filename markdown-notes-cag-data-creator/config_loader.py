@@ -12,6 +12,13 @@ from pathlib import Path
 from typing import Dict, Any
 from dataclasses import dataclass
 
+try:
+    from jsonschema import validate, ValidationError as JsonSchemaValidationError
+    from jsonschema import Draft7Validator
+except ImportError:
+    print("Error: jsonschema library not installed. Run: pip install jsonschema", file=sys.stderr)
+    sys.exit(1)
+
 
 @dataclass(frozen=True)
 class CollectionConfig:
@@ -37,6 +44,115 @@ class CollectionConfig:
 class ConfigError(Exception):
     """Exception raised when configuration loading or validation fails."""
     pass
+
+
+# JSON Schema for collection configuration validation
+COLLECTION_CONFIG_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["collection_name", "description"],
+    "properties": {
+        "collection_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 63,
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]*$",
+            "description": "Collection name (alphanumeric, underscore, hyphen; 1-63 chars)"
+        },
+        "description": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 1000,
+            "description": "Detailed description of when to use this collection (10-1000 chars)"
+        },
+        "forceRecreate": {
+            "type": "boolean",
+            "default": False,
+            "description": "Force recreation of collection if it exists"
+        },
+        "skipAiValidation": {
+            "type": "boolean",
+            "default": False,
+            "description": "Skip AI-based validation of collection name and description"
+        }
+    },
+    "additionalProperties": False
+}
+
+
+def validate_config_schema(data: Dict[str, Any], config_path: str) -> None:
+    """
+    Validate configuration data against JSON schema.
+
+    Args:
+        data: Configuration dictionary to validate
+        config_path: Path to config file (for error messages)
+
+    Raises:
+        ConfigError: If schema validation fails
+    """
+    try:
+        validate(instance=data, schema=COLLECTION_CONFIG_SCHEMA)
+    except JsonSchemaValidationError as e:
+        # Convert jsonschema validation error to user-friendly ConfigError
+        error_path = " → ".join(str(p) for p in e.absolute_path) if e.absolute_path else "root"
+
+        # Provide helpful error messages based on error type
+        if "is a required property" in e.message:
+            missing_field = e.message.split("'")[1]
+            raise ConfigError(
+                f"Missing required field in configuration file: {config_path}\n"
+                f"  Missing field: '{missing_field}'\n"
+                f"  Location: {error_path}\n"
+                f"  Suggestion: Add the required field:\n"
+                f"    {{\n"
+                f'      "collection_name": "your_collection_name",\n'
+                f'      "description": "Detailed description (at least 10 characters)..."\n'
+                f"    }}"
+            )
+        elif "is not of type" in e.message:
+            raise ConfigError(
+                f"Type validation error in configuration file: {config_path}\n"
+                f"  Field: {error_path}\n"
+                f"  Error: {e.message}\n"
+                f"  Suggestion: Check the field type:\n"
+                f"    - Strings: \"value\" (with quotes)\n"
+                f"    - Booleans: true or false (lowercase, no quotes)"
+            )
+        elif "is too short" in e.message or "is too long" in e.message:
+            raise ConfigError(
+                f"Length validation error in configuration file: {config_path}\n"
+                f"  Field: {error_path}\n"
+                f"  Error: {e.message}\n"
+                f"  Suggestion: Check the field length requirements in the schema"
+            )
+        elif "does not match" in e.message:
+            raise ConfigError(
+                f"Pattern validation error in configuration file: {config_path}\n"
+                f"  Field: {error_path}\n"
+                f"  Error: {e.message}\n"
+                f"  Suggestion: collection_name must:\n"
+                f"    - Start with alphanumeric character\n"
+                f"    - Contain only alphanumeric, underscore, or hyphen\n"
+                f"    - Be 1-63 characters long\n"
+                f"  Examples: 'bear_notes', 'project-docs', 'team123'"
+            )
+        elif "Additional properties are not allowed" in e.message:
+            extra_props = [p for p in e.instance.keys() if p not in COLLECTION_CONFIG_SCHEMA['properties']]
+            raise ConfigError(
+                f"Unknown fields in configuration file: {config_path}\n"
+                f"  Unknown fields: {', '.join(extra_props)}\n"
+                f"  Allowed fields: {', '.join(COLLECTION_CONFIG_SCHEMA['properties'].keys())}\n"
+                f"  Suggestion: Remove the unknown fields or check for typos"
+            )
+        else:
+            # Generic schema validation error
+            raise ConfigError(
+                f"Schema validation error in configuration file: {config_path}\n"
+                f"  Field: {error_path}\n"
+                f"  Error: {e.message}\n"
+                f"  Suggestion: Check the configuration format against the schema"
+            )
 
 
 def load_collection_config(config_path: str) -> CollectionConfig:
@@ -98,81 +214,19 @@ def load_collection_config(config_path: str) -> CollectionConfig:
                 f"  Suggestion: Ensure the file contains {{ ... }} at the top level"
             )
 
-        # Extract and validate required fields
-        missing_fields = []
-        if 'collection_name' not in data:
-            missing_fields.append('collection_name')
-        if 'description' not in data:
-            missing_fields.append('description')
+        # Validate against JSON schema (replaces manual validation)
+        validate_config_schema(data, config_path)
 
-        if missing_fields:
-            raise ConfigError(
-                f"Missing required fields in configuration file: {config_path}\n"
-                f"  Missing fields: {', '.join(missing_fields)}\n"
-                f"  Suggestion: Add these fields to your JSON configuration:\n"
-                f"    {{\n"
-                f'      "collection_name": "your_collection_name",\n'
-                f'      "description": "Detailed description of when to use this collection..."\n'
-                f"    }}"
-            )
-
-        # Validate field types
-        type_errors = []
-
-        collection_name = data['collection_name']
-        if not isinstance(collection_name, str):
-            type_errors.append(
-                f"  - collection_name must be a string, got {type(collection_name).__name__}"
-            )
-
-        description = data['description']
-        if not isinstance(description, str):
-            type_errors.append(
-                f"  - description must be a string, got {type(description).__name__}"
-            )
-
-        # Optional fields with defaults
+        # Extract validated fields
+        collection_name = data['collection_name'].strip()
+        description = data['description'].strip()
         force_recreate = data.get('forceRecreate', False)
-        if not isinstance(force_recreate, bool):
-            type_errors.append(
-                f"  - forceRecreate must be a boolean, got {type(force_recreate).__name__}"
-            )
-
         skip_ai_validation = data.get('skipAiValidation', False)
-        if not isinstance(skip_ai_validation, bool):
-            type_errors.append(
-                f"  - skipAiValidation must be a boolean, got {type(skip_ai_validation).__name__}"
-            )
-
-        if type_errors:
-            raise ConfigError(
-                f"Type validation errors in configuration file: {config_path}\n"
-                + "\n".join(type_errors) + "\n"
-                f"  Suggestion: Ensure all fields have the correct type:\n"
-                f"    - Strings: \"value\" (with quotes)\n"
-                f"    - Booleans: true or false (lowercase, no quotes)\n"
-                f"    - Numbers: 123 (no quotes)"
-            )
-
-        # Validate that strings are not empty
-        if not collection_name.strip():
-            raise ConfigError(
-                f"collection_name cannot be empty or whitespace-only\n"
-                f"  File: {config_path}\n"
-                f"  Suggestion: Provide a meaningful collection name"
-            )
-
-        if not description.strip():
-            raise ConfigError(
-                f"description cannot be empty or whitespace-only\n"
-                f"  File: {config_path}\n"
-                f"  Suggestion: Provide a detailed description of when to use this collection"
-            )
 
         # Create and return immutable config object
         return CollectionConfig(
-            collection_name=collection_name.strip(),
-            description=description.strip(),
+            collection_name=collection_name,
+            description=description,
             force_recreate=force_recreate,
             skip_ai_validation=skip_ai_validation
         )
@@ -191,29 +245,148 @@ def load_collection_config(config_path: str) -> CollectionConfig:
 
 if __name__ == "__main__":
     # Simple test when run directly
+    import tempfile
+    import os
+
     print("🧪 Testing config_loader.py module")
     print("=" * 60)
 
-    # Test with non-existent file (should fail gracefully)
+    # Test 1: Non-existent file
     print("\n📋 Test 1: Non-existent file")
     try:
         config = load_collection_config("nonexistent.json")
         print("❌ Should have raised ConfigError")
         sys.exit(1)
     except ConfigError as e:
-        print(f"✅ Correctly raised ConfigError:\n{e}")
+        print(f"✅ Correctly raised ConfigError for missing file")
 
-    # Test with actual config file (if it exists)
-    test_config_path = "collections/bear_notes_config.json"
-    print(f"\n📋 Test 2: Load {test_config_path} (if exists)")
+    # Test 2: Invalid JSON syntax
+    print("\n📋 Test 2: Invalid JSON syntax")
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        f.write('{ "invalid": json syntax }')
+        invalid_json_path = f.name
     try:
-        config = load_collection_config(test_config_path)
+        config = load_collection_config(invalid_json_path)
+        print("❌ Should have raised ConfigError")
+        sys.exit(1)
+    except ConfigError as e:
+        print(f"✅ Correctly raised ConfigError for invalid JSON")
+    finally:
+        os.unlink(invalid_json_path)
+
+    # Test 3: Missing required fields
+    print("\n📋 Test 3: Missing required fields")
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        f.write('{"collection_name": "test"}')
+        missing_field_path = f.name
+    try:
+        config = load_collection_config(missing_field_path)
+        print("❌ Should have raised ConfigError")
+        sys.exit(1)
+    except ConfigError as e:
+        print(f"✅ Correctly raised ConfigError for missing 'description'")
+    finally:
+        os.unlink(missing_field_path)
+
+    # Test 4: Invalid collection name (pattern mismatch)
+    print("\n📋 Test 4: Invalid collection name pattern")
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        f.write('{"collection_name": "-invalid-name", "description": "This should fail because name starts with hyphen"}')
+        invalid_name_path = f.name
+    try:
+        config = load_collection_config(invalid_name_path)
+        print("❌ Should have raised ConfigError")
+        sys.exit(1)
+    except ConfigError as e:
+        print(f"✅ Correctly raised ConfigError for invalid name pattern")
+    finally:
+        os.unlink(invalid_name_path)
+
+    # Test 5: Description too short
+    print("\n📋 Test 5: Description too short")
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        f.write('{"collection_name": "test", "description": "short"}')
+        short_desc_path = f.name
+    try:
+        config = load_collection_config(short_desc_path)
+        print("❌ Should have raised ConfigError")
+        sys.exit(1)
+    except ConfigError as e:
+        print(f"✅ Correctly raised ConfigError for short description")
+    finally:
+        os.unlink(short_desc_path)
+
+    # Test 6: Invalid field type
+    print("\n📋 Test 6: Invalid field type")
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        f.write('{"collection_name": "test", "description": "This is a valid description", "forceRecreate": "yes"}')
+        invalid_type_path = f.name
+    try:
+        config = load_collection_config(invalid_type_path)
+        print("❌ Should have raised ConfigError")
+        sys.exit(1)
+    except ConfigError as e:
+        print(f"✅ Correctly raised ConfigError for invalid boolean type")
+    finally:
+        os.unlink(invalid_type_path)
+
+    # Test 7: Additional properties not allowed
+    print("\n📋 Test 7: Additional unknown fields")
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        f.write('{"collection_name": "test", "description": "Valid description here", "unknown_field": "value"}')
+        extra_field_path = f.name
+    try:
+        config = load_collection_config(extra_field_path)
+        print("❌ Should have raised ConfigError")
+        sys.exit(1)
+    except ConfigError as e:
+        print(f"✅ Correctly raised ConfigError for unknown fields")
+    finally:
+        os.unlink(extra_field_path)
+
+    # Test 8: Valid configuration
+    print("\n📋 Test 8: Valid configuration")
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        f.write('''{
+            "collection_name": "bear_notes_123",
+            "description": "This is a comprehensive description that meets the minimum length requirement",
+            "forceRecreate": true,
+            "skipAiValidation": false
+        }''')
+        valid_config_path = f.name
+    try:
+        config = load_collection_config(valid_config_path)
         print(f"✅ Configuration loaded successfully:")
         print(f"   Collection name: {config.collection_name}")
         print(f"   Description: {config.description[:50]}...")
         print(f"   Force recreate: {config.force_recreate}")
         print(f"   Skip AI validation: {config.skip_ai_validation}")
-    except ConfigError as e:
-        print(f"ℹ️  Config file not found (expected if not created yet):\n{e}")
 
-    print("\n🎉 config_loader.py tests completed!")
+        # Verify immutability
+        try:
+            config.collection_name = "should_fail"
+            print("❌ Should not be able to modify frozen dataclass")
+            sys.exit(1)
+        except:
+            print("✅ Configuration is immutable (as expected)")
+
+    except ConfigError as e:
+        print(f"❌ Should have loaded successfully: {e}")
+        sys.exit(1)
+    finally:
+        os.unlink(valid_config_path)
+
+    # Test 9: Load from actual config file (if it exists)
+    test_config_path = "collections/bear_notes_config.json"
+    print(f"\n📋 Test 9: Load {test_config_path} (if exists)")
+    try:
+        config = load_collection_config(test_config_path)
+        print(f"✅ Real configuration loaded successfully:")
+        print(f"   Collection name: {config.collection_name}")
+        print(f"   Description: {config.description[:50]}...")
+        print(f"   Force recreate: {config.force_recreate}")
+        print(f"   Skip AI validation: {config.skip_ai_validation}")
+    except ConfigError as e:
+        print(f"ℹ️  Config file not found (expected if not created yet)")
+
+    print("\n🎉 All config_loader.py tests passed!")
