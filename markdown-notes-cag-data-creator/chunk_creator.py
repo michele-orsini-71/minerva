@@ -164,8 +164,8 @@ def create_chunks_for_notes(notes: List[Dict[str, Any]], target_chars: int = 120
     enriched_notes = []
     failed_notes = []
 
-    print(f"🔄 Processing {len(notes)} notes with LangChain text splitters...")
-    print(f"⚙️  Configuration: {target_chars} chars target, {overlap_chars} chars overlap")
+    print(f"Processing {len(notes)} notes with LangChain text splitters...")
+    print(f"   Configuration: {target_chars} chars target, {overlap_chars} chars overlap")
 
     for i, note in enumerate(notes):
         try:
@@ -221,7 +221,7 @@ def create_chunks_for_notes(notes: List[Dict[str, Any]], target_chars: int = 120
                 'title': note.get('title', 'Unknown'),
                 'error': str(e)
             })
-            print(f"⚠️  Failed to process note '{note.get('title', 'Unknown')}': {e}", file=sys.stderr)
+            print(f"   Failed to process note '{note.get('title', 'Unknown')}': {e}", file=sys.stderr)
             continue
 
     # Summary
@@ -241,7 +241,7 @@ def create_chunks_for_notes(notes: List[Dict[str, Any]], target_chars: int = 120
     else:
         avg_chunk_size = min_chunk_size = max_chunk_size = 0
 
-    print(f"✅ Chunking complete:")
+    print(f"   Chunking complete:")
     print(f"  Successfully processed: {len(enriched_notes)} notes")
     print(f"  Failed: {len(failed_notes)} notes")
     print(f"  Total chunks created: {total_chunks}")
@@ -250,7 +250,7 @@ def create_chunks_for_notes(notes: List[Dict[str, Any]], target_chars: int = 120
     print(f"  Chunk size range: {min_chunk_size}-{max_chunk_size} chars")
 
     if failed_notes:
-        print(f"\n❌ Failed notes:")
+        print(f"\n   Failed notes:")
         for failed in failed_notes:
             print(f"  - {failed['title']}: {failed['error']}")
 
@@ -280,8 +280,8 @@ def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 12
     chunks = []
     failed_notes = []
 
-    print(f"🔄 Processing {len(notes)} notes with LangChain text splitters...")
-    print(f"⚙️  Configuration: {target_chars} chars target, {overlap_chars} chars overlap")
+    print(f"Processing {len(notes)} notes with LangChain text splitters...")
+    print(f"   Configuration: {target_chars} chars target, {overlap_chars} chars overlap")
 
     for i, note in enumerate(notes):
         try:
@@ -322,7 +322,7 @@ def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 12
                 'title': note.get('title', 'Unknown'),
                 'error': str(e)
             })
-            print(f"⚠️  Failed to process note '{note.get('title', 'Unknown')}': {e}", file=sys.stderr)
+            print(f"   Failed to process note '{note.get('title', 'Unknown')}': {e}", file=sys.stderr)
             continue
 
     # Summary statistics
@@ -341,7 +341,7 @@ def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 12
         unique_note_ids = 0
         avg_chunks_per_note = 0
 
-    print(f"✅ Chunking complete:")
+    print(f"   Chunking complete:")
     print(f"  Successfully processed: {unique_note_ids} notes")
     print(f"  Failed: {len(failed_notes)} notes")
     print(f"  Total chunks created: {len(chunks)}")
@@ -350,7 +350,7 @@ def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 12
     print(f"  Chunk size range: {min_chunk_size}-{max_chunk_size} chars")
 
     if failed_notes:
-        print(f"\n❌ Failed notes:")
+        print(f"\n   Failed notes:")
         for failed in failed_notes:
             print(f"  - {failed['title']}: {failed['error']}")
 

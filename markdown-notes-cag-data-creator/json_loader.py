@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 
-def load_bear_notes_json(json_path: str) -> List[Dict[str, Any]]:
+def load_json_notes(json_path: str) -> List[Dict[str, Any]]:
     """
     Load Bear notes from a JSON file.
 
@@ -61,7 +61,7 @@ def load_bear_notes_json(json_path: str) -> List[Dict[str, Any]]:
                 print(f"Error: Notes missing required fields: {', '.join(missing_fields)}", file=sys.stderr)
                 sys.exit(1)
 
-        print(f"✅ Loaded {len(data)} notes from {json_path}")
+        print(f"   Loaded {len(data)} notes from {json_path}")
         return data
 
     except json.JSONDecodeError as e:
@@ -87,7 +87,7 @@ if __name__ == "__main__":
         print("Usage: python json_loader.py <path_to_json>")
         sys.exit(1)
 
-    notes = load_bear_notes_json(sys.argv[1])
+    notes = load_json_notes(sys.argv[1])
     print(f"Successfully loaded {len(notes)} notes")
 
     if notes:

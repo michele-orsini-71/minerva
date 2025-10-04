@@ -291,12 +291,12 @@ def generate_embeddings(
     if not chunks:
         return []
 
-    print(f"🧠 Generating embeddings for {len(chunks)} chunks using {model}...")
+    print(f"Generating embeddings for {len(chunks)} chunks using {model}...")
 
     # Initialize service to fail fast if there are issues
     try:
         status = initialize_embedding_service(model)
-        print(f"✅ Ollama service ready: {status['model_name']}")
+        print(f"   Ollama service ready: {status['model_name']}")
     except OllamaServiceError as e:
         raise EmbeddingError(f"Embedding service initialization failed: {e}")
 
@@ -330,12 +330,12 @@ def generate_embeddings(
                 'title': chunk.title,
                 'error': str(e)
             })
-            print(f"⚠️  Failed to generate embedding for chunk {chunk.id}: {e}", file=sys.stderr)
+            print(f"   Failed to generate embedding for chunk {chunk.id}: {e}", file=sys.stderr)
             continue
 
         # Progress feedback every 25 chunks or at the end
         if (i + 1) % 25 == 0 or i == len(chunks) - 1:
-            print(f"   📥 Progress: {i + 1}/{len(chunks)} chunks ({(i + 1) / len(chunks) * 100:.1f}%)")
+            print(f"   Progress: {i + 1}/{len(chunks)} chunks ({(i + 1) / len(chunks) * 100:.1f}%)")
 
     if progress_callback:
         progress_callback(len(chunks), len(chunks))
@@ -345,15 +345,15 @@ def generate_embeddings(
         embeddings_only = [cwe.embedding for cwe in chunks_with_embeddings]
         is_consistent = validate_embedding_consistency(embeddings_only)
         if not is_consistent:
-            print("⚠️  Warning: Embedding consistency check failed", file=sys.stderr)
+            print("   Warning: Embedding consistency check failed", file=sys.stderr)
 
     # Summary
-    print(f"✅ Embedding generation complete:")
+    print(f"   Embedding generation complete:")
     print(f"  Successfully embedded: {len(chunks_with_embeddings)} chunks")
     print(f"  Failed: {len(failed_chunks)} chunks")
 
     if failed_chunks:
-        print(f"\n❌ Failed chunks:")
+        print(f"\n   Failed chunks:")
         for failed in failed_chunks:
             print(f"  - {failed['chunk_id']} ({failed['title']}): {failed['error']}")
 
@@ -370,9 +370,9 @@ if __name__ == "__main__":
 
     try:
         # Initialize service
-        print("🔍 Checking Ollama service...")
+        print("Checking Ollama service...")
         status = initialize_embedding_service()
-        print(f"✅ Service status: {status}")
+        print(f"   Service status: {status}")
         print()
 
         # Test single embedding
@@ -380,12 +380,12 @@ if __name__ == "__main__":
         test_text = "This is a test sentence for embedding generation."
         embedding = generate_embedding(test_text)
 
-        print(f"✅ Generated embedding with {len(embedding)} dimensions")
+        print(f"   Generated embedding with {len(embedding)} dimensions")
         print(f"   L2 norm: {np.linalg.norm(embedding):.4f}")
         print()
 
         # Test batch embeddings
-        print("📦 Testing batch embedding generation...")
+        print("Testing batch embedding generation...")
         test_texts = [
             "First test document for batch processing.",
             "Second document with different content.",
@@ -396,16 +396,16 @@ if __name__ == "__main__":
             print(f"   Progress: {current}/{total} ({current/total*100:.1f}%)")
 
         embeddings = generate_embeddings_batch(test_texts, progress_callback=progress_cb)
-        print(f"✅ Generated {len(embeddings)} embeddings")
+        print(f"   Generated {len(embeddings)} embeddings")
 
         # Validate consistency
-        print("✅ Validating embedding consistency...")
+        print("Validating embedding consistency...")
         is_consistent = validate_embedding_consistency(embeddings)
-        print(f"   Consistency check: {'✅ PASSED' if is_consistent else '❌ FAILED'}")
+        print(f"   Consistency check: {'PASSED' if is_consistent else 'FAILED'}")
 
         print()
         print("🎉 All tests completed successfully!")
 
     except Exception as e:
-        print(f"❌ Test failed: {e}", file=sys.stderr)
+        print(f"Test failed: {e}", file=sys.stderr)
         sys.exit(1)

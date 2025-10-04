@@ -255,10 +255,10 @@ if __name__ == "__main__":
     print("\n📋 Test 1: Non-existent file")
     try:
         config = load_collection_config("nonexistent.json")
-        print("❌ Should have raised ConfigError")
+        print("   Should have raised ConfigError")
         sys.exit(1)
     except ConfigError as e:
-        print(f"✅ Correctly raised ConfigError for missing file")
+        print(f"   Correctly raised ConfigError for missing file")
 
     # Test 2: Invalid JSON syntax
     print("\n📋 Test 2: Invalid JSON syntax")
@@ -267,10 +267,10 @@ if __name__ == "__main__":
         invalid_json_path = f.name
     try:
         config = load_collection_config(invalid_json_path)
-        print("❌ Should have raised ConfigError")
+        print("   Should have raised ConfigError")
         sys.exit(1)
     except ConfigError as e:
-        print(f"✅ Correctly raised ConfigError for invalid JSON")
+        print(f"   Correctly raised ConfigError for invalid JSON")
     finally:
         os.unlink(invalid_json_path)
 
@@ -281,10 +281,10 @@ if __name__ == "__main__":
         missing_field_path = f.name
     try:
         config = load_collection_config(missing_field_path)
-        print("❌ Should have raised ConfigError")
+        print("   Should have raised ConfigError")
         sys.exit(1)
     except ConfigError as e:
-        print(f"✅ Correctly raised ConfigError for missing 'description'")
+        print(f"   Correctly raised ConfigError for missing 'description'")
     finally:
         os.unlink(missing_field_path)
 
@@ -295,10 +295,10 @@ if __name__ == "__main__":
         invalid_name_path = f.name
     try:
         config = load_collection_config(invalid_name_path)
-        print("❌ Should have raised ConfigError")
+        print("   Should have raised ConfigError")
         sys.exit(1)
     except ConfigError as e:
-        print(f"✅ Correctly raised ConfigError for invalid name pattern")
+        print(f"   Correctly raised ConfigError for invalid name pattern")
     finally:
         os.unlink(invalid_name_path)
 
@@ -309,10 +309,10 @@ if __name__ == "__main__":
         short_desc_path = f.name
     try:
         config = load_collection_config(short_desc_path)
-        print("❌ Should have raised ConfigError")
+        print("   Should have raised ConfigError")
         sys.exit(1)
     except ConfigError as e:
-        print(f"✅ Correctly raised ConfigError for short description")
+        print(f"   Correctly raised ConfigError for short description")
     finally:
         os.unlink(short_desc_path)
 
@@ -323,10 +323,10 @@ if __name__ == "__main__":
         invalid_type_path = f.name
     try:
         config = load_collection_config(invalid_type_path)
-        print("❌ Should have raised ConfigError")
+        print("   Should have raised ConfigError")
         sys.exit(1)
     except ConfigError as e:
-        print(f"✅ Correctly raised ConfigError for invalid boolean type")
+        print(f"   Correctly raised ConfigError for invalid boolean type")
     finally:
         os.unlink(invalid_type_path)
 
@@ -337,10 +337,10 @@ if __name__ == "__main__":
         extra_field_path = f.name
     try:
         config = load_collection_config(extra_field_path)
-        print("❌ Should have raised ConfigError")
+        print("   Should have raised ConfigError")
         sys.exit(1)
     except ConfigError as e:
-        print(f"✅ Correctly raised ConfigError for unknown fields")
+        print(f"   Correctly raised ConfigError for unknown fields")
     finally:
         os.unlink(extra_field_path)
 
@@ -356,7 +356,7 @@ if __name__ == "__main__":
         valid_config_path = f.name
     try:
         config = load_collection_config(valid_config_path)
-        print(f"✅ Configuration loaded successfully:")
+        print(f"   Configuration loaded successfully:")
         print(f"   Collection name: {config.collection_name}")
         print(f"   Description: {config.description[:50]}...")
         print(f"   Force recreate: {config.force_recreate}")
@@ -365,13 +365,13 @@ if __name__ == "__main__":
         # Verify immutability
         try:
             config.collection_name = "should_fail"
-            print("❌ Should not be able to modify frozen dataclass")
+            print("   Should not be able to modify frozen dataclass")
             sys.exit(1)
         except:
-            print("✅ Configuration is immutable (as expected)")
+            print("   Configuration is immutable (as expected)")
 
     except ConfigError as e:
-        print(f"❌ Should have loaded successfully: {e}")
+        print(f"   Should have loaded successfully: {e}")
         sys.exit(1)
     finally:
         os.unlink(valid_config_path)
@@ -381,12 +381,12 @@ if __name__ == "__main__":
     print(f"\n📋 Test 9: Load {test_config_path} (if exists)")
     try:
         config = load_collection_config(test_config_path)
-        print(f"✅ Real configuration loaded successfully:")
+        print(f"   Real configuration loaded successfully:")
         print(f"   Collection name: {config.collection_name}")
         print(f"   Description: {config.description[:50]}...")
         print(f"   Force recreate: {config.force_recreate}")
         print(f"   Skip AI validation: {config.skip_ai_validation}")
     except ConfigError as e:
-        print(f"ℹ️  Config file not found (expected if not created yet)")
+        print(f"   Config file not found (expected if not created yet)")
 
     print("\n🎉 All config_loader.py tests passed!")

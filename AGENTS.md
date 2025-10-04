@@ -1,25 +1,34 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-This workspace hosts Python tools for Bear exports and ChromaDB. `bear-notes-extractor/` converts `.bear2bk` backups to JSON. `markdown-notes-cag-data-creator/` runs the RAG pipeline (chunk → embed → store). `chroma-peek/` is a Streamlit inspector for persisted vectors, and `markdown-notes-mcp-server/` holds MCP design docs. Shared assets live in `prompts/`, `test-data/`, and `chromadb_data/` (keep untracked). Integration scripts and smoke checks sit in `test-files/`.
-
-## Environment Setup
-Activate `.venv` first: `source .venv/bin/activate`. For fresh setups install the editable packages: `pip install -e bear-notes-extractor -e markdown-notes-cag-data-creator`. The pipeline expects `ollama serve` with `mxbai-embed-large` available and writes to `chromadb_data/` by default.
+- `bear-notes-extractor/` exposes the Bear backup CLI and unit tests; keep fixtures in `test-data/`.
+- `markdown-notes-cag-data-creator/` houses the RAG pipeline; `full_pipeline.py` is the orchestration entrypoint.
+- `chroma-peek/` ships the Streamlit inspector; point configs at `chromadb_data/` (leave untracked).
+- `markdown-notes-mcp-server/` contains MCP notes and design docs for reference.
+- Shared prompts, smoke scripts (`test-files/`), and temporary embedding stores live alongside module directories.
 
 ## Build, Test, and Development Commands
-- `python bear-notes-extractor/cli.py <backup.bear2bk>` converts a Bear backup; `extract-bear-notes` is the console alias.
-- `python markdown-notes-cag-data-creator/full_pipeline.py notes.json --verbose` runs the full pipeline (tune with `--chunk-size`, `--chromadb-path`).
-- `streamlit run chroma-peek/main.py` launches the database inspector; point it at your persistence directory.
-- Use `pytest` (after `pip install -e markdown-notes-cag-data-creator[dev]`) for new tests; run existing benches as scripts, e.g. `python test-files/test-markdown-chunker.py --json-path test-data/...`.
+- `source .venv/bin/activate` to enter the pinned virtualenv.
+- `pip install -e bear-notes-extractor -e markdown-notes-cag-data-creator[dev]` bootstraps editable installs with dev extras.
+- `python bear-notes-extractor/cli.py <backup.bear2bk>` (alias `extract-bear-notes`) converts Bear backups to JSON.
+- `python markdown-notes-cag-data-creator/full_pipeline.py notes.json --verbose` executes chunk → embed → persist; pass `--chromadb-path` to override storage.
+- `streamlit run chroma-peek/main.py` inspects persisted embeddings; ensure `ollama serve` with `mxbai-embed-large` is running.
 
 ## Coding Style & Naming Conventions
-Follow PEP 8 with 4-space indentation, `snake_case` for functions/modules, and PascalCase for classes. Keep type hints and docstrings aligned with existing modules. Run `black .` and `flake8` (provided by the `dev` extra) before opening a PR, and run `mypy` when touching typed modules such as `models.py`.
+- Follow PEP 8 with 4-space indentation, `snake_case` for functions/modules, and PascalCase for classes.
+- Keep docstrings and type hints current; run `black .`, `flake8`, and `mypy` (for typed modules) before publishing changes.
+- Prefer concise helper comments for complex logic; avoid commentary on obvious assignments.
 
 ## Testing Guidelines
-Aim for fast, deterministic coverage. Add automated tests alongside the code (e.g., `bear-notes-extractor/tests/`) so `pytest` finds them. Use the scripts in `test-files/` for integration checks around chunking, embeddings, and Chroma, updating defaults instead of hard-coding paths. Mock or document dependencies on Ollama and ChromaDB when tests require them.
+- Use `pytest` from the repo root after activating the env; add tests under each package’s `tests/` directory.
+- Lean on fixtures in `test-data/`; mock Ollama/Chroma dependencies or document manual steps.
+- Name tests after behavior (`test_markdown_chunker_handles_html`), and ensure they execute quickly and deterministically.
 
 ## Commit & Pull Request Guidelines
-Write short, present-tense subjects that mirror the existing history (`adds mcp implementation instructions`). Group related changes and add body context when behavior shifts. PRs should describe the change, list validation commands, link issues, and attach screenshots when UI output changes. Exclude generated databases and personal notes; rely on `test-data/` fixtures.
+- Commit subjects follow short, present-tense phrases (e.g., `adds mcp implementation instructions`).
+- Group related changes, include context in the body when behavior shifts, and note validation commands.
+- PRs should summarize intent, list verification (tests, scripts), link issues, and attach screenshots for UI diffs.
 
-## Data & Security Notes
-Never commit real notes or secrets. Scrub `chromadb_data/` before sharing. Document new external dependencies in the relevant `README.md` and update `requirements.txt` or `setup.py` to keep editable installs aligned.
+## Security & Data Handling
+- Never commit personal notes, secrets, or generated Chroma stores; scrub `chromadb_data/` before sharing.
+- Document new dependencies in the relevant `README.md` and sync `requirements.txt` or `setup.py` when they change.

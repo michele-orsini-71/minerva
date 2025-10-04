@@ -105,7 +105,7 @@ def get_or_create_collection(
     try:
         # Handle backward compatibility (reset_collection is deprecated)
         if reset_collection:
-            print("⚠️  Warning: 'reset_collection' parameter is deprecated, use 'force_recreate' instead")
+            print("   Warning: 'reset_collection' parameter is deprecated, use 'force_recreate' instead")
             force_recreate = True
 
         # Check if collection already exists
@@ -116,8 +116,8 @@ def get_or_create_collection(
             # Force recreation: delete existing collection
             try:
                 client.delete_collection(collection_name)
-                print(f"🗑️  Deleted existing collection '{collection_name}' for recreation (force_recreate=True)")
-                print(f"⚠️  WARNING: All existing data in this collection has been permanently deleted!")
+                print(f"   Deleted existing collection '{collection_name}' for recreation (force_recreate=True)")
+                print(f"   WARNING: All existing data in this collection has been permanently deleted!")
                 collection_exists = False  # Collection no longer exists after deletion
             except Exception as e:
                 raise StorageError(
@@ -152,7 +152,7 @@ def get_or_create_collection(
         else:
             # Use default description with warning
             metadata["description"] = "Markdown notes semantic chunks with metadata"
-            print(f"⚠️  Using default description for collection '{collection_name}'")
+            print(f"   Using default description for collection '{collection_name}'")
             print(f"   Suggestion: Provide a custom description via --config for better organization")
 
         # Create collection (we know it doesn't exist at this point)
@@ -161,7 +161,7 @@ def get_or_create_collection(
             metadata=metadata
         )
 
-        print(f"✅ Created new collection '{collection_name}'")
+        print(f"   Created new collection '{collection_name}'")
         if description:
             print(f"   Description: {description[:80]}...")
         print(f"   Created at: {metadata['created_at']}")
@@ -304,7 +304,7 @@ def insert_chunks_batch(
                 error_msg = f"Batch {batch_num} failed: {e}"
                 stats["errors"].append(error_msg)
                 stats["failed"] += len(batch)
-                print(f"⚠️  {error_msg}", file=sys.stderr)
+                print(f"   {error_msg}", file=sys.stderr)
                 continue
 
         return stats
@@ -569,7 +569,7 @@ def insert_chunks(
     if not chunks_with_embeddings:
         return {"total_chunks": 0, "batches": 0, "successful": 0, "failed": 0}
 
-    print(f"🗄️  Storing {len(chunks_with_embeddings)} chunks in ChromaDB...")
+    print(f"   Storing {len(chunks_with_embeddings)} chunks in ChromaDB...")
 
     stats = {
         "total_chunks": len(chunks_with_embeddings),
@@ -621,17 +621,17 @@ def insert_chunks(
                 error_msg = f"Batch {batch_num} failed: {e}"
                 stats["errors"].append(error_msg)
                 stats["failed"] += len(batch)
-                print(f"⚠️  {error_msg}", file=sys.stderr)
+                print(f"   {error_msg}", file=sys.stderr)
                 continue
 
         # Summary
-        print(f"✅ Storage complete:")
+        print(f"   Storage complete:")
         print(f"  Successfully stored: {stats['successful']} chunks")
         print(f"  Failed: {stats['failed']} chunks")
         print(f"  Batches processed: {stats['batches']}")
 
         if stats["errors"]:
-            print(f"\n❌ Storage errors:")
+            print(f"\n   Storage errors:")
             for error in stats["errors"]:
                 print(f"  - {error}")
 
@@ -643,29 +643,29 @@ def insert_chunks(
 
 if __name__ == "__main__":
     # Simple test when run directly
-    print("🧪 Testing storage.py module")
+    print("Testing storage.py module")
     print("=" * 50)
 
     try:
         # Test storage validation
-        print("🔍 Validating storage setup...")
+        print("Validating storage setup...")
         validation = validate_storage_setup()
-        print(f"✅ Storage validation: {validation}")
+        print(f"   Storage validation: {validation}")
         print()
 
         # Test storage manager
-        print("📦 Testing storage manager...")
+        print("Testing storage manager...")
         storage = BearNotesStorage()
 
         init_result = storage.initialize(reset_collection=True)
-        print(f"✅ Storage initialized: {init_result}")
+        print(f"   Storage initialized: {init_result}")
 
         stats = storage.get_stats()
-        print(f"✅ Collection stats: {stats}")
+        print(f"   Collection stats: {stats}")
         print()
 
-        print("🎉 All storage tests completed successfully!")
+        print("All storage tests completed successfully!")
 
     except Exception as e:
-        print(f"❌ Storage test failed: {e}", file=sys.stderr)
+        print(f"Storage test failed: {e}", file=sys.stderr)
         sys.exit(1)

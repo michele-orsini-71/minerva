@@ -7,28 +7,33 @@ Both `bear-notes-parser` and `bear-notes-cag-data-creator` are now installed as 
 ## What Was Done
 
 ### 1. Package Structure Created
+
 - Added `setup.py` files to both packages with proper metadata and dependencies
 - Added `__init__.py` files to define package interfaces
 - Configured proper entry points for command-line usage
 
 ### 2. Editable Installation
+
 ```bash
 pip install -e bear-notes-parser/
 pip install -e bear-notes-cag-data-creator/
 ```
 
 The `-e` flag installs packages in "editable" or "development" mode, meaning:
+
 - Changes to source code are immediately available without reinstalling
 - Packages are linked to their source directories rather than copied
 - Perfect for active development
 
 ### 3. Import Path Cleanup
+
 - Removed `sys.path` manipulation from test scripts
 - Updated import statements to use the installed packages directly
 
 ## Usage Examples
 
 ### Bear Notes Parser
+
 ```python
 # From anywhere in your project (after source .venv/bin/activate):
 
@@ -44,13 +49,14 @@ print(f"Extracted {len(notes)} notes")
 ```
 
 ### Bear Notes CAG Data Creator
+
 ```python
 # From anywhere in your project (after source .venv/bin/activate):
 
 # Import core RAG functionality
 from embedding import generate_embedding, initialize_embedding_service
 from storage import initialize_chromadb_client, get_or_create_collection
-from json_loader import load_bear_notes_json
+from json_loader import load_json_notes
 from models import Chunk, ChunkWithEmbedding
 
 # Import specific modules
@@ -59,12 +65,13 @@ import storage
 import chunk_creator
 
 # Example usage
-notes = load_bear_notes_json("notes.json")
+notes = load_json_notes("notes.json")
 embedding_vector = generate_embedding("test query")
 client = initialize_chromadb_client("./chromadb_data")
 ```
 
 ### Updated Test Scripts
+
 Your test scripts now work from any directory:
 
 ```bash
@@ -93,6 +100,7 @@ bear-rag-pipeline --verbose notes.json
 ## Development Workflow Benefits
 
 ### Before (with sys.path manipulation):
+
 ```python
 import sys
 import os
@@ -104,6 +112,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../bear-notes-cag-da
 ```
 
 ### After (with editable packages):
+
 ```python
 # Clean, simple imports from anywhere
 from embedding import generate_embedding
@@ -171,6 +180,7 @@ With packages properly installed, you can now:
 4. **Leverage the query client** as a foundation for MCP retrieval logic
 
 Example MCP server structure:
+
 ```python
 # In your future MCP server:
 from bear_parser import parse_bear_backup

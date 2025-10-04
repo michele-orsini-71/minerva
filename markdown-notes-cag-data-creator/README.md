@@ -70,23 +70,27 @@ python full_pipeline.py --verbose --chunk-size 1200 --chromadb-path ../chromadb_
 ### Components
 
 1. **`json_loader.py`** - JSON file loading and validation
+
    - Handles file validation and error reporting
    - Validates Bear notes structure requirements
    - UTF-8 encoding support
 
 2. **`chunk_creator.py`** - Markdown chunking using LangChain text splitters
+
    - Dual-stage approach: MarkdownHeaderTextSplitter + RecursiveCharacterTextSplitter
    - Optimized configuration for Bear notes with overlap support
    - Stable ID generation for chunks and notes
    - Progress reporting and error handling
 
 3. **`embedding.py`** - Local embedding generation via Ollama
+
    - Uses mxbai-embed-large model for high-quality embeddings
    - Batch processing with error handling
    - L2 normalization for cosine similarity compatibility
    - Connection management and retry logic
 
 4. **`storage.py`** - ChromaDB vector database operations
+
    - Persistent client initialization and collection management
    - Batch insertion with progress callbacks
    - Metadata schema design and cosine similarity configuration
@@ -108,6 +112,7 @@ Bear JSON → json_loader → chunk_creator → embedding → storage → Chroma
 ```
 
 **Complete Pipeline Stages:**
+
 1. **Load** - Validate and parse Bear notes JSON
 2. **Chunk** - Create semantic chunks with LangChain text splitters
 3. **Embed** - Generate embeddings using local Ollama model (mxbai-embed-large)
@@ -118,6 +123,7 @@ Bear JSON → json_loader → chunk_creator → embedding → storage → Chroma
 **Primary Output**: Fully populated ChromaDB vector database at the specified path (default: `../chromadb_data`)
 
 **ChromaDB Schema**:
+
 - **Collection**: "bear_notes" with cosine similarity space
 - **Chunk IDs**: SHA256-based stable identifiers
 - **Documents**: Chunk text content
@@ -152,6 +158,7 @@ Bear JSON → json_loader → chunk_creator → embedding → storage → Chroma
 ### Pipeline Configuration
 
 **Chunking Strategy (LangChain)**:
+
 - **Target size**: 1200 characters (configurable via `--chunk-size`)
 - **Overlap**: Auto-calculated (typically 200 characters)
 - **Header processing**: MarkdownHeaderTextSplitter preserves heading structure
@@ -159,12 +166,14 @@ Bear JSON → json_loader → chunk_creator → embedding → storage → Chroma
 - **Structure preservation**: Code blocks, tables, and paragraph boundaries maintained
 
 **Embedding Configuration (Ollama)**:
+
 - **Model**: mxbai-embed-large:latest (1024 dimensions)
 - **Processing**: Individual text chunks with batch coordination
 - **Normalization**: L2 normalization for cosine similarity
 - **Connection**: Local Ollama service (http://localhost:11434)
 
 **Storage Configuration (ChromaDB)**:
+
 - **Distance metric**: Cosine similarity
 - **Index**: HNSW for efficient similarity search
 - **Persistence**: File-based storage (not in-memory)
@@ -239,18 +248,21 @@ python full_pipeline.py --verbose "../bear-notes-parser/Bear Notes 2025-09-20 at
 The pipeline provides comprehensive error handling at every stage:
 
 **File and Data Validation**:
+
 - **File not found**: Clear error message with file path
 - **Invalid JSON**: Detailed JSON parsing error with line information
 - **Missing fields**: Validation of required Bear notes fields
 - **Encoding issues**: UTF-8 encoding error handling
 
 **AI and Storage Errors**:
+
 - **Ollama connection**: Checks for running service with helpful error messages
 - **Model availability**: Validates required model (mxbai-embed-large) is pulled
 - **Embedding failures**: Individual chunk failures don't stop pipeline
 - **ChromaDB issues**: Database initialization and storage error handling
 
 **Pipeline Resilience**:
+
 - **Graceful degradation**: Continues processing despite individual failures
 - **Progress preservation**: Partial results are preserved on interruption
 - **Clear diagnostics**: Detailed error reporting with suggested fixes
@@ -259,17 +271,20 @@ The pipeline provides comprehensive error handling at every stage:
 ## Integration
 
 **Upstream Dependencies**:
+
 - **Bear Notes Parser** - provides the JSON input (`bear-notes-parser/cli.py`)
 - **Ollama Service** - local AI model server for embeddings
 - **Required Models** - mxbai-embed-large:latest for embedding generation
 
 **Output Integration**:
+
 - **ChromaDB Database** - ready for similarity search and retrieval
 - **RAG Query Systems** - compatible with chromadb client queries
 - **AI Chat Applications** - can use the vector database for context retrieval
 - **Search Interfaces** - enables semantic search across Bear notes content
 
 **Related Tools**:
+
 - **chroma-peek** - visual exploration of the generated ChromaDB database
 - **Future query tools** - planned RAG query interfaces for the vector database
 
@@ -292,13 +307,13 @@ python storage.py  # Test ChromaDB operations
 
 ```python
 # Complete pipeline programmatically
-from json_loader import load_bear_notes_json
+from json_loader import load_json_notes
 from chunk_creator import create_chunks_for_notes
 from embedding import generate_embeddings_batch
 from storage import initialize_chromadb_client, get_or_create_collection, insert_chunks_batch
 
 # Load and process notes
-notes = load_bear_notes_json("notes.json")
+notes = load_json_notes("notes.json")
 enriched_notes = create_chunks_for_notes(notes, target_chars=1200)
 
 # Generate embeddings and store
@@ -316,29 +331,35 @@ insert_chunks_batch(collection, chunks_with_embeddings)
 ### Common Issues
 
 **"Connection to Ollama failed"**
+
 - Ensure Ollama is running: `ollama serve`
 - Check model is available: `ollama list | grep mxbai-embed-large`
 - Pull model if missing: `ollama pull mxbai-embed-large:latest`
 
 **"Model mxbai-embed-large:latest not found"**
+
 - Pull the required model: `ollama pull mxbai-embed-large:latest`
 - Verify installation: `ollama list`
 
 **"ChromaDB database issues"**
+
 - Check write permissions for ChromaDB path
 - Ensure sufficient disk space for vector storage
 - Default path: `../chromadb_data` (relative to script location)
 
 **"JSON file must contain an array of notes"**
+
 - Ensure input file is valid Bear notes JSON from bear-notes-parser
 - Check file exists and is properly formatted
 
 **Slow embedding generation**
+
 - Normal for large note collections (embedding generation is rate-limited by model inference)
 - Use `--verbose` flag to monitor progress
 - Consider running on faster hardware for large datasets
 
 **Memory issues with large datasets**
+
 - Pipeline processes in batches to manage memory
 - For very large datasets (10k+ notes), monitor system resources
 

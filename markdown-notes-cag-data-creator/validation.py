@@ -352,14 +352,14 @@ def validate_description_hybrid(
 
     # Step 2: Optional AI validation
     if skip_ai_validation:
-        print(f"⚠️  AI validation skipped for collection '{collection_name}'")
+        print(f"   AI validation skipped for collection '{collection_name}'")
         print(f"   You are responsible for ensuring the description is:")
         print(f"   - Clear and specific (not vague)")
         print(f"   - Actionable (explains when to use this collection)")
         print(f"   - Distinguishable from other collections")
         return None
 
-    print(f"🤖 Running AI validation for collection '{collection_name}'...")
+    print(f"Running AI validation for collection '{collection_name}'...")
     score, reasoning, suggestions = validate_with_ai(description, collection_name, model)
 
     print(f"   AI Score: {score}/10")
@@ -385,7 +385,7 @@ def validate_description_hybrid(
 
         raise ValidationError(error_msg)
 
-    print(f"   ✅ Description passed AI validation")
+    print(f"   Description passed AI validation")
 
     return {
         'score': score,
@@ -396,7 +396,7 @@ def validate_description_hybrid(
 
 if __name__ == "__main__":
     # Simple tests when run directly
-    print("🧪 Testing validation.py module")
+    print("Testing validation.py module")
     print("=" * 60)
 
     # Test 1: Valid collection name
@@ -406,9 +406,9 @@ if __name__ == "__main__":
         validate_collection_name("project-docs")
         validate_collection_name("team123")
         validate_collection_name("research_papers_2024")
-        print("✅ All valid names passed")
+        print("   All valid names passed")
     except ValidationError as e:
-        print(f"❌ Valid names failed: {e}")
+        print(f"   Valid names failed: {e}")
         sys.exit(1)
 
     # Test 2: Invalid collection names
@@ -417,28 +417,28 @@ if __name__ == "__main__":
     for name in invalid_names:
         try:
             validate_collection_name(name)
-            print(f"❌ Should have rejected: {name}")
+            print(f"   Should have rejected: {name}")
             sys.exit(1)
         except ValidationError:
-            print(f"✅ Correctly rejected: {name}")
+            print(f"   Correctly rejected: {name}")
 
     # Test 3: Description too short
     print("\n📋 Test 3: Description length validation")
     try:
         validate_description_regex("short", "test")
-        print("❌ Should have rejected short description")
+        print("   Should have rejected short description")
         sys.exit(1)
     except ValidationError:
-        print("✅ Correctly rejected short description")
+        print("   Correctly rejected short description")
 
     # Test 4: Description missing required phrase
     print("\n📋 Test 4: Required phrase validation")
     try:
         validate_description_regex("A" * 100, "test")  # Long but no required phrase
-        print("❌ Should have rejected description without required phrase")
+        print("   Should have rejected description without required phrase")
         sys.exit(1)
     except ValidationError:
-        print("✅ Correctly rejected description without required phrase")
+        print("   Correctly rejected description without required phrase")
 
     # Test 5: Valid description
     print("\n📋 Test 5: Valid description")
@@ -448,18 +448,18 @@ if __name__ == "__main__":
             "Contains project notes, research, and daily thoughts.",
             "bear_notes"
         )
-        print("✅ Valid description passed")
+        print("   Valid description passed")
     except ValidationError as e:
-        print(f"❌ Valid description failed: {e}")
+        print(f"   Valid description failed: {e}")
         sys.exit(1)
 
     # Test 6: Check model availability
     print("\n📋 Test 6: Check AI model availability")
     is_available = check_model_availability(AI_MODEL)
     if is_available:
-        print(f"✅ AI model '{AI_MODEL}' is available")
+        print(f"   AI model '{AI_MODEL}' is available")
     else:
-        print(f"ℹ️  AI model '{AI_MODEL}' is not available")
+        print(f"   AI model '{AI_MODEL}' is not available")
         print(f"   Run: ollama pull {AI_MODEL}")
 
     # Test 7: AI validation (only if model is available)
@@ -471,11 +471,11 @@ if __name__ == "__main__":
                 "Contains my private notes about projects, ideas, research, and daily thoughts.",
                 "bear_notes"
             )
-            print(f"✅ AI validation completed:")
+            print(f"   AI validation completed:")
             print(f"   Score: {score}/10")
             print(f"   Reasoning: {reasoning[:80]}...")
         except ValidationError as e:
-            print(f"⚠️  AI validation error: {e}")
+            print(f"   AI validation error: {e}")
     else:
         print("\n📋 Test 7: Skipping AI validation (model not available)")
 
