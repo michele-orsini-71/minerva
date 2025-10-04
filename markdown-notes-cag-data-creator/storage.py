@@ -14,11 +14,8 @@ except ImportError:
 from models import ChunkWithEmbedding, ChunkWithEmbeddingList
 
 # Configuration constants
-DEFAULT_CHROMADB_PATH = "../chromadb_data/bear_notes_embeddings"
-DEFAULT_COLLECTION_NAME = "bear_notes_chunks"
 DEFAULT_BATCH_SIZE = 64
 HNSW_SPACE = "cosine"  # Distance metric for HNSW index
-
 
 class StorageError(Exception):
     pass
@@ -28,7 +25,7 @@ class ChromaDBConnectionError(Exception):
     pass
 
 
-def initialize_chromadb_client(db_path: str = DEFAULT_CHROMADB_PATH) -> chromadb.PersistentClient:
+def initialize_chromadb_client(db_path: str) -> chromadb.PersistentClient:
     try:
         # Ensure path is absolute and create parent directories
         db_path = os.path.abspath(os.path.expanduser(db_path))
@@ -54,7 +51,7 @@ def initialize_chromadb_client(db_path: str = DEFAULT_CHROMADB_PATH) -> chromadb
 
 def get_or_create_collection(
     client: chromadb.PersistentClient,
-    collection_name: str = DEFAULT_COLLECTION_NAME,
+    collection_name: str,
     description: Optional[str] = None,
     force_recreate: bool = False,
     reset_collection: bool = False  # Deprecated parameter kept for backward compatibility
@@ -179,70 +176,6 @@ def prepare_batch_data(chunks: List[Dict[str, Any]]) -> Dict[str, List[Any]]:
     except Exception as e:
         raise StorageError(f"Failed to prepare batch data: {e}")
 
-
-def insert_chunks_batch(
-    collection: chromadb.Collection,
-    chunks: List[Dict[str, Any]],
-    batch_size: int = DEFAULT_BATCH_SIZE,
-    progress_callback: Optional[callable] = None
-) -> Dict[str, Any]:
-    if not chunks:
-        return {"total_chunks": 0, "batches": 0, "successful": 0, "failed": 0}
-
-    stats = {
-        "total_chunks": len(chunks),
-        "batches": 0,
-        "successful": 0,
-        "failed": 0,
-        "errors": []
-    }
-
-    try:
-        # Process chunks in batches
-        for i in range(0, len(chunks), batch_size):
-            batch = chunks[i:i + batch_size]
-            batch_num = stats["batches"] + 1
-
-            try:
-                # Prepare batch data
-                batch_data = prepare_batch_data(batch)
-
-                # Insert batch into collection
-                if batch_data["embeddings"] is not None:
-                    collection.add(
-                        ids=batch_data["ids"],
-                        documents=batch_data["documents"],
-                        metadatas=batch_data["metadatas"],
-                        embeddings=batch_data["embeddings"]
-                    )
-                else:
-                    # Let ChromaDB generate embeddings (if configured)
-                    collection.add(
-                        ids=batch_data["ids"],
-                        documents=batch_data["documents"],
-                        metadatas=batch_data["metadatas"]
-                    )
-
-                stats["successful"] += len(batch)
-                stats["batches"] += 1
-
-                # Progress callback
-                if progress_callback:
-                    progress_callback(min(i + batch_size, len(chunks)), len(chunks))
-
-            except Exception as e:
-                error_msg = f"Batch {batch_num} failed: {e}"
-                stats["errors"].append(error_msg)
-                stats["failed"] += len(batch)
-                print(f"   {error_msg}", file=sys.stderr)
-                continue
-
-        return stats
-
-    except Exception as e:
-        raise StorageError(f"Batch insertion failed: {e}")
-
-
 def get_collection_stats(collection: chromadb.Collection) -> Dict[str, Any]:
     try:
         # Get collection count
@@ -275,144 +208,6 @@ def get_collection_stats(collection: chromadb.Collection) -> Dict[str, Any]:
 
     except Exception as e:
         raise StorageError(f"Failed to retrieve collection stats: {e}")
-
-
-def validate_storage_setup(
-    db_path: str = DEFAULT_CHROMADB_PATH,
-    collection_name: str = DEFAULT_COLLECTION_NAME
-) -> Dict[str, Any]:
-    try:
-        # Initialize client
-        client = initialize_chromadb_client(db_path)
-
-        # Get or create collection
-        collection = get_or_create_collection(client, collection_name, reset_collection=False)
-
-        # Get collection stats
-        stats = get_collection_stats(collection)
-
-        # Return validation results
-        return {
-            "db_path": os.path.abspath(os.path.expanduser(db_path)),
-            "client_ready": True,
-            "collection_ready": True,
-            "collection_stats": stats
-        }
-
-    except Exception as e:
-        raise ChromaDBConnectionError(f"Storage validation failed: {e}")
-
-
-class BearNotesStorage:
-    def __init__(
-        self,
-        db_path: str = DEFAULT_CHROMADB_PATH,
-        collection_name: str = DEFAULT_COLLECTION_NAME,
-        batch_size: int = DEFAULT_BATCH_SIZE
-    ):
-        """
-        Initialize storage manager.
-
-        Args:
-            db_path: Path to ChromaDB data directory
-            collection_name: Name of the collection
-            batch_size: Default batch size for operations
-        """
-        self.db_path = db_path
-        self.collection_name = collection_name
-        self.batch_size = batch_size
-        self.client = None
-        self.collection = None
-
-    def initialize(self, reset_collection: bool = False) -> Dict[str, Any]:
-        try:
-            # Initialize client
-            self.client = initialize_chromadb_client(self.db_path)
-
-            # Get or create collection
-            self.collection = get_or_create_collection(
-                self.client,
-                self.collection_name,
-                reset_collection=reset_collection
-            )
-
-            # Get initial stats
-            stats = get_collection_stats(self.collection)
-
-            return {
-                "status": "initialized",
-                "db_path": os.path.abspath(os.path.expanduser(self.db_path)),
-                "collection_name": self.collection_name,
-                "reset_performed": reset_collection,
-                "stats": stats
-            }
-
-        except Exception as e:
-            raise ChromaDBConnectionError(f"Storage initialization failed: {e}")
-
-    def store_chunks(
-        self,
-        chunks: List[Dict[str, Any]],
-        progress_callback: Optional[callable] = None
-    ) -> Dict[str, Any]:
-        """
-        Store chunks in the ChromaDB collection.
-
-        Args:
-            chunks: List of chunk dictionaries
-            progress_callback: Optional progress callback
-
-        Returns:
-            Storage operation statistics
-
-        Raises:
-            StorageError: If storage operation fails
-        """
-        if not self.collection:
-            raise StorageError("Storage not initialized. Call initialize() first.")
-
-        return insert_chunks_batch(
-            self.collection,
-            chunks,
-            batch_size=self.batch_size,
-            progress_callback=progress_callback
-        )
-
-    def get_stats(self) -> Dict[str, Any]:
-        """
-        Get collection statistics.
-
-        Returns:
-            Collection statistics dictionary
-
-        Raises:
-            StorageError: If collection is not initialized
-        """
-        if not self.collection:
-            raise StorageError("Storage not initialized. Call initialize() first.")
-
-        return get_collection_stats(self.collection)
-
-    def query_similar(
-        self,
-        query_embeddings: List[List[float]],
-        n_results: int = 10,
-        metadata_filter: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
-        if not self.collection:
-            raise StorageError("Storage not initialized. Call initialize() first.")
-
-        try:
-            results = self.collection.query(
-                query_embeddings=query_embeddings,
-                n_results=n_results,
-                where=metadata_filter
-            )
-            return results
-
-        except Exception as e:
-            raise StorageError(f"Query failed: {e}")
-
 
 def insert_chunks(
     collection: chromadb.Collection,
