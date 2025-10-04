@@ -78,44 +78,99 @@ def initialize_chromadb_client(db_path: str = DEFAULT_CHROMADB_PATH) -> chromadb
 def get_or_create_collection(
     client: chromadb.PersistentClient,
     collection_name: str = DEFAULT_COLLECTION_NAME,
-    reset_collection: bool = False
+    description: Optional[str] = None,
+    force_recreate: bool = False,
+    reset_collection: bool = False  # Deprecated parameter kept for backward compatibility
 ) -> chromadb.Collection:
     """
-    Get or create ChromaDB collection with optimal configuration for Bear notes.
+    Get or create ChromaDB collection with configurable metadata.
 
     Args:
         client: ChromaDB client instance
         collection_name: Name of the collection
-        reset_collection: If True, delete existing collection before creating
+        description: Collection description for metadata (optional)
+        force_recreate: If True, delete and recreate collection if it exists (destructive!)
+        reset_collection: DEPRECATED - use force_recreate instead (kept for backward compatibility)
 
     Returns:
         Configured ChromaDB collection
 
     Raises:
-        StorageError: If collection operations fail
+        StorageError: If collection operations fail or already exists when force_recreate=False
+
+    Note:
+        force_recreate is destructive and will permanently delete existing data.
+        Use with caution!
     """
     try:
-        # Reset collection if requested
+        # Handle backward compatibility (reset_collection is deprecated)
         if reset_collection:
+            print("⚠️  Warning: 'reset_collection' parameter is deprecated, use 'force_recreate' instead")
+            force_recreate = True
+
+        # Check if collection already exists
+        existing_collections = [col.name for col in client.list_collections()]
+        collection_exists = collection_name in existing_collections
+
+        if collection_exists and force_recreate:
+            # Force recreation: delete existing collection
             try:
                 client.delete_collection(collection_name)
-                print(f"🗑️  Deleted existing collection '{collection_name}' for clean rebuild")
+                print(f"🗑️  Deleted existing collection '{collection_name}' for recreation (force_recreate=True)")
+                print(f"⚠️  WARNING: All existing data in this collection has been permanently deleted!")
+                collection_exists = False  # Collection no longer exists after deletion
             except Exception as e:
-                # Collection might not exist, which is fine
-                print(f"ℹ️  Collection '{collection_name}' not found for deletion (expected if first run)")
+                raise StorageError(
+                    f"Failed to delete existing collection '{collection_name}': {e}\n"
+                    f"  Suggestion: Check ChromaDB permissions or set force_recreate=False"
+                )
 
-        # Create or get collection with optimal settings
-        collection = client.get_or_create_collection(
+        elif collection_exists and not force_recreate:
+            # Collection exists but force_recreate=False - this is an error condition
+            raise StorageError(
+                f"Collection '{collection_name}' already exists\n"
+                f"  Options:\n"
+                f"    1. Use a different collection name\n"
+                f"    2. Set 'forceRecreate': true in your configuration file to delete and recreate\n"
+                f"       (WARNING: This will permanently delete all existing data!)\n"
+                f"    3. Use the existing collection (not currently supported)\n"
+                f"  Note: force_recreate is a destructive operation - use with caution!"
+            )
+
+        # Prepare metadata
+        from datetime import datetime, timezone
+
+        metadata = {
+            "hnsw:space": HNSW_SPACE,  # Cosine similarity for L2-normalized embeddings
+            "version": "1.0",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+
+        # Add description to metadata if provided
+        if description:
+            metadata["description"] = description
+        else:
+            # Use default description with warning
+            metadata["description"] = "Markdown notes semantic chunks with metadata"
+            print(f"⚠️  Using default description for collection '{collection_name}'")
+            print(f"   Suggestion: Provide a custom description via --config for better organization")
+
+        # Create collection (we know it doesn't exist at this point)
+        collection = client.create_collection(
             name=collection_name,
-            metadata={
-                "hnsw:space": HNSW_SPACE,  # Cosine similarity for L2-normalized embeddings
-                "description": "Bear Notes semantic chunks with metadata",
-                "version": "1.0"
-            }
+            metadata=metadata
         )
+
+        print(f"✅ Created new collection '{collection_name}'")
+        if description:
+            print(f"   Description: {description[:80]}...")
+        print(f"   Created at: {metadata['created_at']}")
 
         return collection
 
+    except StorageError:
+        # Re-raise StorageError as-is
+        raise
     except Exception as e:
         raise StorageError(f"Failed to create/access collection '{collection_name}': {e}")
 
