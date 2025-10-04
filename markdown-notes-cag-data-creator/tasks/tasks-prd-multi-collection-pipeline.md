@@ -28,37 +28,37 @@ Generated from: [prd-multi-collection-pipeline.md](prd-multi-collection-pipeline
 
 ## Tasks
 
-- [ ] 1.0 Create JSON configuration file infrastructure and validation system
-  - [ ] 1.1 Create `config_loader.py` module with `load_collection_config()` function
-  - [ ] 1.2 Implement JSON schema validation using jsonschema library (validate field types: collection_name/description as strings, forceRecreate/skipAiValidation as booleans)
-  - [ ] 1.3 Add validation for required fields (collection_name, description) and set defaults for optional fields (forceRecreate=False, skipAiValidation=False)
-  - [ ] 1.4 Implement clear error messages for: file not found, invalid JSON syntax, missing required fields, type mismatches
-  - [ ] 1.5 Create `collections/` directory and example configuration files (bear_notes_config.json, wikipedia_history_config.json)
-  - [ ] 1.6 Add FileNotFoundError, json.JSONDecodeError, and ValueError exception handling with user-friendly error formatting
+- [x] 1.0 Create JSON configuration file infrastructure and validation system
+  - [x] 1.1 Create `config_loader.py` module with `load_collection_config()` function
+  - [x] 1.2 Implement JSON schema validation using jsonschema library (validate field types: collection_name/description as strings, forceRecreate/skipAiValidation as booleans)
+  - [x] 1.3 Add validation for required fields (collection_name, description) and set defaults for optional fields (forceRecreate=False, skipAiValidation=False)
+  - [x] 1.4 Implement clear error messages for: file not found, invalid JSON syntax, missing required fields, type mismatches
+  - [x] 1.5 Create `collections/` directory and example configuration files (bear_notes_config.json, wikipedia_history_config.json)
+  - [x] 1.6 Add FileNotFoundError, json.JSONDecodeError, and ValueError exception handling with user-friendly error formatting
 
-- [ ] 2.0 Implement collection name and description validation (regex + AI)
-  - [ ] 2.1 Create `validation.py` module with `validate_collection_name()` function (regex: `^[a-zA-Z0-9_-]+$`, max 64 chars)
-  - [ ] 2.2 Implement `validate_description_regex()` for mandatory checks: minimum 50 chars, required phrases ("use this when", "use this collection", etc.), vague description blacklist
-  - [ ] 2.3 Create `check_model_availability()` function to verify llama3.1:8b model is available via Ollama
-  - [ ] 2.4 Implement `validate_with_ai()` function using Ollama llama3.1:8b model with scoring prompt (0-10 scale, threshold 7+)
-  - [ ] 2.5 Create `validate_description_hybrid()` that runs regex validation first (mandatory), then AI validation (optional based on skipAiValidation flag)
-  - [ ] 2.6 Add comprehensive error messages with examples, templates, and escape hatch instructions (suggest skipAiValidation when AI is too strict)
+- [x] 2.0 Implement collection name and description validation (regex + AI)
+  - [x] 2.1 Create `validation.py` module with `validate_collection_name()` function (regex: `^[a-zA-Z0-9_-]+$`, max 64 chars)
+  - [x] 2.2 Implement `validate_description_regex()` for mandatory checks: minimum 50 chars, required phrases ("use this when", "use this collection", etc.), vague description blacklist
+  - [x] 2.3 Create `check_model_availability()` function to verify llama3.1:8b model is available via Ollama
+  - [x] 2.4 Implement `validate_with_ai()` function using Ollama llama3.1:8b model with scoring prompt (0-10 scale, threshold 7+)
+  - [x] 2.5 Create `validate_description_hybrid()` that runs regex validation first (mandatory), then AI validation (optional based on skipAiValidation flag)
+  - [x] 2.6 Add comprehensive error messages with examples, templates, and escape hatch instructions (suggest skipAiValidation when AI is too strict)
 
-- [ ] 3.0 Update storage.py to support collection metadata and force recreation
-  - [ ] 3.1 Update `get_or_create_collection()` function signature to accept `description: str` and `force_recreate: bool` parameters
-  - [ ] 3.2 Add collection existence check using `client.list_collections()` before creation
-  - [ ] 3.3 Implement force_recreate logic: raise StorageError if collection exists and force_recreate=False, delete and recreate if force_recreate=True
-  - [ ] 3.4 Update collection metadata to include: "description" field and "created_at" timestamp (ISO format with timezone.utc)
-  - [ ] 3.5 Add warning messages when using default metadata or when force recreating collections
-  - [ ] 3.6 Update StorageError messages to include instructions about forceRecreate configuration option
+- [x] 3.0 Update storage.py to support collection metadata and force recreation
+  - [x] 3.1 Update `get_or_create_collection()` function signature to accept `description: str` and `force_recreate: bool` parameters
+  - [x] 3.2 Add collection existence check using `client.list_collections()` before creation
+  - [x] 3.3 Implement force_recreate logic: raise StorageError if collection exists and force_recreate=False, delete and recreate if force_recreate=True
+  - [x] 3.4 Update collection metadata to include: "description" field and "created_at" timestamp (ISO format with timezone.utc)
+  - [x] 3.5 Add warning messages when using default metadata or when force recreating collections
+  - [x] 3.6 Update StorageError messages to include instructions about forceRecreate configuration option
 
-- [ ] 4.0 Integrate configuration system into full_pipeline.py
-  - [ ] 4.1 Add `--config` argument to argparse (required parameter, type=str, help text explaining JSON configuration file)
-  - [ ] 4.2 Import and call `load_collection_config()` to load and validate configuration file early in pipeline
-  - [ ] 4.3 Import **validation** functions and validate collection name and description after loading config
-  - [ ] 4.4 Pass collection_name, description, and force_recreate from config to `get_or_create_collection()` in storage step
-  - [ ] 4.5 Update progress output to display collection name and description being used
-  - [ ] 4.6 Add try/except blocks for configuration and validation errors with clear error formatting (show config file path, issue details, suggestions)
+- [x] 4.0 Integrate configuration system into full_pipeline.py
+  - [x] 4.1 Add `--config` argument to argparse (required parameter, type=str, help text explaining JSON configuration file)
+  - [x] 4.2 Import and call `load_collection_config()` to load and validate configuration file early in pipeline
+  - [x] 4.3 Import **validation** functions and validate collection name and description after loading config
+  - [x] 4.4 Pass collection_name, description, and force_recreate from config to `get_or_create_collection()` in storage step
+  - [x] 4.5 Update progress output to display collection name and description being used
+  - [x] 4.6 Add try/except blocks for configuration and validation errors with clear error formatting (show config file path, issue details, suggestions)
 
 - [ ] 5.0 Add dry-run mode and comprehensive error handling
   - [ ] 5.1 Add `--dry-run` argument to argparse (boolean flag, help text explaining validation-only mode)
