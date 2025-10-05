@@ -59,5 +59,9 @@ Thumbs.db
 
 chromadb_data/
 
-# Generated Bear notes JSON files
-*.json
+# MCP Server configuration (contains local paths)
+markdown-notes-mcp-server/config.json
+
+# Generated Bear notes JSON backup files (large files)
+test-data/*.json
+Bear*.json

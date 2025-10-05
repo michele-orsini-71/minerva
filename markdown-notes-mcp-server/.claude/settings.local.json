@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/michele/my-code/search-markdown-notes/test-files/**)",
+      "Read(//Users/michele/my-code/search-markdown-notes/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

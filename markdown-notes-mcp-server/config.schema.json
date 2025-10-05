@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MCP Server Configuration",
+  "description": "Configuration schema for the markdown notes MCP server",
+  "type": "object",
+  "required": [
+    "chromadb_path",
+    "default_max_results",
+    "embedding_model"
+  ],
+  "properties": {
+    "chromadb_path": {
+      "type": "string",
+      "description": "Absolute path to the ChromaDB persistent storage directory",
+      "minLength": 1,
+      "pattern": "^/",
+      "examples": [
+        "/Users/username/my-code/search-markdown-notes/chromadb_data",
+        "/home/user/chromadb_data"
+      ]
+    },
+    "default_max_results": {
+      "type": "integer",
+      "description": "Default maximum number of search results to return",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 5
+    },
+    "embedding_model": {
+      "type": "string",
+      "description": "Name of the Ollama embedding model to use (format: model-name:version)",
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9._-]*:[a-z0-9][a-z0-9._-]*$|^[a-z0-9][a-z0-9._-]*$",
+      "examples": [
+        "mxbai-embed-large:latest",
+        "nomic-embed-text:latest",
+        "all-minilm:latest"
+      ]
+    }
+  },
+  "additionalProperties": false
+}
