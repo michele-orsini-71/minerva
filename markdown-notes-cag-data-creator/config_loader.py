@@ -87,13 +87,13 @@ COLLECTION_CONFIG_SCHEMA = {
 def validate_config_schema(data: Dict[str, Any], config_path: str) -> None:
     try:
         validate(instance=data, schema=COLLECTION_CONFIG_SCHEMA)
-    except JsonSchemaValidationError as e:
+    except JsonSchemaValidationError as error:
         # Convert jsonschema validation error to user-friendly ConfigError
-        error_path = " → ".join(str(p) for p in e.absolute_path) if e.absolute_path else "root"
+        error_path = " → ".join(str(p) for p in error.absolute_path) if error.absolute_path else "root"
 
         # Provide helpful error messages based on error type
-        if "is a required property" in e.message:
-            missing_field = e.message.split("'")[1]
+        if "is a required property" in error.message:
+            missing_field = error.message.split("'")[1]
             raise ConfigError(
                 f"Missing required field in configuration file: {config_path}\n"
                 f"  Missing field: '{missing_field}'\n"
@@ -111,7 +111,7 @@ def validate_config_schema(data: Dict[str, Any], config_path: str) -> None:
             raise ConfigError(
                 f"Type validation error in configuration file: {config_path}\n"
                 f"  Field: {error_path}\n"
-                f"  Error: {e.message}\n"
+                f"  Error: {error.message}\n"
                 f"  Suggestion: Check the field type:\n"
                 f"    - Strings: \"value\" (with quotes)\n"
                 f"    - Booleans: true or false (lowercase, no quotes)"
@@ -120,14 +120,14 @@ def validate_config_schema(data: Dict[str, Any], config_path: str) -> None:
             raise ConfigError(
                 f"Length validation error in configuration file: {config_path}\n"
                 f"  Field: {error_path}\n"
-                f"  Error: {e.message}\n"
+                f"  Error: {error.message}\n"
                 f"  Suggestion: Check the field length requirements in the schema"
             )
         elif "does not match" in e.message:
             raise ConfigError(
                 f"Pattern validation error in configuration file: {config_path}\n"
                 f"  Field: {error_path}\n"
-                f"  Error: {e.message}\n"
+                f"  Error: {error.message}\n"
                 f"  Suggestion: collection_name must:\n"
                 f"    - Start with alphanumeric character\n"
                 f"    - Contain only alphanumeric, underscore, or hyphen\n"
@@ -147,7 +147,7 @@ def validate_config_schema(data: Dict[str, Any], config_path: str) -> None:
             raise ConfigError(
                 f"Schema validation error in configuration file: {config_path}\n"
                 f"  Field: {error_path}\n"
-                f"  Error: {e.message}\n"
+                f"  Error: {error.message}\n"
                 f"  Suggestion: Check the configuration format against the schema"
             )
 
@@ -176,16 +176,16 @@ def load_collection_config(config_path: str) -> CollectionConfig:
         try:
             with open(config_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-        except json.JSONDecodeError as e:
+        except json.JSONDecodeError as error:
             raise ConfigError(
                 f"Invalid JSON syntax in configuration file: {config_path}\n"
-                f"  Error: {e.msg} at line {e.lineno}, column {e.colno}\n"
+                f"  Error: {error.msg} at line {error.lineno}, column {error.colno}\n"
                 f"  Suggestion: Validate your JSON using a JSON validator or linter"
             )
-        except Exception as e:
+        except Exception as error:
             raise ConfigError(
                 f"Failed to read configuration file: {config_path}\n"
-                f"  Error: {e}\n"
+                f"  Error: {error}\n"
                 f"  Suggestion: Check file permissions and encoding"
             )
 
@@ -223,10 +223,10 @@ def load_collection_config(config_path: str) -> CollectionConfig:
     except ConfigError:
         # Re-raise ConfigError as-is
         raise
-    except Exception as e:
+    except Exception as error:
         # Wrap unexpected errors
         raise ConfigError(
             f"Unexpected error loading configuration: {config_path}\n"
-            f"  Error: {e}\n"
+            f"  Error: {error}\n"
             f"  Suggestion: Verify the file is accessible and properly formatted"
         )

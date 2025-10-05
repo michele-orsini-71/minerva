@@ -76,17 +76,17 @@ def generate_embedding(
             normalized = l2_normalize(vector.reshape(1, -1))
             return normalized.flatten().tolist()
 
-        except Exception as e:
+        except Exception as error:
             if attempt < max_retries:
-                print(f"Warning: Embedding attempt {attempt + 1} failed: {e}", file=sys.stderr)
+                print(f"Warning: Embedding attempt {attempt + 1} failed: {error}", file=sys.stderr)
                 print(f"         Retrying in {retry_delay} seconds...", file=sys.stderr)
                 time.sleep(retry_delay)
                 retry_delay *= 1.5  # Exponential backoff
             else:
-                if "connection" in str(e).lower() or "refused" in str(e).lower():
-                    raise OllamaServiceError(f"Ollama service unavailable: {e}")
+                if "connection" in str(error).lower() or "refused" in str(error).lower():
+                    raise OllamaServiceError(f"Ollama service unavailable: {error}")
                 else:
-                    raise EmbeddingError(f"Failed to generate embedding after {max_retries + 1} attempts: {e}")
+                    raise EmbeddingError(f"Failed to generate embedding after {max_retries + 1} attempts: {error}")
 
 def validate_embedding_consistency(embeddings: List[List[float]]) -> bool:
     if not embeddings:
@@ -157,8 +157,8 @@ def generate_embeddings(
     try:
         status = initialize_embedding_service(model)
         print(f"   Ollama service ready: {status['model_name']}")
-    except OllamaServiceError as e:
-        raise EmbeddingError(f"Embedding service initialization failed: {e}")
+    except OllamaServiceError as error:
+        raise EmbeddingError(f"Embedding service initialization failed: {error}")
 
     chunks_with_embeddings = []
     failed_chunks = []
@@ -184,13 +184,13 @@ def generate_embeddings(
 
             chunks_with_embeddings.append(chunk_with_embedding)
 
-        except Exception as e:
+        except Exception as error:
             failed_chunks.append({
                 'chunk_id': chunk.id,
                 'title': chunk.title,
-                'error': str(e)
+                'error': str(error)
             })
-            print(f"   Failed to generate embedding for chunk {chunk.id}: {e}", file=sys.stderr)
+            print(f"   Failed to generate embedding for chunk {chunk.id}: {error}", file=sys.stderr)
             continue
 
         # Progress feedback every 25 chunks or at the end
@@ -202,8 +202,8 @@ def generate_embeddings(
 
     # Validate embedding consistency
     if chunks_with_embeddings:
-        embeddings_only = [cwe.embedding for cwe in chunks_with_embeddings]
-        is_consistent = validate_embedding_consistency(embeddings_only)
+        embedding_vectors = [cwe.embedding for cwe in chunks_with_embeddings]
+        is_consistent = validate_embedding_consistency(embedding_vectors)
         if not is_consistent:
             print("   Warning: Embedding consistency check failed", file=sys.stderr)
 

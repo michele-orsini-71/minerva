@@ -16,11 +16,11 @@ def load_and_validate_config(config_path: str, verbose: bool = False):
         print(f"   Force recreate: {config.force_recreate}")
         print(f"   Skip AI validation: {config.skip_ai_validation}")
         print()
-    except ConfigError as e:
+    except ConfigError as error:
         print(f"\n{'=' * 60}", file=sys.stderr)
         print(f"CONFIGURATION ERROR", file=sys.stderr)
         print(f"{'=' * 60}", file=sys.stderr)
-        print(f"\n{e}", file=sys.stderr)
+        print(f"\n{error}", file=sys.stderr)
         print(f"\nConfiguration file: {config_path}", file=sys.stderr)
         print(f"\nActionable Steps:", file=sys.stderr)
         print(f"  1. Review the error message above for specific issues", file=sys.stderr)
@@ -58,11 +58,11 @@ def load_and_validate_config(config_path: str, verbose: bool = False):
             print(f"     - Confusion when selecting the right collection for queries")
             print(f"     - Poor AI routing decisions in production")
         print()
-    except ValidationError as e:
+    except ValidationError as error:
         print(f"\n{'=' * 60}", file=sys.stderr)
         print(f"VALIDATION ERROR", file=sys.stderr)
         print(f"{'=' * 60}", file=sys.stderr)
-        print(f"\n{e}", file=sys.stderr)
+        print(f"\n{error}", file=sys.stderr)
         print(f"\nConfiguration file: {config_path}", file=sys.stderr)
         print(f"Collection name: {config.collection_name}", file=sys.stderr)
         print(f"\nActionable Steps:", file=sys.stderr)

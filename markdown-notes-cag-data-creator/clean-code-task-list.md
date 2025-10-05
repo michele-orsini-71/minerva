@@ -25,35 +25,35 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
 #### Priority: HIGH
 **Issues Found:**
 
-- [ ] **chunk_creator.py:63** - `chunk_data_list` is redundant (contains "data" noise word)
+- [x] **chunk_creator.py:63** - `chunk_data_list` is redundant (contains "data" noise word)
   - **Current:** `chunk_data_list = chunk_markdown_content(...)`
   - **Suggested:** `markdown_chunks = chunk_markdown_content(...)`
   - **Rationale:** "data" adds no information; "markdown_chunks" reveals intent
 
-- [ ] **chunk_creator.py:115** - Same issue in function `create_chunks_for_notes`
+- [x] **chunk_creator.py:115** - Same issue in function `create_chunks_for_notes`
   - **Current:** `chunk_data_list = chunk_markdown_content(...)`
   - **Suggested:** `markdown_chunks = chunk_markdown_content(...)`
 
-- [ ] **chunk_creator.py:216** - Same issue in function `create_chunks_from_notes`
+- [x] **chunk_creator.py:216** - Same issue in function `create_chunks_from_notes`
   - **Current:** `chunk_data_list = chunk_markdown_content(...)`
   - **Suggested:** `markdown_chunks = chunk_markdown_content(...)`
 
-- [ ] **embedding.py:236** - `embeddings_only` is vague
+- [x] **embedding.py:236** - `embeddings_only` is vague
   - **Current:** `embeddings_only = [cwe.embedding for cwe in chunks_with_embeddings]`
   - **Suggested:** `embedding_vectors = [cwe.embedding for cwe in chunks_with_embeddings]`
   - **Rationale:** More specific about what it contains (vectors, not chunks)
 
-- [ ] **validation.py:150** - `vague_terms_found` could be clearer
+- [x] **validation.py:150** - `vague_terms_found` could be clearer
   - **Current:** `vague_terms_found = [term for term in VAGUE_DESCRIPTIONS_BLACKLIST if term in description_lower]`
   - **Suggested:** `blacklisted_terms_in_description = [term for term in VAGUE_DESCRIPTIONS_BLACKLIST if term in description_lower]`
   - **Rationale:** More explicit about relationship between terms and description
 
-- [ ] **storage.py:110** - Generic parameter name `chunks`
+- [x] **storage.py:110** - Generic parameter name `chunks`
   - **Current:** `def prepare_batch_data(chunks: List[Dict[str, Any]])`
   - **Suggested:** `def prepare_batch_data(chunk_dicts: List[Dict[str, Any]])`
   - **Rationale:** Clarifies that these are dictionaries, not Chunk objects
 
-- [ ] **chunk_creator.py:71-74** - Anonymous object creation is cryptic
+- [x] **chunk_creator.py:71-74** - Anonymous object creation is cryptic
   - **Current:** `type('obj', (object,), {'page_content': markdown, 'metadata': {}})`
   - **Suggested:** Create a named `FallbackDocument` class or function
   - **Rationale:** This is extremely unclear and hard to understand
@@ -63,22 +63,22 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
 #### Priority: MEDIUM
 **Issues Found:**
 
-- [ ] **chunk_creator.py:29** - `create_langchain_chunker` doesn't reveal what it returns
+- [x] **chunk_creator.py:29** - `create_langchain_chunker` doesn't reveal what it returns
   - **Current:** `create_langchain_chunker(target_chars, overlap_chars)`
   - **Suggested:** `build_text_splitters(target_chars, overlap_chars)` returning `TextSplitters`
   - **Rationale:** "create" is vague; "build_text_splitters" reveals return value
 
-- [ ] **storage.py:52** - `collection_exists` naming conflict with local variable
+- [x] **storage.py:52** - `collection_exists` naming conflict with local variable
   - **Current:** Function name shadows variable on line 67
   - **Suggested:** Rename function to `check_collection_exists` or variable to `exists`
   - **Rationale:** Function and variable have same name in scope
 
-- [ ] **storage.py:110** - `prepare_batch_data` is vague
+- [x] **storage.py:110** - `prepare_batch_data` is vague
   - **Current:** `prepare_batch_data(chunks)`
   - **Suggested:** `convert_chunks_to_chromadb_format(chunks)`
   - **Rationale:** More specific about transformation being performed
 
-- [ ] **config_loader.py:155** - `load_collection_config` should be `load_and_validate_collection_config`
+- [x] **config_loader.py:155** - `load_collection_config` should be `load_and_validate_collection_config`
   - **Current:** `load_collection_config(config_path)`
   - **Suggested:** `load_and_validate_collection_config(config_path)` OR extract validation
   - **Rationale:** Function does both loading AND validation (violates SRP)
@@ -88,7 +88,7 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
 #### Priority: LOW
 **Issues Found:**
 
-- [ ] **No weasel words found** - Class names are appropriate
+- [x] **No weasel words found** - Class names are appropriate
   - `Chunk`, `ChunkWithEmbedding`, `CollectionConfig` are all clear nouns
   - No "Manager", "Processor", "Helper", or "Utility" anti-patterns found
   - **Action:** None required
@@ -98,18 +98,13 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
 #### Priority: HIGH
 **Issues Found:**
 
-- [ ] **chunk_creator.py:122-144** - Variable `chunks` reused in different scopes
+- [x] **chunk_creator.py:122-144** - Variable `chunks` reused in different scopes
   - **Current:** `chunks = []` (local list of chunk metadata dicts)
   - **Issue:** Same name used for different meanings in different functions
   - **Suggested:** Use `chunk_metadata_list` or `enriched_chunks`
   - **Rationale:** Makes searching and understanding context harder
 
-- [ ] **embedding.py:14** - Magic string `EMBED_MODEL` should have better searchability
-  - **Current:** `EMBED_MODEL = "mxbai-embed-large:latest"`
-  - **Suggested:** Add docstring explaining why this specific model
-  - **Rationale:** Not clear why this model vs others
-
-- [ ] **Multiple files** - Generic variable name `e` used for exceptions
+- [x] **Multiple files** - Generic variable name `e` used for exceptions
   - **Current:** `except Exception as e:`
   - **Suggested:** `except Exception as error:` or specific exception type
   - **Rationale:** "e" is too short and not searchable; specific names aid debugging

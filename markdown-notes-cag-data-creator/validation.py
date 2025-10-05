@@ -147,13 +147,13 @@ def validate_description_regex(description: str, collection_name: str) -> None:
         )
 
     # Check for vague descriptions
-    vague_terms_found = [term for term in VAGUE_DESCRIPTIONS_BLACKLIST if term in description_lower]
-    if vague_terms_found:
+    blacklisted_terms_in_description = [term for term in VAGUE_DESCRIPTIONS_BLACKLIST if term in description_lower]
+    if blacklisted_terms_in_description:
         # Warning only if description is mostly vague terms
-        if len(" ".join(vague_terms_found)) / len(description) > 0.3:
+        if len(" ".join(blacklisted_terms_in_description)) / len(description) > 0.3:
             raise ValidationError(
                 f"Description for collection '{collection_name}' is too vague\n"
-                f"  Vague terms found: {', '.join(vague_terms_found)}\n"
+                f"  Vague terms found: {', '.join(blacklisted_terms_in_description)}\n"
                 f"  Suggestion: Be more specific about:\n"
                 f"    - What TYPE of content is in the collection\n"
                 f"    - What TOPICS or DOMAINS it covers\n"
@@ -251,11 +251,11 @@ def validate_with_ai(description: str, collection_name: str, model: str = AI_MOD
 
         return (int(score), reasoning, suggestions)
 
-    except Exception as e:
-        if isinstance(e, ValidationError):
+    except Exception as error:
+        if isinstance(error, ValidationError):
             raise
         raise ValidationError(
-            f"AI validation failed: {e}\n"
+            f"AI validation failed: {error}\n"
             f"  Suggestion: Check Ollama is running (ollama serve) or skip AI validation with 'skipAiValidation': true"
         )
 
@@ -326,8 +326,8 @@ if __name__ == "__main__":
         validate_collection_name("team123")
         validate_collection_name("research_papers_2024")
         print("   All valid names passed")
-    except ValidationError as e:
-        print(f"   Valid names failed: {e}")
+    except ValidationError as error:
+        print(f"   Valid names failed: {error}")
         sys.exit(1)
 
     # Test 2: Invalid collection names
@@ -368,8 +368,8 @@ if __name__ == "__main__":
             "bear_notes"
         )
         print("   Valid description passed")
-    except ValidationError as e:
-        print(f"   Valid description failed: {e}")
+    except ValidationError as error:
+        print(f"   Valid description failed: {error}")
         sys.exit(1)
 
     # Test 6: Check model availability
@@ -393,8 +393,8 @@ if __name__ == "__main__":
             print(f"   AI validation completed:")
             print(f"   Score: {score}/10")
             print(f"   Reasoning: {reasoning[:80]}...")
-        except ValidationError as e:
-            print(f"   AI validation error: {e}")
+        except ValidationError as error:
+            print(f"   AI validation error: {error}")
     else:
         print("\n📋 Test 7: Skipping AI validation (model not available)")
 

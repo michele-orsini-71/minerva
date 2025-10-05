@@ -26,7 +26,7 @@ def generate_chunk_id(note_id: str, modification_date: str, chunk_index: int) ->
     return hashlib.sha256(chunk_source.encode('utf-8')).hexdigest()
 
 
-def create_langchain_chunker(target_chars: int = 1200, overlap_chars: int = 200):
+def build_text_splitters(target_chars: int = 1200, overlap_chars: int = 200):
     # Configure header-based splitter
     headers_to_split_on = [
         ("#", "Header 1"),
@@ -59,19 +59,23 @@ def create_langchain_chunker(target_chars: int = 1200, overlap_chars: int = 200)
     return header_splitter, recursive_splitter
 
 
+class FallbackDocument:
+    """Simple document wrapper for fallback when header splitting fails."""
+    def __init__(self, page_content: str):
+        self.page_content = page_content
+        self.metadata = {}
+
+
 def chunk_markdown_content(markdown: str, target_chars: int = 1200, overlap_chars: int = 200) -> List[Dict[str, Any]]:
-    header_splitter, recursive_splitter = create_langchain_chunker(target_chars, overlap_chars)
+    header_splitter, recursive_splitter = build_text_splitters(target_chars, overlap_chars)
 
     # Step 1: Split by headers to preserve structure
     try:
         header_splits = header_splitter.split_text(markdown)
-    except Exception as e:
+    except Exception as error:
         # Fallback to recursive splitting only if header splitting fails
-        print(f"Warning: Header splitting failed, using recursive only: {e}", file=sys.stderr)
-        header_splits = [type('obj', (object,), {
-            'page_content': markdown,
-            'metadata': {}
-        })]
+        print(f"Warning: Header splitting failed, using recursive only: {error}", file=sys.stderr)
+        header_splits = [FallbackDocument(markdown)]
 
     # Step 2: Further split large sections with recursive splitter
     all_chunks = []
@@ -111,14 +115,14 @@ def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 12
             note_id = generate_note_id(note['title'], note.get('creationDate'))
 
             # Create chunks using LangChain
-            chunk_data_list = chunk_markdown_content(
+            markdown_chunks = chunk_markdown_content(
                 note['markdown'],
                 target_chars=target_chars,
                 overlap_chars=overlap_chars
             )
 
             # Build immutable Chunk objects
-            for chunk_index, chunk_data in enumerate(chunk_data_list):
+            for chunk_index, chunk_data in enumerate(markdown_chunks):
                 chunk_id = generate_chunk_id(note_id, note['modificationDate'], chunk_index)
 
                 # Create immutable Chunk
@@ -139,12 +143,12 @@ def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 12
             if (i + 1) % 50 == 0 or i == len(notes) - 1:
                 print(f"  Progress: {i + 1}/{len(notes)} notes ({(i + 1) / len(notes) * 100:.1f}%) - {len(chunks)} chunks created")
 
-        except Exception as e:
+        except Exception as error:
             failed_notes.append({
                 'title': note.get('title', 'Unknown'),
-                'error': str(e)
+                'error': str(error)
             })
-            print(f"   Failed to process note '{note.get('title', 'Unknown')}': {e}", file=sys.stderr)
+            print(f"   Failed to process note '{note.get('title', 'Unknown')}': {error}", file=sys.stderr)
             continue
 
     # Summary statistics

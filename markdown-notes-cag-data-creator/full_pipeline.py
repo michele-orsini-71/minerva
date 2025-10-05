@@ -161,8 +161,8 @@ def main():
             if stats['failed'] > 0:
                 print(f"   Failed to store {stats['failed']} chunks")
             print()
-        except StorageError as e:
-            print(f"\nStorage Error:\n{e}", file=sys.stderr)
+        except StorageError as error:
+            print(f"\nStorage Error:\n{error}", file=sys.stderr)
             print(f"\nCollection: {config.collection_name}", file=sys.stderr)
             print(f"Configuration file: {args.config}", file=sys.stderr)
             sys.exit(1)
@@ -187,11 +187,11 @@ def main():
         print("\n   Operation cancelled by user", file=sys.stderr)
         sys.exit(130)
 
-    except EmbeddingError as e:
+    except EmbeddingError as error:
         print(f"\n{'=' * 60}", file=sys.stderr)
         print(f"EMBEDDING GENERATION ERROR", file=sys.stderr)
         print(f"{'=' * 60}", file=sys.stderr)
-        print(f"\nError: {e}", file=sys.stderr)
+        print(f"\nError: {error}", file=sys.stderr)
         print(f"\nActionable Steps:", file=sys.stderr)
         print(f"  1. Check if Ollama is running:", file=sys.stderr)
         print(f"     $ ollama serve", file=sys.stderr)
@@ -207,11 +207,11 @@ def main():
         print(f"\nConfiguration file: {args.config}", file=sys.stderr)
         sys.exit(1)
 
-    except FileNotFoundError as e:
+    except FileNotFoundError as error:
         print(f"\n{'=' * 60}", file=sys.stderr)
         print(f"FILE NOT FOUND ERROR", file=sys.stderr)
         print(f"{'=' * 60}", file=sys.stderr)
-        print(f"\nError: {e}", file=sys.stderr)
+        print(f"\nError: {error}", file=sys.stderr)
         print(f"\nActionable Steps:", file=sys.stderr)
         print(f"  1. Check the file path in your configuration:", file=sys.stderr)
         print(f"     Configuration file: {args.config}", file=sys.stderr)
@@ -223,11 +223,11 @@ def main():
         print(f"\nTip: Use --dry-run to validate configuration before processing", file=sys.stderr)
         sys.exit(1)
 
-    except Exception as e:
+    except Exception as error:
         print(f"\n{'=' * 60}", file=sys.stderr)
         print(f"UNEXPECTED ERROR", file=sys.stderr)
         print(f"{'=' * 60}", file=sys.stderr)
-        print(f"\nError: {e}", file=sys.stderr)
+        print(f"\nError: {error}", file=sys.stderr)
         print(f"\nDebug Information:", file=sys.stderr)
         print(f"  Configuration file: {args.config}", file=sys.stderr)
         print(f"  Mode: {'DRY-RUN' if args.dry_run else 'NORMAL'}", file=sys.stderr)

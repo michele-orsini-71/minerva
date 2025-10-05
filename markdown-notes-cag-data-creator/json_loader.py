@@ -45,18 +45,18 @@ def load_json_notes(json_path: str) -> List[Dict[str, Any]]:
         print(f"   Loaded {len(data)} notes from {json_path}")
         return data
 
-    except json.JSONDecodeError as e:
-        print(f"Error: Invalid JSON format in {json_path}: {e}", file=sys.stderr)
+    except json.JSONDecodeError as error:
+        print(f"Error: Invalid JSON format in {json_path}: {error}", file=sys.stderr)
         sys.exit(1)
 
-    except UnicodeDecodeError as e:
-        print(f"Error: File encoding issue in {json_path}: {e}", file=sys.stderr)
+    except UnicodeDecodeError as error:
+        print(f"Error: File encoding issue in {json_path}: {error}", file=sys.stderr)
         sys.exit(1)
 
     except PermissionError:
         print(f"Error: Permission denied reading {json_path}", file=sys.stderr)
         sys.exit(1)
 
-    except Exception as e:
-        print(f"Error: Unexpected error loading {json_path}: {e}", file=sys.stderr)
+    except Exception as error:
+        print(f"Error: Unexpected error loading {json_path}: {error}", file=sys.stderr)
         sys.exit(1)

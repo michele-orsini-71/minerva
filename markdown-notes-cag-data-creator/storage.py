@@ -45,16 +45,16 @@ def initialize_chromadb_client(db_path: str) -> chromadb.PersistentClient:
 
         return client
 
-    except Exception as e:
-        raise ChromaDBConnectionError(f"Failed to initialize ChromaDB client at '{db_path}': {e}")
+    except Exception as error:
+        raise ChromaDBConnectionError(f"Failed to initialize ChromaDB client at '{db_path}': {error}")
 
 
 def collection_exists(client: chromadb.PersistentClient, collection_name: str) -> bool:
     try:
         existing_collections = [col.name for col in client.list_collections()]
         return collection_name in existing_collections
-    except Exception as e:
-        raise StorageError(f"Failed to check if collection '{collection_name}' exists: {e}")
+    except Exception as error:
+        raise StorageError(f"Failed to check if collection '{collection_name}' exists: {error}")
 
 def get_or_create_collection(
     client: chromadb.PersistentClient,
@@ -72,9 +72,9 @@ def get_or_create_collection(
                 print(f"   Deleted existing collection '{collection_name}' for recreation (force_recreate=True)")
                 print(f"   WARNING: All existing data in this collection has been permanently deleted!")
                 collection_exists = False  # Collection no longer exists after deletion
-            except Exception as e:
+            except Exception as error:
                 raise StorageError(
-                    f"Failed to delete existing collection '{collection_name}': {e}\n"
+                    f"Failed to delete existing collection '{collection_name}': {error}\n"
                     f"  Suggestion: Check ChromaDB permissions or set force_recreate=False"
                 )
 
@@ -103,8 +103,8 @@ def get_or_create_collection(
     except StorageError:
         # Re-raise StorageError as-is
         raise
-    except Exception as e:
-        raise StorageError(f"Failed to create/access collection '{collection_name}': {e}")
+    except Exception as error:
+        raise StorageError(f"Failed to create/access collection '{collection_name}': {error}")
 
 def insert_chunks(
     collection: chromadb.Collection,
@@ -163,8 +163,8 @@ def insert_chunks(
                 if progress_callback:
                     progress_callback(min(i + batch_size, len(chunks_with_embeddings)), len(chunks_with_embeddings))
 
-            except Exception as e:
-                error_msg = f"Batch {batch_num} failed: {e}"
+            except Exception as error:
+                error_msg = f"Batch {batch_num} failed: {error}"
                 stats["errors"].append(error_msg)
                 stats["failed"] += len(batch)
                 print(f"   {error_msg}", file=sys.stderr)
@@ -183,5 +183,5 @@ def insert_chunks(
 
         return stats
 
-    except Exception as e:
-        raise StorageError(f"Chunk storage failed: {e}")
+    except Exception as error:
+        raise StorageError(f"Chunk storage failed: {error}")
