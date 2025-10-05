@@ -1,7 +1,10 @@
+import importlib
 import json
 import runpy
 from types import SimpleNamespace
+from unittest import mock
 
+import builtins
 import pytest
 
 import validation
@@ -61,6 +64,20 @@ def test_validate_description_regex_too_vague():
         validation.validate_description_regex(description, "collection")
 
 
+def test_validate_description_regex_empty():
+    with pytest.raises(ValidationError):
+        validation.validate_description_regex("", "collection")
+
+
+def test_validate_description_regex_too_long():
+    long_description = (
+        "Use this collection when analyzing comprehensive infrastructure change proposals and rollback procedures. "
+        + "deployment patterns and resilience requirements " * 25
+    )
+    with pytest.raises(ValidationError):
+        validation.validate_description_regex(long_description, "collection")
+
+
 def test_validate_with_ai_success(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(validation, "check_model_availability_or_raise", lambda model: None)
     response = {"score": 8, "reasoning": "clear", "suggestions": ""}
@@ -86,6 +103,95 @@ def test_validate_with_ai_invalid_response(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(validation, "call_ollama_ai", lambda description, collection_name, model: "not-json")
     with pytest.raises(ValidationError):
         validation.validate_with_ai("desc", "collection")
+
+
+def test_validate_ai_score_invalid():
+    with pytest.raises(ValidationError):
+        validation.validate_ai_score(11)
+
+
+def test_call_ollama_ai_uses_prompt(monkeypatch: pytest.MonkeyPatch):
+    calls = {}
+
+    def fake_chat(*, model, messages, options):
+        calls["model"] = model
+        calls["messages"] = messages
+        calls["options"] = options
+        return {"message": {"content": " {\"score\": 10}"}}
+
+    monkeypatch.setattr(validation, "ollama_chat", fake_chat)
+    result = validation.call_ollama_ai("description", "collection", model="model")
+    assert "score" in result
+    assert calls["model"] == "model"
+    assert any("collection" in msg["content"] for msg in calls["messages"])
+
+
+def test_check_model_availability_handles_empty_list(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(validation, "ollama_list", lambda: SimpleNamespace(models=[]))
+    assert validation.check_model_availability("model") is False
+
+
+def test_check_model_availability_or_raise(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(validation, "check_model_availability", lambda model: False)
+    with pytest.raises(ValidationError):
+        validation.check_model_availability_or_raise("model")
+
+
+def test_wrap_generic_ai_error(monkeypatch: pytest.MonkeyPatch):
+    error = ValidationError("already handled")
+    assert validation.wrap_generic_ai_error(error) is error
+
+    wrapped = validation.wrap_generic_ai_error(RuntimeError("boom"))
+    assert isinstance(wrapped, ValidationError)
+
+
+def test_validate_description_regex_only_outputs(capsys):
+    validation.validate_description_regex_only(make_description(include_required=True), "collection")
+    captured = capsys.readouterr()
+    assert "AI validation was skipped" in captured.out
+
+
+def test_validate_description_with_ai_failure(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(validation, "validate_with_ai", lambda description, collection_name, model: (5, "needs work", "add detail"))
+    with pytest.raises(ValidationError) as error_info:
+        validation.validate_description_with_ai(make_description(include_required=True), "collection", model="model")
+
+    assert "below threshold" in str(error_info.value)
+
+
+def test_validate_description_with_ai_success(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(validation, "validate_with_ai", lambda description, collection_name, model: (9, "clear", ""))
+    result = validation.validate_description_with_ai(make_description(include_required=True), "collection", model="model")
+    assert result["score"] == 9
+
+
+def test_validate_description_hybrid_skip_ai_runs_real_function(monkeypatch: pytest.MonkeyPatch, capsys):
+    result = validation.validate_description_hybrid(make_description(include_required=True), "collection", skip_ai_validation=True)
+    captured = capsys.readouterr()
+    assert result is None
+    assert "Description validated" in captured.out
+
+
+def test_validate_description_hybrid_with_ai_invokes_real_flow(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(validation, "validate_with_ai", lambda description, collection_name, model: (8, "clear", ""))
+    result = validation.validate_description_hybrid(make_description(include_required=True), "collection", skip_ai_validation=False, model="model")
+    assert result["score"] == 8
+
+
+def test_validation_import_missing_ollama(monkeypatch: pytest.MonkeyPatch):
+    module = importlib.import_module("validation")
+    original_import = builtins.__import__
+
+    def fake_import(name, *args, **kwargs):
+        if name == "ollama" or name.startswith("ollama."):
+            raise ImportError("missing ollama")
+        return original_import(name, *args, **kwargs)
+
+    with mock.patch("builtins.__import__", side_effect=fake_import):
+        with pytest.raises(SystemExit):
+            importlib.reload(module)
+
+    importlib.reload(module)
 
 
 def test_validate_description_hybrid_skip_ai(monkeypatch: pytest.MonkeyPatch):

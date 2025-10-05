@@ -160,3 +160,27 @@ def test_create_chunks_from_notes_empty_list():
         chunk_creator.create_chunks_from_notes([])
 
     assert exit_info.value.code == 1
+
+
+def test_build_text_splitters_uses_stubbed_classes():
+    header_splitter, recursive_splitter = chunk_creator.build_text_splitters(128, 16)
+    assert hasattr(header_splitter, "split_text")
+    assert hasattr(recursive_splitter, "split_text")
+
+
+def test_chunk_markdown_content_falls_back_on_failure(monkeypatch: pytest.MonkeyPatch, capsys):
+    def failing_build_text_splitters(*_args, **_kwargs):
+        class FailingHeader:
+            def split_text(self, _markdown):
+                raise RuntimeError("fail")
+
+        return FailingHeader(), DummyRecursiveSplitter(target_size=50)
+
+    monkeypatch.setattr(chunk_creator, "build_text_splitters", failing_build_text_splitters)
+
+    chunks = chunk_creator.chunk_markdown_content("content", target_chars=100)
+
+    captured = capsys.readouterr()
+    assert "Header splitting failed" in captured.err
+    assert len(chunks) == 1
+    assert chunks[0]["content"] == "content"

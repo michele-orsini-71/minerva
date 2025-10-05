@@ -110,6 +110,34 @@ def test_generate_embedding_retry_exhausted(mock_ollama_service, monkeypatch: py
         embedding.generate_embedding("will fail", max_retries=0)
 
 
+def test_generate_embedding_missing_field(mock_ollama_service, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(embedding.time, "sleep", lambda *_: None)
+    monkeypatch.setattr(embedding, "ollama_embeddings", lambda model, prompt: {})
+
+    with pytest.raises(embedding.EmbeddingError):
+        embedding.generate_embedding("missing", max_retries=0)
+
+
+def test_generate_embedding_empty_vector(mock_ollama_service, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(embedding.time, "sleep", lambda *_: None)
+    monkeypatch.setattr(embedding, "ollama_embeddings", lambda model, prompt: {"embedding": []})
+
+    with pytest.raises(embedding.EmbeddingError):
+        embedding.generate_embedding("empty", max_retries=0)
+
+
+def test_generate_embedding_connection_error(mock_ollama_service, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(embedding.time, "sleep", lambda *_: None)
+
+    def connection_error(model: str, prompt: str):
+        raise RuntimeError("connection refused")
+
+    monkeypatch.setattr(embedding, "ollama_embeddings", connection_error)
+
+    with pytest.raises(embedding.OllamaServiceError):
+        embedding.generate_embedding("down", max_retries=0)
+
+
 def test_initialize_embedding_service_success(mock_ollama_service):
     status = embedding.initialize_embedding_service()
     assert status["service_available"]
@@ -143,6 +171,12 @@ def test_check_ollama_service(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(embedding.ollama, "list", lambda: SimpleNamespace(models=[]))
     assert embedding.check_ollama_service() is True
 
+    def raise_error():
+        raise RuntimeError("offline")
+
+    monkeypatch.setattr(embedding.ollama, "list", raise_error)
+    assert embedding.check_ollama_service() is False
+
 
 def test_check_model_availability(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(embedding.ollama, "list", lambda: SimpleNamespace(models=[SimpleNamespace(model="model")]))
@@ -150,3 +184,49 @@ def test_check_model_availability(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(embedding.ollama, "list", lambda: SimpleNamespace(models=[]))
     assert embedding.check_model_availability("model") is False
 
+    def explode():
+        raise RuntimeError("offline")
+
+    monkeypatch.setattr(embedding.ollama, "list", explode)
+    assert embedding.check_model_availability("model") is False
+
+
+def test_generate_embeddings_progress_and_failures(monkeypatch: pytest.MonkeyPatch, capsys):
+    monkeypatch.setattr(embedding, "initialize_embedding_service", lambda model: {"model_name": model})
+
+    chunks = [build_chunk(chunk_id="chunk-0", index=0), build_chunk(chunk_id="chunk-1", index=1)]
+    invocation = {"count": 0}
+
+    def generate_with_tracking(text: str, **_kwargs):
+        if invocation["count"] == 1:
+            raise embedding.EmbeddingError("fail")
+        invocation["count"] += 1
+        return [1.0, 0.0, 0.0]
+
+    monkeypatch.setattr(embedding, "generate_embedding", generate_with_tracking)
+
+    progress_events = []
+
+    result = embedding.generate_embeddings(
+        chunks,
+        progress_callback=lambda current, total: progress_events.append((current, total)),
+    )
+
+    assert len(result) == 1
+    assert progress_events[-1] == (len(chunks), len(chunks))
+    captured = capsys.readouterr()
+    assert "Failed chunks" in captured.out
+    assert progress_events == [(0, 2), (1, 2), (2, 2)]
+
+
+def test_generate_embeddings_all_fail(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(embedding, "initialize_embedding_service", lambda model: {"model_name": model})
+    def fail_generate_embedding(*_args, **_kwargs):
+        raise RuntimeError("fail")
+
+    monkeypatch.setattr(embedding, "generate_embedding", fail_generate_embedding)
+
+    chunks = [build_chunk(chunk_id="chunk-0", index=0)]
+
+    with pytest.raises(embedding.EmbeddingError):
+        embedding.generate_embeddings(chunks)

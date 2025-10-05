@@ -1,6 +1,9 @@
+import importlib
 from types import SimpleNamespace
 from typing import List
+from unittest import mock
 
+import builtins
 import pytest
 
 import storage
@@ -203,3 +206,121 @@ def test_print_storage_summary_outputs(capsys):
     storage.print_storage_summary({"successful": 1, "failed": 0, "batches": 1, "errors": []})
     captured = capsys.readouterr()
     assert "Storage complete" in captured.out
+
+
+def test_collection_exists_raises_storage_error(monkeypatch: pytest.MonkeyPatch):
+    def failing_list():
+        raise RuntimeError("boom")
+
+    client = SimpleNamespace(list_collections=failing_list)
+
+    with pytest.raises(storage.StorageError):
+        storage.collection_exists(client, "name")
+
+
+def test_delete_existing_collection_failure(monkeypatch: pytest.MonkeyPatch):
+    class DummyClient:
+        def delete_collection(self, name):
+            raise RuntimeError("cannot delete")
+
+    monkeypatch.setattr(storage, "collection_exists", lambda client, name: True)
+
+    with pytest.raises(storage.StorageError):
+        storage.delete_existing_collection(DummyClient(), "name")
+
+
+def test_create_new_collection_failure(monkeypatch: pytest.MonkeyPatch):
+    class DummyClient:
+        def create_collection(self, *args, **kwargs):
+            raise RuntimeError("fail")
+
+    with pytest.raises(storage.StorageError):
+        storage.create_new_collection(DummyClient(), "name", {})
+
+
+def test_print_collection_creation_summary_without_description(capsys):
+    storage.print_collection_creation_summary("name", "", "now")
+    captured = capsys.readouterr()
+    assert "Created new collection" in captured.out
+
+
+def test_create_collection_success(monkeypatch: pytest.MonkeyPatch):
+    metadata = {"created_at": "now"}
+    monkeypatch.setattr(storage, "collection_exists", lambda client, name: False)
+    monkeypatch.setattr(storage, "build_collection_metadata", lambda description: metadata)
+    monkeypatch.setattr(storage, "create_new_collection", lambda client, name, metadata: SimpleNamespace(name=name))
+    monkeypatch.setattr(storage, "print_collection_creation_summary", lambda *args, **kwargs: None)
+
+    result = storage.create_collection(object(), "name", "desc")
+    assert result.name == "name"
+
+
+def test_create_collection_wraps_unexpected_exception(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(storage, "collection_exists", lambda client, name: False)
+    def fail_metadata(description):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(storage, "build_collection_metadata", fail_metadata)
+
+    with pytest.raises(storage.StorageError):
+        storage.create_collection(object(), "name", "desc")
+
+
+def test_recreate_collection_wraps_unexpected_exception(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(storage, "delete_existing_collection", lambda client, name: None)
+    def fail_metadata(description):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(storage, "build_collection_metadata", fail_metadata)
+
+    with pytest.raises(storage.StorageError):
+        storage.recreate_collection(object(), "name", "desc")
+
+
+def test_insert_chunks_progress_callback(monkeypatch: pytest.MonkeyPatch):
+    def fake_insert_batch(collection, batch, batch_num, stats_dict):
+        stats_dict["successful"] += len(batch)
+        stats_dict["batches"] += 1
+        return True
+
+    monkeypatch.setattr(storage, "print_storage_summary", lambda _stats: None)
+    monkeypatch.setattr(storage, "insert_batch_to_collection", fake_insert_batch)
+
+    progress = []
+    chunks = [build_chunk_with_embedding(0), build_chunk_with_embedding(1), build_chunk_with_embedding(2)]
+    stats_result = storage.insert_chunks(SimpleNamespace(), chunks, batch_size=2, progress_callback=lambda current, total: progress.append((current, total)))
+
+    assert stats_result["successful"] == 3
+    assert progress[-1] == (3, 3)
+
+
+def test_insert_chunks_raises_storage_error(monkeypatch: pytest.MonkeyPatch):
+    def explode(collection, batch, batch_num, stats):
+        raise RuntimeError("fail")
+
+    monkeypatch.setattr(storage, "insert_batch_to_collection", explode)
+
+    with pytest.raises(storage.StorageError):
+        storage.insert_chunks(SimpleNamespace(), [build_chunk_with_embedding(0)])
+
+
+def test_print_storage_summary_with_errors(capsys):
+    storage.print_storage_summary({"successful": 0, "failed": 1, "batches": 1, "errors": ["failure"]})
+    captured = capsys.readouterr()
+    assert "Storage errors" in captured.out
+
+
+def test_storage_missing_chromadb_dependency():
+    module = importlib.import_module("storage")
+    original_import = builtins.__import__
+
+    def fake_import(name, *args, **kwargs):
+        if name == "chromadb" or name.startswith("chromadb."):
+            raise ImportError("chromadb missing")
+        return original_import(name, *args, **kwargs)
+
+    with mock.patch("builtins.__import__", side_effect=fake_import):
+        with pytest.raises(SystemExit):
+            importlib.reload(module)
+
+    importlib.reload(module)
