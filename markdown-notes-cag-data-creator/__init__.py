@@ -1,19 +1,43 @@
 """
-Markdown Notes CAG Data Creator - CLI tool for markdown notes RAG pipeline.
+Markdown Notes CAG Data Creator - Multi-collection RAG pipeline tool.
 
-This package provides the 'create-cag-from-markdown-notes' command-line tool for
-processing markdown notes JSON files through a complete RAG pipeline:
-chunking, embedding generation, and ChromaDB storage.
+This package provides a config-based CLI tool for processing markdown notes JSON
+files through a complete RAG pipeline: semantic chunking, embedding generation,
+and multi-collection ChromaDB storage with intelligent routing support.
+
+Key Features:
+- Config-based workflow with JSON configuration files
+- Multi-collection architecture with named, described collections
+- AI-powered validation of collection descriptions (optional)
+- Dry-run mode for validation without data modification
+- Immutable API design throughout the pipeline
+- Local AI processing via Ollama (privacy-first)
 
 Usage:
-    create-cag-from-markdown-notes "path/to/notes.json"
-    create-cag-from-markdown-notes --verbose --chunk-size 1200 "path/to/notes.json"
+    # Create a collection configuration file
+    cat > collections/my_collection.json <<EOF
+    {
+      "collection_name": "my_notes",
+      "description": "Personal notes about software development and research...",
+      "chromadb_path": "/path/to/chromadb_data",
+      "json_file": "/path/to/notes.json",
+      "chunk_size": 1200,
+      "forceRecreate": false,
+      "skipAiValidation": false
+    }
+    EOF
+
+    # Run the pipeline
+    create-cag-from-markdown-notes --config collections/my_collection.json --verbose
+
+    # Dry-run mode (validation only, no data changes)
+    create-cag-from-markdown-notes --config collections/my_collection.json --dry-run
 
 The package is designed as a CLI-only tool and does not expose
-importable functionality.
+importable functionality for direct use.
 """
 
-__version__ = "1.0.0"
+__version__ = "2.0.0"
 __author__ = "Michele"
 
 # CLI-only package - no public API exposed
