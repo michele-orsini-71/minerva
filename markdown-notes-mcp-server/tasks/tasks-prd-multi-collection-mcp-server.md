@@ -42,15 +42,15 @@ Generated from: `prd-multi-collection-mcp-server.md`
 
 ## Tasks
 
-- [ ] **1.0 Implement Configuration Management**
-  - [ ] 1.1 Create `config.schema.json` with JSON schema defining required/optional fields (`chromadb_path`, `default_max_results`, `embedding_model`)
-  - [ ] 1.2 Create `config.json.example` with sample configuration showing absolute paths and default values
-  - [ ] 1.3 Implement `config.py` module with `load_config()` function to read and parse JSON configuration file
-  - [ ] 1.4 Add validation logic in `config.py` to ensure `chromadb_path` is absolute path (not relative)
-  - [ ] 1.5 Add validation for `default_max_results` (integer between 1 and 100)
-  - [ ] 1.6 Add validation for `embedding_model` format (string matching Ollama model naming convention)
-  - [ ] 1.7 Implement clear error messages for missing or invalid configuration fields with actionable remediation steps
-  - [ ] 1.8 Write unit tests in `tests/test_config.py` covering valid configs, missing fields, invalid paths, and out-of-range values
+- [x] **1.0 Implement Configuration Management**
+  - [x] 1.1 Create `config.schema.json` with JSON schema defining required/optional fields (`chromadb_path`, `default_max_results`, `embedding_model`)
+  - [x] 1.2 Create `config.json.example` with sample configuration showing absolute paths and default values
+  - [x] 1.3 Implement `config.py` module with `load_config()` function to read and parse JSON configuration file
+  - [x] 1.4 Add validation logic in `config.py` to ensure `chromadb_path` is absolute path (not relative)
+  - [x] 1.5 Add validation for `default_max_results` (integer between 1 and 100)
+  - [x] 1.6 Add validation for `embedding_model` format (string matching Ollama model naming convention)
+  - [x] 1.7 Implement clear error messages for missing or invalid configuration fields with actionable remediation steps
+  - [x] 1.8 Write unit tests in `tests/test_config.py` covering valid configs, missing fields, invalid paths, and out-of-range values
 
 - [ ] **2.0 Implement Collection Discovery Tool**
   - [ ] 2.1 Create `collection_discovery.py` module with `list_collections()` function

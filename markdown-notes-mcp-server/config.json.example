@@ -1,0 +1,5 @@
+{
+  "chromadb_path": "/absolute/path/to/your/chromadb_data",
+  "default_max_results": 5,
+  "embedding_model": "mxbai-embed-large:latest"
+}

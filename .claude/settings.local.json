@@ -45,7 +45,8 @@
       "Bash(extract-zim-articles:*)",
       "Bash(cat:*)",
       "Bash(timeout 60 python:*)",
-      "Read(//Users/michele/my-code/**)"
+      "Read(//Users/michele/my-code/**)",
+      "Bash(pytest:*)"
     ]
   },
   "outputStyle": "Explanatory"
