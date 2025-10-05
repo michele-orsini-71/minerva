@@ -2,5 +2,7 @@
   "collection_name": "wikipedia_history_articles",
   "description": "Use this collection when searching for historical information from Wikipedia articles about world history, historical events, biographies, and timelines. Contains comprehensive articles covering major historical periods, significant figures, wars, cultural movements, and civilizations. This collection is ideal for historical research, fact-checking dates and events, understanding historical context, or exploring connections between different historical periods and figures.",
   "forceRecreate": false,
-  "skipAiValidation": false
+  "skipAiValidation": false,
+  "chromadb_path": "/Users/michele/my-code/search-markdown-notes/chromadb_data",
+  "json_file": "/Users/michele/my-code/search-markdown-notes/test-data/wikipedia_en_history_nopic_2025-09.json"
 }

@@ -26,7 +26,6 @@ def main():
     print("=" * 60)
 
     try:
-        # Step 0: Load and validate configuration
         config = load_and_validate_config(args.config, verbose=args.verbose)
 
         if args.verbose:
@@ -41,7 +40,6 @@ def main():
         sys.exit(130)
 
     try:
-        # Step 1: Load JSON
         print("Loading notes JSON...")
         notes = load_json_notes(config.json_file)
 
@@ -57,7 +55,6 @@ def main():
             client = initialize_chromadb_client(config.chromadb_path)
 
             if (collection_exists(client, config.collection_name) and not config.force_recreate):
-                # Collection exists but force_recreate=False - this is an error condition
                 raise StorageError(
                     f"Collection '{config.collection_name}' already exists\n"
                     f"  Options:\n"
