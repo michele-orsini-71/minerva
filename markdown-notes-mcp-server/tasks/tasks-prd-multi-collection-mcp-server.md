@@ -52,16 +52,16 @@ Generated from: `prd-multi-collection-mcp-server.md`
   - [x] 1.7 Implement clear error messages for missing or invalid configuration fields with actionable remediation steps
   - [x] 1.8 Write unit tests in `tests/test_config.py` covering valid configs, missing fields, invalid paths, and out-of-range values
 
-- [ ] **2.0 Implement Collection Discovery Tool**
-  - [ ] 2.1 Create `collection_discovery.py` module with `list_collections()` function
-  - [ ] 2.2 Implement ChromaDB client initialization using `storage.py:initialize_chromadb_client()`
-  - [ ] 2.3 Query all collections from ChromaDB using `client.list_collections()`
-  - [ ] 2.4 Extract metadata from each collection: name, description, created_at (from collection.metadata)
-  - [ ] 2.5 Retrieve chunk count for each collection using `collection.count()`
-  - [ ] 2.6 Format response as list of dictionaries with fields: `name`, `description`, `chunk_count`, `created_at`
-  - [ ] 2.7 Implement error handling for ChromaDB connection failures with clear error messages
-  - [ ] 2.8 Write unit tests in `tests/test_collection_discovery.py` with mocked ChromaDB client and metadata
-  - [ ] 2.9 Add integration test for real ChromaDB connection in `tests/test_integration.py`
+- [x] **2.0 Implement Collection Discovery Tool**
+  - [x] 2.1 Create `collection_discovery.py` module with `list_collections()` function
+  - [x] 2.2 Implement ChromaDB client initialization using `storage.py:initialize_chromadb_client()`
+  - [x] 2.3 Query all collections from ChromaDB using `client.list_collections()`
+  - [x] 2.4 Extract metadata from each collection: name, description, created_at (from collection.metadata)
+  - [x] 2.5 Retrieve chunk count for each collection using `collection.count()`
+  - [x] 2.6 Format response as list of dictionaries with fields: `name`, `description`, `chunk_count`, `created_at`
+  - [x] 2.7 Implement error handling for ChromaDB connection failures with clear error messages
+  - [x] 2.8 Write unit tests in `tests/test_collection_discovery.py` with mocked ChromaDB client and metadata
+  - [x] 2.9 Add integration test for real ChromaDB connection in `tests/test_integration.py`
 
 - [ ] **3.0 Implement Semantic Search with Context Retrieval**
   - [ ] 3.1 Create `search_tools.py` module with `search_knowledge_base()` function accepting parameters: `query`, `collection_name`, `context_mode`, `max_results`
