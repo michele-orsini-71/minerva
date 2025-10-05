@@ -188,7 +188,66 @@ def check_model_availability(model_name: str = AI_MODEL) -> bool:
         return False
 
 
+def parse_ai_validation_response(response_text: str) -> Tuple[int, str, str]:
+    """Parse and validate AI response JSON for validation results."""
+    import json
+
+    try:
+        # Try to extract JSON from response (handle cases where model adds extra text)
+        json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+        if json_match:
+            response_text = json_match.group(0)
+
+        result = json.loads(response_text)
+        score = result.get('score', 0)
+        reasoning = result.get('reasoning', 'No reasoning provided')
+        suggestions = result.get('suggestions', '')
+
+        return (score, reasoning, suggestions)
+
+    except json.JSONDecodeError:
+        raise ValidationError(
+            f"AI model returned invalid response format\n"
+            f"  Response: {response_text[:200]}...\n"
+            f"  Suggestion: Try again or skip AI validation with 'skipAiValidation': true"
+        )
+
+
+def validate_ai_score(score: Any) -> int:
+    """Validate that AI score is a valid number in the expected range."""
+    if not isinstance(score, (int, float)) or score < 0 or score > 10:
+        raise ValidationError(
+            f"AI model returned invalid score: {score}\n"
+            f"  Expected: number between 0-10\n"
+            f"  Suggestion: Try again or skip AI validation with 'skipAiValidation': true"
+        )
+    return int(score)
+
+
+def call_ollama_ai(description: str, collection_name: str, model: str) -> str:
+    """Call Ollama AI model with validation prompt."""
+    prompt = AI_VALIDATION_PROMPT.format(
+        collection_name=collection_name,
+        description=description
+    )
+
+    response = ollama_chat(
+        model=model,
+        messages=[{
+            'role': 'user',
+            'content': prompt
+        }],
+        options={
+            'temperature': 0.1,  # Low temperature for consistent scoring
+            'num_predict': 500
+        }
+    )
+
+    return response['message']['content'].strip()
+
+
 def validate_with_ai(description: str, collection_name: str, model: str = AI_MODEL) -> Tuple[int, str, str]:
+    """Validate collection description using AI model."""
     # Check model availability first
     if not check_model_availability(model):
         raise ValidationError(
@@ -201,55 +260,16 @@ def validate_with_ai(description: str, collection_name: str, model: str = AI_MOD
         )
 
     try:
-        # Call Ollama with the validation prompt
-        prompt = AI_VALIDATION_PROMPT.format(
-            collection_name=collection_name,
-            description=description
-        )
-
-        response = ollama_chat(
-            model=model,
-            messages=[{
-                'role': 'user',
-                'content': prompt
-            }],
-            options={
-                'temperature': 0.1,  # Low temperature for consistent scoring
-                'num_predict': 500
-            }
-        )
-
-        response_text = response['message']['content'].strip()
+        # Call Ollama and get response
+        response_text = call_ollama_ai(description, collection_name, model)
 
         # Parse JSON response
-        import json
-        try:
-            # Try to extract JSON from response (handle cases where model adds extra text)
-            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
-            if json_match:
-                response_text = json_match.group(0)
-
-            result = json.loads(response_text)
-            score = result.get('score', 0)
-            reasoning = result.get('reasoning', 'No reasoning provided')
-            suggestions = result.get('suggestions', '')
-
-        except json.JSONDecodeError:
-            raise ValidationError(
-                f"AI model returned invalid response format\n"
-                f"  Response: {response_text[:200]}...\n"
-                f"  Suggestion: Try again or skip AI validation with 'skipAiValidation': true"
-            )
+        score, reasoning, suggestions = parse_ai_validation_response(response_text)
 
         # Validate score is in range
-        if not isinstance(score, (int, float)) or score < 0 or score > 10:
-            raise ValidationError(
-                f"AI model returned invalid score: {score}\n"
-                f"  Expected: number between 0-10\n"
-                f"  Suggestion: Try again or skip AI validation with 'skipAiValidation': true"
-            )
+        validated_score = validate_ai_score(score)
 
-        return (int(score), reasoning, suggestions)
+        return (validated_score, reasoning, suggestions)
 
     except Exception as error:
         if isinstance(error, ValidationError):

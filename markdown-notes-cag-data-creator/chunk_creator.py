@@ -102,6 +102,52 @@ def chunk_markdown_content(markdown: str, target_chars: int = 1200, overlap_char
 
     return all_chunks
 
+
+def calculate_chunk_statistics(chunks: List[Chunk]) -> Dict[str, Any]:
+    """Calculate comprehensive statistics about created chunks."""
+    if not chunks:
+        return {
+            'avg_chunk_size': 0,
+            'min_chunk_size': 0,
+            'max_chunk_size': 0,
+            'unique_note_ids': 0,
+            'avg_chunks_per_note': 0
+        }
+
+    all_chunk_sizes = [chunk.size for chunk in chunks]
+    unique_note_ids = len(set(chunk.noteId for chunk in chunks))
+
+    return {
+        'avg_chunk_size': sum(all_chunk_sizes) / len(all_chunk_sizes),
+        'min_chunk_size': min(all_chunk_sizes),
+        'max_chunk_size': max(all_chunk_sizes),
+        'unique_note_ids': unique_note_ids,
+        'avg_chunks_per_note': len(chunks) / unique_note_ids if unique_note_ids else 0
+    }
+
+
+def log_chunking_progress(current: int, total: int, chunks_created: int) -> None:
+    """Log progress during chunking operation."""
+    percentage = (current / total * 100) if total > 0 else 0
+    print(f"  Progress: {current}/{total} notes ({percentage:.1f}%) - {chunks_created} chunks created")
+
+
+def print_chunking_summary(stats: Dict[str, Any], failed_notes: List[Dict[str, str]], total_chunks: int) -> None:
+    """Print comprehensive summary of chunking operation."""
+    print(f"   Chunking complete:")
+    print(f"  Successfully processed: {stats['unique_note_ids']} notes")
+    print(f"  Failed: {len(failed_notes)} notes")
+    print(f"  Total chunks created: {total_chunks}")
+    print(f"  Average chunks per note: {stats['avg_chunks_per_note']:.1f}")
+    print(f"  Average chunk size: {stats['avg_chunk_size']:.0f} chars")
+    print(f"  Chunk size range: {stats['min_chunk_size']}-{stats['max_chunk_size']} chars")
+
+    if failed_notes:
+        print(f"\n   Failed notes:")
+        for failed in failed_notes:
+            print(f"  - {failed['title']}: {failed['error']}")
+
+
 def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 1200, overlap_chars: int = 200) -> ChunkList:
     chunks = []
     failed_notes = []
@@ -141,7 +187,7 @@ def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 12
 
             # Progress feedback
             if (i + 1) % 50 == 0 or i == len(notes) - 1:
-                print(f"  Progress: {i + 1}/{len(notes)} notes ({(i + 1) / len(notes) * 100:.1f}%) - {len(chunks)} chunks created")
+                log_chunking_progress(i + 1, len(notes), len(chunks))
 
         except Exception as error:
             failed_notes.append({
@@ -151,34 +197,9 @@ def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 12
             print(f"   Failed to process note '{note.get('title', 'Unknown')}': {error}", file=sys.stderr)
             continue
 
-    # Summary statistics
-    if chunks:
-        # Calculate chunk size statistics
-        all_chunk_sizes = [chunk.size for chunk in chunks]
-        avg_chunk_size = sum(all_chunk_sizes) / len(all_chunk_sizes)
-        min_chunk_size = min(all_chunk_sizes)
-        max_chunk_size = max(all_chunk_sizes)
-
-        # Calculate notes processed
-        unique_note_ids = len(set(chunk.noteId for chunk in chunks))
-        avg_chunks_per_note = len(chunks) / unique_note_ids if unique_note_ids else 0
-    else:
-        avg_chunk_size = min_chunk_size = max_chunk_size = 0
-        unique_note_ids = 0
-        avg_chunks_per_note = 0
-
-    print(f"   Chunking complete:")
-    print(f"  Successfully processed: {unique_note_ids} notes")
-    print(f"  Failed: {len(failed_notes)} notes")
-    print(f"  Total chunks created: {len(chunks)}")
-    print(f"  Average chunks per note: {avg_chunks_per_note:.1f}")
-    print(f"  Average chunk size: {avg_chunk_size:.0f} chars")
-    print(f"  Chunk size range: {min_chunk_size}-{max_chunk_size} chars")
-
-    if failed_notes:
-        print(f"\n   Failed notes:")
-        for failed in failed_notes:
-            print(f"  - {failed['title']}: {failed['error']}")
+    # Calculate statistics and print summary
+    stats = calculate_chunk_statistics(chunks)
+    print_chunking_summary(stats, failed_notes, len(chunks))
 
     if not chunks:
         print("Error: No chunks were successfully created", file=sys.stderr)

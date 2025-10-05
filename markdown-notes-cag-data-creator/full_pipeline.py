@@ -16,10 +16,165 @@ from embedding import generate_embeddings, EmbeddingError  # New immutable API
 from storage import collection_exists, initialize_chromadb_client, insert_chunks, get_or_create_collection, StorageError  # New immutable API
 
 
+def calculate_dry_run_estimates(notes, config):
+    """Calculate rough estimates for dry-run mode without actual chunking."""
+    total_chars = sum(len(note['markdown']) for note in notes)
+    avg_note_size = total_chars / len(notes) if notes else 0
+
+    # Rough estimate: assume each chunk is target_chars size
+    estimated_chunks = total_chars // config.chunk_size
+    # Account for overlap and header boundaries (roughly +20% chunks)
+    estimated_chunks = int(estimated_chunks * 1.2)
+
+    # Estimate: ~4 bytes per dimension for embeddings (1024 dimensions typical)
+    estimated_embedding_size = estimated_chunks * 1024 * 4 / (1024 * 1024)  # MB
+    estimated_metadata_size = estimated_chunks * 0.001  # Rough estimate: 1KB per chunk metadata
+    total_estimated_size = estimated_embedding_size + estimated_metadata_size
+
+    return {
+        'total_chars': total_chars,
+        'avg_note_size': avg_note_size,
+        'estimated_chunks': estimated_chunks,
+        'total_estimated_size': total_estimated_size
+    }
+
+
+def print_dry_run_summary(config, notes, estimates, exists):
+    """Print comprehensive dry-run summary."""
+    print(f"Collection Configuration:")
+    print(f"   Name: {config.collection_name}")
+    print(f"   Description: {config.description}")
+    print(f"   Force Recreate: {config.force_recreate}")
+    print()
+    print(f"Data Analysis:")
+    print(f"   Source file: {config.json_file}")
+    print(f"   Notes loaded: {len(notes)}")
+    print(f"   Total content: {estimates['total_chars']:,} characters")
+    print(f"   Average note size: {estimates['avg_note_size']:.0f} characters")
+    print(f"   Target chunk size: {config.chunk_size} characters")
+    print()
+    print(f"Estimates (without actual chunking):")
+    print(f"   Estimated chunks: ~{estimates['estimated_chunks']:,}")
+    print(f"   Estimated storage: ~{estimates['total_estimated_size']:.2f} MB")
+    print(f"   Note: Actual values may vary by ±20% depending on content structure")
+    print()
+    print(f"Collection Status:")
+    print(f"   ChromaDB path: {config.chromadb_path}")
+    print(f"   Collection exists: {'YES' if exists else 'NO'}")
+
+
+def validate_dry_run_config(config, exists):
+    """Validate configuration in dry-run mode and exit if invalid."""
+    if exists and config.force_recreate:
+        print(f"   Action: Will DELETE and recreate (WARNING: destructive!)")
+    elif exists and not config.force_recreate:
+        print(f"   Action: Will FAIL (collection exists, forceRecreate=false)")
+        print(f"   ERROR: Configuration would fail in real run!")
+        print(f"   Fix: Set 'forceRecreate': true or use different collection name")
+        print()
+        print("=" * 60)
+        print("DRY-RUN VALIDATION FAILED")
+        sys.exit(1)
+    else:
+        print(f"   Action: Will create new collection")
+
+
+def run_dry_run_mode(config, args, notes):
+    """Execute dry-run validation mode."""
+    print("DRY-RUN PREVIEW (fast validation mode)")
+    print("=" * 60)
+
+    # Check if collection exists
+    client = initialize_chromadb_client(config.chromadb_path)
+    exists = collection_exists(client, config.collection_name)
+
+    # Calculate estimates
+    estimates = calculate_dry_run_estimates(notes, config)
+
+    # Print summary
+    print_dry_run_summary(config, notes, estimates, exists)
+
+    # Validate and potentially exit
+    validate_dry_run_config(config, exists)
+
+    print()
+    print("=" * 60)
+    print("DRY-RUN VALIDATION SUCCESSFUL")
+    print("Configuration is valid and ready for processing")
+    print(f"Run without --dry-run to execute the pipeline")
+    sys.exit(0)
+
+
+def run_normal_pipeline(config, args, notes, start_time):
+    """Execute the normal RAG pipeline with chunking, embedding, and storage."""
+    # Create chunks (immutable)
+    print("Creating semantic chunks...")
+    chunks = create_chunks_from_notes(notes, target_chars=config.chunk_size)
+    print(f"   Created {len(chunks)} chunks from {len(notes)} notes")
+    print()
+
+    # Initialize storage
+    client = initialize_chromadb_client(config.chromadb_path)
+
+    if (collection_exists(client, config.collection_name) and not config.force_recreate):
+        raise StorageError(
+            f"Collection '{config.collection_name}' already exists\n"
+            f"  Options:\n"
+            f"    1. Use a different collection name\n"
+            f"    2. Set 'forceRecreate': true in your configuration file to delete and recreate\n"
+            f"       (WARNING: This will permanently delete all existing data!)\n"
+            f"    3. Use the existing collection (not currently supported)\n"
+            f"  Note: force_recreate is a destructive operation - use with caution!"
+        )
+
+    # Generate embeddings (immutable)
+    print("Generating embeddings with Ollama...")
+    chunks_with_embeddings = generate_embeddings(chunks)
+    print(f"   Generated {len(chunks_with_embeddings)} embeddings")
+    print()
+
+    # Store in ChromaDB (immutable)
+    print(f"Storing in ChromaDB collection '{config.collection_name}'...")
+
+    collection = get_or_create_collection(
+        client,
+        collection_name=config.collection_name,
+        description=config.description,
+        force_recreate=config.force_recreate
+    )
+
+    def progress_callback(current, total):
+        if args.verbose:
+            print(f"   Storing: {current}/{total} chunks ({current/total*100:.1f}%)")
+
+    stats = insert_chunks(collection, chunks_with_embeddings, progress_callback=progress_callback)
+    print(f"   Stored {stats['successful']} chunks in collection '{config.collection_name}'")
+    if stats['failed'] > 0:
+        print(f"   Failed to store {stats['failed']} chunks")
+    print()
+
+    return chunks, chunks_with_embeddings, stats
+
+
+def print_pipeline_summary(config, notes, chunks, chunks_with_embeddings, stats, processing_time):
+    """Print final pipeline execution summary."""
+    print("Pipeline completed successfully!")
+    print("=" * 60)
+    print(f"Collection: {config.collection_name}")
+    print(f"Description: {config.description[:60]}...")
+    print(f"Notes processed: {len(notes)}")
+    print(f"Chunks created: {len(chunks)}")
+    print(f"Embeddings generated: {len(chunks_with_embeddings)}")
+    print(f"Chunks stored: {stats['successful']}")
+    print(f"Processing time: {processing_time:.1f} seconds")
+    print(f"Performance: {len(chunks) / processing_time:.1f} chunks/second")
+    print()
+    print(f"Collection '{config.collection_name}' ready for RAG queries")
+    print(f"   Database location: {config.chromadb_path}")
+
+
 def main():
     args = parse_pipeline_args()
-
-    # Start processing
     start_time = time.time()
 
     print("Markdown Notes Multi-Collection RAG Pipeline")
@@ -53,135 +208,19 @@ def main():
             print(f"   Average note size: {avg_chars:.0f} characters")
             print()
 
-        # DRY-RUN MODE: Fast validation without expensive operations
+        # Execute dry-run or normal mode
         if args.dry_run:
-            print("DRY-RUN PREVIEW (fast validation mode)")
-            print("=" * 60)
-
-            # Check if collection exists
-            client = initialize_chromadb_client(config.chromadb_path)
-            exists = collection_exists(client, config.collection_name)
-
-            # Calculate rough estimates WITHOUT actually chunking (for speed)
-            total_chars = sum(len(note['markdown']) for note in notes)
-            avg_note_size = total_chars / len(notes) if notes else 0
-
-            # Rough estimate: assume each chunk is target_chars size
-            estimated_chunks = total_chars // config.chunk_size
-            # Account for overlap and header boundaries (roughly +20% chunks)
-            estimated_chunks = int(estimated_chunks * 1.2)
-
-            # Estimate: ~4 bytes per dimension for embeddings (1024 dimensions typical)
-            estimated_embedding_size = estimated_chunks * 1024 * 4 / (1024 * 1024)  # MB
-            estimated_metadata_size = estimated_chunks * 0.001  # Rough estimate: 1KB per chunk metadata
-            total_estimated_size = estimated_embedding_size + estimated_metadata_size
-
-            print(f"Collection Configuration:")
-            print(f"   Name: {config.collection_name}")
-            print(f"   Description: {config.description}")
-            print(f"   Force Recreate: {config.force_recreate}")
-            print()
-            print(f"Data Analysis:")
-            print(f"   Source file: {config.json_file}")
-            print(f"   Notes loaded: {len(notes)}")
-            print(f"   Total content: {total_chars:,} characters")
-            print(f"   Average note size: {avg_note_size:.0f} characters")
-            print(f"   Target chunk size: {config.chunk_size} characters")
-            print()
-            print(f"Estimates (without actual chunking):")
-            print(f"   Estimated chunks: ~{estimated_chunks:,}")
-            print(f"   Estimated storage: ~{total_estimated_size:.2f} MB")
-            print(f"   Note: Actual values may vary by ±20% depending on content structure")
-            print()
-            print(f"Collection Status:")
-            print(f"   ChromaDB path: {config.chromadb_path}")
-            print(f"   Collection exists: {'YES' if exists else 'NO'}")
-            if exists and config.force_recreate:
-                print(f"   Action: Will DELETE and recreate (WARNING: destructive!)")
-            elif exists and not config.force_recreate:
-                print(f"   Action: Will FAIL (collection exists, forceRecreate=false)")
-                print(f"   ERROR: Configuration would fail in real run!")
-                print(f"   Fix: Set 'forceRecreate': true or use different collection name")
-                print()
-                print("=" * 60)
-                print("DRY-RUN VALIDATION FAILED")
+            run_dry_run_mode(config, args, notes)
+        else:
+            try:
+                chunks, chunks_with_embeddings, stats = run_normal_pipeline(config, args, notes, start_time)
+                processing_time = time.time() - start_time
+                print_pipeline_summary(config, notes, chunks, chunks_with_embeddings, stats, processing_time)
+            except StorageError as error:
+                print(f"\nStorage Error:\n{error}", file=sys.stderr)
+                print(f"\nCollection: {config.collection_name}", file=sys.stderr)
+                print(f"Configuration file: {args.config}", file=sys.stderr)
                 sys.exit(1)
-            else:
-                print(f"   Action: Will create new collection")
-            print()
-            print("=" * 60)
-            print("DRY-RUN VALIDATION SUCCESSFUL")
-            print("Configuration is valid and ready for processing")
-            print(f"Run without --dry-run to execute the pipeline")
-            sys.exit(0)
-
-        # NORMAL MODE: Create chunks (immutable)
-        print("Creating semantic chunks...")
-        chunks = create_chunks_from_notes(notes, target_chars=config.chunk_size)
-        print(f"   Created {len(chunks)} chunks from {len(notes)} notes")
-        print()
-
-        # NORMAL MODE: Continue with full pipeline
-        try:
-            client = initialize_chromadb_client(config.chromadb_path)
-
-            if (collection_exists(client, config.collection_name) and not config.force_recreate):
-                raise StorageError(
-                    f"Collection '{config.collection_name}' already exists\n"
-                    f"  Options:\n"
-                    f"    1. Use a different collection name\n"
-                    f"    2. Set 'forceRecreate': true in your configuration file to delete and recreate\n"
-                    f"       (WARNING: This will permanently delete all existing data!)\n"
-                    f"    3. Use the existing collection (not currently supported)\n"
-                    f"  Note: force_recreate is a destructive operation - use with caution!"
-                )
-
-            # Step 3: Generate embeddings (immutable)
-            print("Generating embeddings with Ollama...")
-            chunks_with_embeddings = generate_embeddings(chunks)
-            print(f"   Generated {len(chunks_with_embeddings)} embeddings")
-            print()
-
-            # Step 4: Store in ChromaDB (immutable)
-            print(f"Storing in ChromaDB collection '{config.collection_name}'...")
-
-            collection = get_or_create_collection(
-                client,
-                collection_name=config.collection_name,
-                description=config.description,
-                force_recreate=config.force_recreate
-            )
-
-            def progress_callback(current, total):
-                if args.verbose:
-                    print(f"   Storing: {current}/{total} chunks ({current/total*100:.1f}%)")
-
-            stats = insert_chunks(collection, chunks_with_embeddings, progress_callback=progress_callback)
-            print(f"   Stored {stats['successful']} chunks in collection '{config.collection_name}'")
-            if stats['failed'] > 0:
-                print(f"   Failed to store {stats['failed']} chunks")
-            print()
-        except StorageError as error:
-            print(f"\nStorage Error:\n{error}", file=sys.stderr)
-            print(f"\nCollection: {config.collection_name}", file=sys.stderr)
-            print(f"Configuration file: {args.config}", file=sys.stderr)
-            sys.exit(1)
-
-        # Final summary
-        processing_time = time.time() - start_time
-        print("Pipeline completed successfully!")
-        print("=" * 60)
-        print(f"Collection: {config.collection_name}")
-        print(f"Description: {config.description[:60]}...")
-        print(f"Notes processed: {len(notes)}")
-        print(f"Chunks created: {len(chunks)}")
-        print(f"Embeddings generated: {len(chunks_with_embeddings)}")
-        print(f"Chunks stored: {stats['successful']}")
-        print(f"Processing time: {processing_time:.1f} seconds")
-        print(f"Performance: {len(chunks) / processing_time:.1f} chunks/second")
-        print()
-        print(f"Collection '{config.collection_name}' ready for RAG queries")
-        print(f"   Database location: {config.chromadb_path}")
 
     except KeyboardInterrupt:
         print("\n   Operation cancelled by user", file=sys.stderr)

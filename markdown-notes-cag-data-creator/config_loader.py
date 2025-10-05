@@ -152,73 +152,91 @@ def validate_config_schema(data: Dict[str, Any], config_path: str) -> None:
             )
 
 
-def load_collection_config(config_path: str) -> CollectionConfig:
+def validate_config_file_exists(config_path: str) -> Path:
+    """Validate that configuration file exists and return Path object."""
+    config_file = Path(config_path)
+
+    if not config_file.exists():
+        raise ConfigError(
+            f"Configuration file not found: {config_path}\n"
+            f"  Expected location: {config_file.absolute()}\n"
+            f"  Suggestion: Create a JSON config file with required fields:\n"
+            f"    - collection_name (required, string)\n"
+            f"    - chromadb_path (required, string)\n"
+            f"    - json_file (required, string)\n"
+            f"    - chunk_size (defaults to 1200, number)\n"
+            f"    - description (required, string)\n"
+            f"    - forceRecreate (optional, boolean, default: false)\n"
+            f"    - skipAiValidation (optional, boolean, default: false)"
+        )
+
+    return config_file
+
+
+def read_json_config_file(config_file: Path, config_path: str) -> Dict[str, Any]:
+    """Read and parse JSON configuration file."""
     try:
-        # Convert to Path object for better error messages
-        config_file = Path(config_path)
+        with open(config_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except json.JSONDecodeError as error:
+        raise ConfigError(
+            f"Invalid JSON syntax in configuration file: {config_path}\n"
+            f"  Error: {error.msg} at line {error.lineno}, column {error.colno}\n"
+            f"  Suggestion: Validate your JSON using a JSON validator or linter"
+        )
+    except Exception as error:
+        raise ConfigError(
+            f"Failed to read configuration file: {config_path}\n"
+            f"  Error: {error}\n"
+            f"  Suggestion: Check file permissions and encoding"
+        )
 
-        # Check if file exists
-        if not config_file.exists():
-            raise ConfigError(
-                f"Configuration file not found: {config_path}\n"
-                f"  Expected location: {config_file.absolute()}\n"
-                f"  Suggestion: Create a JSON config file with required fields:\n"
-                f"    - collection_name (required, string)\n"
-                f"    - chromadb_path (required, string)\n"
-                f"    - json_file (required, string)\n"
-                f"    - chunk_size (defaults to 1200, number)\n"
-                f"    - description (required, string)\n"
-                f"    - forceRecreate (optional, boolean, default: false)\n"
-                f"    - skipAiValidation (optional, boolean, default: false)"
-            )
+    # Validate data is a dictionary
+    if not isinstance(data, dict):
+        raise ConfigError(
+            f"Configuration file must contain a JSON object, got {type(data).__name__}\n"
+            f"  File: {config_path}\n"
+            f"  Suggestion: Ensure the file contains {{ ... }} at the top level"
+        )
 
-        # Read and parse JSON
-        try:
-            with open(config_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-        except json.JSONDecodeError as error:
-            raise ConfigError(
-                f"Invalid JSON syntax in configuration file: {config_path}\n"
-                f"  Error: {error.msg} at line {error.lineno}, column {error.colno}\n"
-                f"  Suggestion: Validate your JSON using a JSON validator or linter"
-            )
-        except Exception as error:
-            raise ConfigError(
-                f"Failed to read configuration file: {config_path}\n"
-                f"  Error: {error}\n"
-                f"  Suggestion: Check file permissions and encoding"
-            )
+    return data
 
-        # Validate data is a dictionary
-        if not isinstance(data, dict):
-            raise ConfigError(
-                f"Configuration file must contain a JSON object, got {type(data).__name__}\n"
-                f"  File: {config_path}\n"
-                f"  Suggestion: Ensure the file contains {{ ... }} at the top level"
-            )
 
-        # Validate against JSON schema (replaces manual validation)
+def extract_config_fields(data: Dict[str, Any]) -> CollectionConfig:
+    """Extract and build CollectionConfig from validated data."""
+    collection_name = data['collection_name'].strip()
+    description = data['description'].strip()
+    force_recreate = data.get('forceRecreate', False)
+    skip_ai_validation = data.get('skipAiValidation', False)
+    chromadb_path = data['chromadb_path'].strip()
+    json_file = data['json_file'].strip()
+    chunk_size = data.get('chunk_size', 1200)
+
+    return CollectionConfig(
+        collection_name=collection_name,
+        description=description,
+        force_recreate=force_recreate,
+        skip_ai_validation=skip_ai_validation,
+        chromadb_path=chromadb_path,
+        json_file=json_file,
+        chunk_size=chunk_size,
+    )
+
+
+def load_collection_config(config_path: str) -> CollectionConfig:
+    """Load and validate collection configuration from JSON file."""
+    try:
+        # Step 1: Validate file exists
+        config_file = validate_config_file_exists(config_path)
+
+        # Step 2: Read and parse JSON
+        data = read_json_config_file(config_file, config_path)
+
+        # Step 3: Validate against JSON schema
         validate_config_schema(data, config_path)
 
-        # Extract validated fields
-        collection_name = data['collection_name'].strip()
-        description = data['description'].strip()
-        force_recreate = data.get('forceRecreate', False)
-        skip_ai_validation = data.get('skipAiValidation', False)
-        chromadb_path = data['chromadb_path'].strip()
-        json_file = data['json_file'].strip()
-        chunk_size = data.get('chunk_size', 1200)
-
-        # Create and return immutable config object
-        return CollectionConfig(
-            collection_name=collection_name,
-            description=description,
-            force_recreate=force_recreate,
-            skip_ai_validation=skip_ai_validation,
-            chromadb_path=chromadb_path,
-            json_file=json_file,
-            chunk_size=chunk_size,
-        )
+        # Step 4: Extract fields and create config object
+        return extract_config_fields(data)
 
     except ConfigError:
         # Re-raise ConfigError as-is

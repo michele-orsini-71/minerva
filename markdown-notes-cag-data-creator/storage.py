@@ -106,6 +106,63 @@ def get_or_create_collection(
     except Exception as error:
         raise StorageError(f"Failed to create/access collection '{collection_name}': {error}")
 
+
+def prepare_chunk_batch_data(batch):
+    """Prepare a batch of chunks for ChromaDB insertion."""
+    ids = [chunk.id for chunk in batch]
+    documents = [chunk.content for chunk in batch]
+    embeddings = [chunk.embedding for chunk in batch]
+    metadatas = [
+        {
+            'noteId': chunk.noteId,
+            'title': chunk.title,
+            'modificationDate': chunk.modificationDate,
+            'creationDate': chunk.creationDate,
+            'size': chunk.size,
+            'chunkIndex': chunk.chunkIndex
+        }
+        for chunk in batch
+    ]
+    return ids, documents, embeddings, metadatas
+
+
+def insert_batch_to_collection(collection, batch, batch_num, stats):
+    """Insert a single batch of chunks into ChromaDB collection."""
+    try:
+        ids, documents, embeddings, metadatas = prepare_chunk_batch_data(batch)
+
+        collection.add(
+            ids=ids,
+            documents=documents,
+            metadatas=metadatas,
+            embeddings=embeddings
+        )
+
+        stats["successful"] += len(batch)
+        stats["batches"] += 1
+        return True
+
+    except Exception as error:
+        error_msg = f"Batch {batch_num} failed: {error}"
+        stats["errors"].append(error_msg)
+        stats["failed"] += len(batch)
+        print(f"   {error_msg}", file=sys.stderr)
+        return False
+
+
+def print_storage_summary(stats):
+    """Print comprehensive summary of storage operation."""
+    print(f"   Storage complete:")
+    print(f"  Successfully stored: {stats['successful']} chunks")
+    print(f"  Failed: {stats['failed']} chunks")
+    print(f"  Batches processed: {stats['batches']}")
+
+    if stats["errors"]:
+        print(f"\n   Storage errors:")
+        for error in stats["errors"]:
+            print(f"  - {error}")
+
+
 def insert_chunks(
     collection: chromadb.Collection,
     chunks_with_embeddings: ChunkWithEmbeddingList,
@@ -131,55 +188,15 @@ def insert_chunks(
             batch = chunks_with_embeddings[i:i + batch_size]
             batch_num = stats["batches"] + 1
 
-            try:
-                # Convert ChunkWithEmbedding objects to ChromaDB format
-                ids = [chunk.id for chunk in batch]
-                documents = [chunk.content for chunk in batch]
-                embeddings = [chunk.embedding for chunk in batch]
-                metadatas = [
-                    {
-                        'noteId': chunk.noteId,
-                        'title': chunk.title,
-                        'modificationDate': chunk.modificationDate,
-                        'creationDate': chunk.creationDate,
-                        'size': chunk.size,
-                        'chunkIndex': chunk.chunkIndex
-                    }
-                    for chunk in batch
-                ]
+            # Insert batch and update stats
+            insert_batch_to_collection(collection, batch, batch_num, stats)
 
-                # Insert batch into collection
-                collection.add(
-                    ids=ids,
-                    documents=documents,
-                    metadatas=metadatas,
-                    embeddings=embeddings
-                )
+            # Progress callback
+            if progress_callback:
+                progress_callback(min(i + batch_size, len(chunks_with_embeddings)), len(chunks_with_embeddings))
 
-                stats["successful"] += len(batch)
-                stats["batches"] += 1
-
-                # Progress callback
-                if progress_callback:
-                    progress_callback(min(i + batch_size, len(chunks_with_embeddings)), len(chunks_with_embeddings))
-
-            except Exception as error:
-                error_msg = f"Batch {batch_num} failed: {error}"
-                stats["errors"].append(error_msg)
-                stats["failed"] += len(batch)
-                print(f"   {error_msg}", file=sys.stderr)
-                continue
-
-        # Summary
-        print(f"   Storage complete:")
-        print(f"  Successfully stored: {stats['successful']} chunks")
-        print(f"  Failed: {stats['failed']} chunks")
-        print(f"  Batches processed: {stats['batches']}")
-
-        if stats["errors"]:
-            print(f"\n   Storage errors:")
-            for error in stats["errors"]:
-                print(f"  - {error}")
+        # Print summary
+        print_storage_summary(stats)
 
         return stats
 
