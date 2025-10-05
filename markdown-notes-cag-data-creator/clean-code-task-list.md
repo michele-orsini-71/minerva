@@ -118,7 +118,7 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
 #### Priority: CRITICAL
 **Issues Found:**
 
-- [ ] **chunk_creator.py:102-200** - `create_chunks_for_notes` is 98 lines (limit: 20)
+- [x] **chunk_creator.py:102-200** - `create_chunks_for_notes` is 98 lines (limit: 20)
   - **Violation Severity:** 490% over limit
   - **Refactoring Strategy:**
     1. Extract statistics calculation to `calculate_chunk_statistics(enriched_notes)`
@@ -126,7 +126,7 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
     3. Extract summary printing to `print_chunking_summary(stats, failed_notes)`
   - **Result:** 4 functions of ~20 lines each
 
-- [ ] **chunk_creator.py:203-285** - `create_chunks_from_notes` is 82 lines (limit: 20)
+- [x] **chunk_creator.py:203-285** - `create_chunks_from_notes` is 82 lines (limit: 20)
   - **Violation Severity:** 410% over limit
   - **Refactoring Strategy:**
     1. Extract Chunk object creation to `build_chunk_from_data(chunk_id, chunk_data, note, chunk_index)`
@@ -134,7 +134,7 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
     3. Extract summary printing to `print_chunking_summary_v2(stats, failed_notes)`
   - **Result:** 3 functions of ~20 lines each
 
-- [ ] **validation.py:191-260** - `validate_with_ai` is 69 lines (limit: 20)
+- [x] **validation.py:191-260** - `validate_with_ai` is 69 lines (limit: 20)
   - **Violation Severity:** 345% over limit
   - **Refactoring Strategy:**
     1. Extract model availability check to separate validation
@@ -142,7 +142,7 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
     3. Extract score validation to `validate_ai_score(score)`
   - **Result:** 4 functions of ~15 lines each
 
-- [ ] **full_pipeline.py:19-242** - `main()` is 223 lines (limit: 20)
+- [x] **full_pipeline.py:19-242** - `main()` is 223 lines (limit: 20)
   - **Violation Severity:** 1115% over limit
   - **Refactoring Strategy:**
     1. Extract dry-run logic to `run_dry_run_validation(config, args)`
@@ -151,7 +151,7 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
     4. Extract summary printing to `print_pipeline_summary(stats, processing_time)`
   - **Result:** 8 functions of ~20-30 lines each
 
-- [ ] **storage.py:190-268** - `insert_chunks` is 78 lines (limit: 20)
+- [x] **storage.py:190-268** - `insert_chunks` is 78 lines (limit: 20)
   - **Violation Severity:** 390% over limit
   - **Refactoring Strategy:**
     1. Extract batch processing loop to `process_chunk_batches(collection, chunks, batch_size, stats)`
@@ -159,7 +159,7 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
     3. Extract summary printing to `print_storage_summary(stats)`
   - **Result:** 4 functions of ~18 lines each
 
-- [ ] **config_loader.py:155-232** - `load_collection_config` is 77 lines (limit: 20)
+- [x] **config_loader.py:155-232** - `load_collection_config` is 77 lines (limit: 20)
   - **Violation Severity:** 385% over limit
   - **Refactoring Strategy:**
     1. Extract file existence checking to `validate_config_file_exists(config_path)`
@@ -173,42 +173,31 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
 #### Priority: HIGH
 **Issues Found:**
 
-- [ ] **full_pipeline.py:44-168** - Nested try-except-if blocks (4 levels deep)
+- [x] **full_pipeline.py:44-168** - Nested try-except-if blocks (4 levels deep)
   - **Current:** Main function has 4 levels of indentation
   - **Violation:** Exceeds 2-level limit
   - **Solution:** Extract to separate functions with guard clauses
-  - **Example:**
-    ```python
-    # Before (4 levels):
-    try:
-        if args.dry_run:
-            if exists:
-                if config.force_recreate:
-                    # 4 levels deep
+  - **Status:** COMPLETED - Extracted error handlers, config/notes loading to separate functions
+  - **Result:** Max 2 levels of nesting in main() function
 
-    # After (2 levels):
-    def check_dry_run_collection_conflict(config, exists):
-        if not exists:
-            return  # Guard clause
-        if not config.force_recreate:
-            raise ConfigError(...)
-    ```
-
-- [ ] **chunk_creator.py:109-164** - Loop with try-except-if (3 levels)
+- [x] **chunk_creator.py:109-164** - Loop with try-except-if (3 levels)
   - **Current:** `for note in notes: try: ... if (i+1) % 50 == 0: ...`
   - **Solution:** Extract progress reporting, extract chunk creation
-  - **Limit to:** 2 levels maximum
+  - **Status:** COMPLETED - Extracted `build_chunks_from_note()` and `should_report_progress()`
+  - **Result:** Max 2 levels of nesting in main loop
 
-- [ ] **validation.py:204-250** - Try-except-try-if-except nesting (4+ levels)
+- [x] **validation.py:204-250** - Try-except-try-if-except nesting (4+ levels)
   - **Current:** Multiple nested error handling blocks
   - **Solution:** Use early returns and extract error parsing
+  - **Status:** COMPLETED - Extracted helper functions for model checking, JSON extraction, error wrapping
+  - **Result:** Max 2 levels of nesting throughout validation module
 
 ### 2.3 "Do One Thing" Principle
 
 #### Priority: CRITICAL
 **Issues Found:**
 
-- [ ] **config_loader.py:155** - `load_collection_config` does 3 things
+- [x] **config_loader.py:155** - `load_collection_config` does 3 things
   - **Violations:**
     1. Validates file exists (I/O concern)
     2. Parses JSON (parsing concern)
@@ -218,8 +207,14 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
     - `read_config_file(path) -> dict`
     - `validate_config_schema(data) -> None`
     - `build_config_object(data) -> CollectionConfig`
+  - **Status:** COMPLETED - Functions extracted:
+    - `validate_config_file_exists()` (line 155)
+    - `read_json_config_file()` (line 176)
+    - `validate_config_schema()` (line 87)
+    - `extract_config_fields()` (line 205)
+    - `load_collection_config()` now orchestrates these functions cleanly
 
-- [ ] **chunk_creator.py:102** - `create_chunks_for_notes` does 4 things
+- [x] **chunk_creator.py:102** - `create_chunks_for_notes` does 4 things
   - **Violations:**
     1. Chunks markdown content (business logic)
     2. Generates IDs (ID generation)
@@ -227,12 +222,29 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
     4. Calculates statistics (statistics)
     5. Prints progress/summary (presentation)
   - **Solution:** Extract each responsibility
+  - **Status:** COMPLETED - Functions extracted:
+    - `build_chunks_from_note()` (line 151) - handles single note chunking
+    - `calculate_chunk_statistics()` (line 106) - statistics calculation
+    - `log_chunking_progress()` (line 129) - progress logging
+    - `print_chunking_summary()` (line 135) - summary printing
+    - `should_report_progress()` (line 180) - progress reporting logic
 
-- [ ] **full_pipeline.py:19** - `main()` does everything
+- [x] **full_pipeline.py:19** - `main()` does everything
   - **Violations:** Acts as orchestrator AND error handler AND presenter
   - **Solution:** Extract pipeline orchestration, error handling, presentation
+  - **Status:** COMPLETED - Functions extracted:
+    - `load_config_with_verbose_output()` (line 255) - config loading
+    - `load_notes_with_verbose_output()` (line 269) - notes loading
+    - `execute_pipeline_mode()` (line 244) - pipeline execution
+    - `run_dry_run_mode()` (line 82) - dry-run mode
+    - `run_normal_pipeline()` (line 108) - normal pipeline
+    - `handle_embedding_error()` (line 176) - specific error handlers
+    - `handle_file_not_found_error()` (line 198)
+    - `handle_storage_error()` (line 216)
+    - `handle_unexpected_error()` (line 224)
+    - `print_pipeline_summary()` (line 159) - summary printing
 
-- [ ] **storage.py:59** - `get_or_create_collection` does 3 things
+- [x] **storage.py:59** - `get_or_create_collection` does 3 things
   - **Violations:**
     1. Checks if collection exists
     2. Deletes if force_recreate
@@ -240,6 +252,12 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
   - **Solution:**
     - `handle_existing_collection(client, name, force_recreate)`
     - `create_new_collection(client, name, description)`
+  - **Status:** COMPLETED - Functions extracted:
+    - `handle_existing_collection()` (line 59) - handles deletion if force_recreate
+    - `build_collection_metadata()` (line 75) - metadata preparation
+    - `create_new_collection()` (line 87) - collection creation
+    - `print_collection_creation_summary()` (line 99) - summary printing
+    - `get_or_create_collection()` now orchestrates these functions cleanly
 
 ### 2.4 Mixed Abstraction Levels
 

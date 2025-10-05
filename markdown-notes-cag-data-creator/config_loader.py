@@ -107,7 +107,7 @@ def validate_config_schema(data: Dict[str, Any], config_path: str) -> None:
                 f'      "chunk_size = Size of the chunks in characters (defaults to 1200)"\n'
                 f"    }}"
             )
-        elif "is not of type" in e.message:
+        elif "is not of type" in error.message:
             raise ConfigError(
                 f"Type validation error in configuration file: {config_path}\n"
                 f"  Field: {error_path}\n"
@@ -116,14 +116,14 @@ def validate_config_schema(data: Dict[str, Any], config_path: str) -> None:
                 f"    - Strings: \"value\" (with quotes)\n"
                 f"    - Booleans: true or false (lowercase, no quotes)"
             )
-        elif "is too short" in e.message or "is too long" in e.message:
+        elif "is too short" in error.message or "is too long" in error.message:
             raise ConfigError(
                 f"Length validation error in configuration file: {config_path}\n"
                 f"  Field: {error_path}\n"
                 f"  Error: {error.message}\n"
                 f"  Suggestion: Check the field length requirements in the schema"
             )
-        elif "does not match" in e.message:
+        elif "does not match" in error.message:
             raise ConfigError(
                 f"Pattern validation error in configuration file: {config_path}\n"
                 f"  Field: {error_path}\n"
@@ -134,8 +134,8 @@ def validate_config_schema(data: Dict[str, Any], config_path: str) -> None:
                 f"    - Be 1-63 characters long\n"
                 f"  Examples: 'bear_notes', 'project-docs', 'team123'"
             )
-        elif "Additional properties are not allowed" in e.message:
-            extra_props = [p for p in e.instance.keys() if p not in COLLECTION_CONFIG_SCHEMA['properties']]
+        elif "Additional properties are not allowed" in error.message:
+            extra_props = [p for p in error.instance.keys() if p not in COLLECTION_CONFIG_SCHEMA['properties']]
             raise ConfigError(
                 f"Unknown fields in configuration file: {config_path}\n"
                 f"  Unknown fields: {', '.join(extra_props)}\n"

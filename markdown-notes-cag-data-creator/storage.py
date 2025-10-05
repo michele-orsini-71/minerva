@@ -56,47 +56,73 @@ def collection_exists(client: chromadb.PersistentClient, collection_name: str) -
     except Exception as error:
         raise StorageError(f"Failed to check if collection '{collection_name}' exists: {error}")
 
+def handle_existing_collection(client: chromadb.PersistentClient, collection_name: str, force_recreate: bool) -> None:
+    """Handle existing collection deletion if force_recreate is True."""
+    exists = collection_exists(client, collection_name)
+
+    if exists and force_recreate:
+        try:
+            client.delete_collection(collection_name)
+            print(f"   Deleted existing collection '{collection_name}' for recreation (force_recreate=True)")
+            print(f"   WARNING: All existing data in this collection has been permanently deleted!")
+        except Exception as error:
+            raise StorageError(
+                f"Failed to delete existing collection '{collection_name}': {error}\n"
+                f"  Suggestion: Check ChromaDB permissions or set force_recreate=False"
+            )
+
+
+def build_collection_metadata(description: str) -> Dict[str, Any]:
+    """Build metadata dictionary for ChromaDB collection."""
+    from datetime import datetime, timezone
+
+    return {
+        "hnsw:space": HNSW_SPACE,  # Cosine similarity for L2-normalized embeddings
+        "version": "1.0",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "description": description
+    }
+
+
+def create_new_collection(client: chromadb.PersistentClient, collection_name: str, metadata: Dict[str, Any]) -> chromadb.Collection:
+    """Create a new ChromaDB collection with provided metadata."""
+    try:
+        collection = client.create_collection(
+            name=collection_name,
+            metadata=metadata
+        )
+        return collection
+    except Exception as error:
+        raise StorageError(f"Failed to create collection '{collection_name}': {error}")
+
+
+def print_collection_creation_summary(collection_name: str, description: str, created_at: str) -> None:
+    """Print summary of collection creation."""
+    print(f"   Created new collection '{collection_name}'")
+    if description:
+        print(f"   Description: {description[:80]}...")
+    print(f"   Created at: {created_at}")
+
+
 def get_or_create_collection(
     client: chromadb.PersistentClient,
     collection_name: str,
     description: str,
     force_recreate: bool = False,
 ) -> chromadb.Collection:
+    """Get existing or create new ChromaDB collection."""
     try:
+        # Step 1: Handle existing collection deletion if needed
+        handle_existing_collection(client, collection_name, force_recreate)
 
-        collection_exists = collection_exists(client, collection_name)
-        if collection_exists and force_recreate:
-            # Force recreation: delete existing collection
-            try:
-                client.delete_collection(collection_name)
-                print(f"   Deleted existing collection '{collection_name}' for recreation (force_recreate=True)")
-                print(f"   WARNING: All existing data in this collection has been permanently deleted!")
-                collection_exists = False  # Collection no longer exists after deletion
-            except Exception as error:
-                raise StorageError(
-                    f"Failed to delete existing collection '{collection_name}': {error}\n"
-                    f"  Suggestion: Check ChromaDB permissions or set force_recreate=False"
-                )
+        # Step 2: Build metadata
+        metadata = build_collection_metadata(description)
 
-        # Prepare metadata
-        from datetime import datetime, timezone
+        # Step 3: Create new collection
+        collection = create_new_collection(client, collection_name, metadata)
 
-        metadata = {
-            "hnsw:space": HNSW_SPACE,  # Cosine similarity for L2-normalized embeddings
-            "version": "1.0",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "description": description
-        }
-
-        collection = client.create_collection(
-            name=collection_name,
-            metadata=metadata
-        )
-
-        print(f"   Created new collection '{collection_name}'")
-        if description:
-            print(f"   Description: {description[:80]}...")
-        print(f"   Created at: {metadata['created_at']}")
+        # Step 4: Print summary
+        print_collection_creation_summary(collection_name, description, metadata['created_at'])
 
         return collection
 
