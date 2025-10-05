@@ -1,6 +1,6 @@
 import sys
 from config_loader import load_collection_config, ConfigError
-from validation import validate_collection_name, validate_description_hybrid, ValidationError
+from validation import validate_collection_name, validate_description_regex_only, validate_description_with_ai, ValidationError
 
 def load_and_validate_config(config_path: str, verbose: bool = False):
     # Step 1: Load configuration
@@ -37,16 +37,11 @@ def load_and_validate_config(config_path: str, verbose: bool = False):
         validate_collection_name(config.collection_name)
         print(f"   Collection name validated: {config.collection_name}")
 
-        # Validate description (hybrid: regex + optional AI)
-        validation_result = validate_description_hybrid(
-            config.description,
-            config.collection_name,
-            skip_ai_validation=config.skip_ai_validation
-        )
-        print(f"   Description validated successfully")
-        if validation_result:
-            print(f"   AI Quality Score: {validation_result['score']}/10")
-        elif config.skip_ai_validation:
+        # Validate description using explicit function based on skip_ai_validation flag
+        if config.skip_ai_validation:
+            validate_description_regex_only(config.description, config.collection_name)
+            validation_result = None
+
             # Warning when AI validation is skipped
             print(f"\n   WARNING: AI validation was skipped (skipAiValidation: true)")
             print(f"   You are responsible for ensuring the description is:")
@@ -57,6 +52,13 @@ def load_and_validate_config(config_path: str, verbose: bool = False):
             print(f"     - Reduced accuracy in multi-collection RAG systems")
             print(f"     - Confusion when selecting the right collection for queries")
             print(f"     - Poor AI routing decisions in production")
+        else:
+            validation_result = validate_description_with_ai(
+                config.description,
+                config.collection_name
+            )
+            print(f"   Description validated successfully")
+            print(f"   AI Quality Score: {validation_result['score']}/10")
         print()
     except ValidationError as error:
         print(f"\n{'=' * 60}", file=sys.stderr)

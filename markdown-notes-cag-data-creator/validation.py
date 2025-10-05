@@ -305,24 +305,42 @@ def validate_with_ai(description: str, collection_name: str, model: str = AI_MOD
         raise wrap_generic_ai_error(error)
 
 
-def validate_description_hybrid(
+def validate_description_regex_only(
+    description: str,
+    collection_name: str
+) -> None:
+    """
+    Validate description using regex rules only (no AI validation).
+
+    Use this when you want to skip AI validation or when AI models are unavailable.
+    You are responsible for ensuring the description is clear, specific, and actionable.
+    """
+    # Mandatory regex validation
+    validate_description_regex(description, collection_name)
+
+    print(f"   Description validated (regex only)")
+    print(f"   NOTE: AI validation was skipped")
+    print(f"   Ensure your description is:")
+    print(f"     - Clear and specific (not vague)")
+    print(f"     - Actionable (explains when to use this collection)")
+    print(f"     - Distinguishable from other collections")
+
+
+def validate_description_with_ai(
     description: str,
     collection_name: str,
-    skip_ai_validation: bool = False,
     model: str = AI_MODEL
-) -> Optional[Dict[str, Any]]:
+) -> Dict[str, Any]:
+    """
+    Validate description using both regex rules and AI quality scoring.
+
+    Returns a dictionary with AI validation results (score, reasoning, suggestions).
+    Raises ValidationError if validation fails.
+    """
     # Step 1: Mandatory regex validation
     validate_description_regex(description, collection_name)
 
-    # Step 2: Optional AI validation
-    if skip_ai_validation:
-        print(f"   AI validation skipped for collection '{collection_name}'")
-        print(f"   You are responsible for ensuring the description is:")
-        print(f"   - Clear and specific (not vague)")
-        print(f"   - Actionable (explains when to use this collection)")
-        print(f"   - Distinguishable from other collections")
-        return None
-
+    # Step 2: AI validation
     print(f"Running AI validation for collection '{collection_name}'...")
     score, reasoning, suggestions = validate_with_ai(description, collection_name, model)
 
@@ -343,8 +361,7 @@ def validate_description_hybrid(
             f"\n"
             f"  Options:\n"
             f"    1. Improve the description based on AI feedback\n"
-            f"    2. Skip AI validation by setting 'skipAiValidation': true\n"
-            f"       (use this if you believe AI is being too strict)\n"
+            f"    2. Use validate_description_regex_only() if you believe AI is too strict\n"
         )
 
         raise ValidationError(error_msg)
@@ -356,6 +373,25 @@ def validate_description_hybrid(
         'reasoning': reasoning,
         'suggestions': suggestions
     }
+
+
+# Backward compatibility: Keep old function but mark as deprecated
+def validate_description_hybrid(
+    description: str,
+    collection_name: str,
+    skip_ai_validation: bool = False,
+    model: str = AI_MODEL
+) -> Optional[Dict[str, Any]]:
+    """
+    DEPRECATED: Use validate_description_regex_only() or validate_description_with_ai() instead.
+
+    This function is kept for backward compatibility but will be removed in future versions.
+    """
+    if skip_ai_validation:
+        validate_description_regex_only(description, collection_name)
+        return None
+    else:
+        return validate_description_with_ai(description, collection_name, model)
 
 
 if __name__ == "__main__":

@@ -56,19 +56,19 @@ def collection_exists(client: chromadb.PersistentClient, collection_name: str) -
     except Exception as error:
         raise StorageError(f"Failed to check if collection '{collection_name}' exists: {error}")
 
-def handle_existing_collection(client: chromadb.PersistentClient, collection_name: str, force_recreate: bool) -> None:
-    """Handle existing collection deletion if force_recreate is True."""
+def delete_existing_collection(client: chromadb.PersistentClient, collection_name: str) -> None:
+    """Delete an existing collection if it exists."""
     exists = collection_exists(client, collection_name)
 
-    if exists and force_recreate:
+    if exists:
         try:
             client.delete_collection(collection_name)
-            print(f"   Deleted existing collection '{collection_name}' for recreation (force_recreate=True)")
+            print(f"   Deleted existing collection '{collection_name}'")
             print(f"   WARNING: All existing data in this collection has been permanently deleted!")
         except Exception as error:
             raise StorageError(
                 f"Failed to delete existing collection '{collection_name}': {error}\n"
-                f"  Suggestion: Check ChromaDB permissions or set force_recreate=False"
+                f"  Suggestion: Check ChromaDB permissions"
             )
 
 
@@ -104,16 +104,59 @@ def print_collection_creation_summary(collection_name: str, description: str, cr
     print(f"   Created at: {created_at}")
 
 
-def get_or_create_collection(
+def create_collection(
     client: chromadb.PersistentClient,
     collection_name: str,
     description: str,
-    force_recreate: bool = False,
 ) -> chromadb.Collection:
-    """Get existing or create new ChromaDB collection."""
+    """
+    Create a new ChromaDB collection.
+
+    Raises StorageError if collection already exists.
+    Use recreate_collection() if you want to delete and recreate.
+    """
     try:
-        # Step 1: Handle existing collection deletion if needed
-        handle_existing_collection(client, collection_name, force_recreate)
+        # Check if collection already exists
+        if collection_exists(client, collection_name):
+            raise StorageError(
+                f"Collection '{collection_name}' already exists\n"
+                f"  Options:\n"
+                f"    1. Use a different collection name\n"
+                f"    2. Use recreate_collection() to delete and recreate\n"
+                f"       (WARNING: This will permanently delete all existing data!)\n"
+            )
+
+        # Step 1: Build metadata
+        metadata = build_collection_metadata(description)
+
+        # Step 2: Create new collection
+        collection = create_new_collection(client, collection_name, metadata)
+
+        # Step 3: Print summary
+        print_collection_creation_summary(collection_name, description, metadata['created_at'])
+
+        return collection
+
+    except StorageError:
+        # Re-raise StorageError as-is
+        raise
+    except Exception as error:
+        raise StorageError(f"Failed to create collection '{collection_name}': {error}")
+
+
+def recreate_collection(
+    client: chromadb.PersistentClient,
+    collection_name: str,
+    description: str,
+) -> chromadb.Collection:
+    """
+    Delete existing collection (if it exists) and create a new one.
+
+    WARNING: This is a destructive operation that permanently deletes all data.
+    """
+    try:
+        # Step 1: Delete existing collection if it exists
+        delete_existing_collection(client, collection_name)
 
         # Step 2: Build metadata
         metadata = build_collection_metadata(description)
@@ -130,7 +173,25 @@ def get_or_create_collection(
         # Re-raise StorageError as-is
         raise
     except Exception as error:
-        raise StorageError(f"Failed to create/access collection '{collection_name}': {error}")
+        raise StorageError(f"Failed to recreate collection '{collection_name}': {error}")
+
+
+# Backward compatibility: Keep old function but mark as deprecated
+def get_or_create_collection(
+    client: chromadb.PersistentClient,
+    collection_name: str,
+    description: str,
+    force_recreate: bool = False,
+) -> chromadb.Collection:
+    """
+    DEPRECATED: Use create_collection() or recreate_collection() instead.
+
+    This function is kept for backward compatibility but will be removed in future versions.
+    """
+    if force_recreate:
+        return recreate_collection(client, collection_name, description)
+    else:
+        return create_collection(client, collection_name, description)
 
 
 def prepare_chunk_batch_data(batch):

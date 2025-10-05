@@ -264,83 +264,72 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
 #### Priority: HIGH
 **Issues Found:**
 
-- [ ] **chunk_creator.py:109-164** - Mixes high and low level operations
+- [x] **chunk_creator.py:109-164** - Mixes high and low level operations
   - **High level:** "Process notes and create chunks"
   - **Low level:** `if (i + 1) % 50 == 0` (modulo arithmetic for progress)
   - **Solution:** Extract progress tracking to separate function
+  - **Status:** COMPLETED - Functions extracted:
+    - `should_report_progress()` (line 180) - abstracts modulo arithmetic for progress reporting
+    - `log_chunking_progress()` (line 129) - handles progress display
+    - Main loop (line 192-204) now operates at consistent high level
 
-- [ ] **full_pipeline.py:44-116** - Dry run mixes calculations and presentation
+- [x] **full_pipeline.py:44-116** - Dry run mixes calculations and presentation
   - **High level:** "Validate dry run configuration"
   - **Low level:** `estimated_chunks = int(total_chars / config.chunk_size * 1.2)`
   - **Solution:** Extract `estimate_pipeline_metrics(notes, config)` returning object
+  - **Status:** COMPLETED - Functions extracted:
+    - `calculate_dry_run_estimates()` (line 19) - encapsulates all estimation arithmetic
+    - Returns structured dictionary with all metrics
+    - `print_dry_run_summary()` (line 42) - handles presentation at high level
+    - `validate_dry_run_config()` (line 66) - validation logic separated
 
-- [ ] **validation.py:191-260** - Mixes API calls, parsing, validation
+- [x] **validation.py:191-260** - Mixes API calls, parsing, validation
   - **High level:** "Validate description with AI"
   - **Low level:** `json_match = re.search(r'\{.*\}', response_text, re.DOTALL)`
   - **Solution:** Extract parsing and validation logic
+  - **Status:** COMPLETED - Functions extracted:
+    - `call_ollama_ai()` (line 249) - high-level API call wrapper
+    - `extract_json_from_response()` (line 209) - low-level regex JSON extraction
+    - `parse_ai_validation_response()` (line 217) - JSON parsing and extraction
+    - `validate_ai_score()` (line 238) - score validation logic
+    - `check_model_availability_or_raise()` (line 271) - availability check
+    - `validate_with_ai()` (line 295) now orchestrates at consistent high level
 
-### 2.5 Argument Count (Arity)
-
-#### Priority: MEDIUM
-**Issues Found:**
-
-- [ ] **storage.py:190** - `insert_chunks` has 4 parameters (limit: 2-3)
-  - **Current:** `insert_chunks(collection, chunks_with_embeddings, batch_size, progress_callback)`
-  - **Solution:** Create `StorageConfig` object:
-    ```python
-    @dataclass
-    class StorageConfig:
-        batch_size: int = DEFAULT_BATCH_SIZE
-        progress_callback: Optional[callable] = None
-
-    def insert_chunks(collection, chunks_with_embeddings, config: StorageConfig = None)
-    ```
-
-- [ ] **validation.py:263** - `validate_description_hybrid` has 4 parameters (limit: 2-3)
-  - **Current:** `validate_description_hybrid(description, collection_name, skip_ai_validation, model)`
-  - **Solution:** Create `ValidationConfig` object:
-    ```python
-    @dataclass
-    class ValidationConfig:
-        skip_ai_validation: bool = False
-        model: str = AI_MODEL
-
-    def validate_description_hybrid(description, collection_name, config: ValidationConfig = None)
-    ```
-
-- [ ] **chunk_creator.py:62** - `chunk_markdown_content` has 3 parameters (acceptable but could improve)
-  - **Current:** `chunk_markdown_content(markdown, target_chars, overlap_chars)`
-  - **Optional Enhancement:** Group chunking parameters:
-    ```python
-    @dataclass
-    class ChunkingConfig:
-        target_chars: int = 1200
-        overlap_chars: int = 200
-    ```
 
 ### 2.6 Flag Arguments (Boolean Parameters)
 
 #### Priority: HIGH
 **Issues Found:**
 
-- [ ] **storage.py:59** - `force_recreate` flag argument
+- [x] **storage.py:59** - `force_recreate` flag argument
   - **Current:** `get_or_create_collection(..., force_recreate: bool = False)`
   - **Violation:** Boolean flag indicates function does two different things
   - **Solution:** Split into two functions:
+
     ```python
-    def get_existing_collection(client, name, description) -> Collection:
-        # Only get/create without deletion
+    def create_collection(client, name, description) -> Collection:
+        # Create new collection (raises error if exists)
 
     def recreate_collection(client, name, description) -> Collection:
-        # Delete and create
+        # Delete and create (destructive operation)
     ```
 
-- [ ] **config_loader.py** - No boolean flags found in function parameters (GOOD)
+  - **Status:** COMPLETED - Functions created:
+    - `create_collection()` (line 107) - creates new collection, raises StorageError if exists
+    - `recreate_collection()` (line 147) - deletes existing and creates new (explicit about destructive behavior)
+    - `delete_existing_collection()` (line 59) - helper for deletion logic
+    - `get_or_create_collection()` (line 180) - kept as deprecated wrapper for backward compatibility
+    - Call site in [full_pipeline.py:140](full_pipeline.py#L140) updated to use explicit if/else with new functions
+    - Boolean flag moved to call site, making intent clear: `if config.force_recreate: recreate_collection(...) else: create_collection(...)`
 
-- [ ] **validation.py:263** - `skip_ai_validation` flag argument
+- [x] **config_loader.py** - No boolean flags found in function parameters (GOOD)
+  - **Status:** Verified - no flag arguments present
+
+- [x] **validation.py:308** - `skip_ai_validation` flag argument
   - **Current:** `validate_description_hybrid(..., skip_ai_validation: bool = False)`
   - **Violation:** Function has two paths based on flag
   - **Solution:** Split functions:
+
     ```python
     def validate_description_regex_only(description, collection_name):
         # Only regex validation
@@ -348,6 +337,13 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
     def validate_description_with_ai(description, collection_name, model):
         # Regex + AI validation
     ```
+
+  - **Status:** COMPLETED - Functions created:
+    - `validate_description_regex_only()` (line 308) - regex validation only, prints warnings about skipped AI
+    - `validate_description_with_ai()` (line 329) - full validation with AI quality scoring
+    - `validate_description_hybrid()` (line 379) - kept as deprecated wrapper for backward compatibility
+    - Call site in [config_validator.py:41](config_validator.py#L41) updated to use explicit if/else with new functions
+    - Boolean flag moved to call site, making validation path explicit
 
 ### 2.7 Side Effects
 
@@ -1392,188 +1388,6 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
 
 ---
 
-## 10. Documentation
-
-### 10.1 Module Documentation
-
-#### Priority: MEDIUM
-**Issues Found:**
-
-- [ ] **Missing module-level docstrings**
-  - **Files without docstrings:**
-    - chunk_creator.py
-    - embedding.py
-    - json_loader.py
-    - storage.py
-    - validation.py
-    - config_loader.py
-    - args_parser.py
-    - config_validator.py
-
-- [ ] **Add module docstrings to all files**
-  - Example for chunk_creator.py:
-    ```python
-    """
-    Markdown Content Chunking Module
-
-    This module provides functionality for semantically chunking markdown content
-    into manageable pieces for embedding and storage in vector databases.
-
-    Key Features:
-    - Header-aware splitting (preserves markdown structure)
-    - Configurable chunk size with overlap
-    - Stable chunk ID generation for incremental updates
-    - Progress reporting and statistics
-
-    Main Functions:
-    - create_chunks_from_notes: Processes notes into immutable Chunk objects
-    - chunk_markdown_content: Core chunking logic using LangChain splitters
-    - generate_chunk_id: Deterministic chunk ID generation
-
-    Dependencies:
-    - langchain-text-splitters: For intelligent text splitting
-    - models: For immutable Chunk data structures
-
-    Example:
-        from chunk_creator import create_chunks_from_notes
-
-        notes = [{"title": "Note", "markdown": "# Content", ...}]
-        chunks = create_chunks_from_notes(notes, target_chars=1200)
-    """
-    ```
-
-### 10.2 Function Documentation
-
-#### Priority: MEDIUM
-**Issues Found:**
-
-- [ ] **Inconsistent docstring style**
-  - Some functions have docstrings, some don't
-  - No consistent format (Google style vs. NumPy style vs. Sphinx)
-
-- [ ] **Recommendation: Adopt Google docstring style**
-  ```python
-  def chunk_markdown_content(
-      markdown: str,
-      target_chars: int = 1200,
-      overlap_chars: int = 200
-  ) -> List[Dict[str, Any]]:
-      """
-      Chunks markdown content into semantic pieces using LangChain splitters.
-
-      First splits by headers to preserve document structure, then applies
-      recursive character splitting to large sections. Maintains heading
-      context and respects markdown element boundaries.
-
-      Args:
-          markdown: Markdown content to chunk
-          target_chars: Target size for each chunk in characters
-          overlap_chars: Number of overlapping characters between chunks
-
-      Returns:
-          List of chunk dictionaries, each containing:
-              - content (str): The chunk text
-              - metadata (dict): Header hierarchy from markdown
-              - size (int): Character count of the chunk
-
-      Raises:
-          Exception: If header splitting fails, falls back to recursive splitting only
-
-      Example:
-          >>> chunks = chunk_markdown_content("# Title\\n\\nContent...", target_chars=500)
-          >>> print(chunks[0]['size'])
-          450
-      """
-  ```
-
-- [ ] **Add docstrings to all public functions**
-  - Priority list:
-    1. chunk_creator.py: `create_chunks_from_notes`, `chunk_markdown_content`
-    2. embedding.py: `generate_embeddings`, `generate_embedding`
-    3. storage.py: `insert_chunks`, `get_or_create_collection`
-    4. validation.py: `validate_description_hybrid`, `validate_with_ai`
-    5. All other public functions
-
-### 10.3 API Documentation
-
-#### Priority: LOW
-**Recommendations:**
-
-- [ ] **Generate API documentation with Sphinx**
-  - Install: `pip install sphinx sphinx-rtd-theme`
-  - Initialize: `sphinx-quickstart docs`
-  - Configure autodoc in `docs/conf.py`
-  - Generate: `make html`
-
-- [ ] **Add README with API examples**
-  - Create comprehensive README.md with:
-    - Installation instructions
-    - Quick start guide
-    - API reference with examples
-    - Configuration guide
-    - Troubleshooting section
-
----
-
-## 11. Performance and Optimization
-
-### 11.1 Potential Performance Issues
-
-#### Priority: LOW
-**Issues Found:**
-
-- [ ] **chunk_creator.py:172-176** - Inefficient statistics calculation
-  - **Current:** Iterates all notes/chunks to build temporary list
-  - **Code:**
-    ```python
-    all_chunk_sizes = [
-        chunk['size']
-        for note in enriched_notes
-        for chunk in note['chunks']
-    ]
-    ```
-  - **Issue:** Creates unnecessary intermediate list
-  - **Solution:** Calculate statistics incrementally during chunking
-  - **Impact:** Minor - only noticeable with thousands of notes
-
-- [ ] **embedding.py:104-114** - Sequential embedding generation
-  - **Current:** Generates embeddings one at a time
-  - **Issue:** Doesn't leverage batch API if available
-  - **Solution:** Investigate Ollama batch embedding API
-  - **Impact:** Could significantly speed up large batches
-
-- [ ] **storage.py:211-252** - Batch processing could be optimized
-  - **Current:** Fixed batch size of 64
-  - **Issue:** Not tuned for different data sizes
-  - **Solution:** Implement adaptive batch sizing:
-    ```python
-    def calculate_optimal_batch_size(chunk_count: int, embedding_dim: int) -> int:
-        # Optimize based on memory constraints and chunk count
-        if chunk_count < 100:
-            return 32
-        elif chunk_count < 1000:
-            return 64
-        else:
-            return 128
-    ```
-
-### 11.2 Memory Optimization
-
-#### Priority: LOW
-**Recommendations:**
-
-- [ ] **Consider streaming for large datasets**
-  - **Current:** Loads all notes into memory at once
-  - **Issue:** Could fail with very large JSON files (GB+)
-  - **Solution:** Implement generator-based processing:
-    ```python
-    def stream_json_notes(json_path: str) -> Generator[Dict, None, None]:
-        """Stream notes one at a time from large JSON files."""
-        # Use ijson library for streaming JSON parsing
-    ```
-
----
-
 ## 12. Security Considerations
 
 ### 12.1 Input Validation
@@ -1630,178 +1444,3 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
 - [ ] **Add dependency update monitoring**
   - Use Dependabot or Renovate for automated updates
   - Review security advisories regularly
-
----
-
-## Implementation Roadmap
-
-### Phase 1: Critical Fixes (Week 1)
-**Priority: CRITICAL - Must be done first**
-
-1. **Testing Infrastructure** (2 days)
-   - [ ] Set up pytest framework
-   - [ ] Create conftest.py with fixtures
-   - [ ] Write tests for models.py (100% coverage)
-   - [ ] Write tests for json_loader.py
-
-2. **Function Size Refactoring** (3 days)
-   - [ ] Refactor `full_pipeline.main()` - extract to smaller functions
-   - [ ] Refactor `create_chunks_for_notes` and `create_chunks_from_notes` - extract common logic
-   - [ ] Refactor `validate_with_ai` - split into parsing, validation, API call
-
-3. **Error Handling** (2 days)
-   - [ ] Replace all `sys.exit()` calls with exceptions
-   - [ ] Isolate try/catch blocks to single operations
-   - [ ] Add proper exception hierarchies
-
-### Phase 2: High Priority Improvements (Week 2)
-**Priority: HIGH - Important for maintainability**
-
-4. **Naming Cleanup** (1 day)
-   - [ ] Rename misleading variables (chunk_data_list → markdown_chunks)
-   - [ ] Fix function name conflicts (collection_exists)
-   - [ ] Improve generic names (embeddings_only → embedding_vectors)
-
-5. **Remove Code Duplication** (2 days)
-   - [ ] Extract common statistics calculation
-   - [ ] Extract common progress reporting
-   - [ ] Extract common error formatting
-   - [ ] Consolidate duplicate chunking functions
-
-6. **Boundary Protection** (2 days)
-   - [ ] Create OllamaEmbeddingAdapter
-   - [ ] Create TextSplitterAdapter
-   - [ ] Create ChromaDBRepository interface
-
-7. **Complete Test Suite** (3 days)
-   - [ ] Write tests for chunk_creator.py
-   - [ ] Write tests for embedding.py
-   - [ ] Write tests for storage.py
-   - [ ] Write tests for validation.py
-   - [ ] Achieve 80%+ code coverage
-
-### Phase 3: Medium Priority Refinements (Week 3)
-**Priority: MEDIUM - Improves code quality**
-
-8. **Type Safety** (1 day)
-   - [ ] Add mypy configuration
-   - [ ] Fix all type hint issues
-   - [ ] Add proper Callable signatures
-   - [ ] Create NamedTuples for complex return types
-
-9. **Documentation** (2 days)
-   - [ ] Add module-level docstrings to all files
-   - [ ] Add Google-style docstrings to all public functions
-   - [ ] Create comprehensive README
-   - [ ] Generate Sphinx API documentation
-
-10. **Abstraction Layer** (2 days)
-    - [ ] Create ProgressReporter protocol
-    - [ ] Create EmbeddingStrategy interface
-    - [ ] Create PipelineConfig protocol
-
-11. **Side Effects Cleanup** (1 day)
-    - [ ] Remove print statements from business logic
-    - [ ] Implement dependency injection for output
-    - [ ] Return statistics objects instead of printing
-
-### Phase 4: Low Priority Polish (Week 4)
-**Priority: LOW - Nice to have**
-
-12. **Formatting and Style** (1 day)
-    - [ ] Set up Black, isort, flake8
-    - [ ] Configure line length limits
-    - [ ] Standardize import organization
-    - [ ] Add .editorconfig
-
-13. **Performance Optimization** (1 day)
-    - [ ] Implement adaptive batch sizing
-    - [ ] Investigate Ollama batch API
-    - [ ] Add streaming support for large files
-
-14. **Security Hardening** (1 day)
-    - [ ] Add input validation for file sizes
-    - [ ] Add path traversal protection
-    - [ ] Set up safety checks for dependencies
-    - [ ] Pin dependency versions
-
-15. **Final Code Review** (1 day)
-    - [ ] Review all changes against Clean Code principles
-    - [ ] Ensure test coverage >85%
-    - [ ] Verify all documentation is complete
-    - [ ] Run full linting and type checking
-
----
-
-## Success Metrics
-
-### Code Quality Metrics
-- [ ] **Test Coverage:** ≥85% overall
-- [ ] **Function Length:** All functions ≤20 lines
-- [ ] **Indentation:** Max 2 levels
-- [ ] **Cyclomatic Complexity:** ≤10 per function
-- [ ] **Type Coverage:** 100% (mypy strict mode)
-
-### Maintainability Metrics
-- [ ] **No Code Duplication:** DRY violations ≤5%
-- [ ] **Documentation:** 100% of public APIs documented
-- [ ] **Dependency Health:** 0 known vulnerabilities
-- [ ] **Linting:** 0 warnings from flake8/pylint
-
-### Architecture Metrics
-- [ ] **Coupling:** Low coupling (clear module boundaries)
-- [ ] **Cohesion:** High cohesion (focused modules)
-- [ ] **SOLID Compliance:** All classes follow SRP, OCP, LSP, ISP, DIP
-
----
-
-## Notes and Considerations
-
-### Strengths to Preserve
-1. **Immutable Data Models** - The use of frozen dataclasses is excellent
-2. **Separation of Concerns** - Modules are well-organized by responsibility
-3. **Error Messages** - Very helpful, detailed error messages for users
-4. **Validation** - Comprehensive validation with regex + AI hybrid approach
-
-### Breaking Changes to Consider
-Some refactorings may introduce breaking changes:
-- Changing function signatures (e.g., removing boolean flags)
-- Changing return types (e.g., exceptions instead of sys.exit)
-- Splitting modules (changing import paths)
-
-**Recommendation:** Use semantic versioning and create migration guide
-
-### Trade-offs
-Some Clean Code principles conflict with Python idioms:
-- **Argument count:** Python commonly uses keyword arguments, making 4+ arguments acceptable
-- **Exceptions vs. return codes:** Python strongly favors exceptions (already done well)
-- **Getter/setters:** Python uses properties instead (already done well via dataclasses)
-
-**Decision:** Follow Python idioms where they conflict with Java-centric Clean Code rules
-
----
-
-## Conclusion
-
-This refactoring plan provides a comprehensive roadmap to bring the `markdown-notes-cag-data-creator` project to Clean Code standards. The project has a solid foundation with good architectural choices, but requires significant work in:
-
-1. **Testing** (CRITICAL - currently 0% coverage)
-2. **Function decomposition** (CRITICAL - many functions >100 lines)
-3. **Error handling** (HIGH - too many sys.exit calls)
-4. **Code duplication** (HIGH - significant overlap between functions)
-
-**Estimated Total Effort:** 15-20 days for single developer
-
-**Recommended Approach:** Follow phased implementation, starting with critical items (testing, function size, error handling) before moving to refinements.
-
-**Review Status:** ✅ READY FOR USER APPROVAL
-
----
-
-**Next Steps:**
-1. Review this task list with stakeholders
-2. Prioritize tasks based on project constraints
-3. Begin Phase 1 implementation
-4. Track progress against success metrics
-5. Iterate and adjust plan as needed
-

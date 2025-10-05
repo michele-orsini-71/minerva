@@ -13,7 +13,7 @@ from config_validator import load_and_validate_config
 from json_loader import load_json_notes
 from chunk_creator import create_chunks_from_notes  # New immutable API
 from embedding import generate_embeddings, EmbeddingError  # New immutable API
-from storage import collection_exists, initialize_chromadb_client, insert_chunks, get_or_create_collection, StorageError  # New immutable API
+from storage import collection_exists, initialize_chromadb_client, insert_chunks, create_collection, recreate_collection, StorageError  # New immutable API
 
 
 def calculate_dry_run_estimates(notes, config):
@@ -116,17 +116,6 @@ def run_normal_pipeline(config, args, notes, start_time):
     # Initialize storage
     client = initialize_chromadb_client(config.chromadb_path)
 
-    if (collection_exists(client, config.collection_name) and not config.force_recreate):
-        raise StorageError(
-            f"Collection '{config.collection_name}' already exists\n"
-            f"  Options:\n"
-            f"    1. Use a different collection name\n"
-            f"    2. Set 'forceRecreate': true in your configuration file to delete and recreate\n"
-            f"       (WARNING: This will permanently delete all existing data!)\n"
-            f"    3. Use the existing collection (not currently supported)\n"
-            f"  Note: force_recreate is a destructive operation - use with caution!"
-        )
-
     # Generate embeddings (immutable)
     print("Generating embeddings with Ollama...")
     chunks_with_embeddings = generate_embeddings(chunks)
@@ -136,12 +125,19 @@ def run_normal_pipeline(config, args, notes, start_time):
     # Store in ChromaDB (immutable)
     print(f"Storing in ChromaDB collection '{config.collection_name}'...")
 
-    collection = get_or_create_collection(
-        client,
-        collection_name=config.collection_name,
-        description=config.description,
-        force_recreate=config.force_recreate
-    )
+    # Use explicit function based on force_recreate flag
+    if config.force_recreate:
+        collection = recreate_collection(
+            client,
+            collection_name=config.collection_name,
+            description=config.description
+        )
+    else:
+        collection = create_collection(
+            client,
+            collection_name=config.collection_name,
+            description=config.description
+        )
 
     def progress_callback(current, total):
         if args.verbose:
