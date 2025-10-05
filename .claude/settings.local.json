@@ -44,7 +44,8 @@
       "Bash(create-cag-from-markdown-notes:*)",
       "Bash(extract-zim-articles:*)",
       "Bash(cat:*)",
-      "Bash(timeout 60 python:*)"
+      "Bash(timeout 60 python:*)",
+      "Read(//Users/michele/my-code/**)"
     ]
   },
   "outputStyle": "Explanatory"
