@@ -148,6 +148,40 @@ def print_chunking_summary(stats: Dict[str, Any], failed_notes: List[Dict[str, s
             print(f"  - {failed['title']}: {failed['error']}")
 
 
+def build_chunks_from_note(note: Dict[str, Any], target_chars: int, overlap_chars: int) -> List[Chunk]:
+    """Build immutable Chunk objects from a single note."""
+    note_id = generate_note_id(note['title'], note.get('creationDate'))
+
+    markdown_chunks = chunk_markdown_content(
+        note['markdown'],
+        target_chars=target_chars,
+        overlap_chars=overlap_chars
+    )
+
+    chunks = []
+    for chunk_index, chunk_data in enumerate(markdown_chunks):
+        chunk_id = generate_chunk_id(note_id, note['modificationDate'], chunk_index)
+
+        chunk = Chunk(
+            id=chunk_id,
+            content=chunk_data['content'],
+            noteId=note_id,
+            title=note['title'],
+            modificationDate=note['modificationDate'],
+            creationDate=note.get('creationDate', ''),
+            size=chunk_data['size'],
+            chunkIndex=chunk_index
+        )
+        chunks.append(chunk)
+
+    return chunks
+
+
+def should_report_progress(current_index: int, total_count: int) -> bool:
+    """Determine if progress should be reported at this iteration."""
+    return (current_index + 1) % 50 == 0 or current_index == total_count - 1
+
+
 def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 1200, overlap_chars: int = 200) -> ChunkList:
     chunks = []
     failed_notes = []
@@ -157,45 +191,17 @@ def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 12
 
     for i, note in enumerate(notes):
         try:
-            # Generate stable note ID
-            note_id = generate_note_id(note['title'], note.get('creationDate'))
+            note_chunks = build_chunks_from_note(note, target_chars, overlap_chars)
+            chunks.extend(note_chunks)
 
-            # Create chunks using LangChain
-            markdown_chunks = chunk_markdown_content(
-                note['markdown'],
-                target_chars=target_chars,
-                overlap_chars=overlap_chars
-            )
-
-            # Build immutable Chunk objects
-            for chunk_index, chunk_data in enumerate(markdown_chunks):
-                chunk_id = generate_chunk_id(note_id, note['modificationDate'], chunk_index)
-
-                # Create immutable Chunk
-                chunk = Chunk(
-                    id=chunk_id,
-                    content=chunk_data['content'],
-                    noteId=note_id,
-                    title=note['title'],
-                    modificationDate=note['modificationDate'],
-                    creationDate=note.get('creationDate', ''),
-                    size=chunk_data['size'],
-                    chunkIndex=chunk_index
-                )
-
-                chunks.append(chunk)
-
-            # Progress feedback
-            if (i + 1) % 50 == 0 or i == len(notes) - 1:
+            if should_report_progress(i, len(notes)):
                 log_chunking_progress(i + 1, len(notes), len(chunks))
-
         except Exception as error:
             failed_notes.append({
                 'title': note.get('title', 'Unknown'),
                 'error': str(error)
             })
             print(f"   Failed to process note '{note.get('title', 'Unknown')}': {error}", file=sys.stderr)
-            continue
 
     # Calculate statistics and print summary
     stats = calculate_chunk_statistics(chunks)

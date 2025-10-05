@@ -173,6 +173,115 @@ def print_pipeline_summary(config, notes, chunks, chunks_with_embeddings, stats,
     print(f"   Database location: {config.chromadb_path}")
 
 
+def handle_embedding_error(error, config_path):
+    """Handle embedding generation errors with actionable guidance."""
+    print(f"\n{'=' * 60}", file=sys.stderr)
+    print(f"EMBEDDING GENERATION ERROR", file=sys.stderr)
+    print(f"{'=' * 60}", file=sys.stderr)
+    print(f"\nError: {error}", file=sys.stderr)
+    print(f"\nActionable Steps:", file=sys.stderr)
+    print(f"  1. Check if Ollama is running:", file=sys.stderr)
+    print(f"     $ ollama serve", file=sys.stderr)
+    print(f"", file=sys.stderr)
+    print(f"  2. Verify the embedding model is available:", file=sys.stderr)
+    print(f"     $ ollama list", file=sys.stderr)
+    print(f"", file=sys.stderr)
+    print(f"  3. If model is missing, pull it:", file=sys.stderr)
+    print(f"     $ ollama pull mxbai-embed-large:latest", file=sys.stderr)
+    print(f"", file=sys.stderr)
+    print(f"  4. Test the model manually:", file=sys.stderr)
+    print(f"     $ ollama run mxbai-embed-large:latest \"test\"", file=sys.stderr)
+    print(f"\nConfiguration file: {config_path}", file=sys.stderr)
+    sys.exit(1)
+
+
+def handle_file_not_found_error(error, config_path):
+    """Handle file not found errors with actionable guidance."""
+    print(f"\n{'=' * 60}", file=sys.stderr)
+    print(f"FILE NOT FOUND ERROR", file=sys.stderr)
+    print(f"{'=' * 60}", file=sys.stderr)
+    print(f"\nError: {error}", file=sys.stderr)
+    print(f"\nActionable Steps:", file=sys.stderr)
+    print(f"  1. Check the file path in your configuration:", file=sys.stderr)
+    print(f"     Configuration file: {config_path}", file=sys.stderr)
+    print(f"", file=sys.stderr)
+    print(f"  2. Verify the JSON file exists:", file=sys.stderr)
+    print(f"     $ ls -la <json_file_path>", file=sys.stderr)
+    print(f"", file=sys.stderr)
+    print(f"  3. Use absolute paths or verify relative paths are correct", file=sys.stderr)
+    print(f"\nTip: Use --dry-run to validate configuration before processing", file=sys.stderr)
+    sys.exit(1)
+
+
+def handle_storage_error(error, collection_name, config_path):
+    """Handle storage errors with actionable guidance."""
+    print(f"\nStorage Error:\n{error}", file=sys.stderr)
+    print(f"\nCollection: {collection_name}", file=sys.stderr)
+    print(f"Configuration file: {config_path}", file=sys.stderr)
+    sys.exit(1)
+
+
+def handle_unexpected_error(error, config_path, is_dry_run):
+    """Handle unexpected errors with actionable guidance."""
+    print(f"\n{'=' * 60}", file=sys.stderr)
+    print(f"UNEXPECTED ERROR", file=sys.stderr)
+    print(f"{'=' * 60}", file=sys.stderr)
+    print(f"\nError: {error}", file=sys.stderr)
+    print(f"\nDebug Information:", file=sys.stderr)
+    print(f"  Configuration file: {config_path}", file=sys.stderr)
+    print(f"  Mode: {'DRY-RUN' if is_dry_run else 'NORMAL'}", file=sys.stderr)
+    print(f"\nActionable Steps:", file=sys.stderr)
+    print(f"  1. Try running with --dry-run to identify issues:", file=sys.stderr)
+    print(f"     $ python full_pipeline.py --config {config_path} --dry-run", file=sys.stderr)
+    print(f"", file=sys.stderr)
+    print(f"  2. Check the configuration file format", file=sys.stderr)
+    print(f"  3. Verify all required dependencies are installed:", file=sys.stderr)
+    print(f"     $ pip list | grep -E '(chromadb|ollama|langchain)'", file=sys.stderr)
+    print(f"\nIf the issue persists, please report it with the full error message", file=sys.stderr)
+    sys.exit(1)
+
+
+def execute_pipeline_mode(config, args, notes, start_time):
+    """Execute either dry-run or normal pipeline mode."""
+    if args.dry_run:
+        run_dry_run_mode(config, args, notes)
+        return  # dry_run_mode calls sys.exit, but this helps clarity
+
+    chunks, chunks_with_embeddings, stats = run_normal_pipeline(config, args, notes, start_time)
+    processing_time = time.time() - start_time
+    print_pipeline_summary(config, notes, chunks, chunks_with_embeddings, stats, processing_time)
+
+
+def load_config_with_verbose_output(args):
+    """Load and optionally print configuration details."""
+    config = load_and_validate_config(args.config, verbose=args.verbose)
+
+    if args.verbose:
+        print(f"   Input file: {config.json_file}")
+        print(f"   Target chunk size: {config.chunk_size} characters")
+        print(f"   ChromaDB path: {config.chromadb_path}")
+        print(f"   Collection: {config.collection_name}")
+        print()
+
+    return config
+
+
+def load_notes_with_verbose_output(config, verbose):
+    """Load notes and optionally print statistics."""
+    print("Loading notes JSON...")
+    notes = load_json_notes(config.json_file)
+
+    if verbose:
+        total_chars = sum(len(note['markdown']) for note in notes)
+        avg_chars = total_chars / len(notes) if notes else 0
+        print(f"   Loaded {len(notes)} notes")
+        print(f"   Total content: {total_chars:,} characters")
+        print(f"   Average note size: {avg_chars:.0f} characters")
+        print()
+
+    return notes
+
+
 def main():
     args = parse_pipeline_args()
     start_time = time.time()
@@ -183,102 +292,25 @@ def main():
     print("=" * 60)
 
     try:
-        config = load_and_validate_config(args.config, verbose=args.verbose)
-
-        if args.verbose:
-            print(f"   Input file: {config.json_file}")
-            print(f"   Target chunk size: {config.chunk_size} characters")
-            print(f"   ChromaDB path: {config.chromadb_path}")
-            print(f"   Collection: {config.collection_name}")
-            print()
-
+        config = load_config_with_verbose_output(args)
     except KeyboardInterrupt:
         print("\n   Operation cancelled by user", file=sys.stderr)
         sys.exit(130)
 
     try:
-        print("Loading notes JSON...")
-        notes = load_json_notes(config.json_file)
-
-        if args.verbose:
-            total_chars = sum(len(note['markdown']) for note in notes)
-            avg_chars = total_chars / len(notes) if notes else 0
-            print(f"   Loaded {len(notes)} notes")
-            print(f"   Total content: {total_chars:,} characters")
-            print(f"   Average note size: {avg_chars:.0f} characters")
-            print()
-
-        # Execute dry-run or normal mode
-        if args.dry_run:
-            run_dry_run_mode(config, args, notes)
-        else:
-            try:
-                chunks, chunks_with_embeddings, stats = run_normal_pipeline(config, args, notes, start_time)
-                processing_time = time.time() - start_time
-                print_pipeline_summary(config, notes, chunks, chunks_with_embeddings, stats, processing_time)
-            except StorageError as error:
-                print(f"\nStorage Error:\n{error}", file=sys.stderr)
-                print(f"\nCollection: {config.collection_name}", file=sys.stderr)
-                print(f"Configuration file: {args.config}", file=sys.stderr)
-                sys.exit(1)
-
+        notes = load_notes_with_verbose_output(config, args.verbose)
+        execute_pipeline_mode(config, args, notes, start_time)
     except KeyboardInterrupt:
         print("\n   Operation cancelled by user", file=sys.stderr)
         sys.exit(130)
-
+    except StorageError as error:
+        handle_storage_error(error, config.collection_name, args.config)
     except EmbeddingError as error:
-        print(f"\n{'=' * 60}", file=sys.stderr)
-        print(f"EMBEDDING GENERATION ERROR", file=sys.stderr)
-        print(f"{'=' * 60}", file=sys.stderr)
-        print(f"\nError: {error}", file=sys.stderr)
-        print(f"\nActionable Steps:", file=sys.stderr)
-        print(f"  1. Check if Ollama is running:", file=sys.stderr)
-        print(f"     $ ollama serve", file=sys.stderr)
-        print(f"", file=sys.stderr)
-        print(f"  2. Verify the embedding model is available:", file=sys.stderr)
-        print(f"     $ ollama list", file=sys.stderr)
-        print(f"", file=sys.stderr)
-        print(f"  3. If model is missing, pull it:", file=sys.stderr)
-        print(f"     $ ollama pull mxbai-embed-large:latest", file=sys.stderr)
-        print(f"", file=sys.stderr)
-        print(f"  4. Test the model manually:", file=sys.stderr)
-        print(f"     $ ollama run mxbai-embed-large:latest \"test\"", file=sys.stderr)
-        print(f"\nConfiguration file: {args.config}", file=sys.stderr)
-        sys.exit(1)
-
+        handle_embedding_error(error, args.config)
     except FileNotFoundError as error:
-        print(f"\n{'=' * 60}", file=sys.stderr)
-        print(f"FILE NOT FOUND ERROR", file=sys.stderr)
-        print(f"{'=' * 60}", file=sys.stderr)
-        print(f"\nError: {error}", file=sys.stderr)
-        print(f"\nActionable Steps:", file=sys.stderr)
-        print(f"  1. Check the file path in your configuration:", file=sys.stderr)
-        print(f"     Configuration file: {args.config}", file=sys.stderr)
-        print(f"", file=sys.stderr)
-        print(f"  2. Verify the JSON file exists:", file=sys.stderr)
-        print(f"     $ ls -la <json_file_path>", file=sys.stderr)
-        print(f"", file=sys.stderr)
-        print(f"  3. Use absolute paths or verify relative paths are correct", file=sys.stderr)
-        print(f"\nTip: Use --dry-run to validate configuration before processing", file=sys.stderr)
-        sys.exit(1)
-
+        handle_file_not_found_error(error, args.config)
     except Exception as error:
-        print(f"\n{'=' * 60}", file=sys.stderr)
-        print(f"UNEXPECTED ERROR", file=sys.stderr)
-        print(f"{'=' * 60}", file=sys.stderr)
-        print(f"\nError: {error}", file=sys.stderr)
-        print(f"\nDebug Information:", file=sys.stderr)
-        print(f"  Configuration file: {args.config}", file=sys.stderr)
-        print(f"  Mode: {'DRY-RUN' if args.dry_run else 'NORMAL'}", file=sys.stderr)
-        print(f"\nActionable Steps:", file=sys.stderr)
-        print(f"  1. Try running with --dry-run to identify issues:", file=sys.stderr)
-        print(f"     $ python full_pipeline.py --config {args.config} --dry-run", file=sys.stderr)
-        print(f"", file=sys.stderr)
-        print(f"  2. Check the configuration file format", file=sys.stderr)
-        print(f"  3. Verify all required dependencies are installed:", file=sys.stderr)
-        print(f"     $ pip list | grep -E '(chromadb|ollama|langchain)'", file=sys.stderr)
-        print(f"\nIf the issue persists, please report it with the full error message", file=sys.stderr)
-        sys.exit(1)
+        handle_unexpected_error(error, args.config, args.dry_run)
 
 
 if __name__ == "__main__":

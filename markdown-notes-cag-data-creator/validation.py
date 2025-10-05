@@ -163,29 +163,55 @@ def validate_description_regex(description: str, collection_name: str) -> None:
             )
 
 
+def extract_models_list(models_response):
+    """Extract models list from Ollama response (handles both dict and object formats)."""
+    if hasattr(models_response, 'models'):
+        return models_response.models
+
+    if isinstance(models_response, dict):
+        return models_response.get('models', [])
+
+    return None
+
+
+def extract_model_name(model_entry):
+    """Extract model name from a model entry (handles both dict and object formats)."""
+    if hasattr(model_entry, 'model'):
+        return model_entry.model
+
+    if isinstance(model_entry, dict) and 'name' in model_entry:
+        return model_entry['name']
+
+    return None
+
+
+def is_model_match(model_name: str, available_model: str) -> bool:
+    """Check if model name matches available model (handles :latest suffix variations)."""
+    return model_name in available_model or available_model in model_name
+
+
 def check_model_availability(model_name: str = AI_MODEL) -> bool:
     try:
         models_response = ollama_list()
-        # Handle both dict and object responses from ollama
-        if hasattr(models_response, 'models'):
-            models_list = models_response.models
-        elif isinstance(models_response, dict):
-            models_list = models_response.get('models', [])
-        else:
+        models_list = extract_models_list(models_response)
+
+        if not models_list:
             return False
 
-        # Extract model names (handle both dict and object models)
-        available_models = []
-        for m in models_list:
-            if hasattr(m, 'model'):
-                available_models.append(m.model)
-            elif isinstance(m, dict) and 'name' in m:
-                available_models.append(m['name'])
+        available_models = [extract_model_name(m) for m in models_list]
+        available_models = [name for name in available_models if name is not None]
 
-        # Check if model is in the list (handle with or without :latest suffix)
-        return any(model_name in model or model in model_name for model in available_models)
+        return any(is_model_match(model_name, model) for model in available_models)
     except Exception:
         return False
+
+
+def extract_json_from_response(response_text: str) -> str:
+    """Extract JSON object from response text that may contain extra text."""
+    json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+    if json_match:
+        return json_match.group(0)
+    return response_text
 
 
 def parse_ai_validation_response(response_text: str) -> Tuple[int, str, str]:
@@ -193,18 +219,14 @@ def parse_ai_validation_response(response_text: str) -> Tuple[int, str, str]:
     import json
 
     try:
-        # Try to extract JSON from response (handle cases where model adds extra text)
-        json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
-        if json_match:
-            response_text = json_match.group(0)
+        cleaned_response = extract_json_from_response(response_text)
+        result = json.loads(cleaned_response)
 
-        result = json.loads(response_text)
         score = result.get('score', 0)
         reasoning = result.get('reasoning', 'No reasoning provided')
         suggestions = result.get('suggestions', '')
 
         return (score, reasoning, suggestions)
-
     except json.JSONDecodeError:
         raise ValidationError(
             f"AI model returned invalid response format\n"
@@ -246,9 +268,8 @@ def call_ollama_ai(description: str, collection_name: str, model: str) -> str:
     return response['message']['content'].strip()
 
 
-def validate_with_ai(description: str, collection_name: str, model: str = AI_MODEL) -> Tuple[int, str, str]:
-    """Validate collection description using AI model."""
-    # Check model availability first
+def check_model_availability_or_raise(model: str) -> None:
+    """Check if AI model is available, raise ValidationError if not."""
     if not check_model_availability(model):
         raise ValidationError(
             f"AI model '{model}' not available for validation\n"
@@ -259,25 +280,29 @@ def validate_with_ai(description: str, collection_name: str, model: str = AI_MOD
             f"  in your configuration file"
         )
 
+
+def wrap_generic_ai_error(error: Exception) -> ValidationError:
+    """Wrap generic exceptions in ValidationError with helpful message."""
+    if isinstance(error, ValidationError):
+        return error
+
+    return ValidationError(
+        f"AI validation failed: {error}\n"
+        f"  Suggestion: Check Ollama is running (ollama serve) or skip AI validation with 'skipAiValidation': true"
+    )
+
+
+def validate_with_ai(description: str, collection_name: str, model: str = AI_MODEL) -> Tuple[int, str, str]:
+    """Validate collection description using AI model."""
+    check_model_availability_or_raise(model)
+
     try:
-        # Call Ollama and get response
         response_text = call_ollama_ai(description, collection_name, model)
-
-        # Parse JSON response
         score, reasoning, suggestions = parse_ai_validation_response(response_text)
-
-        # Validate score is in range
         validated_score = validate_ai_score(score)
-
         return (validated_score, reasoning, suggestions)
-
     except Exception as error:
-        if isinstance(error, ValidationError):
-            raise
-        raise ValidationError(
-            f"AI validation failed: {error}\n"
-            f"  Suggestion: Check Ollama is running (ollama serve) or skip AI validation with 'skipAiValidation': true"
-        )
+        raise wrap_generic_ai_error(error)
 
 
 def validate_description_hybrid(
