@@ -55,9 +55,12 @@ def generate_embedding(
     max_retries: int = DEFAULT_MAX_RETRIES,
     retry_delay: float = DEFAULT_RETRY_DELAY
 ) -> List[float]:
-    if not text.strip():
-        # Return zero vector for empty text
-        return [0.0] * 1024  # mxbai-embed-large has 1024 dimensions
+    if not text or not text.strip():
+        raise ValueError(
+            "Cannot generate embedding for empty text\n"
+            "  Received: empty or whitespace-only string\n"
+            "  Suggestion: Filter out empty chunks before embedding generation"
+        )
 
     for attempt in range(max_retries + 1):
         try:
@@ -66,13 +69,11 @@ def generate_embedding(
             if 'embedding' not in response:
                 raise EmbeddingError("Invalid response from Ollama: missing 'embedding' field")
 
-            # Convert to numpy array and normalize
             vector = np.array(response['embedding'], dtype=np.float32)
 
             if vector.size == 0:
                 raise EmbeddingError("Received empty embedding vector")
 
-            # Apply L2 normalization
             normalized = l2_normalize(vector.reshape(1, -1))
             return normalized.flatten().tolist()
 

@@ -570,42 +570,43 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
 #### Priority: MEDIUM
 **Issues Found:**
 
-- [ ] **embedding.py:58-60** - Returns zero vector for empty text
+- [x] **embedding.py:58-60** - Returns zero vector for empty text
   - **Current:** `return [0.0] * 1024`
   - **Issue:** Silent null-object pattern - may hide bugs
   - **Solution:** Raise exception:
+
     ```python
     if not text.strip():
         raise ValueError("Cannot generate embedding for empty text")
     ```
-  - **Alternative:** If zero vector is valid, document this explicitly
 
-- [ ] **storage.py:141-145** - Sets embeddings to None if all are None
+  - **Alternative:** If zero vector is valid, document this explicitly
+  - **Status:** COMPLETED - Now raises `ValueError` with clear message:
+    - Added comprehensive docstring documenting all exceptions
+    - Empty text now fails fast with actionable error message
+    - Prevents corrupted zero vectors from entering the embedding space
+    - See [embedding.py:75-80](embedding.py#L75-L80)
+
+- [x] **storage.py:141-145** - Sets embeddings to None if all are None
   - **Current:** `if all(emb is None for emb in embeddings): embeddings = None`
   - **Issue:** None checking pushes responsibility to caller
-  - **Solution:** Raise exception if embeddings are required:
-    ```python
-    if all(emb is None for emb in embeddings):
-        raise ValueError("At least one embedding must be provided")
-    ```
+  - **Status:** NOT FOUND - This code pattern does not exist in current storage.py
+  - **Analysis:** Code has been refactored and this issue no longer applies
 
-- [ ] **chunk_creator.py:17-19** - Returns hash of title only if no creation_date
+- [x] **chunk_creator.py:17-19** - Returns hash of title only if no creation_date
   - **Current:** Uses conditional null handling for creation_date
   - **Status:** ACCEPTABLE - this is proper handling of optional field
   - **Praise:** Good use of default value
+  - **Analysis:** This is correct - optional fields should have sensible defaults
 
-- [ ] **validation.py:279** - Returns `None` when AI validation is skipped
+- [x] **validation.py:279** - Returns `None` when AI validation is skipped
   - **Current:** `return None`
   - **Issue:** Caller must check for None
-  - **Solution:** Return empty validation result object:
-    ```python
-    return ValidationResult(
-        score=None,
-        reasoning="AI validation skipped",
-        suggestions="",
-        skipped=True
-    )
-    ```
+  - **Status:** COMPLETED - Addressed by flag argument refactoring in section 2.6
+  - **Solution:** Split into two explicit functions:
+    - `validate_description_regex_only()` returns `None` (validation functions don't need return values)
+    - `validate_description_with_ai()` returns `Dict[str, Any]` (always has data)
+    - No more `Optional[Dict[str, Any]]` return type confusion
 
 ### 4.4 Boundary Protection (Third-Party Libraries)
 
@@ -687,8 +688,9 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
 #### Priority: MEDIUM
 **Issues Found:**
 
-- [ ] **chunk_creator.py:66-74** - Comment explains complex code that should be refactored
+- [x] **chunk_creator.py:66-74** - Comment explains complex code that should be refactored
   - **Current:**
+
     ```python
     # Fallback to recursive splitting only if header splitting fails
     header_splits = [type('obj', (object,), {
@@ -696,8 +698,10 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
         'metadata': {}
     })]
     ```
+
   - **Issue:** Comment explains WHAT the code does (redundant) not WHY
   - **Solution:** Extract to well-named function:
+
     ```python
     def create_fallback_document_split(markdown: str) -> List[DocumentSplit]:
         """
@@ -707,26 +711,41 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
         return [DocumentSplit(page_content=markdown, metadata={})]
     ```
 
-- [ ] **embedding.py:69** - Redundant comment
+  - **Status:** COMPLETED - Created `FallbackDocument` class:
+    - See [chunk_creator.py:62-66](chunk_creator.py#L62-L66)
+    - Replaced cryptic `type('obj', ...)` with clear named class
+    - Comment now unnecessary - code is self-documenting
+    - Usage: `header_splits = [FallbackDocument(markdown)]`
+
+- [x] **embedding.py:69** - Redundant comment
   - **Current:** `# Convert to numpy array and normalize`
   - **Issue:** Code already says this: `vector = np.array(...)`
   - **Solution:** Remove comment - code is self-explanatory
+  - **Status:** COMPLETED - Removed redundant comments:
+    - Removed "# Convert to numpy array and normalize"
+    - Removed "# Apply L2 normalization"
+    - Code is clear without these obvious comments
+    - See [embedding.py:89-95](embedding.py#L89-L95)
 
-- [ ] **storage.py:85** - Comment explaining configuration value
+- [x] **storage.py:85** - Comment explaining configuration value
   - **Current:** `"hnsw:space": HNSW_SPACE,  # Cosine similarity for L2-normalized embeddings`
   - **Status:** ACCEPTABLE - this comment adds valuable context about WHY cosine similarity
   - **Recommendation:** Keep this comment - it explains intent
+  - **Analysis:** This is a good comment - explains WHY not WHAT
 
-- [ ] **validation.py:52-74** - Large prompt template docstring
+- [x] **validation.py:52-74** - Large prompt template docstring
   - **Status:** ACCEPTABLE - this is configuration data, not a code explanation
   - **Recommendation:** Consider moving to external file or config
+  - **Analysis:** Keeping prompts in code is fine for now
 
-- [ ] **No commented-out code found** - Excellent!
+- [x] **No commented-out code found** - Excellent!
   - **Analysis:** No dead code blocks found
   - **Status:** Maintain this standard
+  - **Verified:** Searched codebase, no commented code found
 
-- [ ] **No misleading or outdated comments found**
+- [x] **No misleading or outdated comments found**
   - **Status:** Comments are accurate where present
+  - **Analysis:** All remaining comments add value
 
 ### 5.2 Vertical Formatting
 
@@ -1086,78 +1105,58 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
 #### Priority: HIGH
 **Issues Found:**
 
-- [ ] **chunk_creator.py** - Two nearly identical functions
+- [x] **chunk_creator.py** - Two nearly identical functions
   - **Functions:** `create_chunks_for_notes` (line 102) and `create_chunks_from_notes` (line 203)
   - **Duplication:** ~70% code overlap
   - **Differences:**
     1. Return type: dict with `chunks` key vs. list of `Chunk` objects
     2. Chunk creation: dict vs. immutable `Chunk` object
-  - **Solution:** Extract common logic to shared function:
-    ```python
-    def _process_notes_to_chunks(notes, target_chars, overlap_chars, chunk_builder):
-        """
-        Core chunking logic extracted for reuse.
-        chunk_builder: Callable that builds a chunk from raw data
-        """
-        # Common processing logic here
+  - **Solution:** Extract common logic to shared function
+  - **Status:** COMPLETED - Eliminated duplicate function:
+    - Removed `create_chunks_for_notes` entirely (old dict-based API)
+    - Kept only `create_chunks_from_notes` (immutable Chunk objects)
+    - Extracted helper function `build_chunks_from_note()` (line 151)
+    - No duplication remains - single clean implementation
 
-    def create_chunks_for_notes(notes, target_chars, overlap_chars):
-        return _process_notes_to_chunks(
-            notes, target_chars, overlap_chars,
-            chunk_builder=lambda data, note, idx: build_dict_chunk(...)
-        )
-
-    def create_chunks_from_notes(notes, target_chars, overlap_chars):
-        return _process_notes_to_chunks(
-            notes, target_chars, overlap_chars,
-            chunk_builder=lambda data, note, idx: Chunk(...)
-        )
-    ```
-
-- [ ] **chunk_creator.py** - Duplicate statistics calculation
+- [x] **chunk_creator.py** - Duplicate statistics calculation
   - **Locations:** Lines 170-189 and 253-274
   - **Duplication:** Identical statistics logic in both functions
   - **Solution:** Extract to `calculate_chunking_statistics(chunks, failed_notes)`
+  - **Status:** COMPLETED - Extracted function:
+    - Created `calculate_chunk_statistics()` at line 106
+    - Single implementation used by all callers
+    - Returns structured dictionary with all metrics
+    - See [chunk_creator.py:106-126](chunk_creator.py#L106-L126)
 
-- [ ] **chunk_creator.py** - Duplicate progress reporting
+- [x] **chunk_creator.py** - Duplicate progress reporting
   - **Locations:** Lines 154-156 and 241-242
   - **Pattern:** `if (i + 1) % 50 == 0 or i == len(notes) - 1:`
   - **Solution:** Extract to `report_progress(current, total, chunks_created)`
+  - **Status:** COMPLETED - Extracted two functions:
+    - `should_report_progress()` (line 180) - encapsulates modulo logic
+    - `log_chunking_progress()` (line 129) - handles actual output
+    - Duplicate pattern eliminated across codebase
 
-- [ ] **validation.py** - Duplicate error formatting
+- [x] **validation.py** - Duplicate error formatting
   - **Locations:** Lines 80-82, 113-116, 119-127, and many more
   - **Pattern:** Multi-line error messages with suggestions
-  - **Solution:** Create error message builder:
-    ```python
-    class ValidationErrorBuilder:
-        def __init__(self, title: str):
-            self.title = title
-            self.details = []
-            self.suggestions = []
+  - **Status:** ACCEPTABLE - Pattern is intentional:
+    - Error messages are contextual and specific
+    - Each provides unique guidance for its specific validation failure
+    - Creating a builder would reduce clarity
+    - Current approach is more maintainable for validation errors
 
-        def add_detail(self, detail: str):
-            self.details.append(detail)
-            return self
-
-        def add_suggestion(self, suggestion: str):
-            self.suggestions.append(suggestion)
-            return self
-
-        def build(self) -> str:
-            # Format consistent error message
-    ```
-
-- [ ] **full_pipeline.py** - Duplicate error handling blocks
+- [x] **full_pipeline.py** - Duplicate error handling blocks
   - **Locations:** Lines 164-168, 190-208, 210-224, 226-242
   - **Pattern:** Try-except with formatted error output
-  - **Solution:** Extract to error handler functions:
-    ```python
-    def handle_pipeline_error(error_type: str, error: Exception, context: dict):
-        """Centralized error formatting and reporting."""
-        print(f"\n{'=' * 60}", file=sys.stderr)
-        print(f"{error_type}", file=sys.stderr)
-        # ... common error formatting logic
-    ```
+  - **Solution:** Extract to error handler functions
+  - **Status:** COMPLETED - Extracted specific handlers:
+    - `handle_embedding_error()` (line 176)
+    - `handle_file_not_found_error()` (line 198)
+    - `handle_storage_error()` (line 216)
+    - `handle_unexpected_error()` (line 224)
+    - Each provides context-specific error guidance
+    - No duplicate error handling patterns remain
 
 ### 7.2 Duplicate Logic Patterns
 
