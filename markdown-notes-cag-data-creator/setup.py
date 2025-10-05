@@ -48,10 +48,13 @@ setup(
     # Optional dependencies for development and testing
     extras_require={
         "dev": [
-            "pytest>=6.0",
-            "black>=21.0",
-            "flake8>=3.8",
-            "mypy>=0.910",
+            "pytest>=7.0",
+            "pytest-cov>=4.0",
+            "pytest-mock>=3.10",
+            "black>=23.0",
+            "flake8>=6.0",
+            "mypy>=1.0",
+            "isort>=5.12",
         ],
         "test": [
             "pytest>=6.0",
