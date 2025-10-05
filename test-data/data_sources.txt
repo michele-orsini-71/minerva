@@ -1,0 +1,13 @@
+aggiornare
+readme
+__init__.py
+
+
+tutti i test files sono da rivedere, hanno vecchi parameri, aggiustare SOLO LORO, non i file che usano
+
+
+
+codice scritto male!
+- non rispetta le direttive
+- vecchio codice dopo un cambio di design e' ancora li'
+- brutte pratiche (validaz param di input a meta' pipeline dopo un tot di calcoli)

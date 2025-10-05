@@ -16,8 +16,11 @@ except ImportError:
 class CollectionConfig:
     collection_name: str
     description: str
+    chromadb_path: str
+    json_file: str
     force_recreate: bool = False
     skip_ai_validation: bool = False
+    chunk_size: int = 1200
 
     def __post_init__(self):
         if not self.collection_name:
@@ -58,6 +61,23 @@ COLLECTION_CONFIG_SCHEMA = {
             "type": "boolean",
             "default": False,
             "description": "Skip AI-based validation of collection name and description"
+        },
+        "chromadb_path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Path to ChromaDB storage location"
+        },
+        "json_file": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Path to Bear notes JSON file"
+        },
+        "chunk_size": {
+            "type": "number",
+            "minimum": 300,
+            "maximum": 20000,
+            "default": 1200,
+            "description": "Target chunk size in characters (100-10000)"
         }
     },
     "additionalProperties": False
@@ -82,6 +102,9 @@ def validate_config_schema(data: Dict[str, Any], config_path: str) -> None:
                 f"    {{\n"
                 f'      "collection_name": "your_collection_name",\n'
                 f'      "description": "Detailed description (at least 10 characters)..."\n'
+                f'      "chromadb_path = Path to chromadb file"\n'
+                f'      "json_file = Path to the json data file"\n'
+                f'      "chunk_size = Size of the chunks in characters (defaults to 1200)"\n'
                 f"    }}"
             )
         elif "is not of type" in e.message:
@@ -141,6 +164,9 @@ def load_collection_config(config_path: str) -> CollectionConfig:
                 f"  Expected location: {config_file.absolute()}\n"
                 f"  Suggestion: Create a JSON config file with required fields:\n"
                 f"    - collection_name (required, string)\n"
+                f"    - chromadb_path (required, string)\n"
+                f"    - json_file (required, string)\n"
+                f"    - chunk_size (defaults to 1200, number)\n"
                 f"    - description (required, string)\n"
                 f"    - forceRecreate (optional, boolean, default: false)\n"
                 f"    - skipAiValidation (optional, boolean, default: false)"
@@ -179,13 +205,19 @@ def load_collection_config(config_path: str) -> CollectionConfig:
         description = data['description'].strip()
         force_recreate = data.get('forceRecreate', False)
         skip_ai_validation = data.get('skipAiValidation', False)
+        chromadb_path = data['chromadb_path'].strip()
+        json_file = data['json_file'].strip()
+        chunk_size = data.get('chunk_size', 1200)
 
         # Create and return immutable config object
         return CollectionConfig(
             collection_name=collection_name,
             description=description,
             force_recreate=force_recreate,
-            skip_ai_validation=skip_ai_validation
+            skip_ai_validation=skip_ai_validation,
+            chromadb_path=chromadb_path,
+            json_file=json_file,
+            chunk_size=chunk_size,
         )
 
     except ConfigError:

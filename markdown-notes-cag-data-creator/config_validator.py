@@ -2,13 +2,15 @@ import sys
 from config_loader import load_collection_config, ConfigError
 from validation import validate_collection_name, validate_description_hybrid, ValidationError
 
-
 def load_and_validate_config(config_path: str, verbose: bool = False):
     # Step 1: Load configuration
     print("Loading collection configuration...")
     try:
         config = load_collection_config(config_path)
         print(f"   Configuration loaded from: {config_path}")
+        print(f"   Json file: {config.json_file}")
+        print(f"   ChromaDB path: {config.chromadb_path}")
+        print(f"   Chunk size: {config.chunk_size}")
         print(f"   Collection name: {config.collection_name}")
         print(f"   Description: {config.description[:80]}...")
         print(f"   Force recreate: {config.force_recreate}")

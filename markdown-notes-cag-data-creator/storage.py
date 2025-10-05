@@ -49,23 +49,22 @@ def initialize_chromadb_client(db_path: str) -> chromadb.PersistentClient:
         raise ChromaDBConnectionError(f"Failed to initialize ChromaDB client at '{db_path}': {e}")
 
 
+def collection_exists(client: chromadb.PersistentClient, collection_name: str) -> bool:
+    try:
+        existing_collections = [col.name for col in client.list_collections()]
+        return collection_name in existing_collections
+    except Exception as e:
+        raise StorageError(f"Failed to check if collection '{collection_name}' exists: {e}")
+
 def get_or_create_collection(
     client: chromadb.PersistentClient,
     collection_name: str,
-    description: Optional[str] = None,
+    description: str,
     force_recreate: bool = False,
-    reset_collection: bool = False  # Deprecated parameter kept for backward compatibility
 ) -> chromadb.Collection:
     try:
-        # Handle backward compatibility (reset_collection is deprecated)
-        if reset_collection:
-            print("   Warning: 'reset_collection' parameter is deprecated, use 'force_recreate' instead")
-            force_recreate = True
 
-        # Check if collection already exists
-        existing_collections = [col.name for col in client.list_collections()]
-        collection_exists = collection_name in existing_collections
-
+        collection_exists = collection_exists(client, collection_name)
         if collection_exists and force_recreate:
             # Force recreation: delete existing collection
             try:
@@ -79,37 +78,16 @@ def get_or_create_collection(
                     f"  Suggestion: Check ChromaDB permissions or set force_recreate=False"
                 )
 
-        elif collection_exists and not force_recreate:
-            # Collection exists but force_recreate=False - this is an error condition
-            raise StorageError(
-                f"Collection '{collection_name}' already exists\n"
-                f"  Options:\n"
-                f"    1. Use a different collection name\n"
-                f"    2. Set 'forceRecreate': true in your configuration file to delete and recreate\n"
-                f"       (WARNING: This will permanently delete all existing data!)\n"
-                f"    3. Use the existing collection (not currently supported)\n"
-                f"  Note: force_recreate is a destructive operation - use with caution!"
-            )
-
         # Prepare metadata
         from datetime import datetime, timezone
 
         metadata = {
             "hnsw:space": HNSW_SPACE,  # Cosine similarity for L2-normalized embeddings
             "version": "1.0",
-            "created_at": datetime.now(timezone.utc).isoformat()
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "description": description
         }
 
-        # Add description to metadata if provided
-        if description:
-            metadata["description"] = description
-        else:
-            # Use default description with warning
-            metadata["description"] = "Markdown notes semantic chunks with metadata"
-            print(f"   Using default description for collection '{collection_name}'")
-            print(f"   Suggestion: Provide a custom description via --config for better organization")
-
-        # Create collection (we know it doesn't exist at this point)
         collection = client.create_collection(
             name=collection_name,
             metadata=metadata
