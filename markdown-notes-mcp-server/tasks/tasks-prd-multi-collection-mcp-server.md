@@ -10,7 +10,7 @@ Generated from: `prd-multi-collection-mcp-server.md`
 - `markdown-notes-mcp-server/collection_discovery.py` - Module for discovering and listing ChromaDB collections with metadata ✅
 - `markdown-notes-mcp-server/search_tools.py` - Semantic search implementation with context retrieval (chunk_only, enhanced, full_note modes) ✅
 - `markdown-notes-mcp-server/context_retrieval.py` - Logic for fetching surrounding chunks and full notes based on context mode ✅
-- `markdown-notes-mcp-server/startup_validation.py` - Server initialization checks (ChromaDB connection, Ollama service, collection availability)
+- `markdown-notes-mcp-server/startup_validation.py` - Server initialization checks (ChromaDB connection, Ollama service, collection availability) ✅
 
 ### Configuration Files
 - `markdown-notes-mcp-server/config.json` - Server configuration file (ChromaDB path, defaults, embedding model)
@@ -21,7 +21,7 @@ Generated from: `prd-multi-collection-mcp-server.md`
 - `markdown-notes-mcp-server/tests/test_collection_discovery.py` - Unit tests for collection listing and metadata extraction ✅
 - `markdown-notes-mcp-server/tests/test_search_tools.py` - Unit tests for semantic search functionality ✅
 - `markdown-notes-mcp-server/tests/test_context_retrieval.py` - Unit tests for context mode implementations (chunk_only, enhanced, full_note) ✅
-- `markdown-notes-mcp-server/tests/test_startup_validation.py` - Unit tests for server initialization validation
+- `markdown-notes-mcp-server/tests/test_startup_validation.py` - Unit tests for server initialization validation ✅
 - `markdown-notes-mcp-server/tests/test_integration.py` - End-to-end integration tests for MCP server tools
 
 ### Documentation Files
@@ -82,19 +82,19 @@ Generated from: `prd-multi-collection-mcp-server.md`
   - [x] 3.16 Write unit tests in `tests/test_context_retrieval.py` for all three context modes (chunk_only, enhanced, full_note)
   - [x] 3.17 Test edge cases: first chunk (no predecessors), last chunk (no successors), single-chunk notes
 
-- [ ] **4.0 Implement Server Initialization and Validation**
-  - [ ] 4.1 Create `startup_validation.py` module with `validate_server_prerequisites()` function
-  - [ ] 4.2 Implement ChromaDB path validation: check that path exists and is accessible
-  - [ ] 4.3 Implement collection availability check: verify at least one collection exists in ChromaDB
-  - [ ] 4.4 Implement Ollama service check using `embedding.py:check_ollama_service()`
-  - [ ] 4.5 Implement embedding model availability check using `embedding.py:check_model_availability()`
-  - [ ] 4.6 Create detailed error messages for each validation failure with remediation steps (FR6):
+- [x] **4.0 Implement Server Initialization and Validation**
+  - [x] 4.1 Create `startup_validation.py` module with `validate_server_prerequisites()` function
+  - [x] 4.2 Implement ChromaDB path validation: check that path exists and is accessible
+  - [x] 4.3 Implement collection availability check: verify at least one collection exists in ChromaDB
+  - [x] 4.4 Implement Ollama service check using `embedding.py:check_ollama_service()`
+  - [x] 4.5 Implement embedding model availability check using `embedding.py:check_model_availability()`
+  - [x] 4.6 Create detailed error messages for each validation failure with remediation steps (FR6):
     - ChromaDB path invalid: Show expected path, suggest verifying config
     - No collections: Suggest running pipeline to create collections
     - Ollama unavailable: Suggest `ollama serve`
     - Model unavailable: Suggest `ollama pull mxbai-embed-large:latest`
-  - [ ] 4.7 Make validation function return tuple: `(success: bool, error_message: str | None)`
-  - [ ] 4.8 Write unit tests in `tests/test_startup_validation.py` for all validation scenarios (success and each failure case)
+  - [x] 4.7 Make validation function return tuple: `(success: bool, error_message: str | None)`
+  - [x] 4.8 Write unit tests in `tests/test_startup_validation.py` for all validation scenarios (success and each failure case)
 
 - [ ] **5.0 Create MCP Server Entry Point**
   - [ ] 5.1 Create `server.py` with FastMCP initialization using `from mcp.server.fastmcp import FastMCP`
