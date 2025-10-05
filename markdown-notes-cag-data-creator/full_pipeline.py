@@ -23,6 +23,8 @@ def main():
     start_time = time.time()
 
     print("Markdown Notes Multi-Collection RAG Pipeline")
+    if args.dry_run:
+        print("DRY-RUN MODE: Validation only, no data will be modified")
     print("=" * 60)
 
     try:
@@ -51,6 +53,75 @@ def main():
             print(f"   Average note size: {avg_chars:.0f} characters")
             print()
 
+        # DRY-RUN MODE: Fast validation without expensive operations
+        if args.dry_run:
+            print("DRY-RUN PREVIEW (fast validation mode)")
+            print("=" * 60)
+
+            # Check if collection exists
+            client = initialize_chromadb_client(config.chromadb_path)
+            exists = collection_exists(client, config.collection_name)
+
+            # Calculate rough estimates WITHOUT actually chunking (for speed)
+            total_chars = sum(len(note['markdown']) for note in notes)
+            avg_note_size = total_chars / len(notes) if notes else 0
+
+            # Rough estimate: assume each chunk is target_chars size
+            estimated_chunks = total_chars // config.chunk_size
+            # Account for overlap and header boundaries (roughly +20% chunks)
+            estimated_chunks = int(estimated_chunks * 1.2)
+
+            # Estimate: ~4 bytes per dimension for embeddings (1024 dimensions typical)
+            estimated_embedding_size = estimated_chunks * 1024 * 4 / (1024 * 1024)  # MB
+            estimated_metadata_size = estimated_chunks * 0.001  # Rough estimate: 1KB per chunk metadata
+            total_estimated_size = estimated_embedding_size + estimated_metadata_size
+
+            print(f"Collection Configuration:")
+            print(f"   Name: {config.collection_name}")
+            print(f"   Description: {config.description}")
+            print(f"   Force Recreate: {config.force_recreate}")
+            print()
+            print(f"Data Analysis:")
+            print(f"   Source file: {config.json_file}")
+            print(f"   Notes loaded: {len(notes)}")
+            print(f"   Total content: {total_chars:,} characters")
+            print(f"   Average note size: {avg_note_size:.0f} characters")
+            print(f"   Target chunk size: {config.chunk_size} characters")
+            print()
+            print(f"Estimates (without actual chunking):")
+            print(f"   Estimated chunks: ~{estimated_chunks:,}")
+            print(f"   Estimated storage: ~{total_estimated_size:.2f} MB")
+            print(f"   Note: Actual values may vary by ±20% depending on content structure")
+            print()
+            print(f"Collection Status:")
+            print(f"   ChromaDB path: {config.chromadb_path}")
+            print(f"   Collection exists: {'YES' if exists else 'NO'}")
+            if exists and config.force_recreate:
+                print(f"   Action: Will DELETE and recreate (WARNING: destructive!)")
+            elif exists and not config.force_recreate:
+                print(f"   Action: Will FAIL (collection exists, forceRecreate=false)")
+                print(f"   ERROR: Configuration would fail in real run!")
+                print(f"   Fix: Set 'forceRecreate': true or use different collection name")
+                print()
+                print("=" * 60)
+                print("DRY-RUN VALIDATION FAILED")
+                sys.exit(1)
+            else:
+                print(f"   Action: Will create new collection")
+            print()
+            print("=" * 60)
+            print("DRY-RUN VALIDATION SUCCESSFUL")
+            print("Configuration is valid and ready for processing")
+            print(f"Run without --dry-run to execute the pipeline")
+            sys.exit(0)
+
+        # NORMAL MODE: Create chunks (immutable)
+        print("Creating semantic chunks...")
+        chunks = create_chunks_from_notes(notes, target_chars=config.chunk_size)
+        print(f"   Created {len(chunks)} chunks from {len(notes)} notes")
+        print()
+
+        # NORMAL MODE: Continue with full pipeline
         try:
             client = initialize_chromadb_client(config.chromadb_path)
 
@@ -64,12 +135,6 @@ def main():
                     f"    3. Use the existing collection (not currently supported)\n"
                     f"  Note: force_recreate is a destructive operation - use with caution!"
                 )
-
-            # Step 2: Create chunks (immutable)
-            print("Creating semantic chunks...")
-            chunks = create_chunks_from_notes(notes, target_chars=config.chunk_size)
-            print(f"   Created {len(chunks)} chunks from {len(notes)} notes")
-            print()
 
             # Step 3: Generate embeddings (immutable)
             print("Generating embeddings with Ollama...")
@@ -123,13 +188,57 @@ def main():
         sys.exit(130)
 
     except EmbeddingError as e:
-        print(f"\nEmbedding generation failed: {e}", file=sys.stderr)
-        print("   Make sure Ollama is running: ollama serve", file=sys.stderr)
-        print("   And model is available: ollama pull mxbai-embed-large:latest", file=sys.stderr)
+        print(f"\n{'=' * 60}", file=sys.stderr)
+        print(f"EMBEDDING GENERATION ERROR", file=sys.stderr)
+        print(f"{'=' * 60}", file=sys.stderr)
+        print(f"\nError: {e}", file=sys.stderr)
+        print(f"\nActionable Steps:", file=sys.stderr)
+        print(f"  1. Check if Ollama is running:", file=sys.stderr)
+        print(f"     $ ollama serve", file=sys.stderr)
+        print(f"", file=sys.stderr)
+        print(f"  2. Verify the embedding model is available:", file=sys.stderr)
+        print(f"     $ ollama list", file=sys.stderr)
+        print(f"", file=sys.stderr)
+        print(f"  3. If model is missing, pull it:", file=sys.stderr)
+        print(f"     $ ollama pull mxbai-embed-large:latest", file=sys.stderr)
+        print(f"", file=sys.stderr)
+        print(f"  4. Test the model manually:", file=sys.stderr)
+        print(f"     $ ollama run mxbai-embed-large:latest \"test\"", file=sys.stderr)
+        print(f"\nConfiguration file: {args.config}", file=sys.stderr)
+        sys.exit(1)
+
+    except FileNotFoundError as e:
+        print(f"\n{'=' * 60}", file=sys.stderr)
+        print(f"FILE NOT FOUND ERROR", file=sys.stderr)
+        print(f"{'=' * 60}", file=sys.stderr)
+        print(f"\nError: {e}", file=sys.stderr)
+        print(f"\nActionable Steps:", file=sys.stderr)
+        print(f"  1. Check the file path in your configuration:", file=sys.stderr)
+        print(f"     Configuration file: {args.config}", file=sys.stderr)
+        print(f"", file=sys.stderr)
+        print(f"  2. Verify the JSON file exists:", file=sys.stderr)
+        print(f"     $ ls -la <json_file_path>", file=sys.stderr)
+        print(f"", file=sys.stderr)
+        print(f"  3. Use absolute paths or verify relative paths are correct", file=sys.stderr)
+        print(f"\nTip: Use --dry-run to validate configuration before processing", file=sys.stderr)
         sys.exit(1)
 
     except Exception as e:
-        print(f"\nUnexpected error: {e}", file=sys.stderr)
+        print(f"\n{'=' * 60}", file=sys.stderr)
+        print(f"UNEXPECTED ERROR", file=sys.stderr)
+        print(f"{'=' * 60}", file=sys.stderr)
+        print(f"\nError: {e}", file=sys.stderr)
+        print(f"\nDebug Information:", file=sys.stderr)
+        print(f"  Configuration file: {args.config}", file=sys.stderr)
+        print(f"  Mode: {'DRY-RUN' if args.dry_run else 'NORMAL'}", file=sys.stderr)
+        print(f"\nActionable Steps:", file=sys.stderr)
+        print(f"  1. Try running with --dry-run to identify issues:", file=sys.stderr)
+        print(f"     $ python full_pipeline.py --config {args.config} --dry-run", file=sys.stderr)
+        print(f"", file=sys.stderr)
+        print(f"  2. Check the configuration file format", file=sys.stderr)
+        print(f"  3. Verify all required dependencies are installed:", file=sys.stderr)
+        print(f"     $ pip list | grep -E '(chromadb|ollama|langchain)'", file=sys.stderr)
+        print(f"\nIf the issue persists, please report it with the full error message", file=sys.stderr)
         sys.exit(1)
 
 

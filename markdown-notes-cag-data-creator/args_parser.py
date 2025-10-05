@@ -19,6 +19,12 @@ def parse_pipeline_args():
         help="Enable verbose output with detailed progress"
     )
 
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validation-only mode: validates configuration and analyzes notes without creating embeddings or modifying ChromaDB"
+    )
+
     args = parser.parse_args()
 
     return args

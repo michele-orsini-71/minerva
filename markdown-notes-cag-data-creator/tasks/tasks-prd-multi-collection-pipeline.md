@@ -60,15 +60,15 @@ Generated from: [prd-multi-collection-pipeline.md](prd-multi-collection-pipeline
   - [x] 4.5 Update progress output to display collection name and description being used
   - [x] 4.6 Add try/except blocks for configuration and validation errors with clear error formatting (show config file path, issue details, suggestions)
 
-- [ ] 5.0 Add dry-run mode and comprehensive error handling
-  - [ ] 5.1 Add `--dry-run` argument to argparse (boolean flag, help text explaining validation-only mode)
-  - [ ] 5.2 Implement dry-run logic: validate config file, validate collection name/description, load and analyze notes, check if collection exists
-  - [ ] 5.3 Display dry-run preview output: collection name, description, estimated chunk count, estimated storage size, collection existence status, forceRecreate setting
-  - [ ] 5.4 Make dry-run mode skip ChromaDB collection creation/modification and embedding generation
-  - [ ] 5.5 Add exit code handling: 0 for successful validation, non-zero for validation failures
-  - [ ] 5.6 Create comprehensive error message templates for all failure scenarios: config file errors, validation failures (name/description), ChromaDB errors, AI model unavailable
-  - [ ] 5.7 Add `skipAiValidation` warning message when AI validation is skipped (display responsibility notice and consequences)
-  - [ ] 5.8 Update all error messages to include actionable next steps (pull model, fix config file, add skipAiValidation, etc.)
+- [x] 5.0 Add dry-run mode and comprehensive error handling
+  - [x] 5.1 Add `--dry-run` argument to argparse (boolean flag, help text explaining validation-only mode)
+  - [x] 5.2 Implement dry-run logic: validate config file, validate collection name/description, load and analyze notes, check if collection exists
+  - [x] 5.3 Display dry-run preview output: collection name, description, estimated chunk count, estimated storage size, collection existence status, forceRecreate setting
+  - [x] 5.4 Make dry-run mode skip ChromaDB collection creation/modification and embedding generation
+  - [x] 5.5 Add exit code handling: 0 for successful validation, non-zero for validation failures
+  - [x] 5.6 Create comprehensive error message templates for all failure scenarios: config file errors, validation failures (name/description), ChromaDB errors, AI model unavailable
+  - [x] 5.7 Add `skipAiValidation` warning message when AI validation is skipped (display responsibility notice and consequences)
+  - [x] 5.8 Update all error messages to include actionable next steps (pull model, fix config file, add skipAiValidation, etc.)
 
 - [ ] 6.0 Code Review
   - [ ] 6.1 Review all the project code using Robert C. Martin "Clean Code" principles, follow the tasklist in prompts/clean-code-review-tasks.md but to not alter the code: build a detailed, step-by-step task list of actions to execute reach a Clean Code status; wait for user input before executing it.
