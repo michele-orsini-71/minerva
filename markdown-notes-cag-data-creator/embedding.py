@@ -88,37 +88,6 @@ def generate_embedding(
                 else:
                     raise EmbeddingError(f"Failed to generate embedding after {max_retries + 1} attempts: {e}")
 
-
-def generate_embeddings_batch(
-    texts: List[str],
-    model: str = EMBED_MODEL,
-    max_retries: int = DEFAULT_MAX_RETRIES,
-    retry_delay: float = DEFAULT_RETRY_DELAY,
-    progress_callback: Optional[callable] = None
-) -> List[List[float]]:
-    if not texts:
-        return []
-
-    embeddings = []
-
-    for i, text in enumerate(texts):
-        if progress_callback:
-            progress_callback(i, len(texts))
-
-        embedding = generate_embedding(
-            text=text,
-            model=model,
-            max_retries=max_retries,
-            retry_delay=retry_delay
-        )
-        embeddings.append(embedding)
-
-    if progress_callback:
-        progress_callback(len(texts), len(texts))
-
-    return embeddings
-
-
 def validate_embedding_consistency(embeddings: List[List[float]]) -> bool:
     if not embeddings:
         return True

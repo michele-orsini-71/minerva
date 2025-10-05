@@ -83,26 +83,6 @@ class ChunkWithEmbedding:
         """Access chunk index directly."""
         return self.chunk.chunkIndex
 
-    def to_storage_dict(self) -> dict:
-        """
-        Convert to dictionary format for ChromaDB storage.
-
-        Returns a dictionary with all fields needed for ChromaDB insertion,
-        eliminating the need for complex data conversion in the storage layer.
-        """
-        return {
-            'id': self.id,
-            'content': self.content,
-            'embedding': self.embedding,
-            # Metadata fields
-            'noteId': self.noteId,
-            'title': self.title,
-            'modificationDate': self.modificationDate,
-            'creationDate': self.creationDate,
-            'size': self.size,
-            'chunkIndex': self.chunkIndex
-        }
-
 
 # Type aliases for better readability in function signatures
 ChunkList = List[Chunk]
