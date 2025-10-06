@@ -91,7 +91,10 @@ def initialize_server() -> None:
         sys.exit(1)
 
 
-@mcp.tool()
+@mcp.tool(
+    description="Discover all available knowledge bases (collections) in the system. "
+                "Returns collection names, descriptions, and chunk counts to help users choose which knowledge base to search."
+)
 def list_knowledge_bases() -> List[Dict[str, Any]]:
     try:
         logger.info("Tool invoked: list_knowledge_bases")
@@ -113,14 +116,19 @@ def list_knowledge_bases() -> List[Dict[str, Any]]:
         raise CollectionDiscoveryError(f"Failed to list knowledge bases: {e}")
 
 
-@mcp.tool()
+@mcp.tool(
+    description="Perform semantic search across a knowledge base. "
+                "IMPORTANT: Always cite sources by including the noteTitle field in your response to users. "
+                "The noteTitle indicates where the information came from (e.g., note name, article title, or document reference). "
+                "Format citations naturally, such as: 'According to [Note Title]...' or 'From [Note Title]: ...' "
+                "This ensures users know the provenance of the information."
+)
 def search_knowledge_base(
     query: str,
     collection_name: str,
     context_mode: str = "enhanced",
     max_results: Optional[int] = None
 ) -> List[Dict[str, Any]]:
-
     try:
         # Use default max_results from config if not provided
         if max_results is None:

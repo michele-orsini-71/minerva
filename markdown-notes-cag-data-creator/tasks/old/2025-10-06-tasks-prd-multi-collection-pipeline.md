@@ -1,28 +1,28 @@
 # Task List: Multi-Collection Support for Markdown Notes Pipeline
 
-Generated from: [prd-multi-collection-pipeline.md](prd-multi-collection-pipeline.md)
+Generated from: [prd-multi-collection-pipeline.md](2025-10-06-prd-multi-collection-pipeline.md)
 
 ## Relevant Files
 
 ### New Files to Create
 
-- [markdown-notes-cag-data-creator/config_loader.py](../config_loader.py) - JSON configuration file loading and schema validation
-- [markdown-notes-cag-data-creator/validation.py](../validation.py) - Collection name and description validation (regex + AI)
-- [markdown-notes-cag-data-creator/collections/](../collections/) - Directory for storing collection configuration JSON files (create examples)
-- [markdown-notes-cag-data-creator/collections/bear_notes_config.json](../collections/bear_notes_config.json) - Example configuration for Bear notes collection
-- [markdown-notes-cag-data-creator/collections/wikipedia_history_config.json](../collections/wikipedia_history_config.json) - Example configuration for Wikipedia collection
+- [markdown-notes-cag-data-creator/config_loader.py](../../config_loader.py) - JSON configuration file loading and schema validation
+- [markdown-notes-cag-data-creator/validation.py](../../validation.py) - Collection name and description validation (regex + AI)
+- [markdown-notes-cag-data-creator/collections/](../../collections) - Directory for storing collection configuration JSON files (create examples)
+- [markdown-notes-cag-data-creator/collections/bear_notes_config.json](../../collections/bear_notes_config.json) - Example configuration for Bear notes collection
+- [markdown-notes-cag-data-creator/collections/wikipedia_history_config.json](../../collections/wikipedia_history_config.json) - Example configuration for Wikipedia collection
 
 ### Files to Modify
 
-- [markdown-notes-cag-data-creator/full_pipeline.py](../full_pipeline.py) - Add --config CLI argument, integrate configuration system, add --dry-run mode
-- [markdown-notes-cag-data-creator/storage.py](../storage.py) - Update get_or_create_collection() to accept description and force_recreate parameters, add metadata storage
-- [markdown-notes-cag-data-creator/embedding.py](../embedding.py) - May need check_model_availability() function for AI validation
+- [markdown-notes-cag-data-creator/full_pipeline.py](../../full_pipeline.py) - Add --config CLI argument, integrate configuration system, add --dry-run mode
+- [markdown-notes-cag-data-creator/storage.py](../../storage.py) - Update get_or_create_collection() to accept description and force_recreate parameters, add metadata storage
+- [markdown-notes-cag-data-creator/embedding.py](../../embedding.py) - May need check_model_availability() function for AI validation
 
 ### Notes
 
 - This project uses Python 3.13 with virtual environment at `.venv/`
 - Dependencies include: chromadb, ollama, langchain-text-splitters, jsonschema (add this)
-- The codebase follows immutable data patterns with models defined in [models.py](../models.py)
+- The codebase follows immutable data patterns with models defined in [models.py](../../models.py)
 - Ollama models required: `mxbai-embed-large:latest` (embeddings), `llama3.1:8b` (AI validation)
 - Use `pip install jsonschema` to add JSON schema validation support
 

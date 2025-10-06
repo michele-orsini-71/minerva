@@ -802,4 +802,4 @@ Same as parent project.
 
 ## Contributing
 
-See implementation instructions in [`tasks/instructions.md`](tasks/instructions.md).
+See implementation instructions in [`tasks/instructions.md`](tasks/old/2025-10-06-instructions.md).

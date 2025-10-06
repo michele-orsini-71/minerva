@@ -319,7 +319,7 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
     - `recreate_collection()` (line 147) - deletes existing and creates new (explicit about destructive behavior)
     - `delete_existing_collection()` (line 59) - helper for deletion logic
     - `get_or_create_collection()` (line 180) - kept as deprecated wrapper for backward compatibility
-    - Call site in [full_pipeline.py:140](../full_pipeline.py#L140) updated to use explicit if/else with new functions
+    - Call site in [full_pipeline.py:140](../../full_pipeline.py#L140) updated to use explicit if/else with new functions
     - Boolean flag moved to call site, making intent clear: `if config.force_recreate: recreate_collection(...) else: create_collection(...)`
 
 - [x] **config_loader.py** - No boolean flags found in function parameters (GOOD)
@@ -342,7 +342,7 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
     - `validate_description_regex_only()` (line 308) - regex validation only, prints warnings about skipped AI
     - `validate_description_with_ai()` (line 329) - full validation with AI quality scoring
     - `validate_description_hybrid()` (line 379) - kept as deprecated wrapper for backward compatibility
-    - Call site in [config_validator.py:41](../config_validator.py#L41) updated to use explicit if/else with new functions
+    - Call site in [config_validator.py:41](../../config_validator.py#L41) updated to use explicit if/else with new functions
     - Boolean flag moved to call site, making validation path explicit
 
 ### 2.7 Side Effects
@@ -585,7 +585,7 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
     - Added comprehensive docstring documenting all exceptions
     - Empty text now fails fast with actionable error message
     - Prevents corrupted zero vectors from entering the embedding space
-    - See [embedding.py:75-80](../embedding.py#L75-L80)
+    - See [embedding.py:75-80](../../embedding.py#L75-L80)
 
 - [x] **storage.py:141-145** - Sets embeddings to None if all are None
   - **Current:** `if all(emb is None for emb in embeddings): embeddings = None`
@@ -712,7 +712,7 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
     ```
 
   - **Status:** COMPLETED - Created `FallbackDocument` class:
-    - See [chunk_creator.py:62-66](../chunk_creator.py#L62-L66)
+    - See [chunk_creator.py:62-66](../../chunk_creator.py#L62-L66)
     - Replaced cryptic `type('obj', ...)` with clear named class
     - Comment now unnecessary - code is self-documenting
     - Usage: `header_splits = [FallbackDocument(markdown)]`
@@ -725,7 +725,7 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
     - Removed "# Convert to numpy array and normalize"
     - Removed "# Apply L2 normalization"
     - Code is clear without these obvious comments
-    - See [embedding.py:89-95](../embedding.py#L89-L95)
+    - See [embedding.py:89-95](../../embedding.py#L89-L95)
 
 - [x] **storage.py:85** - Comment explaining configuration value
   - **Current:** `"hnsw:space": HNSW_SPACE,  # Cosine similarity for L2-normalized embeddings`
@@ -1126,7 +1126,7 @@ This document outlines a comprehensive, step-by-step refactoring plan to bring t
     - Created `calculate_chunk_statistics()` at line 106
     - Single implementation used by all callers
     - Returns structured dictionary with all metrics
-    - See [chunk_creator.py:106-126](../chunk_creator.py#L106-L126)
+    - See [chunk_creator.py:106-126](../../chunk_creator.py#L106-L126)
 
 - [x] **chunk_creator.py** - Duplicate progress reporting
   - **Locations:** Lines 154-156 and 241-242
