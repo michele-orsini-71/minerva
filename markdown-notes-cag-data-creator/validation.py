@@ -309,12 +309,6 @@ def validate_description_regex_only(
     description: str,
     collection_name: str
 ) -> None:
-    """
-    Validate description using regex rules only (no AI validation).
-
-    Use this when you want to skip AI validation or when AI models are unavailable.
-    You are responsible for ensuring the description is clear, specific, and actionable.
-    """
     # Mandatory regex validation
     validate_description_regex(description, collection_name)
 
@@ -331,12 +325,6 @@ def validate_description_with_ai(
     collection_name: str,
     model: str = AI_MODEL
 ) -> Dict[str, Any]:
-    """
-    Validate description using both regex rules and AI quality scoring.
-
-    Returns a dictionary with AI validation results (score, reasoning, suggestions).
-    Raises ValidationError if validation fails.
-    """
     # Step 1: Mandatory regex validation
     validate_description_regex(description, collection_name)
 

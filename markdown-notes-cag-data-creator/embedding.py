@@ -118,7 +118,6 @@ def initialize_embedding_service(model: str = EMBED_MODEL) -> Dict[str, Any]:
         'ready': False
     }
 
-    # Check service availability
     if not check_ollama_service():
         raise OllamaServiceError(
             "Ollama service is not available. Please ensure:\n"
@@ -129,7 +128,6 @@ def initialize_embedding_service(model: str = EMBED_MODEL) -> Dict[str, Any]:
 
     status['service_available'] = True
 
-    # Check model availability
     if not check_model_availability(model):
         raise OllamaServiceError(
             f"Model '{model}' is not available. Please run:\n"

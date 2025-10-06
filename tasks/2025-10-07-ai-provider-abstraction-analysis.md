@@ -1,6 +1,9 @@
 # AI Provider Abstraction Layer Analysis
 ## Switching Between Ollama and OpenAI-compatible Services
 
+
+Please note: embedding of data and of user question must be done with the SAME engine
+
 ### Executive Summary
 
 **TL;DR: YES, it's highly feasible to add AI provider abstraction to support both Ollama (local) and OpenAI/Gemini/etc. (remote) services.** The codebase is well-structured for this change, requiring minimal refactoring. Using LiteLLM as an abstraction layer would provide unified access to 100+ AI providers with a single API.
