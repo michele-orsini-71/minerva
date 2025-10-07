@@ -1,8 +1,7 @@
 # AI Provider Abstraction Layer Analysis
 ## Switching Between Ollama and OpenAI-compatible Services
 
-
-Please note: embedding of data and of user question must be done with the SAME engine
+Please note: the embedding of notes data (cag data creator) and the embedding of the user question (mcp server) must be done with the SAME engine. That means that the embedding engine should appear in the database metadata and checked by MCP in order to verify the embedding engine availability.
 
 ### Executive Summary
 
