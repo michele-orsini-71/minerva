@@ -1,34 +1,43 @@
-# Repository Guidelines
+# Agent Operations Guide
 
-## Project Structure & Module Organization
-- `bear-notes-extractor/` exposes the Bear backup CLI and unit tests; keep fixtures in `test-data/`.
-- `markdown-notes-cag-data-creator/` houses the RAG pipeline; `full_pipeline.py` is the orchestration entrypoint.
-- `chroma-peek/` ships the Streamlit inspector; point configs at `chromadb_data/` (leave untracked).
-- `markdown-notes-mcp-server/` contains MCP notes and design docs for reference.
-- Shared prompts, smoke scripts (`test-files/`), and temporary embedding stores live alongside module directories.
+## Overview
+- Multi-source knowledge ingestion stack for Bear backups, ZIM archives, and markdown notes.
+- Primary flow: extract → normalize JSON → chunk & embed via `markdown-notes-cag-data-creator` → inspect/search with Chroma + MCP.
+- Entire pipeline runs locally: Ollama supplies embeddings and validations; ChromaDB persists vectors under `chromadb_data/`.
 
-## Build, Test, and Development Commands
-- `source .venv/bin/activate` to enter the pinned virtualenv.
-- `pip install -e bear-notes-extractor -e markdown-notes-cag-data-creator[dev]` bootstraps editable installs with dev extras.
-- `python bear-notes-extractor/cli.py <backup.bear2bk>` (alias `extract-bear-notes`) converts Bear backups to JSON.
-- `python markdown-notes-cag-data-creator/full_pipeline.py notes.json --verbose` executes chunk → embed → persist; pass `--chromadb-path` to override storage.
-- `streamlit run chroma-peek/main.py` inspects persisted embeddings; ensure `ollama serve` with `mxbai-embed-large` is running.
+## Key Directories
+- `bear-notes-extractor/` – CLI + library that converts `.bear2bk` backups to normalized JSON; fixtures live in `test-data/`.
+- `zim-articles-parser/` – CLI (`extract-zim-articles`) for pulling markdown and catalogs from ZIM archives.
+- `markdown-notes-cag-data-creator/` – Config-driven multi-collection RAG pipeline (`full_pipeline.py`) with LangChain chunking, embedding, and storage modules.
+- `chroma-peek/` – Streamlit inspector pointed at local Chroma collections (keep `chromadb_data/` untracked).
+- `markdown-notes-mcp-server/` – FastMCP server exposing list/search tools over generated collections; reads `config.json`.
+- `prompts/`, `tasks/`, and `tools/` – Shared prompts, planning docs, automation/scripts (e.g., `tools/find_dead_code.py`).
 
-## Coding Style & Naming Conventions
-- Follow PEP 8 with 4-space indentation, `snake_case` for functions/modules, and PascalCase for classes.
-- Keep docstrings and type hints current; run `black .`, `flake8`, and `mypy` (for typed modules) before publishing changes.
-- Prefer concise helper comments for complex logic; avoid commentary on obvious assignments.
+## Environment & Installation
+- Activate the shared virtualenv: `source .venv/bin/activate` (Python 3.13 expected).
+- Editable installs after activation: `pip install -e bear-notes-extractor -e markdown-notes-cag-data-creator[dev] -e zim-articles-parser[dev]`.
+- Ollama must be running (`ollama serve`) with `mxbai-embed-large:latest`; pull `llama3.1:8b` when enabling AI validation.
+- Point configs at the absolute `chromadb_data/` path; keep the directory out of version control.
 
-## Testing Guidelines
-- Use `pytest` from the repo root after activating the env; add tests under each package’s `tests/` directory.
-- Lean on fixtures in `test-data/`; mock Ollama/Chroma dependencies or document manual steps.
-- Name tests after behavior (`test_markdown_chunker_handles_html`), and ensure they execute quickly and deterministically.
+## Core Workflows
+- **Bear extraction**: `python bear-notes-extractor/cli.py path/to/backup.bear2bk` → emits `{backup}.json`; console script alias `extract-bear-notes`.
+- **ZIM extraction**: `python zim-articles-parser/zim_cli.py archive.zim --json catalog.json --output-dir markdown/ --limit 1000`; supports installed `extract-zim-articles` entrypoint.
+- **RAG pipeline**: Create config in `markdown-notes-cag-data-creator/collections/*.json`, then run `python markdown-notes-cag-data-creator/full_pipeline.py --config collections/name.json --verbose` (`--dry-run` for validation-only run).
+- **Data inspection**: Launch `streamlit run chroma-peek/main.py -- --chromadb-path ./chromadb_data` to browse stored chunks.
+- **MCP server**: `python markdown-notes-mcp-server/server.py` loads `config.json`, validates Ollama + Chroma connectivity, and exposes tools to Claude Desktop (update Claude config with the absolute path).
 
-## Commit & Pull Request Guidelines
-- Commit subjects follow short, present-tense phrases (e.g., `adds mcp implementation instructions`).
-- Group related changes, include context in the body when behavior shifts, and note validation commands.
-- PRs should summarize intent, list verification (tests, scripts), link issues, and attach screenshots for UI diffs.
+## Testing & Quality
+- Run `pytest` from the repo root; package-specific suites live under each module’s `tests/` directory.
+- Enforce formatting and linting: `black .`, `flake8`, `mypy` (where types are declared).
+- Lean on deterministic fixtures in `test-data/`; document manual steps when tests rely on Ollama or Chroma instances.
+- Keep docstrings, type hints, and READMEs in sync with behavior; record new dependencies in package `setup.py` files.
 
-## Security & Data Handling
-- Never commit personal notes, secrets, or generated Chroma stores; scrub `chromadb_data/` before sharing.
-- Document new dependencies in the relevant `README.md` and sync `requirements.txt` or `setup.py` when they change.
+## Data & Security
+- Do not commit Bear backups, ZIM archives, or generated Chroma databases (`chromadb_data/` stays local and untracked).
+- Redact personal content from fixtures and examples before sharing.
+- Note any manual validation or external service requirements in PR descriptions.
+
+## Agent Notes
+- Review active plans under `tasks/` before large refactors or feature work.
+- Align LLM prompt changes with `prompts/` so downstream tools stay consistent.
+- If unexpected files change during your run, pause and ask for direction before reverting.
