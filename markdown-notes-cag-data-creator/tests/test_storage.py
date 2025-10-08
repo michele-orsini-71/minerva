@@ -74,17 +74,25 @@ def test_collection_exists_false(monkeypatch: pytest.MonkeyPatch):
     assert not storage.collection_exists(client, "target")
 
 
+def test_get_or_create_collection_requires_metadata():
+    with pytest.raises(storage.StorageError) as exc_info:
+        storage.get_or_create_collection(object(), "name", "desc", force_recreate=False)
+    assert "Embedding metadata is required" in str(exc_info.value)
+
+
 def test_get_or_create_collection_new(monkeypatch: pytest.MonkeyPatch):
     sentinel = object()
+    test_metadata = {'embedding_model': 'test', 'embedding_provider': 'ollama', 'embedding_dimension': 1024}
     monkeypatch.setattr(storage, "create_collection", lambda *args, **kwargs: sentinel)
-    result = storage.get_or_create_collection(object(), "name", "desc", force_recreate=False)
+    result = storage.get_or_create_collection(object(), "name", "desc", force_recreate=False, embedding_metadata=test_metadata)
     assert result is sentinel
 
 
 def test_get_or_create_collection_force_recreate(monkeypatch: pytest.MonkeyPatch):
     sentinel = object()
+    test_metadata = {'embedding_model': 'test', 'embedding_provider': 'ollama', 'embedding_dimension': 1024}
     monkeypatch.setattr(storage, "recreate_collection", lambda *args, **kwargs: sentinel)
-    result = storage.get_or_create_collection(object(), "name", "desc", force_recreate=True)
+    result = storage.get_or_create_collection(object(), "name", "desc", force_recreate=True, embedding_metadata=test_metadata)
     assert result is sentinel
 
 
@@ -162,28 +170,95 @@ def test_delete_existing_collection_noop(monkeypatch: pytest.MonkeyPatch):
     storage.delete_existing_collection(DummyClient(), "collection")
 
 
+def test_build_collection_metadata_requires_embedding_metadata():
+    with pytest.raises(storage.StorageError) as exc_info:
+        storage.build_collection_metadata("Sample description", None)
+    assert "Embedding metadata is required" in str(exc_info.value)
+
+
+def test_build_collection_metadata_requires_empty_dict():
+    with pytest.raises(storage.StorageError) as exc_info:
+        storage.build_collection_metadata("Sample description", {})
+    error_msg = str(exc_info.value)
+    assert "Embedding metadata is required" in error_msg or "Missing required embedding metadata fields" in error_msg
+
+
 def test_build_collection_metadata_includes_fields():
-    metadata = storage.build_collection_metadata("Sample description")
+    embedding_metadata = {
+        'embedding_model': 'test-model',
+        'embedding_provider': 'ollama',
+        'embedding_dimension': 1024
+    }
+    metadata = storage.build_collection_metadata("Sample description", embedding_metadata)
     assert metadata["description"] == "Sample description"
     assert metadata["hnsw:space"] == storage.HNSW_SPACE
     assert "created_at" in metadata
+    assert metadata["embedding_model"] == 'test-model'
+    assert metadata["embedding_provider"] == 'ollama'
+    assert metadata["embedding_dimension"] == 1024
+
+
+def test_build_collection_metadata_with_embedding_metadata():
+    embedding_metadata = {
+        'embedding_model': 'mxbai-embed-large:latest',
+        'embedding_provider': 'ollama',
+        'embedding_dimension': 1024,
+        'embedding_base_url': 'http://localhost:11434',
+        'embedding_api_key_ref': '${OLLAMA_API_KEY}',
+        'llm_model': 'llama3.1:8b'
+    }
+    metadata = storage.build_collection_metadata("Sample description", embedding_metadata)
+    assert metadata["description"] == "Sample description"
+    assert metadata["embedding_model"] == 'mxbai-embed-large:latest'
+    assert metadata["embedding_provider"] == 'ollama'
+    assert metadata["embedding_dimension"] == 1024
+    assert metadata["embedding_base_url"] == 'http://localhost:11434'
+    assert metadata["embedding_api_key_ref"] == '${OLLAMA_API_KEY}'
+    assert metadata["llm_model"] == 'llama3.1:8b'
+
+
+def test_build_collection_metadata_preserves_templates():
+    embedding_metadata = {
+        'embedding_api_key_ref': '${OPENAI_API_KEY}',
+        'embedding_model': 'text-embedding-3-small',
+        'embedding_provider': 'openai',
+        'embedding_dimension': 1536
+    }
+    metadata = storage.build_collection_metadata("Test", embedding_metadata)
+    assert metadata["embedding_api_key_ref"] == '${OPENAI_API_KEY}'
+
+
+def test_build_collection_metadata_filters_unknown_fields():
+    embedding_metadata = {
+        'embedding_model': 'model-name',
+        'embedding_provider': 'ollama',
+        'embedding_dimension': 1024,
+        'unknown_field': 'should-be-ignored',
+        'random_data': 123
+    }
+    metadata = storage.build_collection_metadata("Test", embedding_metadata)
+    assert metadata["embedding_model"] == 'model-name'
+    assert "unknown_field" not in metadata
+    assert "random_data" not in metadata
 
 
 def test_create_collection_existing_raises(monkeypatch: pytest.MonkeyPatch):
+    test_metadata = {'embedding_model': 'test', 'embedding_provider': 'ollama', 'embedding_dimension': 1024}
     monkeypatch.setattr(storage, "collection_exists", lambda client, name: True)
     with pytest.raises(storage.StorageError):
-        storage.create_collection(object(), "collection", "desc")
+        storage.create_collection(object(), "collection", "desc", test_metadata)
 
 
 def test_recreate_collection_calls_delete(monkeypatch: pytest.MonkeyPatch):
     calls = {"deleted": False, "created": False}
+    test_metadata = {'embedding_model': 'test', 'embedding_provider': 'ollama', 'embedding_dimension': 1024}
 
     monkeypatch.setattr(storage, "delete_existing_collection", lambda client, name: calls.update({"deleted": True}))
-    monkeypatch.setattr(storage, "build_collection_metadata", lambda description: {"created_at": "now", "description": description})
+    monkeypatch.setattr(storage, "build_collection_metadata", lambda description, embedding_metadata: {"created_at": "now", "description": description})
     monkeypatch.setattr(storage, "create_new_collection", lambda client, name, metadata: calls.update({"created": True}) or SimpleNamespace(name=name, metadata=metadata))
     monkeypatch.setattr(storage, "print_collection_creation_summary", lambda *args, **kwargs: None)
 
-    storage.recreate_collection(object(), "collection", "desc")
+    storage.recreate_collection(object(), "collection", "desc", test_metadata)
     assert calls["deleted"] and calls["created"]
 
 
@@ -246,35 +321,38 @@ def test_print_collection_creation_summary_without_description(capsys):
 
 def test_create_collection_success(monkeypatch: pytest.MonkeyPatch):
     metadata = {"created_at": "now"}
+    test_metadata = {'embedding_model': 'test', 'embedding_provider': 'ollama', 'embedding_dimension': 1024}
     monkeypatch.setattr(storage, "collection_exists", lambda client, name: False)
-    monkeypatch.setattr(storage, "build_collection_metadata", lambda description: metadata)
+    monkeypatch.setattr(storage, "build_collection_metadata", lambda description, embedding_metadata: metadata)
     monkeypatch.setattr(storage, "create_new_collection", lambda client, name, metadata: SimpleNamespace(name=name))
     monkeypatch.setattr(storage, "print_collection_creation_summary", lambda *args, **kwargs: None)
 
-    result = storage.create_collection(object(), "name", "desc")
+    result = storage.create_collection(object(), "name", "desc", test_metadata)
     assert result.name == "name"
 
 
 def test_create_collection_wraps_unexpected_exception(monkeypatch: pytest.MonkeyPatch):
+    test_metadata = {'embedding_model': 'test', 'embedding_provider': 'ollama', 'embedding_dimension': 1024}
     monkeypatch.setattr(storage, "collection_exists", lambda client, name: False)
-    def fail_metadata(description):
+    def fail_metadata(description, embedding_metadata):
         raise RuntimeError("boom")
 
     monkeypatch.setattr(storage, "build_collection_metadata", fail_metadata)
 
     with pytest.raises(storage.StorageError):
-        storage.create_collection(object(), "name", "desc")
+        storage.create_collection(object(), "name", "desc", test_metadata)
 
 
 def test_recreate_collection_wraps_unexpected_exception(monkeypatch: pytest.MonkeyPatch):
+    test_metadata = {'embedding_model': 'test', 'embedding_provider': 'ollama', 'embedding_dimension': 1024}
     monkeypatch.setattr(storage, "delete_existing_collection", lambda client, name: None)
-    def fail_metadata(description):
+    def fail_metadata(description, embedding_metadata):
         raise RuntimeError("boom")
 
     monkeypatch.setattr(storage, "build_collection_metadata", fail_metadata)
 
     with pytest.raises(storage.StorageError):
-        storage.recreate_collection(object(), "name", "desc")
+        storage.recreate_collection(object(), "name", "desc", test_metadata)
 
 
 def test_insert_chunks_progress_callback(monkeypatch: pytest.MonkeyPatch):
@@ -324,3 +402,41 @@ def test_storage_missing_chromadb_dependency():
             importlib.reload(module)
 
     importlib.reload(module)
+
+
+def test_validate_no_actual_api_keys_openai():
+    with pytest.raises(storage.StorageError) as exc_info:
+        storage._validate_no_actual_api_keys('sk-1234567890abcdefghij1234567890', 'embedding_api_key_ref')
+    assert "API keys must be stored as environment variable templates" in str(exc_info.value)
+
+
+def test_validate_no_actual_api_keys_google():
+    with pytest.raises(storage.StorageError) as exc_info:
+        storage._validate_no_actual_api_keys('AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ123456', 'embedding_api_key_ref')
+    assert "API keys must be stored as environment variable templates" in str(exc_info.value)
+
+
+def test_validate_no_actual_api_keys_generic_long():
+    with pytest.raises(storage.StorageError) as exc_info:
+        storage._validate_no_actual_api_keys('abcdefghijklmnopqrstuvwxyz123456ABCDEFGHIJ', 'embedding_api_key_ref')
+    assert "API keys must be stored as environment variable templates" in str(exc_info.value)
+
+
+def test_validate_no_actual_api_keys_allows_templates():
+    storage._validate_no_actual_api_keys('${OPENAI_API_KEY}', 'embedding_api_key_ref')
+    storage._validate_no_actual_api_keys('${GEMINI_API_KEY}', 'embedding_api_key_ref')
+    storage._validate_no_actual_api_keys(None, 'embedding_api_key_ref')
+
+
+def test_validate_no_actual_api_keys_allows_none():
+    storage._validate_no_actual_api_keys(None, 'embedding_api_key_ref')
+
+
+def test_build_collection_metadata_rejects_actual_api_key():
+    embedding_metadata = {
+        'embedding_api_key_ref': 'sk-1234567890abcdefghij1234567890',
+        'embedding_model': 'text-embedding-3-small'
+    }
+    with pytest.raises(storage.StorageError) as exc_info:
+        storage.build_collection_metadata("Test", embedding_metadata)
+    assert "API keys must be stored as environment variable templates" in str(exc_info.value)

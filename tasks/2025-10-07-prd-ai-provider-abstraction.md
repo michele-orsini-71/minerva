@@ -147,12 +147,14 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 
 **FR-14:** Embedding dimension MUST be auto-detected by generating a test embedding during pipeline initialization.
 
+**FR-15:** Embedding metadata is REQUIRED when creating new collections. Collections without AI provider metadata cannot be queried and are considered invalid. Backward compatibility with legacy collections is NOT supported - all collections must be recreated with provider metadata.
+
 ### 4.4 MCP Server Dynamic Discovery
 
-**FR-15:** The MCP server MUST have a minimal configuration file containing ONLY:
+**FR-16:** The MCP server MUST have a minimal configuration file containing ONLY:
 - `chromadb_path`: Path to ChromaDB storage
 
-**FR-16:** At startup, the MCP server MUST:
+**FR-17:** At startup, the MCP server MUST:
 1. Connect to ChromaDB
 2. List all collections
 3. For each collection, read metadata to extract AI provider configuration

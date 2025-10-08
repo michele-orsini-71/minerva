@@ -92,15 +92,15 @@
   - [x] 3.11 Add tests for uninitialized provider error handling
   - [x] 3.12 Add tests for provider initialization with different provider types
 
-- [ ] 4.0 Update Storage Module for Provider Metadata
-  - [ ] 4.1 Update `build_collection_metadata()` function signature to accept optional `embedding_metadata: Optional[Dict[str, Any]]` parameter
-  - [ ] 4.2 Merge embedding_metadata fields into collection metadata dictionary: `embedding_model`, `embedding_provider`, `embedding_dimension`, `embedding_base_url`, `embedding_api_key_ref`, `llm_model`
-  - [ ] 4.3 Ensure API key references are stored as templates (e.g., `${OPENAI_API_KEY}`), NOT actual secret values
-  - [ ] 4.4 Update `create_collection()` and `recreate_collection()` to accept optional `embedding_metadata` parameter and pass to `build_collection_metadata()`
-  - [ ] 4.5 Update `get_or_create_collection()` (backward compatibility function) to accept `embedding_metadata` parameter
-  - [ ] 4.6 Add validation to prevent storing actual API keys (check for patterns like `sk-`, `AIza`, etc. and raise error)
-  - [ ] 4.7 Update unit tests in `tests/test_storage.py` to verify metadata storage, verify templates are stored (not secrets)
-  - [ ] 4.8 Add test case to ensure actual API keys are rejected with clear error message
+- [x] 4.0 Update Storage Module for Provider Metadata
+  - [x] 4.1 Update `build_collection_metadata()` function signature to accept optional `embedding_metadata: Optional[Dict[str, Any]]` parameter
+  - [x] 4.2 Merge embedding_metadata fields into collection metadata dictionary: `embedding_model`, `embedding_provider`, `embedding_dimension`, `embedding_base_url`, `embedding_api_key_ref`, `llm_model`
+  - [x] 4.3 Ensure API key references are stored as templates (e.g., `${OPENAI_API_KEY}`), NOT actual secret values
+  - [x] 4.4 Update `create_collection()` and `recreate_collection()` to accept optional `embedding_metadata` parameter and pass to `build_collection_metadata()`
+  - [x] 4.5 Update `get_or_create_collection()` (backward compatibility function) to accept `embedding_metadata` parameter
+  - [x] 4.6 Add validation to prevent storing actual API keys (check for patterns like `sk-`, `AIza`, etc. and raise error)
+  - [x] 4.7 Update unit tests in `tests/test_storage.py` to verify metadata storage, verify templates are stored (not secrets)
+  - [x] 4.8 Add test case to ensure actual API keys are rejected with clear error message
 
 - [ ] 5.0 Update Pipeline to Use Config-Driven Provider Initialization
   - [ ] 5.1 Import `initialize_provider`, `get_embedding_metadata`, `validate_description` from updated `embedding.py`

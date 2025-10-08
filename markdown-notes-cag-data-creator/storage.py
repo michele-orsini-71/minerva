@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 from typing import List, Dict, Any, Optional
 from pathlib import Path
@@ -72,16 +73,73 @@ def delete_existing_collection(client: chromadb.PersistentClient, collection_nam
             )
 
 
-def build_collection_metadata(description: str) -> Dict[str, Any]:
-    """Build metadata dictionary for ChromaDB collection."""
+def _validate_no_actual_api_keys(value: Any, field_name: str) -> None:
+    if not isinstance(value, str) or value is None:
+        return
+
+    secret_patterns = [
+        r'sk-[a-zA-Z0-9]{20,}',  # OpenAI keys
+        r'AIza[a-zA-Z0-9_-]{35}',  # Google API keys
+        r'[a-zA-Z0-9]{32,}',  # Generic long strings that might be keys
+    ]
+
+    for pattern in secret_patterns:
+        if re.search(pattern, value):
+            raise StorageError(
+                f"Attempted to store actual API key in {field_name}\n"
+                f"  Security error: API keys must be stored as environment variable templates\n"
+                f"  Example: Use '${{OPENAI_API_KEY}}' instead of actual key value\n"
+                f"  Suggestion: Update your config to use environment variable templates"
+            )
+
+
+def build_collection_metadata(description: str, embedding_metadata: Dict[str, Any]) -> Dict[str, Any]:
     from datetime import datetime, timezone
 
-    return {
-        "hnsw:space": HNSW_SPACE,  # Cosine similarity for L2-normalized embeddings
+    if not embedding_metadata:
+        raise StorageError(
+            "Embedding metadata is required when creating collections\n"
+            "  AI provider metadata must be provided for all new collections\n"
+            "  Required fields: embedding_model, embedding_provider, embedding_dimension\n"
+            "  Suggestion: Ensure the pipeline initializes the AI provider and passes metadata to storage"
+        )
+
+    metadata = {
+        "hnsw:space": HNSW_SPACE,
         "version": "1.0",
         "created_at": datetime.now(timezone.utc).isoformat(),
         "description": description
     }
+
+    allowed_fields = [
+        'embedding_model',
+        'embedding_provider',
+        'embedding_dimension',
+        'embedding_base_url',
+        'embedding_api_key_ref',
+        'llm_model'
+    ]
+
+    for field in allowed_fields:
+        if field in embedding_metadata:
+            value = embedding_metadata[field]
+
+            if field == 'embedding_api_key_ref':
+                _validate_no_actual_api_keys(value, field)
+
+            metadata[field] = value
+
+    required_fields = ['embedding_model', 'embedding_provider', 'embedding_dimension']
+    missing_fields = [f for f in required_fields if f not in metadata]
+
+    if missing_fields:
+        raise StorageError(
+            f"Missing required embedding metadata fields: {', '.join(missing_fields)}\n"
+            f"  All collections must include AI provider metadata\n"
+            f"  Suggestion: Ensure the pipeline calls get_embedding_metadata() and passes result to storage"
+        )
+
+    return metadata
 
 
 def create_new_collection(client: chromadb.PersistentClient, collection_name: str, metadata: Dict[str, Any]) -> chromadb.Collection:
@@ -108,6 +166,7 @@ def create_collection(
     client: chromadb.PersistentClient,
     collection_name: str,
     description: str,
+    embedding_metadata: Dict[str, Any],
 ) -> chromadb.Collection:
     """
     Create a new ChromaDB collection.
@@ -127,7 +186,7 @@ def create_collection(
             )
 
         # Step 1: Build metadata
-        metadata = build_collection_metadata(description)
+        metadata = build_collection_metadata(description, embedding_metadata)
 
         # Step 2: Create new collection
         collection = create_new_collection(client, collection_name, metadata)
@@ -148,6 +207,7 @@ def recreate_collection(
     client: chromadb.PersistentClient,
     collection_name: str,
     description: str,
+    embedding_metadata: Dict[str, Any],
 ) -> chromadb.Collection:
     """
     Delete existing collection (if it exists) and create a new one.
@@ -159,7 +219,7 @@ def recreate_collection(
         delete_existing_collection(client, collection_name)
 
         # Step 2: Build metadata
-        metadata = build_collection_metadata(description)
+        metadata = build_collection_metadata(description, embedding_metadata)
 
         # Step 3: Create new collection
         collection = create_new_collection(client, collection_name, metadata)
@@ -182,16 +242,26 @@ def get_or_create_collection(
     collection_name: str,
     description: str,
     force_recreate: bool = False,
+    embedding_metadata: Optional[Dict[str, Any]] = None,
 ) -> chromadb.Collection:
     """
     DEPRECATED: Use create_collection() or recreate_collection() instead.
 
     This function is kept for backward compatibility but will be removed in future versions.
+    Note: embedding_metadata is still optional here for compatibility, but will fail
+    in create_collection/recreate_collection if not provided.
     """
+    if not embedding_metadata:
+        raise StorageError(
+            "Embedding metadata is required when creating collections\n"
+            "  This function is deprecated - use create_collection() or recreate_collection() directly\n"
+            "  Suggestion: Update code to pass embedding_metadata parameter"
+        )
+
     if force_recreate:
-        return recreate_collection(client, collection_name, description)
+        return recreate_collection(client, collection_name, description, embedding_metadata)
     else:
-        return create_collection(client, collection_name, description)
+        return create_collection(client, collection_name, description, embedding_metadata)
 
 
 def prepare_chunk_batch_data(batch):
