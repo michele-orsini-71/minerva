@@ -57,6 +57,15 @@ Thumbs.db
 *.tmp
 *.temp
 
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
 chromadb_data/
 
 # MCP Server configuration (contains local paths)

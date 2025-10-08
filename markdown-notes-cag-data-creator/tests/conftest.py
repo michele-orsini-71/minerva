@@ -74,6 +74,19 @@ if "ollama" not in sys.modules:
     ollama_module.chat = _stub_chat
     sys.modules["ollama"] = ollama_module
 
+if "litellm" not in sys.modules:
+    litellm_module = types.ModuleType("litellm")
+
+    def _stub_litellm_embedding(*_args, **_kwargs):
+        raise RuntimeError("litellm stub: embedding not patched")
+
+    def _stub_litellm_completion(*_args, **_kwargs):
+        raise RuntimeError("litellm stub: completion not patched")
+
+    litellm_module.embedding = _stub_litellm_embedding
+    litellm_module.completion = _stub_litellm_completion
+    sys.modules["litellm"] = litellm_module
+
 import embedding
 
 
