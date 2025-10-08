@@ -100,19 +100,6 @@ def test_initialize_provider_success(monkeypatch: pytest.MonkeyPatch):
     mock_provider_class.assert_called_once()
 
 
-def test_initialize_provider_no_config():
-    embedding._provider = None
-
-    config = CollectionConfig(
-        collection_name="test",
-        description="test",
-        chromadb_path="./test",
-        json_file="./test.json",
-        ai_provider=None
-    )
-
-    with pytest.raises(embedding.EmbeddingError, match="No AI provider configuration"):
-        embedding.initialize_provider(config)
 
 
 def test_initialize_provider_provider_error(monkeypatch: pytest.MonkeyPatch):

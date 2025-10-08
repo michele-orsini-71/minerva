@@ -18,16 +18,18 @@ class CollectionConfig:
     description: str
     chromadb_path: str
     json_file: str
+    ai_provider: Dict[str, Any]
     force_recreate: bool = False
     skip_ai_validation: bool = False
     chunk_size: int = 1200
-    ai_provider: Optional[Dict[str, Any]] = None
 
     def __post_init__(self):
         if not self.collection_name:
             raise ValueError("collection_name cannot be empty")
         if not self.description:
             raise ValueError("description cannot be empty")
+        if not self.ai_provider:
+            raise ValueError("ai_provider cannot be empty")
 
 
 class ConfigError(Exception):
@@ -38,7 +40,7 @@ class ConfigError(Exception):
 COLLECTION_CONFIG_SCHEMA = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["collection_name", "description"],
+    "required": ["collection_name", "description", "chromadb_path", "json_file", "ai_provider"],
     "properties": {
         "collection_name": {
             "type": "string",
@@ -255,13 +257,13 @@ def validate_config_file_exists(config_path: str) -> Path:
             f"    - description (required, string)\n"
             f"    - chromadb_path (required, string)\n"
             f"    - json_file (required, string)\n"
-            f"    - chunk_size (optional, number, default: 1200)\n"
-            f"    - forceRecreate (optional, boolean, default: false)\n"
-            f"    - skipAiValidation (optional, boolean, default: false)\n"
-            f"    - ai_provider (optional, object, defaults to Ollama):\n"
+            f"    - ai_provider (required, object):\n"
             f"        type: ollama|openai|gemini|azure|anthropic\n"
             f"        embedding: {{ model: string, base_url?: string, api_key?: ${{ENV_VAR}} }}\n"
-            f"        llm: {{ model: string, base_url?: string, api_key?: ${{ENV_VAR}} }}"
+            f"        llm: {{ model: string, base_url?: string, api_key?: ${{ENV_VAR}} }}\n"
+            f"    - chunk_size (optional, number, default: 1200)\n"
+            f"    - forceRecreate (optional, boolean, default: false)\n"
+            f"    - skipAiValidation (optional, boolean, default: false)"
         )
 
     return config_file
@@ -305,32 +307,17 @@ def extract_config_fields(data: Dict[str, Any]) -> CollectionConfig:
     chromadb_path = data['chromadb_path'].strip()
     json_file = data['json_file'].strip()
     chunk_size = data.get('chunk_size', 1200)
-
-    ai_provider = data.get('ai_provider', None)
-    if ai_provider is None:
-        ai_provider = {
-            "type": "ollama",
-            "embedding": {
-                "model": "mxbai-embed-large:latest",
-                "base_url": None,
-                "api_key": None
-            },
-            "llm": {
-                "model": "llama3.1:8b",
-                "base_url": None,
-                "api_key": None
-            }
-        }
+    ai_provider = data['ai_provider']
 
     return CollectionConfig(
         collection_name=collection_name,
         description=description,
-        force_recreate=force_recreate,
-        skip_ai_validation=skip_ai_validation,
         chromadb_path=chromadb_path,
         json_file=json_file,
-        chunk_size=chunk_size,
         ai_provider=ai_provider,
+        force_recreate=force_recreate,
+        skip_ai_validation=skip_ai_validation,
+        chunk_size=chunk_size,
     )
 
 

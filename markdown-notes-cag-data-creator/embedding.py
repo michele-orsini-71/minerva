@@ -24,12 +24,6 @@ def initialize_provider(config: CollectionConfig) -> AIProvider:
 
     ai_provider_config = config.ai_provider
 
-    if ai_provider_config is None:
-        raise EmbeddingError(
-            "No AI provider configuration found.\n"
-            "  Suggestion: Ensure config has ai_provider section or use default config"
-        )
-
     provider_config = AIProviderConfig(
         provider_type=ai_provider_config['type'],
         embedding_model=ai_provider_config['embedding']['model'],

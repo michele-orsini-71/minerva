@@ -20,6 +20,19 @@ def minimal_config_dict() -> dict:
         "chromadb_path": "./chromadb",
         "json_file": "notes.json",
         "chunk_size": 1200,
+        "ai_provider": {
+            "type": "ollama",
+            "embedding": {
+                "model": "mxbai-embed-large:latest",
+                "base_url": None,
+                "api_key": None
+            },
+            "llm": {
+                "model": "llama3.1:8b",
+                "base_url": None,
+                "api_key": None
+            }
+        }
     }
 
 
@@ -69,12 +82,19 @@ def test_validate_config_schema_additional_properties():
 
 
 def test_collection_config_requires_non_empty_fields():
+    ai_provider = {
+        "type": "ollama",
+        "embedding": {"model": "test"},
+        "llm": {"model": "test"}
+    }
+
     with pytest.raises(ValueError):
         CollectionConfig(
             collection_name="",
             description="valid",
             chromadb_path="./chromadb",
             json_file="notes.json",
+            ai_provider=ai_provider,
         )
 
     with pytest.raises(ValueError):
@@ -83,6 +103,16 @@ def test_collection_config_requires_non_empty_fields():
             description="",
             chromadb_path="./chromadb",
             json_file="notes.json",
+            ai_provider=ai_provider,
+        )
+
+    with pytest.raises(ValueError):
+        CollectionConfig(
+            collection_name="notes",
+            description="valid",
+            chromadb_path="./chromadb",
+            json_file="notes.json",
+            ai_provider={},
         )
 
 
@@ -274,14 +304,12 @@ def test_ai_provider_null_api_key_allowed(tmp_path: Path):
     assert result.ai_provider["embedding"]["api_key"] is None
 
 
-def test_ai_provider_backward_compatibility_defaults_to_ollama(tmp_path: Path):
+def test_ai_provider_missing_required_field(tmp_path: Path):
     data = minimal_config_dict()
+    del data["ai_provider"]
     config_path = write_json(tmp_path / "config.json", data)
-    result = config_loader.load_collection_config(str(config_path))
-    assert result.ai_provider is not None
-    assert result.ai_provider["type"] == "ollama"
-    assert result.ai_provider["embedding"]["model"] == "mxbai-embed-large:latest"
-    assert result.ai_provider["llm"]["model"] == "llama3.1:8b"
+    with pytest.raises(ConfigError, match="ai_provider"):
+        config_loader.load_collection_config(str(config_path))
 
 
 def test_ai_provider_all_supported_types(tmp_path: Path):
