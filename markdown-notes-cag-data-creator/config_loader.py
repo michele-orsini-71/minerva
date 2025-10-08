@@ -1,7 +1,7 @@
 import json
 import sys
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from dataclasses import dataclass
 
 try:
@@ -21,6 +21,7 @@ class CollectionConfig:
     force_recreate: bool = False
     skip_ai_validation: bool = False
     chunk_size: int = 1200
+    ai_provider: Optional[Dict[str, Any]] = None
 
     def __post_init__(self):
         if not self.collection_name:
@@ -78,6 +79,61 @@ COLLECTION_CONFIG_SCHEMA = {
             "maximum": 20000,
             "default": 1200,
             "description": "Target chunk size in characters (100-10000)"
+        },
+        "ai_provider": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": ["ollama", "openai", "gemini", "azure", "anthropic"],
+                    "description": "AI provider type"
+                },
+                "embedding": {
+                    "type": "object",
+                    "required": ["model"],
+                    "properties": {
+                        "model": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "Embedding model name"
+                        },
+                        "base_url": {
+                            "type": ["string", "null"],
+                            "description": "Custom base URL for the provider API"
+                        },
+                        "api_key": {
+                            "type": ["string", "null"],
+                            "pattern": "^(\\$\\{[A-Z_][A-Z0-9_]*\\}|null)?$",
+                            "description": "API key as environment variable template (e.g., ${OPENAI_API_KEY}) or null"
+                        }
+                    },
+                    "additionalProperties": False
+                },
+                "llm": {
+                    "type": "object",
+                    "required": ["model"],
+                    "properties": {
+                        "model": {
+                            "type": "string",
+                            "minLength": 1,
+                            "description": "LLM model name for text generation"
+                        },
+                        "base_url": {
+                            "type": ["string", "null"],
+                            "description": "Custom base URL for the provider API"
+                        },
+                        "api_key": {
+                            "type": ["string", "null"],
+                            "pattern": "^(\\$\\{[A-Z_][A-Z0-9_]*\\}|null)?$",
+                            "description": "API key as environment variable template (e.g., ${OPENAI_API_KEY}) or null"
+                        }
+                    },
+                    "additionalProperties": False
+                }
+            },
+            "required": ["type", "embedding", "llm"],
+            "additionalProperties": False,
+            "description": "AI provider configuration for embeddings and LLM"
         }
     },
     "additionalProperties": False
@@ -123,6 +179,16 @@ def validate_config_schema(data: Dict[str, Any], config_path: str) -> None:
                 f"  Error: {error.message}\n"
                 f"  Suggestion: Check the field length requirements in the schema"
             )
+        elif "does not match" in error.message and "api_key" in error_path:
+            raise ConfigError(
+                f"Invalid API key format in: {config_path}\n"
+                f"  Field: {error_path}\n"
+                f"  Error: {error.message}\n"
+                f"  Suggestion: API keys must be environment variable templates:\n"
+                f"    - Correct: \"api_key\": \"${{OPENAI_API_KEY}}\"\n"
+                f"    - Correct: \"api_key\": null\n"
+                f"    - Incorrect: \"api_key\": \"sk-abc123...\" (never store raw keys)"
+            )
         elif "does not match" in error.message:
             raise ConfigError(
                 f"Pattern validation error in configuration file: {config_path}\n"
@@ -141,6 +207,30 @@ def validate_config_schema(data: Dict[str, Any], config_path: str) -> None:
                 f"  Unknown fields: {', '.join(extra_props)}\n"
                 f"  Allowed fields: {', '.join(COLLECTION_CONFIG_SCHEMA['properties'].keys())}\n"
                 f"  Suggestion: Remove the unknown fields or check for typos"
+            )
+        elif "'type' is a required property" in error.message and "ai_provider" in error_path:
+            raise ConfigError(
+                f"AI provider configuration error in: {config_path}\n"
+                f"  Field: {error_path}\n"
+                f"  Error: Missing 'type' field\n"
+                f"  Suggestion: Add provider type to ai_provider configuration:\n"
+                f"    \"ai_provider\": {{\n"
+                f"      \"type\": \"ollama\",  // or openai, gemini, azure, anthropic\n"
+                f"      \"embedding\": {{ \"model\": \"mxbai-embed-large:latest\" }},\n"
+                f"      \"llm\": {{ \"model\": \"llama3.1:8b\" }}\n"
+                f"    }}"
+            )
+        elif "is not one of" in error.message and "ai_provider" in error_path:
+            raise ConfigError(
+                f"Invalid AI provider type in: {config_path}\n"
+                f"  Field: {error_path}\n"
+                f"  Error: {error.message}\n"
+                f"  Suggestion: Use one of the supported provider types:\n"
+                f"    - ollama (local models)\n"
+                f"    - openai (OpenAI API)\n"
+                f"    - gemini (Google Gemini API)\n"
+                f"    - azure (Azure OpenAI)\n"
+                f"    - anthropic (Anthropic API)"
             )
         else:
             # Generic schema validation error
@@ -162,12 +252,16 @@ def validate_config_file_exists(config_path: str) -> Path:
             f"  Expected location: {config_file.absolute()}\n"
             f"  Suggestion: Create a JSON config file with required fields:\n"
             f"    - collection_name (required, string)\n"
+            f"    - description (required, string)\n"
             f"    - chromadb_path (required, string)\n"
             f"    - json_file (required, string)\n"
-            f"    - chunk_size (defaults to 1200, number)\n"
-            f"    - description (required, string)\n"
+            f"    - chunk_size (optional, number, default: 1200)\n"
             f"    - forceRecreate (optional, boolean, default: false)\n"
-            f"    - skipAiValidation (optional, boolean, default: false)"
+            f"    - skipAiValidation (optional, boolean, default: false)\n"
+            f"    - ai_provider (optional, object, defaults to Ollama):\n"
+            f"        type: ollama|openai|gemini|azure|anthropic\n"
+            f"        embedding: {{ model: string, base_url?: string, api_key?: ${{ENV_VAR}} }}\n"
+            f"        llm: {{ model: string, base_url?: string, api_key?: ${{ENV_VAR}} }}"
         )
 
     return config_file
@@ -212,6 +306,22 @@ def extract_config_fields(data: Dict[str, Any]) -> CollectionConfig:
     json_file = data['json_file'].strip()
     chunk_size = data.get('chunk_size', 1200)
 
+    ai_provider = data.get('ai_provider', None)
+    if ai_provider is None:
+        ai_provider = {
+            "type": "ollama",
+            "embedding": {
+                "model": "mxbai-embed-large:latest",
+                "base_url": None,
+                "api_key": None
+            },
+            "llm": {
+                "model": "llama3.1:8b",
+                "base_url": None,
+                "api_key": None
+            }
+        }
+
     return CollectionConfig(
         collection_name=collection_name,
         description=description,
@@ -220,6 +330,7 @@ def extract_config_fields(data: Dict[str, Any]) -> CollectionConfig:
         chromadb_path=chromadb_path,
         json_file=json_file,
         chunk_size=chunk_size,
+        ai_provider=ai_provider,
     )
 
 

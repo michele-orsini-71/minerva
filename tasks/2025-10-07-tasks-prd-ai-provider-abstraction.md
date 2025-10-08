@@ -21,6 +21,11 @@
 - `markdown-notes-cag-data-creator/ai_provider.py` - Core abstraction layer for multi-provider AI support with LiteLLM integration
 - `markdown-notes-cag-data-creator/tests/test_ai_provider.py` - Comprehensive unit tests for AI provider abstraction layer
 
+**Files Modified (Tasks 2.1-2.8):**
+
+- `markdown-notes-cag-data-creator/config_loader.py` - Extended to support `ai_provider` configuration section with JSON schema validation, backward compatibility defaults, and comprehensive error messages
+- `markdown-notes-cag-data-creator/tests/test_config_loader.py` - Added 14 unit tests for AI provider config validation, backward compatibility, and error cases
+
 **Files to Modify:**
 
 - `markdown-notes-cag-data-creator/embedding.py` - Refactor to use AI provider abstraction instead of direct Ollama calls
@@ -29,8 +34,6 @@
 - `markdown-notes-cag-data-creator/tests/test_storage.py` - Add tests for metadata storage functionality
 - `markdown-notes-cag-data-creator/full_pipeline.py` - Update to use config-driven AI provider initialization
 - `markdown-notes-cag-data-creator/tests/test_full_pipeline.py` - Update tests for config-driven pipeline
-- `markdown-notes-cag-data-creator/config_loader.py` - Extend to support `ai_provider` configuration section
-- `markdown-notes-cag-data-creator/tests/test_config_loader.py` - Add tests for AI provider config validation
 - `markdown-notes-mcp-server/server.py` - Implement dynamic collection discovery with provider loading
 - `markdown-notes-mcp-server/collection_discovery.py` - Update to read and instantiate providers from metadata
 - `markdown-notes-mcp-server/tests/test_collection_discovery.py` - Add tests for provider-aware discovery
@@ -65,15 +68,15 @@
   - [x] 1.11 Add custom exception classes: `AIProviderError`, `APIKeyMissingError`, `ProviderUnavailableError`
   - [x] 1.12 Create unit tests in `tests/test_ai_provider.py` covering all methods, environment variable resolution, and error conditions
 
-- [ ] 2.0 Update Pipeline Configuration System
-  - [ ] 2.1 Update `COLLECTION_CONFIG_SCHEMA` in `config_loader.py` to add optional `ai_provider` object with type, embedding, and llm fields
-  - [ ] 2.2 Update `CollectionConfig` dataclass to include optional `ai_provider: Optional[Dict[str, Any]]` field
-  - [ ] 2.3 Add validation logic to ensure `ai_provider.type` is one of: ollama, openai, gemini, azure, anthropic
-  - [ ] 2.4 Add validation for `embedding` and `llm` sub-objects (required: model; optional: base_url, api_key)
-  - [ ] 2.5 Add validation to check that api_key values are either null or environment variable templates (`${VAR_NAME}`)
-  - [ ] 2.6 Add backward compatibility support: if `ai_provider` is missing, default to Ollama with `mxbai-embed-large:latest`
-  - [ ] 2.7 Update `config_loader.py` error messages to guide users on correct ai_provider format
-  - [ ] 2.8 Create unit tests in `tests/test_config_loader.py` for ai_provider validation, backward compatibility, and error cases
+- [x] 2.0 Update Pipeline Configuration System
+  - [x] 2.1 Update `COLLECTION_CONFIG_SCHEMA` in `config_loader.py` to add optional `ai_provider` object with type, embedding, and llm fields
+  - [x] 2.2 Update `CollectionConfig` dataclass to include optional `ai_provider: Optional[Dict[str, Any]]` field
+  - [x] 2.3 Add validation logic to ensure `ai_provider.type` is one of: ollama, openai, gemini, azure, anthropic
+  - [x] 2.4 Add validation for `embedding` and `llm` sub-objects (required: model; optional: base_url, api_key)
+  - [x] 2.5 Add validation to check that api_key values are either null or environment variable templates (`${VAR_NAME}`)
+  - [x] 2.6 Add backward compatibility support: if `ai_provider` is missing, default to Ollama with `mxbai-embed-large:latest`
+  - [x] 2.7 Update `config_loader.py` error messages to guide users on correct ai_provider format
+  - [x] 2.8 Create unit tests in `tests/test_config_loader.py` for ai_provider validation, backward compatibility, and error cases
 
 - [ ] 3.0 Refactor Embedding Module to Use Provider Abstraction
   - [ ] 3.1 Add module-level variable `_provider: Optional[AIProvider] = None` to store initialized provider instance
