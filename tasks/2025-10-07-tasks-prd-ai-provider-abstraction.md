@@ -78,19 +78,19 @@
   - [x] 2.7 Update `config_loader.py` error messages to guide users on correct ai_provider format
   - [x] 2.8 Create unit tests in `tests/test_config_loader.py` for ai_provider validation, backward compatibility, and error cases
 
-- [ ] 3.0 Refactor Embedding Module to Use Provider Abstraction
-  - [ ] 3.1 Add module-level variable `_provider: Optional[AIProvider] = None` to store initialized provider instance
-  - [ ] 3.2 Create `initialize_provider(config: CollectionConfig) -> AIProvider` function that creates AIProvider from config
-  - [ ] 3.3 Update `generate_embedding()` to check `_provider` is initialized (raise assertion error if not) then delegate to `_provider.generate_embedding()`
-  - [ ] 3.4 Update `generate_embeddings()` to check `_provider` is initialized then delegate to `_provider.generate_embeddings_batch()`
-  - [ ] 3.5 Create `get_embedding_metadata() -> Dict[str, Any]` function that returns `_provider.get_embedding_metadata()`
-  - [ ] 3.6 Create `validate_description(description: str) -> Dict[str, Any]` function that delegates to `_provider.validate_description()`
-  - [ ] 3.7 Remove direct Ollama imports and replace with provider abstraction calls
-  - [ ] 3.8 Update error handling to catch `AIProviderError` and wrap in `EmbeddingError` with context
-  - [ ] 3.9 Keep backward-compatible function signatures (same parameters and return types)
-  - [ ] 3.10 Update unit tests in `tests/test_embedding.py` to mock `AIProvider` instead of direct Ollama calls
-  - [ ] 3.11 Add tests for uninitialized provider error handling
-  - [ ] 3.12 Add tests for provider initialization with different provider types
+- [x] 3.0 Refactor Embedding Module to Use Provider Abstraction
+  - [x] 3.1 Add module-level variable `_provider: Optional[AIProvider] = None` to store initialized provider instance
+  - [x] 3.2 Create `initialize_provider(config: CollectionConfig) -> AIProvider` function that creates AIProvider from config
+  - [x] 3.3 Update `generate_embedding()` to check `_provider` is initialized (raise assertion error if not) then delegate to `_provider.generate_embedding()`
+  - [x] 3.4 Update `generate_embeddings()` to check `_provider` is initialized then delegate to `_provider.generate_embeddings_batch()`
+  - [x] 3.5 Create `get_embedding_metadata() -> Dict[str, Any]` function that returns `_provider.get_embedding_metadata()`
+  - [x] 3.6 Create `validate_description(description: str) -> Dict[str, Any]` function that delegates to `_provider.validate_description()`
+  - [x] 3.7 Remove direct Ollama imports and replace with provider abstraction calls
+  - [x] 3.8 Update error handling to catch `AIProviderError` and wrap in `EmbeddingError` with context
+  - [x] 3.9 Keep backward-compatible function signatures (same parameters and return types)
+  - [x] 3.10 Update unit tests in `tests/test_embedding.py` to mock `AIProvider` instead of direct Ollama calls
+  - [x] 3.11 Add tests for uninitialized provider error handling
+  - [x] 3.12 Add tests for provider initialization with different provider types
 
 - [ ] 4.0 Update Storage Module for Provider Metadata
   - [ ] 4.1 Update `build_collection_metadata()` function signature to accept optional `embedding_metadata: Optional[Dict[str, Any]]` parameter

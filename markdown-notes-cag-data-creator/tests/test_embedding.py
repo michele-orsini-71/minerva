@@ -1,12 +1,14 @@
 import math
 from typing import List
-from types import SimpleNamespace
+from unittest.mock import Mock, MagicMock
 
 import numpy as np
 import pytest
 
 import embedding
 from models import Chunk, ChunkWithEmbedding
+from config_loader import CollectionConfig
+from ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
 
 
 def build_chunk(chunk_id: str, content: str = "content", index: int = 0) -> Chunk:
@@ -22,66 +24,290 @@ def build_chunk(chunk_id: str, content: str = "content", index: int = 0) -> Chun
     )
 
 
-def test_l2_normalize_basic():
-    vectors = np.array([[3.0, 4.0]])
-    normalized = embedding.l2_normalize(vectors)
-    assert math.isclose(np.linalg.norm(normalized[0]), 1.0, rel_tol=1e-6)
+def build_test_config(provider_type: str = "ollama") -> CollectionConfig:
+    return CollectionConfig(
+        collection_name="test_collection",
+        description="Test collection for unit tests",
+        chromadb_path="./test_chromadb",
+        json_file="./test_data.json",
+        force_recreate=False,
+        skip_ai_validation=False,
+        chunk_size=1200,
+        ai_provider={
+            "type": provider_type,
+            "embedding": {
+                "model": "mxbai-embed-large:latest" if provider_type == "ollama" else "text-embedding-3-small",
+                "base_url": "http://localhost:11434" if provider_type == "ollama" else None,
+                "api_key": None if provider_type == "ollama" else "${OPENAI_API_KEY}"
+            },
+            "llm": {
+                "model": "llama3.1:8b" if provider_type == "ollama" else "gpt-4o-mini",
+                "base_url": None,
+                "api_key": None if provider_type == "ollama" else "${OPENAI_API_KEY}"
+            }
+        }
+    )
 
 
-def test_l2_normalize_zero_vector():
-    vectors = np.array([[0.0, 0.0]])
-    normalized = embedding.l2_normalize(vectors)
-    assert np.array_equal(normalized, np.array([[0.0, 0.0]]))
+@pytest.fixture
+def mock_ai_provider(monkeypatch: pytest.MonkeyPatch):
+    mock_provider = Mock(spec=AIProvider)
+    mock_provider.provider_type = "ollama"
+    mock_provider.embedding_model = "mxbai-embed-large:latest"
+    mock_provider.llm_model = "llama3.1:8b"
+
+    mock_provider.generate_embedding.return_value = [0.6, 0.8]
+    mock_provider.check_availability.return_value = {
+        'available': True,
+        'provider_type': 'ollama',
+        'embedding_model': 'mxbai-embed-large:latest',
+        'dimension': 2,
+        'error': None
+    }
+    mock_provider.get_embedding_metadata.return_value = {
+        'embedding_provider': 'ollama',
+        'embedding_model': 'mxbai-embed-large:latest',
+        'llm_model': 'llama3.1:8b',
+        'embedding_dimension': 2,
+        'embedding_base_url': 'http://localhost:11434',
+        'embedding_api_key_ref': None
+    }
+    mock_provider.validate_description.return_value = {
+        'score': 8,
+        'feedback': 'Good description',
+        'valid': True,
+        'error': None
+    }
+
+    monkeypatch.setattr(embedding, '_provider', mock_provider)
+
+    return mock_provider
 
 
-def test_generate_embedding_success(mock_ollama_service, monkeypatch: pytest.MonkeyPatch):
+def test_initialize_provider_success(monkeypatch: pytest.MonkeyPatch):
+    embedding._provider = None
+
+    mock_provider_instance = Mock(spec=AIProvider)
+    mock_provider_class = Mock(return_value=mock_provider_instance)
+
+    monkeypatch.setattr(embedding, 'AIProvider', mock_provider_class)
+
+    config = build_test_config()
+    result = embedding.initialize_provider(config)
+
+    assert result == mock_provider_instance
+    assert embedding._provider == mock_provider_instance
+    mock_provider_class.assert_called_once()
+
+
+def test_initialize_provider_no_config():
+    embedding._provider = None
+
+    config = CollectionConfig(
+        collection_name="test",
+        description="test",
+        chromadb_path="./test",
+        json_file="./test.json",
+        ai_provider=None
+    )
+
+    with pytest.raises(embedding.EmbeddingError, match="No AI provider configuration"):
+        embedding.initialize_provider(config)
+
+
+def test_initialize_provider_provider_error(monkeypatch: pytest.MonkeyPatch):
+    embedding._provider = None
+
+    def failing_provider(*args, **kwargs):
+        raise AIProviderError("Provider failed")
+
+    monkeypatch.setattr(embedding, 'AIProvider', failing_provider)
+
+    config = build_test_config()
+
+    with pytest.raises(embedding.EmbeddingError, match="Failed to initialize AI provider"):
+        embedding.initialize_provider(config)
+
+
+def test_initialize_provider_different_types(monkeypatch: pytest.MonkeyPatch):
+    embedding._provider = None
+
+    mock_provider_class = Mock(return_value=Mock(spec=AIProvider))
+    monkeypatch.setattr(embedding, 'AIProvider', mock_provider_class)
+
+    for provider_type in ['ollama', 'openai', 'gemini']:
+        config = build_test_config(provider_type)
+        result = embedding.initialize_provider(config)
+        assert result is not None
+
+
+def test_get_embedding_metadata_success(mock_ai_provider):
+    metadata = embedding.get_embedding_metadata()
+
+    assert metadata['embedding_provider'] == 'ollama'
+    assert metadata['embedding_model'] == 'mxbai-embed-large:latest'
+    assert metadata['embedding_dimension'] == 2
+    mock_ai_provider.get_embedding_metadata.assert_called_once()
+
+
+def test_get_embedding_metadata_uninitialized():
+    embedding._provider = None
+
+    with pytest.raises(AssertionError, match="Provider not initialized"):
+        embedding.get_embedding_metadata()
+
+
+def test_validate_description_success(mock_ai_provider):
+    result = embedding.validate_description("A collection of Bear notes")
+
+    assert result['score'] == 8
+    assert result['valid'] is True
+    mock_ai_provider.validate_description.assert_called_once_with("A collection of Bear notes")
+
+
+def test_validate_description_uninitialized():
+    embedding._provider = None
+
+    with pytest.raises(AssertionError, match="Provider not initialized"):
+        embedding.validate_description("test")
+
+
+def test_generate_embedding_success(mock_ai_provider, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(embedding.time, "sleep", lambda *_: None)
+
     vector = embedding.generate_embedding("hello world")
-    assert isinstance(vector, list)
-    assert math.isclose(np.linalg.norm(vector), 1.0, rel_tol=1e-6)
-    assert mock_ollama_service["embeddings"]
+
+    assert vector == [0.6, 0.8]
+    mock_ai_provider.generate_embedding.assert_called_once_with("hello world")
 
 
-def test_generate_embedding_empty_text():
-    with pytest.raises(ValueError):
+def test_generate_embedding_uninitialized():
+    embedding._provider = None
+
+    with pytest.raises(AssertionError, match="Provider not initialized"):
+        embedding.generate_embedding("test")
+
+
+def test_generate_embedding_empty_text(mock_ai_provider):
+    with pytest.raises(ValueError, match="Cannot generate embedding for empty text"):
         embedding.generate_embedding("   ")
 
 
-def test_generate_embedding_retry_logic(mock_ollama_service, monkeypatch: pytest.MonkeyPatch):
+def test_generate_embedding_retry_logic(mock_ai_provider, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(embedding.time, "sleep", lambda *_: None)
+
     attempts: List[int] = []
 
-    def flaky_embeddings(model: str, prompt: str):
+    def flaky_generate(text: str):
         attempts.append(1)
         if len(attempts) == 1:
-            raise RuntimeError("temporary failure")
-        return {"embedding": [0.5, 0.5, 0.5]}
+            raise AIProviderError("temporary failure")
+        return [0.6, 0.8]
 
-    monkeypatch.setattr(embedding, "ollama_embeddings", flaky_embeddings)
+    mock_ai_provider.generate_embedding.side_effect = flaky_generate
 
     vector = embedding.generate_embedding("retry me", max_retries=1)
     assert len(attempts) == 2
-    assert math.isclose(np.linalg.norm(vector), 1.0, rel_tol=1e-6)
+    assert vector == [0.6, 0.8]
 
 
-def test_generate_embeddings_batch_success(mock_ollama_service, monkeypatch: pytest.MonkeyPatch):
+def test_generate_embedding_retry_exhausted(mock_ai_provider, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(embedding.time, "sleep", lambda *_: None)
 
-    def fake_generate_embedding(**kwargs):
-        return [0.0, 0.1, 0.2]
+    mock_ai_provider.generate_embedding.side_effect = AIProviderError("persistent failure")
 
-    monkeypatch.setattr(embedding, "generate_embedding", lambda **kwargs: fake_generate_embedding())
+    with pytest.raises(embedding.EmbeddingError, match="Failed to generate embedding after"):
+        embedding.generate_embedding("will fail", max_retries=1)
+
+
+def test_generate_embeddings_success(mock_ai_provider, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(embedding.time, "sleep", lambda *_: None)
 
     chunks = [build_chunk(f"chunk-{i}", content=f"content {i}", index=i) for i in range(2)]
     result = embedding.generate_embeddings(chunks)
 
     assert len(result) == 2
     assert all(isinstance(item, ChunkWithEmbedding) for item in result)
+    assert mock_ai_provider.generate_embedding.call_count == 2
+
+
+def test_generate_embeddings_uninitialized():
+    embedding._provider = None
+
+    chunks = [build_chunk("chunk-1")]
+
+    with pytest.raises(AssertionError, match="Provider not initialized"):
+        embedding.generate_embeddings(chunks)
+
+
+def test_generate_embeddings_empty_list(mock_ai_provider):
+    result = embedding.generate_embeddings([])
+    assert result == []
+
+
+def test_generate_embeddings_provider_unavailable(mock_ai_provider):
+    mock_ai_provider.check_availability.return_value = {
+        'available': False,
+        'error': 'Connection refused'
+    }
+
+    chunks = [build_chunk("chunk-1")]
+
+    with pytest.raises(embedding.EmbeddingError, match="Provider unavailable"):
+        embedding.generate_embeddings(chunks)
+
+
+def test_generate_embeddings_progress_callback(mock_ai_provider, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(embedding.time, "sleep", lambda *_: None)
+
+    chunks = [build_chunk(f"chunk-{i}", index=i) for i in range(3)]
+    progress_events = []
+
+    embedding.generate_embeddings(
+        chunks,
+        progress_callback=lambda current, total: progress_events.append((current, total))
+    )
+
+    assert len(progress_events) > 0
+    assert progress_events[-1] == (3, 3)
+
+
+def test_generate_embeddings_partial_failure(mock_ai_provider, monkeypatch: pytest.MonkeyPatch, capsys):
+    monkeypatch.setattr(embedding.time, "sleep", lambda *_: None)
+
+    chunks = [build_chunk(f"chunk-{i}", index=i) for i in range(3)]
+
+    mock_ai_provider.generate_embedding.side_effect = [
+        [0.6, 0.8],
+        AIProviderError("Failed on second chunk"),
+        [0.6, 0.8]
+    ]
+
+    result = embedding.generate_embeddings(chunks)
+
+    assert len(result) == 2
+    captured = capsys.readouterr()
+    assert "Failed chunks" in captured.out
+
+
+def test_generate_embeddings_all_fail(mock_ai_provider, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(embedding.time, "sleep", lambda *_: None)
+
+    mock_ai_provider.generate_embedding.side_effect = AIProviderError("All fail")
+
+    chunks = [build_chunk("chunk-1")]
+
+    with pytest.raises(embedding.EmbeddingError, match="No embeddings were successfully generated"):
+        embedding.generate_embeddings(chunks)
 
 
 def test_validate_embedding_consistency_valid():
     vectors = [[1.0, 0.0], [0.0, 1.0]]
     assert embedding.validate_embedding_consistency(vectors)
+
+
+def test_validate_embedding_consistency_empty():
+    assert embedding.validate_embedding_consistency([])
 
 
 def test_validate_embedding_consistency_invalid_dimension(capsys):
@@ -96,137 +322,3 @@ def test_validate_embedding_consistency_not_normalized(capsys):
     assert not embedding.validate_embedding_consistency(vectors)
     captured = capsys.readouterr()
     assert "not normalized" in captured.err
-
-
-def test_generate_embedding_retry_exhausted(mock_ollama_service, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(embedding.time, "sleep", lambda *_: None)
-
-    def failing_embeddings(model: str, prompt: str):
-        raise RuntimeError("boom")
-
-    monkeypatch.setattr(embedding, "ollama_embeddings", failing_embeddings)
-
-    with pytest.raises(embedding.EmbeddingError):
-        embedding.generate_embedding("will fail", max_retries=0)
-
-
-def test_generate_embedding_missing_field(mock_ollama_service, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(embedding.time, "sleep", lambda *_: None)
-    monkeypatch.setattr(embedding, "ollama_embeddings", lambda model, prompt: {})
-
-    with pytest.raises(embedding.EmbeddingError):
-        embedding.generate_embedding("missing", max_retries=0)
-
-
-def test_generate_embedding_empty_vector(mock_ollama_service, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(embedding.time, "sleep", lambda *_: None)
-    monkeypatch.setattr(embedding, "ollama_embeddings", lambda model, prompt: {"embedding": []})
-
-    with pytest.raises(embedding.EmbeddingError):
-        embedding.generate_embedding("empty", max_retries=0)
-
-
-def test_generate_embedding_connection_error(mock_ollama_service, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(embedding.time, "sleep", lambda *_: None)
-
-    def connection_error(model: str, prompt: str):
-        raise RuntimeError("connection refused")
-
-    monkeypatch.setattr(embedding, "ollama_embeddings", connection_error)
-
-    with pytest.raises(embedding.OllamaServiceError):
-        embedding.generate_embedding("down", max_retries=0)
-
-
-def test_initialize_embedding_service_success(mock_ollama_service):
-    status = embedding.initialize_embedding_service()
-    assert status["service_available"]
-    assert status["model_available"]
-    assert status["ready"]
-
-
-def test_initialize_embedding_service_ollama_not_running(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(embedding, "check_ollama_service", lambda: False)
-    with pytest.raises(embedding.OllamaServiceError):
-        embedding.initialize_embedding_service()
-
-
-def test_initialize_embedding_service_model_missing(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(embedding, "check_ollama_service", lambda: True)
-    monkeypatch.setattr(embedding, "check_model_availability", lambda model: False)
-    with pytest.raises(embedding.OllamaServiceError):
-        embedding.initialize_embedding_service()
-
-
-def test_generate_embedding_service_initialization_failure(mock_ollama_service, monkeypatch: pytest.MonkeyPatch):
-    def fail_init(*_args, **_kwargs):
-        raise embedding.OllamaServiceError("init")
-
-    monkeypatch.setattr(embedding, "initialize_embedding_service", fail_init)
-    with pytest.raises(embedding.EmbeddingError):
-        embedding.generate_embeddings([build_chunk("chunk-1")])
-
-
-def test_check_ollama_service(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(embedding.ollama, "list", lambda: SimpleNamespace(models=[]))
-    assert embedding.check_ollama_service() is True
-
-    def raise_error():
-        raise RuntimeError("offline")
-
-    monkeypatch.setattr(embedding.ollama, "list", raise_error)
-    assert embedding.check_ollama_service() is False
-
-
-def test_check_model_availability(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(embedding.ollama, "list", lambda: SimpleNamespace(models=[SimpleNamespace(model="model")]))
-    assert embedding.check_model_availability("model") is True
-    monkeypatch.setattr(embedding.ollama, "list", lambda: SimpleNamespace(models=[]))
-    assert embedding.check_model_availability("model") is False
-
-    def explode():
-        raise RuntimeError("offline")
-
-    monkeypatch.setattr(embedding.ollama, "list", explode)
-    assert embedding.check_model_availability("model") is False
-
-
-def test_generate_embeddings_progress_and_failures(monkeypatch: pytest.MonkeyPatch, capsys):
-    monkeypatch.setattr(embedding, "initialize_embedding_service", lambda model: {"model_name": model})
-
-    chunks = [build_chunk(chunk_id="chunk-0", index=0), build_chunk(chunk_id="chunk-1", index=1)]
-    invocation = {"count": 0}
-
-    def generate_with_tracking(text: str, **_kwargs):
-        if invocation["count"] == 1:
-            raise embedding.EmbeddingError("fail")
-        invocation["count"] += 1
-        return [1.0, 0.0, 0.0]
-
-    monkeypatch.setattr(embedding, "generate_embedding", generate_with_tracking)
-
-    progress_events = []
-
-    result = embedding.generate_embeddings(
-        chunks,
-        progress_callback=lambda current, total: progress_events.append((current, total)),
-    )
-
-    assert len(result) == 1
-    assert progress_events[-1] == (len(chunks), len(chunks))
-    captured = capsys.readouterr()
-    assert "Failed chunks" in captured.out
-    assert progress_events == [(0, 2), (1, 2), (2, 2)]
-
-
-def test_generate_embeddings_all_fail(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(embedding, "initialize_embedding_service", lambda model: {"model_name": model})
-    def fail_generate_embedding(*_args, **_kwargs):
-        raise RuntimeError("fail")
-
-    monkeypatch.setattr(embedding, "generate_embedding", fail_generate_embedding)
-
-    chunks = [build_chunk(chunk_id="chunk-0", index=0)]
-
-    with pytest.raises(embedding.EmbeddingError):
-        embedding.generate_embeddings(chunks)
