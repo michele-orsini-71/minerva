@@ -43,6 +43,7 @@ setup(
         "langchain-text-splitters>=0.0.1",
         "tiktoken>=0.4.0",
         "nltk>=3.8",
+        "litellm>=1.0.0",
     ],
 
     # Optional dependencies for development and testing

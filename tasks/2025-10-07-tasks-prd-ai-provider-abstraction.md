@@ -15,7 +15,12 @@
 - `configs/example-openai.json` - Example configuration file for OpenAI provider
 - `configs/example-gemini.json` - Example configuration file for Google Gemini provider
 
+**Files Created (Task 1.1):**
+
+- `requirements.txt` - Project-level dependency file listing all core dependencies including litellm
+
 **Files to Modify:**
+
 - `markdown-notes-cag-data-creator/embedding.py` - Refactor to use AI provider abstraction instead of direct Ollama calls
 - `markdown-notes-cag-data-creator/tests/test_embedding.py` - Update tests for new provider-based architecture
 - `markdown-notes-cag-data-creator/storage.py` - Add support for storing AI provider metadata in ChromaDB collections
@@ -45,7 +50,7 @@
 ## Tasks
 
 - [ ] 1.0 Create AI Provider Abstraction Layer Module
-  - [ ] 1.1 Install LiteLLM dependency (`pip install litellm`) and update requirements.txt
+  - [x] 1.1 Install LiteLLM dependency (`pip install litellm`) and update requirements.txt
   - [ ] 1.2 Create `ai_provider.py` with `AIProviderConfig` dataclass (provider_type, embedding_model, llm_model, base_url, api_key fields)
   - [ ] 1.3 Implement environment variable resolution function to replace `${ENV_VAR}` templates with actual values from `os.environ`
   - [ ] 1.4 Implement `AIProvider` class constructor that initializes LiteLLM with resolved config
