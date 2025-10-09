@@ -7,106 +7,80 @@ Processes Bear notes JSON, creates chunks, generates embeddings, and stores in C
 import sys
 import time
 
-# Import our modules
+from ai_provider import AIProviderError
 from args_parser import parse_pipeline_args
+from chunk_creator import create_chunks_from_notes
 from config_validator import load_and_validate_config
+from dry_run import run_dry_run_mode
+from embedding import (EmbeddingError, generate_embeddings,
+                       get_embedding_metadata, initialize_provider,
+                       validate_description)
 from json_loader import load_json_notes
-from chunk_creator import create_chunks_from_notes  # New immutable API
-from embedding import generate_embeddings, EmbeddingError  # New immutable API
-from storage import collection_exists, initialize_chromadb_client, insert_chunks, create_collection, recreate_collection, StorageError  # New immutable API
+from storage import (StorageError, create_collection,
+                     initialize_chromadb_client, insert_chunks,
+                     recreate_collection)
 
 
-def calculate_dry_run_estimates(notes, config):
-    """Calculate rough estimates for dry-run mode without actual chunking."""
-    total_chars = sum(len(note['markdown']) for note in notes)
-    avg_note_size = total_chars / len(notes) if notes else 0
+def initialize_ai_provider(config, args):
+    """Initialize and validate AI provider before processing."""
+    print("Initializing AI provider...")
 
-    # Rough estimate: assume each chunk is target_chars size
-    estimated_chunks = total_chars // config.chunk_size
-    # Account for overlap and header boundaries (roughly +20% chunks)
-    estimated_chunks = int(estimated_chunks * 1.2)
+    try:
+        provider = initialize_provider(config)
 
-    # Estimate: ~4 bytes per dimension for embeddings (1024 dimensions typical)
-    estimated_embedding_size = estimated_chunks * 1024 * 4 / (1024 * 1024)  # MB
-    estimated_metadata_size = estimated_chunks * 0.001  # Rough estimate: 1KB per chunk metadata
-    total_estimated_size = estimated_embedding_size + estimated_metadata_size
+        availability = provider.check_availability()
+        if not availability['available']:
+            error_msg = availability.get('error', 'Unknown error')
+            print(f"\n{'=' * 60}", file=sys.stderr)
+            print(f"PROVIDER UNAVAILABLE", file=sys.stderr)
+            print(f"{'=' * 60}", file=sys.stderr)
+            print(f"\nProvider: {provider.provider_type}", file=sys.stderr)
+            print(f"Model: {provider.embedding_model}", file=sys.stderr)
+            print(f"Error: {error_msg}", file=sys.stderr)
+            sys.exit(1)
 
-    return {
-        'total_chars': total_chars,
-        'avg_note_size': avg_note_size,
-        'estimated_chunks': estimated_chunks,
-        'total_estimated_size': total_estimated_size
-    }
+        provider_type = provider.provider_type
+        embedding_model = provider.embedding_model
+        llm_model = provider.llm_model
+        dimension = availability.get('dimension', 'unknown')
 
-
-def print_dry_run_summary(config, notes, estimates, exists):
-    """Print comprehensive dry-run summary."""
-    print(f"Collection Configuration:")
-    print(f"   Name: {config.collection_name}")
-    print(f"   Description: {config.description}")
-    print(f"   Force Recreate: {config.force_recreate}")
-    print()
-    print(f"Data Analysis:")
-    print(f"   Source file: {config.json_file}")
-    print(f"   Notes loaded: {len(notes)}")
-    print(f"   Total content: {estimates['total_chars']:,} characters")
-    print(f"   Average note size: {estimates['avg_note_size']:.0f} characters")
-    print(f"   Target chunk size: {config.chunk_size} characters")
-    print()
-    print(f"Estimates (without actual chunking):")
-    print(f"   Estimated chunks: ~{estimates['estimated_chunks']:,}")
-    print(f"   Estimated storage: ~{estimates['total_estimated_size']:.2f} MB")
-    print(f"   Note: Actual values may vary by ±20% depending on content structure")
-    print()
-    print(f"Collection Status:")
-    print(f"   ChromaDB path: {config.chromadb_path}")
-    print(f"   Collection exists: {'YES' if exists else 'NO'}")
-
-
-def validate_dry_run_config(config, exists):
-    """Validate configuration in dry-run mode and exit if invalid."""
-    if exists and config.force_recreate:
-        print(f"   Action: Will DELETE and recreate (WARNING: destructive!)")
-    elif exists and not config.force_recreate:
-        print(f"   Action: Will FAIL (collection exists, forceRecreate=false)")
-        print(f"   ERROR: Configuration would fail in real run!")
-        print(f"   Fix: Set 'forceRecreate': true or use different collection name")
+        print(f"   Provider: {provider_type}")
+        print(f"   Embedding model: {embedding_model}")
+        print(f"   LLM model: {llm_model}")
+        print(f"   Embedding dimension: {dimension}")
+        print(f"   Status: Available")
         print()
-        print("=" * 60)
-        print("DRY-RUN VALIDATION FAILED")
+
+        if not config.skip_ai_validation:
+            print("Validating collection description...")
+            validation_result = validate_description(config.description)
+            score = validation_result.get('score', 0)
+            feedback = validation_result.get('feedback', 'No feedback available')
+
+            print(f"   Description score: {score}/10")
+            print(f"   Feedback: {feedback}")
+
+            if score < 7:
+                print(f"   WARNING: Description score is below 7. Consider improving the description.")
+            print()
+
+        metadata = get_embedding_metadata()
+        return provider, metadata
+
+    except AIProviderError as error:
+        print(f"\n{'=' * 60}", file=sys.stderr)
+        print(f"PROVIDER INITIALIZATION ERROR", file=sys.stderr)
+        print(f"{'=' * 60}", file=sys.stderr)
+        print(f"\nError: {error}", file=sys.stderr)
+        print(f"\nConfiguration file: {args.config}", file=sys.stderr)
         sys.exit(1)
-    else:
-        print(f"   Action: Will create new collection")
-
-
-def run_dry_run_mode(config, args, notes):
-    """Execute dry-run validation mode."""
-    print("DRY-RUN PREVIEW (fast validation mode)")
-    print("=" * 60)
-
-    # Check if collection exists
-    client = initialize_chromadb_client(config.chromadb_path)
-    exists = collection_exists(client, config.collection_name)
-
-    # Calculate estimates
-    estimates = calculate_dry_run_estimates(notes, config)
-
-    # Print summary
-    print_dry_run_summary(config, notes, estimates, exists)
-
-    # Validate and potentially exit
-    validate_dry_run_config(config, exists)
-
-    print()
-    print("=" * 60)
-    print("DRY-RUN VALIDATION SUCCESSFUL")
-    print("Configuration is valid and ready for processing")
-    print(f"Run without --dry-run to execute the pipeline")
-    sys.exit(0)
 
 
 def run_normal_pipeline(config, args, notes, start_time):
     """Execute the normal RAG pipeline with chunking, embedding, and storage."""
+    # Initialize provider and get metadata
+    provider, embedding_metadata = initialize_ai_provider(config, args)
+
     # Create chunks (immutable)
     print("Creating semantic chunks...")
     chunks = create_chunks_from_notes(notes, target_chars=config.chunk_size)
@@ -130,13 +104,15 @@ def run_normal_pipeline(config, args, notes, start_time):
         collection = recreate_collection(
             client,
             collection_name=config.collection_name,
-            description=config.description
+            description=config.description,
+            embedding_metadata=embedding_metadata
         )
     else:
         collection = create_collection(
             client,
             collection_name=config.collection_name,
-            description=config.description
+            description=config.description,
+            embedding_metadata=embedding_metadata
         )
 
     def progress_callback(current, total):
@@ -169,24 +145,57 @@ def print_pipeline_summary(config, notes, chunks, chunks_with_embeddings, stats,
     print(f"   Database location: {config.chromadb_path}")
 
 
-def handle_embedding_error(error, config_path):
+def handle_embedding_error(error, config_path, config):
     """Handle embedding generation errors with actionable guidance."""
     print(f"\n{'=' * 60}", file=sys.stderr)
     print(f"EMBEDDING GENERATION ERROR", file=sys.stderr)
     print(f"{'=' * 60}", file=sys.stderr)
     print(f"\nError: {error}", file=sys.stderr)
+
+    provider_type = config.ai_provider.get('type', 'unknown') if config.ai_provider else 'ollama'
+    embedding_model = config.ai_provider.get('embedding', {}).get('model', 'unknown') if config.ai_provider else 'mxbai-embed-large:latest'
+
+    print(f"\nProvider: {provider_type}", file=sys.stderr)
+    print(f"Model: {embedding_model}", file=sys.stderr)
     print(f"\nActionable Steps:", file=sys.stderr)
-    print(f"  1. Check if Ollama is running:", file=sys.stderr)
-    print(f"     $ ollama serve", file=sys.stderr)
-    print(f"", file=sys.stderr)
-    print(f"  2. Verify the embedding model is available:", file=sys.stderr)
-    print(f"     $ ollama list", file=sys.stderr)
-    print(f"", file=sys.stderr)
-    print(f"  3. If model is missing, pull it:", file=sys.stderr)
-    print(f"     $ ollama pull mxbai-embed-large:latest", file=sys.stderr)
-    print(f"", file=sys.stderr)
-    print(f"  4. Test the model manually:", file=sys.stderr)
-    print(f"     $ ollama run mxbai-embed-large:latest \"test\"", file=sys.stderr)
+
+    if provider_type == 'ollama':
+        print(f"  1. Check if Ollama is running:", file=sys.stderr)
+        print(f"     $ ollama serve", file=sys.stderr)
+        print(f"", file=sys.stderr)
+        print(f"  2. Verify the embedding model is available:", file=sys.stderr)
+        print(f"     $ ollama list", file=sys.stderr)
+        print(f"", file=sys.stderr)
+        print(f"  3. If model is missing, pull it:", file=sys.stderr)
+        print(f"     $ ollama pull {embedding_model}", file=sys.stderr)
+        print(f"", file=sys.stderr)
+        print(f"  4. Test the model manually:", file=sys.stderr)
+        print(f"     $ ollama run {embedding_model} \"test\"", file=sys.stderr)
+    elif provider_type in ['openai', 'azure']:
+        print(f"  1. Verify your API key is set correctly:", file=sys.stderr)
+        print(f"     $ echo $OPENAI_API_KEY", file=sys.stderr)
+        print(f"", file=sys.stderr)
+        print(f"  2. Check API key has proper permissions", file=sys.stderr)
+        print(f"", file=sys.stderr)
+        print(f"  3. Verify the model name is correct: {embedding_model}", file=sys.stderr)
+        print(f"", file=sys.stderr)
+        print(f"  4. Check your API quota and rate limits", file=sys.stderr)
+    elif provider_type == 'gemini':
+        print(f"  1. Verify your API key is set correctly:", file=sys.stderr)
+        print(f"     $ echo $GEMINI_API_KEY", file=sys.stderr)
+        print(f"", file=sys.stderr)
+        print(f"  2. Check API key has proper permissions", file=sys.stderr)
+        print(f"", file=sys.stderr)
+        print(f"  3. Verify the model name is correct: {embedding_model}", file=sys.stderr)
+        print(f"", file=sys.stderr)
+        print(f"  4. Check your API quota and rate limits", file=sys.stderr)
+    else:
+        print(f"  1. Verify your provider configuration is correct", file=sys.stderr)
+        print(f"", file=sys.stderr)
+        print(f"  2. Check API keys and credentials are set", file=sys.stderr)
+        print(f"", file=sys.stderr)
+        print(f"  3. Verify the model name is correct: {embedding_model}", file=sys.stderr)
+
     print(f"\nConfiguration file: {config_path}", file=sys.stderr)
     sys.exit(1)
 
@@ -257,6 +266,18 @@ def load_config_with_verbose_output(args):
         print(f"   Target chunk size: {config.chunk_size} characters")
         print(f"   ChromaDB path: {config.chromadb_path}")
         print(f"   Collection: {config.collection_name}")
+
+        if config.ai_provider:
+            provider_type = config.ai_provider.get('type', 'unknown')
+            embedding_model = config.ai_provider.get('embedding', {}).get('model', 'unknown')
+            llm_model = config.ai_provider.get('llm', {}).get('model', 'unknown')
+            base_url = config.ai_provider.get('embedding', {}).get('base_url')
+
+            print(f"   AI Provider: {provider_type}")
+            print(f"   Embedding model: {embedding_model}")
+            print(f"   LLM model: {llm_model}")
+            if base_url:
+                print(f"   Base URL: {base_url}")
         print()
 
     return config
@@ -302,7 +323,7 @@ def main():
     except StorageError as error:
         handle_storage_error(error, config.collection_name, args.config)
     except EmbeddingError as error:
-        handle_embedding_error(error, args.config)
+        handle_embedding_error(error, args.config, config)
     except FileNotFoundError as error:
         handle_file_not_found_error(error, args.config)
     except Exception as error:

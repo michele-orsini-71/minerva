@@ -1,5 +1,5 @@
 import time
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Callable
 import sys
 
 import numpy as np
@@ -51,7 +51,6 @@ def validate_description(description: str) -> Dict[str, Any]:
 
 def generate_embedding(
     text: str,
-    model: str = None,
     max_retries: int = DEFAULT_MAX_RETRIES,
     retry_delay: float = DEFAULT_RETRY_DELAY
 ) -> List[float]:
@@ -85,6 +84,9 @@ def generate_embedding(
             else:
                 raise EmbeddingError(f"Failed to generate embedding after {max_retries + 1} attempts: {error}")
 
+    # Safety fallback - should never reach here due to exception handling above
+    raise EmbeddingError("Failed to generate embedding: unexpected loop exit")
+
 def validate_embedding_consistency(embeddings: List[List[float]]) -> bool:
     if not embeddings:
         return True
@@ -106,10 +108,9 @@ def validate_embedding_consistency(embeddings: List[List[float]]) -> bool:
 
 def generate_embeddings(
     chunks: ChunkList,
-    model: str = None,
     max_retries: int = DEFAULT_MAX_RETRIES,
     retry_delay: float = DEFAULT_RETRY_DELAY,
-    progress_callback: Optional[callable] = None
+    progress_callback: Optional[Callable[[int, int], None]] = None
 ) -> ChunkWithEmbeddingList:
     assert _provider is not None, "Provider not initialized. Call initialize_provider() first"
 

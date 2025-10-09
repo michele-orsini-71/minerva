@@ -102,20 +102,20 @@
   - [x] 4.7 Update unit tests in `tests/test_storage.py` to verify metadata storage, verify templates are stored (not secrets)
   - [x] 4.8 Add test case to ensure actual API keys are rejected with clear error message
 
-- [ ] 5.0 Update Pipeline to Use Config-Driven Provider Initialization
-  - [ ] 5.1 Import `initialize_provider`, `get_embedding_metadata`, `validate_description` from updated `embedding.py`
-  - [ ] 5.2 In `main()`, after loading config, call `initialize_provider(config)` to set up the AI provider
-  - [ ] 5.3 Add try-except block around provider initialization to catch `AIProviderError` and print actionable error messages
-  - [ ] 5.4 Call `provider.check_availability()` before processing to fail fast if provider is unavailable
-  - [ ] 5.5 Print provider status: type, embedding model, LLM model, embedding dimension, availability
-  - [ ] 5.6 If `skipAiValidation` is false, call `validate_description(config.description)` and log the score/feedback
-  - [ ] 5.7 If description validation score < 7, log warning but continue (non-blocking)
-  - [ ] 5.8 After provider initialization, call `get_embedding_metadata()` to retrieve metadata for storage
-  - [ ] 5.9 Pass embedding_metadata to `create_collection()` or `recreate_collection()` calls
-  - [ ] 5.10 Update error handling in `handle_embedding_error()` to provide provider-specific troubleshooting (not just Ollama)
-  - [ ] 5.11 Update verbose output to show provider configuration details
-  - [ ] 5.12 Update unit tests in `tests/test_full_pipeline.py` to test config-driven provider initialization
-  - [ ] 5.13 Add integration test for complete pipeline flow with Ollama (no API keys required)
+- [x] 5.0 Update Pipeline to Use Config-Driven Provider Initialization
+  - [x] 5.1 Import `initialize_provider`, `get_embedding_metadata`, `validate_description` from updated `embedding.py`
+  - [x] 5.2 In `main()`, after loading config, call `initialize_provider(config)` to set up the AI provider
+  - [x] 5.3 Add try-except block around provider initialization to catch `AIProviderError` and print actionable error messages
+  - [x] 5.4 Call `provider.check_availability()` before processing to fail fast if provider is unavailable
+  - [x] 5.5 Print provider status: type, embedding model, LLM model, embedding dimension, availability
+  - [x] 5.6 If `skipAiValidation` is false, call `validate_description(config.description)` and log the score/feedback
+  - [x] 5.7 If description validation score < 7, log warning but continue (non-blocking)
+  - [x] 5.8 After provider initialization, call `get_embedding_metadata()` to retrieve metadata for storage
+  - [x] 5.9 Pass embedding_metadata to `create_collection()` or `recreate_collection()` calls
+  - [x] 5.10 Update error handling in `handle_embedding_error()` to provide provider-specific troubleshooting (not just Ollama)
+  - [x] 5.11 Update verbose output to show provider configuration details
+  - [x] 5.12 Update unit tests in `tests/test_full_pipeline.py` to test config-driven provider initialization
+  - [x] 5.13 Add integration test for complete pipeline flow with Ollama (no API keys required)
 
 - [ ] 6.0 Implement MCP Server Dynamic Collection Discovery
   - [ ] 6.1 Update `collection_discovery.py` to read collection metadata and extract AI provider fields

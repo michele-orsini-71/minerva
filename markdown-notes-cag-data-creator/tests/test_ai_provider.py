@@ -289,32 +289,22 @@ class TestEmbeddingGeneration:
             assert result == []
 
     def test_generate_embeddings_batch_with_empty_texts(self):
-        """Test batch generation filters out empty texts"""
-        with patch('litellm.embedding') as mock_embedding:
-            # Setup mock - only 2 embeddings for 2 valid texts
-            mock_embedding.return_value = {
-                'data': [
-                    {'embedding': [0.1, 0.2, 0.3]},
-                    {'embedding': [0.4, 0.5, 0.6]}
-                ]
-            }
+        """Test batch generation rejects empty texts"""
+        config = AIProviderConfig(
+            provider_type='ollama',
+            embedding_model='mxbai-embed-large:latest',
+            llm_model='llama3.1:8b'
+        )
+        provider = AIProvider(config)
 
-            config = AIProviderConfig(
-                provider_type='ollama',
-                embedding_model='mxbai-embed-large:latest',
-                llm_model='llama3.1:8b'
-            )
-            provider = AIProvider(config)
+        # Mix valid and empty texts - should raise ValueError
+        texts = ["text1", "", "text2"]
 
-            # Mix valid and empty texts
-            texts = ["text1", "", "text2"]
-            results = provider.generate_embeddings_batch(texts)
+        with pytest.raises(ValueError) as exc_info:
+            provider.generate_embeddings_batch(texts)
 
-            # Verify results
-            assert len(results) == 3
-            assert results[0] is not None
-            assert results[1] is None  # Empty text
-            assert results[2] is not None
+        # Verify error message mentions the empty text
+        assert "Cannot generate embedding for empty text at index 1" in str(exc_info.value)
 
     def test_provider_unavailable_error(self):
         """Test that connection errors raise ProviderUnavailableError"""

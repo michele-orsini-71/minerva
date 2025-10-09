@@ -1,8 +1,10 @@
 from types import SimpleNamespace
 
 import pytest
+from pytest import MonkeyPatch
 
 import full_pipeline
+import dry_run
 from embedding import EmbeddingError
 from models import Chunk, ChunkWithEmbedding
 from storage import StorageError
@@ -16,6 +18,12 @@ def build_config(force_recreate: bool = False):
         chromadb_path="/tmp/chroma",
         json_file="notes.json",
         chunk_size=500,
+        skip_ai_validation=True,
+        ai_provider={
+            'type': 'ollama',
+            'embedding': {'model': 'mxbai-embed-large:latest'},
+            'llm': {'model': 'llama3.1:8b'}
+        }
     )
 
 
@@ -37,7 +45,7 @@ def build_chunk_with_embedding(index: int = 0) -> ChunkWithEmbedding:
     return ChunkWithEmbedding(chunk=chunk, embedding=[0.1, 0.2])
 
 
-def patch_common_dependencies(monkeypatch: pytest.MonkeyPatch, *, dry_run: bool):
+def patch_common_dependencies(monkeypatch: MonkeyPatch, *, dry_run: bool):
     args = SimpleNamespace(dry_run=dry_run, verbose=False, config="config.json")
     monkeypatch.setattr(full_pipeline, "parse_pipeline_args", lambda: args)
     monkeypatch.setattr(full_pipeline, "load_and_validate_config", lambda path, verbose: build_config(force_recreate=False))
@@ -56,9 +64,9 @@ def patch_common_dependencies(monkeypatch: pytest.MonkeyPatch, *, dry_run: bool)
     return args
 
 
-def test_pipeline_dry_run_success(monkeypatch: pytest.MonkeyPatch):
+def test_pipeline_dry_run_success(monkeypatch: MonkeyPatch):
     patch_common_dependencies(monkeypatch, dry_run=True)
-    monkeypatch.setattr(full_pipeline, "collection_exists", lambda client, name: False)
+    monkeypatch.setattr(dry_run, "collection_exists", lambda client, name: False)
 
     with pytest.raises(SystemExit) as exit_info:
         full_pipeline.main()
@@ -66,9 +74,9 @@ def test_pipeline_dry_run_success(monkeypatch: pytest.MonkeyPatch):
     assert exit_info.value.code == 0
 
 
-def test_pipeline_dry_run_collection_exists_error(monkeypatch: pytest.MonkeyPatch):
+def test_pipeline_dry_run_collection_exists_error(monkeypatch: MonkeyPatch):
     patch_common_dependencies(monkeypatch, dry_run=True)
-    monkeypatch.setattr(full_pipeline, "collection_exists", lambda client, name: True)
+    monkeypatch.setattr(dry_run, "collection_exists", lambda client, name: True)
 
     with pytest.raises(SystemExit) as exit_info:
         full_pipeline.main()
@@ -76,11 +84,12 @@ def test_pipeline_dry_run_collection_exists_error(monkeypatch: pytest.MonkeyPatc
     assert exit_info.value.code == 1
 
 
-def test_pipeline_full_run_success(monkeypatch: pytest.MonkeyPatch):
+def test_pipeline_full_run_success(monkeypatch: MonkeyPatch):
     patch_common_dependencies(monkeypatch, dry_run=False)
+    monkeypatch.setattr(full_pipeline, "initialize_ai_provider", lambda config, args: (object(), {'embedding_model': 'test'}))
     monkeypatch.setattr(full_pipeline, "create_chunks_from_notes", lambda notes, target_chars: [build_chunk(0)])
     monkeypatch.setattr(full_pipeline, "generate_embeddings", lambda chunks: [build_chunk_with_embedding(0)])
-    monkeypatch.setattr(full_pipeline, "create_collection", lambda client, collection_name, description: object())
+    monkeypatch.setattr(full_pipeline, "create_collection", lambda client, collection_name, description, embedding_metadata: object())
     def fake_insert(collection, chunks_with_embeddings, batch_size=64, progress_callback=None):
         return {
             "successful": len(chunks_with_embeddings),
@@ -95,15 +104,16 @@ def test_pipeline_full_run_success(monkeypatch: pytest.MonkeyPatch):
     full_pipeline.main()  # Should not raise
 
 
-def test_pipeline_handles_embedding_error(monkeypatch: pytest.MonkeyPatch):
+def test_pipeline_handles_embedding_error(monkeypatch: MonkeyPatch):
     patch_common_dependencies(monkeypatch, dry_run=False)
+    monkeypatch.setattr(full_pipeline, "initialize_ai_provider", lambda config, args: (object(), {'embedding_model': 'test'}))
     monkeypatch.setattr(full_pipeline, "create_chunks_from_notes", lambda notes, target_chars: [build_chunk(0)])
     def raise_embedding_error(_chunks):
         raise EmbeddingError("boom")
 
     monkeypatch.setattr(full_pipeline, "generate_embeddings", raise_embedding_error)
 
-    def fail_handler(error, config_path):
+    def fail_handler(error, config_path, config):
         raise SystemExit(99)
 
     monkeypatch.setattr(full_pipeline, "handle_embedding_error", fail_handler)
@@ -114,12 +124,13 @@ def test_pipeline_handles_embedding_error(monkeypatch: pytest.MonkeyPatch):
     assert exit_info.value.code == 99
 
 
-def test_pipeline_handles_storage_error(monkeypatch: pytest.MonkeyPatch):
+def test_pipeline_handles_storage_error(monkeypatch: MonkeyPatch):
     patch_common_dependencies(monkeypatch, dry_run=False)
+    monkeypatch.setattr(full_pipeline, "initialize_ai_provider", lambda config, args: (object(), {'embedding_model': 'test'}))
     monkeypatch.setattr(full_pipeline, "create_chunks_from_notes", lambda notes, target_chars: [build_chunk(0)])
     monkeypatch.setattr(full_pipeline, "generate_embeddings", lambda chunks: [build_chunk_with_embedding(0)])
 
-    def raise_storage_error(_client, *, collection_name, description):
+    def raise_storage_error(_client, *, collection_name, description, embedding_metadata):
         raise StorageError("fail")
 
     monkeypatch.setattr(full_pipeline, "create_collection", raise_storage_error)
@@ -138,7 +149,7 @@ def test_pipeline_handles_storage_error(monkeypatch: pytest.MonkeyPatch):
 def test_calculate_dry_run_estimates():
     config = SimpleNamespace(chunk_size=500)
     notes = [{"markdown": "a" * 1000}, {"markdown": "b" * 500}]
-    estimates = full_pipeline.calculate_dry_run_estimates(notes, config)
+    estimates = dry_run.calculate_dry_run_estimates(notes, config)
     assert estimates["total_chars"] == 1500
     assert estimates["estimated_chunks"] > 0
 
@@ -155,14 +166,14 @@ def test_print_dry_run_summary_outputs(capsys):
     notes = [{"markdown": "text"}]
     estimates = {"total_chars": 4, "avg_note_size": 4, "estimated_chunks": 1, "total_estimated_size": 0.1}
 
-    full_pipeline.print_dry_run_summary(config, notes, estimates, exists=True)
+    dry_run.print_dry_run_summary(config, notes, estimates, exists=True)
     captured = capsys.readouterr()
     assert "Collection Configuration" in captured.out
 
 
 def test_validate_dry_run_config_force_recreate(capsys):
     config = SimpleNamespace(force_recreate=True)
-    full_pipeline.validate_dry_run_config(config, exists=True)
+    dry_run.validate_dry_run_config(config, exists=True)
     captured = capsys.readouterr()
     assert "DELETE and recreate" in captured.out
 
@@ -170,7 +181,7 @@ def test_validate_dry_run_config_force_recreate(capsys):
 def test_validate_dry_run_config_failure_exit(capsys):
     config = SimpleNamespace(force_recreate=False)
     with pytest.raises(SystemExit) as exit_info:
-        full_pipeline.validate_dry_run_config(config, exists=True)
+        dry_run.validate_dry_run_config(config, exists=True)
 
     assert exit_info.value.code == 1
     captured = capsys.readouterr()
@@ -179,12 +190,12 @@ def test_validate_dry_run_config_failure_exit(capsys):
 
 def test_validate_dry_run_config_success_branch(capsys):
     config = SimpleNamespace(force_recreate=False)
-    full_pipeline.validate_dry_run_config(config, exists=False)
+    dry_run.validate_dry_run_config(config, exists=False)
     captured = capsys.readouterr()
     assert "Will create new collection" in captured.out
 
 
-def test_run_dry_run_mode_success(monkeypatch: pytest.MonkeyPatch):
+def test_run_dry_run_mode_success(monkeypatch: MonkeyPatch):
     config = SimpleNamespace(
         chromadb_path="/tmp",
         collection_name="collection",
@@ -196,8 +207,8 @@ def test_run_dry_run_mode_success(monkeypatch: pytest.MonkeyPatch):
     args = SimpleNamespace(dry_run=True)
     notes = [{"markdown": "text"}]
 
-    monkeypatch.setattr(full_pipeline, "initialize_chromadb_client", lambda path: object())
-    monkeypatch.setattr(full_pipeline, "collection_exists", lambda client, name: False)
+    monkeypatch.setattr(dry_run, "initialize_chromadb_client", lambda path: object())
+    monkeypatch.setattr(dry_run, "collection_exists", lambda client, name: False)
 
     with pytest.raises(SystemExit) as exit_info:
         full_pipeline.run_dry_run_mode(config, args, notes)
@@ -205,15 +216,9 @@ def test_run_dry_run_mode_success(monkeypatch: pytest.MonkeyPatch):
     assert exit_info.value.code == 0
 
 
-def test_run_normal_pipeline_force_recreate(monkeypatch: pytest.MonkeyPatch, capsys):
-    config = SimpleNamespace(
-        collection_name="collection",
-        description="desc",
-        chromadb_path="/tmp",
-        chunk_size=256,
-        force_recreate=True,
-    )
-    args = SimpleNamespace(verbose=True)
+def test_run_normal_pipeline_force_recreate(monkeypatch: MonkeyPatch, capsys):
+    config = build_config(force_recreate=True)
+    args = SimpleNamespace(verbose=True, config="config.json")
     notes = [
         {
             "title": "Note",
@@ -227,6 +232,7 @@ def test_run_normal_pipeline_force_recreate(monkeypatch: pytest.MonkeyPatch, cap
     def fake_create_chunks(notes_arg, target_chars, overlap_chars=200):
         return chunks
 
+    monkeypatch.setattr(full_pipeline, "initialize_ai_provider", lambda config, args: (object(), {'embedding_model': 'test'}))
     monkeypatch.setattr(full_pipeline, "create_chunks_from_notes", fake_create_chunks)
     monkeypatch.setattr(full_pipeline, "initialize_chromadb_client", lambda path: object())
     monkeypatch.setattr(full_pipeline, "generate_embeddings", lambda *_: embeddings)
@@ -259,8 +265,9 @@ def test_print_pipeline_summary_outputs(capsys):
 
 
 def test_handle_embedding_error_outputs(capsys):
+    config = build_config()
     with pytest.raises(SystemExit) as exit_info:
-        full_pipeline.handle_embedding_error(RuntimeError("fail"), "config.json")
+        full_pipeline.handle_embedding_error(RuntimeError("fail"), "config.json", config)
 
     assert exit_info.value.code == 1
     captured = capsys.readouterr()
@@ -294,7 +301,7 @@ def test_handle_unexpected_error_outputs(capsys):
     assert "UNEXPECTED ERROR" in captured.err
 
 
-def test_execute_pipeline_mode_dry_run(monkeypatch: pytest.MonkeyPatch):
+def test_execute_pipeline_mode_dry_run(monkeypatch: MonkeyPatch):
     config = SimpleNamespace()
     args = SimpleNamespace(dry_run=True)
     notes = []
@@ -308,7 +315,7 @@ def test_execute_pipeline_mode_dry_run(monkeypatch: pytest.MonkeyPatch):
         full_pipeline.execute_pipeline_mode(config, args, notes, start_time=0.0)
 
 
-def test_execute_pipeline_mode_normal(monkeypatch: pytest.MonkeyPatch):
+def test_execute_pipeline_mode_normal(monkeypatch: MonkeyPatch):
     config = SimpleNamespace()
     args = SimpleNamespace(dry_run=False)
     notes = []
@@ -320,12 +327,17 @@ def test_execute_pipeline_mode_normal(monkeypatch: pytest.MonkeyPatch):
     full_pipeline.execute_pipeline_mode(config, args, notes, start_time=5.0)
 
 
-def test_load_config_with_verbose_output(monkeypatch: pytest.MonkeyPatch, capsys):
+def test_load_config_with_verbose_output(monkeypatch: MonkeyPatch, capsys):
     class DummyConfig:
         json_file = "notes.json"
         chunk_size = 500
         chromadb_path = "/tmp"
         collection_name = "collection"
+        ai_provider = {
+            'type': 'ollama',
+            'embedding': {'model': 'mxbai-embed-large:latest'},
+            'llm': {'model': 'llama3.1:8b'}
+        }
 
     args = SimpleNamespace(config="config.json", verbose=True)
     monkeypatch.setattr(full_pipeline, "load_and_validate_config", lambda config, verbose: DummyConfig())
@@ -336,7 +348,7 @@ def test_load_config_with_verbose_output(monkeypatch: pytest.MonkeyPatch, capsys
     assert isinstance(config, DummyConfig)
 
 
-def test_load_notes_with_verbose_output(monkeypatch: pytest.MonkeyPatch, capsys):
+def test_load_notes_with_verbose_output(monkeypatch: MonkeyPatch, capsys):
     config = SimpleNamespace(json_file="notes.json")
     notes = [{"markdown": "text"}]
     monkeypatch.setattr(full_pipeline, "load_json_notes", lambda path: notes)
@@ -347,7 +359,7 @@ def test_load_notes_with_verbose_output(monkeypatch: pytest.MonkeyPatch, capsys)
     assert result == notes
 
 
-def test_main_keyboard_interrupt_during_config(monkeypatch: pytest.MonkeyPatch):
+def test_main_keyboard_interrupt_during_config(monkeypatch: MonkeyPatch):
     args = SimpleNamespace(dry_run=False, verbose=False, config="config.json")
     monkeypatch.setattr(full_pipeline, "parse_pipeline_args", lambda: args)
     def raise_keyboard_interrupt(*_args, **_kwargs):
@@ -361,7 +373,7 @@ def test_main_keyboard_interrupt_during_config(monkeypatch: pytest.MonkeyPatch):
     assert exit_info.value.code == 130
 
 
-def test_main_keyboard_interrupt_during_processing(monkeypatch: pytest.MonkeyPatch):
+def test_main_keyboard_interrupt_during_processing(monkeypatch: MonkeyPatch):
     args = SimpleNamespace(dry_run=False, verbose=False, config="config.json")
     monkeypatch.setattr(full_pipeline, "parse_pipeline_args", lambda: args)
     monkeypatch.setattr(full_pipeline, "load_config_with_verbose_output", lambda _args: SimpleNamespace(json_file="notes.json"))
@@ -376,7 +388,7 @@ def test_main_keyboard_interrupt_during_processing(monkeypatch: pytest.MonkeyPat
     assert exit_info.value.code == 130
 
 
-def test_main_storage_error(monkeypatch: pytest.MonkeyPatch):
+def test_main_storage_error(monkeypatch: MonkeyPatch):
     args = SimpleNamespace(dry_run=False, verbose=False, config="config.json")
     monkeypatch.setattr(full_pipeline, "parse_pipeline_args", lambda: args)
     monkeypatch.setattr(full_pipeline, "load_config_with_verbose_output", lambda _args: SimpleNamespace(json_file="notes.json", collection_name="collection"))
@@ -396,7 +408,7 @@ def test_main_storage_error(monkeypatch: pytest.MonkeyPatch):
     assert exit_info.value.code == 55
 
 
-def test_main_embedding_error(monkeypatch: pytest.MonkeyPatch):
+def test_main_embedding_error(monkeypatch: MonkeyPatch):
     args = SimpleNamespace(dry_run=False, verbose=False, config="config.json")
     monkeypatch.setattr(full_pipeline, "parse_pipeline_args", lambda: args)
     monkeypatch.setattr(full_pipeline, "load_config_with_verbose_output", lambda _args: SimpleNamespace(json_file="notes.json"))
@@ -416,7 +428,7 @@ def test_main_embedding_error(monkeypatch: pytest.MonkeyPatch):
     assert exit_info.value.code == 44
 
 
-def test_main_file_not_found_error(monkeypatch: pytest.MonkeyPatch):
+def test_main_file_not_found_error(monkeypatch: MonkeyPatch):
     args = SimpleNamespace(dry_run=False, verbose=False, config="config.json")
     monkeypatch.setattr(full_pipeline, "parse_pipeline_args", lambda: args)
     monkeypatch.setattr(full_pipeline, "load_config_with_verbose_output", lambda _args: SimpleNamespace(json_file="notes.json"))
@@ -435,7 +447,7 @@ def test_main_file_not_found_error(monkeypatch: pytest.MonkeyPatch):
     assert exit_info.value.code == 33
 
 
-def test_main_unexpected_error(monkeypatch: pytest.MonkeyPatch):
+def test_main_unexpected_error(monkeypatch: MonkeyPatch):
     args = SimpleNamespace(dry_run=False, verbose=False, config="config.json")
     monkeypatch.setattr(full_pipeline, "parse_pipeline_args", lambda: args)
     monkeypatch.setattr(full_pipeline, "load_config_with_verbose_output", lambda _args: SimpleNamespace(json_file="notes.json"))
@@ -452,3 +464,113 @@ def test_main_unexpected_error(monkeypatch: pytest.MonkeyPatch):
         full_pipeline.main()
 
     assert exit_info.value.code == 22
+
+
+def test_initialize_ai_provider_success(monkeypatch: MonkeyPatch, capsys):
+    config = build_config()
+    args = SimpleNamespace(config="config.json")
+
+    class MockProvider:
+        provider_type = "ollama"
+        embedding_model = "mxbai-embed-large:latest"
+        llm_model = "llama3.1:8b"
+
+        def check_availability(self):
+            return {'available': True, 'dimension': 1024}
+
+        def get_embedding_metadata(self):
+            return {'embedding_model': 'mxbai-embed-large:latest', 'dimension': 1024}
+
+    mock_provider = MockProvider()
+
+    monkeypatch.setattr(full_pipeline, "initialize_provider", lambda config: mock_provider)
+    monkeypatch.setattr(full_pipeline, "get_embedding_metadata", lambda: mock_provider.get_embedding_metadata())
+
+    provider, metadata = full_pipeline.initialize_ai_provider(config, args)
+
+    captured = capsys.readouterr()
+    assert "Initializing AI provider" in captured.out
+    assert "Provider: ollama" in captured.out
+    assert provider == mock_provider
+    assert metadata['embedding_model'] == 'mxbai-embed-large:latest'
+
+
+def test_initialize_ai_provider_unavailable(monkeypatch: MonkeyPatch, capsys):
+    config = build_config()
+    args = SimpleNamespace(config="config.json")
+
+    class MockProvider:
+        provider_type = "ollama"
+        embedding_model = "mxbai-embed-large:latest"
+        llm_model = "llama3.1:8b"
+
+        def check_availability(self):
+            return {'available': False, 'error': 'Connection refused'}
+
+    mock_provider = MockProvider()
+    monkeypatch.setattr(full_pipeline, "initialize_provider", lambda config: mock_provider)
+
+    with pytest.raises(SystemExit) as exit_info:
+        full_pipeline.initialize_ai_provider(config, args)
+
+    assert exit_info.value.code == 1
+    captured = capsys.readouterr()
+    assert "PROVIDER UNAVAILABLE" in captured.err
+
+
+def test_initialize_ai_provider_with_validation(monkeypatch: MonkeyPatch, capsys):
+    config = build_config()
+    config.skip_ai_validation = False
+    args = SimpleNamespace(config="config.json")
+
+    class MockProvider:
+        provider_type = "ollama"
+        embedding_model = "mxbai-embed-large:latest"
+        llm_model = "llama3.1:8b"
+
+        def check_availability(self):
+            return {'available': True, 'dimension': 1024}
+
+        def get_embedding_metadata(self):
+            return {'embedding_model': 'mxbai-embed-large:latest', 'dimension': 1024}
+
+    mock_provider = MockProvider()
+
+    monkeypatch.setattr(full_pipeline, "initialize_provider", lambda config: mock_provider)
+    monkeypatch.setattr(full_pipeline, "get_embedding_metadata", lambda: mock_provider.get_embedding_metadata())
+    monkeypatch.setattr(full_pipeline, "validate_description", lambda desc: {'score': 8, 'feedback': 'Good description'})
+
+    provider, metadata = full_pipeline.initialize_ai_provider(config, args)
+
+    captured = capsys.readouterr()
+    assert "Validating collection description" in captured.out
+    assert "Description score: 8/10" in captured.out
+    assert "Good description" in captured.out
+
+
+def test_initialize_ai_provider_low_score_warning(monkeypatch: MonkeyPatch, capsys):
+    config = build_config()
+    config.skip_ai_validation = False
+    args = SimpleNamespace(config="config.json")
+
+    class MockProvider:
+        provider_type = "ollama"
+        embedding_model = "mxbai-embed-large:latest"
+        llm_model = "llama3.1:8b"
+
+        def check_availability(self):
+            return {'available': True, 'dimension': 1024}
+
+        def get_embedding_metadata(self):
+            return {'embedding_model': 'mxbai-embed-large:latest', 'dimension': 1024}
+
+    mock_provider = MockProvider()
+
+    monkeypatch.setattr(full_pipeline, "initialize_provider", lambda config: mock_provider)
+    monkeypatch.setattr(full_pipeline, "get_embedding_metadata", lambda: mock_provider.get_embedding_metadata())
+    monkeypatch.setattr(full_pipeline, "validate_description", lambda desc: {'score': 5, 'feedback': 'Needs improvement'})
+
+    provider, metadata = full_pipeline.initialize_ai_provider(config, args)
+
+    captured = capsys.readouterr()
+    assert "WARNING: Description score is below 7" in captured.out

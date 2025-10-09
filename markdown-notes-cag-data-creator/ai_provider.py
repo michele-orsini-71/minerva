@@ -3,7 +3,7 @@ import re
 from typing import List, Dict, Any, Optional
 import numpy as np
 
-from ai_config import AIProviderConfig
+from ai_config import AIProviderConfig, APIKeyMissingError
 
 
 class AIProviderError(Exception):
@@ -22,8 +22,6 @@ def l2_normalize(vectors: np.ndarray) -> np.ndarray:
 
 class AIProvider:
     def __init__(self, config: AIProviderConfig):
-        from ai_config import APIKeyMissingError
-
         self.config = config
         self.api_key = config.resolve_api_key()
         self.provider_type = config.provider_type
@@ -89,15 +87,37 @@ class AIProvider:
             )
 
             # Extract embedding from response
-            if not response or 'data' not in response or len(response['data']) == 0:
-                raise AIProviderError("Invalid response from provider: missing embedding data")
+            if not response:
+                raise AIProviderError("Invalid response from provider: empty response")
 
-            embedding_data = response['data'][0]
-            if 'embedding' not in embedding_data:
-                raise AIProviderError("Invalid response from provider: missing 'embedding' field")
+            # LiteLLM returns an EmbeddingResponse object - try attribute access first, then dict
+            try:
+                data = response.data
+            except (AttributeError, TypeError):
+                try:
+                    data = response['data']  # type: ignore[index]
+                except (KeyError, TypeError):
+                    raise AIProviderError("Invalid response from provider: missing embedding data")
+
+            if not data:
+                raise AIProviderError("Invalid response from provider: empty embedding data")
+
+            embedding_data = data[0]
+
+            # Extract embedding vector safely
+            try:
+                embedding = embedding_data.embedding
+            except (AttributeError, TypeError):
+                try:
+                    embedding = embedding_data['embedding']  # type: ignore[index]
+                except (KeyError, TypeError):
+                    raise AIProviderError("Invalid response from provider: missing 'embedding' field")
+
+            if not embedding:
+                raise AIProviderError("Invalid response from provider: empty embedding")
 
             # Convert to numpy array and normalize
-            vector = np.array(embedding_data['embedding'], dtype=np.float32)
+            vector = np.array(embedding, dtype=np.float32)
 
             if vector.size == 0:
                 raise AIProviderError("Received empty embedding vector")
@@ -106,6 +126,9 @@ class AIProvider:
             normalized = l2_normalize(vector.reshape(1, -1))
             return normalized.flatten().tolist()
 
+        except (AIProviderError, ProviderUnavailableError):
+            # Re-raise our own exceptions unchanged
+            raise
         except Exception as error:
             # Check for connection/availability errors
             error_str = str(error).lower()
@@ -113,24 +136,22 @@ class AIProvider:
                 raise ProviderUnavailableError(
                     f"{self.provider_type} provider is unavailable: {error}\n"
                     f"  Check that the service is running and accessible"
-                )
+                ) from error
             else:
-                raise AIProviderError(f"Failed to generate embedding: {error}")
+                raise AIProviderError(f"Failed to generate embedding: {error}") from error
 
     def generate_embeddings_batch(self, texts: List[str]) -> List[List[float]]:
         if not texts:
             return []
 
-        # Filter out empty texts and track their indices
-        valid_texts = []
-        valid_indices = []
+        # Validate all texts are non-empty
         for i, text in enumerate(texts):
-            if text and text.strip():
-                valid_texts.append(text)
-                valid_indices.append(i)
-
-        if not valid_texts:
-            raise ValueError("All texts are empty - cannot generate embeddings")
+            if not text or not text.strip():
+                raise ValueError(
+                    f"Cannot generate embedding for empty text at index {i}\n"
+                    f"  Received: empty or whitespace-only string\n"
+                    f"  Suggestion: Filter out empty texts before calling generate_embeddings_batch"
+                )
 
         try:
             # Get model name in LiteLLM format
@@ -139,25 +160,46 @@ class AIProvider:
             # Call LiteLLM's embedding function with batch input
             response = self.litellm.embedding(
                 model=model_name,
-                input=valid_texts
+                input=texts
             )
 
             # Extract embeddings from response
-            if not response or 'data' not in response:
-                raise AIProviderError("Invalid response from provider: missing embedding data")
+            if not response:
+                raise AIProviderError("Invalid response from provider: empty response")
 
-            if len(response['data']) != len(valid_texts):
+            # LiteLLM returns an EmbeddingResponse object - try attribute access first, then dict
+            try:
+                data = response.data
+            except (AttributeError, TypeError):
+                try:
+                    data = response['data']  # type: ignore[index]
+                except (KeyError, TypeError):
+                    raise AIProviderError("Invalid response from provider: missing embedding data")
+
+            if not data:
+                raise AIProviderError("Invalid response from provider: empty embedding data")
+
+            if len(data) != len(texts):
                 raise AIProviderError(
-                    f"Embedding count mismatch: expected {len(valid_texts)}, got {len(response['data'])}"
+                    f"Embedding count mismatch: expected {len(texts)}, got {len(data)}"
                 )
 
             # Extract and normalize all embeddings
             embeddings = []
-            for embedding_data in response['data']:
-                if 'embedding' not in embedding_data:
-                    raise AIProviderError("Invalid response from provider: missing 'embedding' field")
+            for embedding_data in data:
+                # Extract embedding vector safely
+                try:
+                    embedding = embedding_data.embedding
+                except (AttributeError, TypeError):
+                    try:
+                        embedding = embedding_data['embedding']  # type: ignore[index]
+                    except (KeyError, TypeError):
+                        raise AIProviderError("Invalid response from provider: missing 'embedding' field")
 
-                vector = np.array(embedding_data['embedding'], dtype=np.float32)
+                if not embedding:
+                    raise AIProviderError("Invalid response from provider: empty embedding")
+
+                vector = np.array(embedding, dtype=np.float32)
 
                 if vector.size == 0:
                     raise AIProviderError("Received empty embedding vector")
@@ -168,19 +210,12 @@ class AIProvider:
             embeddings_array = np.array(embeddings)
             normalized = l2_normalize(embeddings_array)
 
-            # Convert to list of lists
-            result = normalized.tolist()
+            # Convert to list of lists and return
+            return normalized.tolist()
 
-            # If we filtered out empty texts, we need to reconstruct the full list
-            # with None for empty texts
-            if len(valid_texts) < len(texts):
-                full_result = [None] * len(texts)
-                for i, idx in enumerate(valid_indices):
-                    full_result[idx] = result[i]
-                return full_result
-
-            return result
-
+        except (AIProviderError, ProviderUnavailableError):
+            # Re-raise our own exceptions unchanged
+            raise
         except Exception as error:
             # Check for connection/availability errors
             error_str = str(error).lower()
@@ -188,9 +223,9 @@ class AIProvider:
                 raise ProviderUnavailableError(
                     f"{self.provider_type} provider is unavailable: {error}\n"
                     f"  Check that the service is running and accessible"
-                )
+                ) from error
             else:
-                raise AIProviderError(f"Failed to generate embeddings batch: {error}")
+                raise AIProviderError(f"Failed to generate embeddings batch: {error}") from error
 
     def get_embedding_metadata(self) -> Dict[str, Any]:
         metadata = {
@@ -282,10 +317,44 @@ Be concise and direct."""
             )
 
             # Extract response text
-            if not response or 'choices' not in response or len(response['choices']) == 0:
-                raise AIProviderError("Invalid response from LLM: no choices")
+            if not response:
+                raise AIProviderError("Invalid response from LLM: empty response")
 
-            response_text = response['choices'][0]['message']['content'].strip()
+            # LiteLLM returns a ModelResponse object - try attribute access first, then dict
+            try:
+                choices = response.choices
+            except (AttributeError, TypeError):
+                try:
+                    choices = response['choices']  # type: ignore[index]
+                except (KeyError, TypeError):
+                    raise AIProviderError("Invalid response from LLM: no choices")
+
+            if not choices:
+                raise AIProviderError("Invalid response from LLM: empty choices list")
+
+            first_choice = choices[0]
+
+            # Extract message and content safely
+            try:
+                message = first_choice.message
+            except (AttributeError, TypeError):
+                try:
+                    message = first_choice['message']  # type: ignore[index]
+                except (KeyError, TypeError):
+                    raise AIProviderError("Invalid response from LLM: missing message")
+
+            try:
+                content = message.content
+            except (AttributeError, TypeError):
+                try:
+                    content = message['content']  # type: ignore[index]
+                except (KeyError, TypeError):
+                    raise AIProviderError("Invalid response from LLM: missing content")
+
+            if not content:
+                raise AIProviderError("Invalid response from LLM: empty content")
+
+            response_text = content.strip()
 
             # Parse score and feedback
             score_match = re.search(r'SCORE:\s*(\d+)', response_text, re.IGNORECASE)
@@ -303,6 +372,9 @@ Be concise and direct."""
             else:
                 result['feedback'] = response_text  # Use full response if format doesn't match
 
+        except (AIProviderError, ProviderUnavailableError):
+            # Re-raise our own exceptions unchanged
+            raise
         except Exception as error:
             result['error'] = f"Validation failed: {error}"
             result['feedback'] = "Could not validate description due to an error"

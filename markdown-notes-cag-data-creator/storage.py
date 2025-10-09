@@ -1,7 +1,7 @@
 import os
 import re
 import sys
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Callable
 from pathlib import Path
 
 try:
@@ -324,7 +324,7 @@ def insert_chunks(
     collection: chromadb.Collection,
     chunks_with_embeddings: ChunkWithEmbeddingList,
     batch_size: int = DEFAULT_BATCH_SIZE,
-    progress_callback: Optional[callable] = None
+    progress_callback: Optional[Callable[[int, int], None]] = None
 ) -> Dict[str, Any]:
     if not chunks_with_embeddings:
         return {"total_chunks": 0, "batches": 0, "successful": 0, "failed": 0}
