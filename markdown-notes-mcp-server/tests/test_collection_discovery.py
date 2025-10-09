@@ -1,10 +1,9 @@
 import pytest
+import sys
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime, timezone
+from typing import Any
 
-# Add parent directory to path to import collection_discovery module
-import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from collection_discovery import (
@@ -395,7 +394,7 @@ class TestReconstructProviderFromMetadata:
 
     @patch('collection_discovery.AIProvider')
     @patch('collection_discovery.AIProviderConfig')
-    def test_successful_provider_reconstruction(self, mock_config_class, mock_provider_class):
+    def test_successful_provider_reconstruction(self, mock_config_class: MagicMock, mock_provider_class: MagicMock) -> None:
         """Test successful reconstruction of provider from complete metadata."""
         metadata = {
             'embedding_provider': 'ollama',
@@ -424,7 +423,7 @@ class TestReconstructProviderFromMetadata:
             api_key=None
         )
 
-    def test_missing_provider_type(self):
+    def test_missing_provider_type(self) -> None:
         """Test reconstruction fails gracefully when provider_type is missing."""
         metadata = {
             'embedding_model': 'mxbai-embed-large:latest',
@@ -436,7 +435,7 @@ class TestReconstructProviderFromMetadata:
         assert provider is None
         assert error == "Missing AI provider metadata (created with old pipeline)"
 
-    def test_missing_embedding_model(self):
+    def test_missing_embedding_model(self) -> None:
         """Test reconstruction fails gracefully when embedding_model is missing."""
         metadata = {
             'embedding_provider': 'ollama',
@@ -448,7 +447,7 @@ class TestReconstructProviderFromMetadata:
         assert provider is None
         assert error == "Missing AI provider metadata (created with old pipeline)"
 
-    def test_missing_llm_model(self):
+    def test_missing_llm_model(self) -> None:
         """Test reconstruction fails gracefully when llm_model is missing."""
         metadata = {
             'embedding_provider': 'ollama',
@@ -460,7 +459,7 @@ class TestReconstructProviderFromMetadata:
         assert provider is None
         assert error == "Missing AI provider metadata (created with old pipeline)"
 
-    def test_empty_metadata(self):
+    def test_empty_metadata(self) -> None:
         """Test reconstruction with empty metadata."""
         metadata = {}
 
@@ -471,7 +470,7 @@ class TestReconstructProviderFromMetadata:
 
     @patch('collection_discovery.AIProvider')
     @patch('collection_discovery.AIProviderConfig')
-    def test_provider_unavailable(self, mock_config_class, mock_provider_class):
+    def test_provider_unavailable(self, mock_config_class: MagicMock, mock_provider_class: MagicMock) -> None:
         """Test handling when provider check_availability returns unavailable."""
         metadata = {
             'embedding_provider': 'ollama',
@@ -495,7 +494,7 @@ class TestReconstructProviderFromMetadata:
         assert error == 'Provider unavailable: connection refused'
 
     @patch('collection_discovery.AIProviderConfig')
-    def test_api_key_missing_error(self, mock_config_class):
+    def test_api_key_missing_error(self, mock_config_class: MagicMock) -> None:
         """Test handling of missing API key errors."""
         from ai_config import APIKeyMissingError
 
@@ -515,7 +514,7 @@ class TestReconstructProviderFromMetadata:
 
     @patch('collection_discovery.AIProvider')
     @patch('collection_discovery.AIProviderConfig')
-    def test_provider_initialization_error(self, mock_config_class, mock_provider_class):
+    def test_provider_initialization_error(self, mock_config_class: MagicMock, mock_provider_class: MagicMock) -> None:
         """Test handling of provider initialization errors."""
         from ai_provider import AIProviderError
 
@@ -537,7 +536,7 @@ class TestReconstructProviderFromMetadata:
 
     @patch('collection_discovery.AIProvider')
     @patch('collection_discovery.AIProviderConfig')
-    def test_unexpected_error(self, mock_config_class, mock_provider_class):
+    def test_unexpected_error(self, mock_config_class: MagicMock, mock_provider_class: MagicMock) -> None:
         """Test handling of unexpected errors during reconstruction."""
         metadata = {
             'embedding_provider': 'ollama',
@@ -558,7 +557,7 @@ class TestDiscoverCollectionsWithProviders:
 
     @patch('collection_discovery.initialize_chromadb_client')
     @patch('collection_discovery.reconstruct_provider_from_metadata')
-    def test_discover_with_available_providers(self, mock_reconstruct, mock_init_client):
+    def test_discover_with_available_providers(self, mock_reconstruct: MagicMock, mock_init_client: MagicMock) -> None:
         """Test discovering collections where all providers are available."""
         mock_client = Mock()
         mock_init_client.return_value = mock_client
@@ -607,7 +606,7 @@ class TestDiscoverCollectionsWithProviders:
 
     @patch('collection_discovery.initialize_chromadb_client')
     @patch('collection_discovery.reconstruct_provider_from_metadata')
-    def test_discover_with_unavailable_providers(self, mock_reconstruct, mock_init_client):
+    def test_discover_with_unavailable_providers(self, mock_reconstruct: MagicMock, mock_init_client: MagicMock) -> None:
         """Test discovering collections where some providers are unavailable."""
         mock_client = Mock()
         mock_init_client.return_value = mock_client
@@ -644,7 +643,7 @@ class TestDiscoverCollectionsWithProviders:
 
     @patch('collection_discovery.initialize_chromadb_client')
     @patch('collection_discovery.reconstruct_provider_from_metadata')
-    def test_discover_with_old_collections(self, mock_reconstruct, mock_init_client):
+    def test_discover_with_old_collections(self, mock_reconstruct: MagicMock, mock_init_client: MagicMock) -> None:
         """Test discovering collections created with old pipeline (no metadata)."""
         mock_client = Mock()
         mock_init_client.return_value = mock_client

@@ -18,7 +18,6 @@ from ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
 
 class CollectionDiscoveryError(Exception):
     """Raised when collection discovery operations fail."""
-    pass
 
 
 def reconstruct_provider_from_metadata(metadata: Dict[str, Any]) -> Tuple[Optional[AIProvider], Optional[str]]:
@@ -63,8 +62,8 @@ def discover_collections_with_providers(chromadb_path: str) -> Tuple[Dict[str, A
         client = initialize_chromadb_client(chromadb_path)
         collections = client.list_collections()
 
-        provider_map = {}
-        collection_details = []
+        provider_map: Dict[str, AIProvider] = {}
+        collection_details: List[Dict[str, Any]] = []
 
         for collection in collections:
             metadata = collection.metadata or {}
@@ -122,7 +121,7 @@ def list_collections(chromadb_path: str) -> List[Dict[str, Any]]:
         collections = client.list_collections()
 
         # Step 3: Extract metadata, chunk count, and provider availability for each collection
-        result = []
+        result: List[Dict[str, Any]] = []
         for collection in collections:
             metadata = collection.metadata or {}
 
