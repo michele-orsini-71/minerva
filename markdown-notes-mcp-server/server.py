@@ -37,7 +37,6 @@ from search_tools import (
     SearchError,
     CollectionNotFoundError
 )
-from embedding import OllamaServiceError
 from ai_provider import AIProvider
 
 # Configure logging
@@ -191,14 +190,25 @@ def search_knowledge_base(
         logger.info(f"  Context mode: {context_mode}")
         logger.info(f"  Max results: {max_results}")
 
-        # Perform search
+        # Look up provider for target collection
+        if collection_name not in PROVIDER_MAP:
+            available_collections = [col['name'] for col in AVAILABLE_COLLECTIONS]
+            raise SearchError(
+                f"Collection '{collection_name}' is not available. "
+                f"Use list_knowledge_bases() to see available collections.\n"
+                f"Available collections: {', '.join(available_collections) if available_collections else 'none'}"
+            )
+
+        provider = PROVIDER_MAP[collection_name]
+
+        # Perform search with collection-specific provider
         results = search_kb(
             query=query,
             collection_name=collection_name,
             chromadb_path=CONFIG['chromadb_path'],
+            provider=provider,
             context_mode=context_mode,
-            max_results=max_results,
-            embedding_model=CONFIG['embedding_model']
+            max_results=max_results
         )
 
         logger.info(f"✓ Search completed: {len(results)} result(s)")
@@ -209,9 +219,6 @@ def search_knowledge_base(
 
     except CollectionNotFoundError as e:
         logger.error(f"Collection not found: {e}")
-        raise
-    except OllamaServiceError as e:
-        logger.error(f"Ollama service error: {e}")
         raise
     except SearchError as e:
         logger.error(f"Search error: {e}")

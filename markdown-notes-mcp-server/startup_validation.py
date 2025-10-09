@@ -6,7 +6,6 @@ from typing import Tuple, Optional, Dict, Any
 # Import ChromaDB client initialization from existing pipeline
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'markdown-notes-cag-data-creator'))
 from storage import initialize_chromadb_client
-from embedding import check_ollama_service, check_model_availability
 
 
 class ValidationError(Exception):
@@ -137,66 +136,8 @@ def validate_collection_availability(chromadb_path: str) -> Tuple[bool, Optional
         )
 
 
-def validate_ollama_service() -> Tuple[bool, Optional[str]]:
-    if check_ollama_service():
-        return (True, None)
-    else:
-        return (False,
-            "Ollama service is not available\n"
-            "\n"
-            "  The MCP server requires Ollama to generate embeddings for search queries.\n"
-            "\n"
-            "  Remediation steps:\n"
-            "  1. Check if Ollama is installed:\n"
-            "     ollama --version\n"
-            "\n"
-            "  2. If not installed, install Ollama:\n"
-            "     - Visit: https://ollama.ai\n"
-            "     - Follow installation instructions for your platform\n"
-            "\n"
-            "  3. Start the Ollama service:\n"
-            "     ollama serve\n"
-            "\n"
-            "  4. Keep the Ollama service running in a separate terminal\n"
-            "\n"
-            "  5. Restart the MCP server once Ollama is running"
-        )
-
-
-def validate_embedding_model(model_name: str) -> Tuple[bool, Optional[str]]:
-    if check_model_availability(model_name):
-        return (True, None)
-    else:
-        return (False,
-            f"Embedding model '{model_name}' is not available in Ollama\n"
-            "\n"
-            "  The MCP server requires this model to generate embeddings.\n"
-            "\n"
-            "  Remediation steps:\n"
-            "  1. Check available models:\n"
-            "     ollama list\n"
-            "\n"
-            "  2. Pull the required model:\n"
-            f"     ollama pull {model_name}\n"
-            "\n"
-            "  3. Wait for the download to complete (this may take several minutes)\n"
-            "\n"
-            "  4. Verify the model is available:\n"
-            "     ollama list | grep " + model_name.split(':')[0] + "\n"
-            "\n"
-            "  5. Restart the MCP server once the model is available\n"
-            "\n"
-            "  Note: If you want to use a different model, update config.json:\n"
-            "  {\n"
-            "    \"embedding_model\": \"your-model-name:version\",\n"
-            "    ...\n"
-            "  }"
-        )
-
-
 def validate_server_prerequisites(config: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
     chromadb_path = config.get('chromadb_path', '')
-    embedding_model = config.get('embedding_model', '')
 
     # Validation 1: ChromaDB path exists and is accessible
     success, error = validate_chromadb_path(chromadb_path)
@@ -207,16 +148,6 @@ def validate_server_prerequisites(config: Dict[str, Any]) -> Tuple[bool, Optiona
     success, error = validate_collection_availability(chromadb_path)
     if not success:
         return (False, f"Collection Availability Check Failed:\n\n{error}")
-
-    # Validation 3: Ollama service is running
-    success, error = validate_ollama_service()
-    if not success:
-        return (False, f"Ollama Service Check Failed:\n\n{error}")
-
-    # Validation 4: Embedding model is available
-    success, error = validate_embedding_model(embedding_model)
-    if not success:
-        return (False, f"Embedding Model Check Failed:\n\n{error}")
 
     # All validations passed
     return (True, None)

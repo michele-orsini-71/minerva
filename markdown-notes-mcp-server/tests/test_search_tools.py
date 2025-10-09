@@ -12,6 +12,7 @@ from search_tools import (
     SearchError,
     CollectionNotFoundError
 )
+from ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
 
 
 class TestValidateCollectionExists:
@@ -62,9 +63,8 @@ class TestSearchKnowledgeBase:
     """Test semantic search functionality."""
 
     @patch('search_tools.initialize_chromadb_client')
-    @patch('search_tools.generate_embedding')
     @patch('search_tools.apply_context_mode')
-    def test_search_success_basic(self, mock_context, mock_embedding, mock_init_client):
+    def test_search_success_basic(self, mock_context, mock_init_client):
         """Test successful search with basic results."""
         # Setup mocks
         mock_client = Mock()
@@ -72,10 +72,13 @@ class TestSearchKnowledgeBase:
 
         mock_collection = Mock()
         mock_collection.name = "test_notes"
+        mock_collection.metadata = {'embedding_dimension': 1024}
         mock_client.list_collections.return_value = [mock_collection]
         mock_client.get_collection.return_value = mock_collection
 
-        mock_embedding.return_value = [0.1] * 1024
+        # Mock provider
+        mock_provider = Mock(spec=AIProvider)
+        mock_provider.generate_embedding.return_value = [0.1] * 1024
 
         # Mock search results
         mock_collection.query.return_value = {
@@ -117,6 +120,7 @@ class TestSearchKnowledgeBase:
             query="test query",
             collection_name="test_notes",
             chromadb_path="/fake/path",
+            provider=mock_provider,
             context_mode="chunk_only",
             max_results=5
         )
@@ -125,7 +129,7 @@ class TestSearchKnowledgeBase:
         assert len(results) == 1
         assert results[0]['noteTitle'] == 'Test Note'
         assert results[0]['noteId'] == 'note123'
-        mock_embedding.assert_called_once()
+        mock_provider.generate_embedding.assert_called_once_with("test query")
         mock_context.assert_called_once()
 
     @patch('search_tools.initialize_chromadb_client')
@@ -135,31 +139,40 @@ class TestSearchKnowledgeBase:
         mock_init_client.return_value = mock_client
         mock_client.list_collections.return_value = []
 
+        mock_provider = Mock(spec=AIProvider)
+
         with pytest.raises(CollectionNotFoundError):
             search_knowledge_base(
                 query="test query",
                 collection_name="missing_collection",
-                chromadb_path="/fake/path"
+                chromadb_path="/fake/path",
+                provider=mock_provider
             )
 
     def test_search_empty_query(self):
         """Test search fails with empty query."""
+        mock_provider = Mock(spec=AIProvider)
+
         with pytest.raises(SearchError) as exc_info:
             search_knowledge_base(
                 query="",
                 collection_name="test_notes",
-                chromadb_path="/fake/path"
+                chromadb_path="/fake/path",
+                provider=mock_provider
             )
 
         assert "empty" in str(exc_info.value).lower()
 
     def test_search_invalid_max_results(self):
         """Test search fails with invalid max_results."""
+        mock_provider = Mock(spec=AIProvider)
+
         with pytest.raises(SearchError) as exc_info:
             search_knowledge_base(
                 query="test query",
                 collection_name="test_notes",
                 chromadb_path="/fake/path",
+                provider=mock_provider,
                 max_results=0
             )
 
@@ -170,6 +183,7 @@ class TestSearchKnowledgeBase:
                 query="test query",
                 collection_name="test_notes",
                 chromadb_path="/fake/path",
+                provider=mock_provider,
                 max_results=101
             )
 
@@ -177,11 +191,14 @@ class TestSearchKnowledgeBase:
 
     def test_search_invalid_context_mode(self):
         """Test search fails with invalid context mode."""
+        mock_provider = Mock(spec=AIProvider)
+
         with pytest.raises(SearchError) as exc_info:
             search_knowledge_base(
                 query="test query",
                 collection_name="test_notes",
                 chromadb_path="/fake/path",
+                provider=mock_provider,
                 context_mode="invalid_mode"
             )
 
@@ -191,44 +208,49 @@ class TestSearchKnowledgeBase:
         assert "full_note" in str(exc_info.value)
 
     @patch('search_tools.initialize_chromadb_client')
-    @patch('search_tools.generate_embedding')
-    def test_search_ollama_unavailable(self, mock_embedding, mock_init_client):
-        """Test search handles Ollama service unavailability."""
-        from embedding import OllamaServiceError
-
+    def test_search_provider_unavailable(self, mock_init_client):
+        """Test search handles provider unavailability."""
         mock_client = Mock()
         mock_init_client.return_value = mock_client
 
         mock_collection = Mock()
         mock_collection.name = "test_notes"
+        mock_collection.metadata = {
+            'embedding_provider': 'ollama',
+            'embedding_model': 'mxbai-embed-large:latest',
+            'embedding_dimension': 1024
+        }
         mock_client.list_collections.return_value = [mock_collection]
         mock_client.get_collection.return_value = mock_collection
 
-        mock_embedding.side_effect = OllamaServiceError("Connection refused")
+        mock_provider = Mock(spec=AIProvider)
+        mock_provider.generate_embedding.side_effect = ProviderUnavailableError("Connection refused")
 
-        with pytest.raises(OllamaServiceError) as exc_info:
+        with pytest.raises(SearchError) as exc_info:
             search_knowledge_base(
                 query="test query",
                 collection_name="test_notes",
-                chromadb_path="/fake/path"
+                chromadb_path="/fake/path",
+                provider=mock_provider
             )
 
-        assert "ollama serve" in str(exc_info.value).lower()
+        assert "provider unavailable" in str(exc_info.value).lower()
 
     @patch('search_tools.initialize_chromadb_client')
-    @patch('search_tools.generate_embedding')
     @patch('search_tools.apply_context_mode')
-    def test_search_no_results(self, mock_context, mock_embedding, mock_init_client):
+    def test_search_no_results(self, mock_context, mock_init_client):
         """Test search with no matching results."""
         mock_client = Mock()
         mock_init_client.return_value = mock_client
 
         mock_collection = Mock()
         mock_collection.name = "test_notes"
+        mock_collection.metadata = {'embedding_dimension': 1024}
         mock_client.list_collections.return_value = [mock_collection]
         mock_client.get_collection.return_value = mock_collection
 
-        mock_embedding.return_value = [0.1] * 1024
+        mock_provider = Mock(spec=AIProvider)
+        mock_provider.generate_embedding.return_value = [0.1] * 1024
 
         # Mock empty results
         mock_collection.query.return_value = {
@@ -243,25 +265,27 @@ class TestSearchKnowledgeBase:
         results = search_knowledge_base(
             query="no matches",
             collection_name="test_notes",
-            chromadb_path="/fake/path"
+            chromadb_path="/fake/path",
+            provider=mock_provider
         )
 
         assert len(results) == 0
 
     @patch('search_tools.initialize_chromadb_client')
-    @patch('search_tools.generate_embedding')
     @patch('search_tools.apply_context_mode')
-    def test_search_similarity_score_calculation(self, mock_context, mock_embedding, mock_init_client):
+    def test_search_similarity_score_calculation(self, mock_context, mock_init_client):
         """Test similarity score is calculated correctly from distance."""
         mock_client = Mock()
         mock_init_client.return_value = mock_client
 
         mock_collection = Mock()
         mock_collection.name = "test_notes"
+        mock_collection.metadata = {'embedding_dimension': 1024}
         mock_client.list_collections.return_value = [mock_collection]
         mock_client.get_collection.return_value = mock_collection
 
-        mock_embedding.return_value = [0.1] * 1024
+        mock_provider = Mock(spec=AIProvider)
+        mock_provider.generate_embedding.return_value = [0.1] * 1024
 
         # Mock results with known distance
         mock_collection.query.return_value = {
@@ -273,12 +297,11 @@ class TestSearchKnowledgeBase:
                 'chunkIndex': 0,
                 'modificationDate': '2024-01-01T00:00:00Z'
             }]],
-            'distances': [[0.25]]  # Distance of 0.25
+            'distances': [[0.25]]
         }
 
         # Capture what gets passed to context mode
         def capture_results(collection, results, mode):
-            # Verify similarity score is 1.0 - 0.25 = 0.75
             assert results[0]['similarityScore'] == 0.75
             return results
 
@@ -287,5 +310,168 @@ class TestSearchKnowledgeBase:
         search_knowledge_base(
             query="test",
             collection_name="test_notes",
-            chromadb_path="/fake/path"
+            chromadb_path="/fake/path",
+            provider=mock_provider
         )
+
+    @patch('search_tools.initialize_chromadb_client')
+    def test_search_embedding_dimension_mismatch(self, mock_init_client):
+        """Test embedding dimension validation with mismatching dimensions."""
+        mock_client = Mock()
+        mock_init_client.return_value = mock_client
+
+        mock_collection = Mock()
+        mock_collection.name = "test_notes"
+        mock_collection.metadata = {
+            'embedding_dimension': 1024,
+            'embedding_provider': 'ollama',
+            'embedding_model': 'mxbai-embed-large:latest'
+        }
+        mock_client.list_collections.return_value = [mock_collection]
+        mock_client.get_collection.return_value = mock_collection
+
+        mock_provider = Mock(spec=AIProvider)
+        mock_provider.generate_embedding.return_value = [0.1] * 768
+
+        with pytest.raises(SearchError) as exc_info:
+            search_knowledge_base(
+                query="test query",
+                collection_name="test_notes",
+                chromadb_path="/fake/path",
+                provider=mock_provider
+            )
+
+        error_msg = str(exc_info.value)
+        assert "dimension mismatch" in error_msg.lower()
+        assert "768" in error_msg
+        assert "1024" in error_msg
+
+    @patch('search_tools.initialize_chromadb_client')
+    @patch('search_tools.apply_context_mode')
+    def test_search_embedding_dimension_matching(self, mock_context, mock_init_client):
+        """Test search succeeds when embedding dimensions match."""
+        mock_client = Mock()
+        mock_init_client.return_value = mock_client
+
+        mock_collection = Mock()
+        mock_collection.name = "test_notes"
+        mock_collection.metadata = {
+            'embedding_dimension': 1024,
+            'embedding_provider': 'ollama',
+            'embedding_model': 'mxbai-embed-large:latest'
+        }
+        mock_client.list_collections.return_value = [mock_collection]
+        mock_client.get_collection.return_value = mock_collection
+
+        mock_provider = Mock(spec=AIProvider)
+        mock_provider.generate_embedding.return_value = [0.1] * 1024
+
+        mock_collection.query.return_value = {
+            'ids': [['chunk1']],
+            'documents': [['Content']],
+            'metadatas': [[{
+                'title': 'Note',
+                'noteId': 'id1',
+                'chunkIndex': 0,
+                'modificationDate': '2024-01-01T00:00:00Z'
+            }]],
+            'distances': [[0.2]]
+        }
+
+        mock_context.return_value = [{
+            'noteTitle': 'Note',
+            'noteId': 'id1',
+            'chunkIndex': 0,
+            'modificationDate': '2024-01-01T00:00:00Z',
+            'collectionName': 'test_notes',
+            'similarityScore': 0.8,
+            'content': 'Content',
+            'totalChunks': 1
+        }]
+
+        results = search_knowledge_base(
+            query="test query",
+            collection_name="test_notes",
+            chromadb_path="/fake/path",
+            provider=mock_provider
+        )
+
+        assert len(results) == 1
+        mock_provider.generate_embedding.assert_called_once_with("test query")
+
+    @patch('search_tools.initialize_chromadb_client')
+    def test_search_no_metadata_error(self, mock_init_client):
+        """Test search fails when collection has no metadata (old collections not supported)."""
+        mock_client = Mock()
+        mock_init_client.return_value = mock_client
+
+        mock_collection = Mock()
+        mock_collection.name = "test_notes"
+        mock_collection.metadata = None
+        mock_client.list_collections.return_value = [mock_collection]
+        mock_client.get_collection.return_value = mock_collection
+
+        mock_provider = Mock(spec=AIProvider)
+
+        with pytest.raises(SearchError) as exc_info:
+            search_knowledge_base(
+                query="test query",
+                collection_name="test_notes",
+                chromadb_path="/fake/path",
+                provider=mock_provider
+            )
+
+        error_msg = str(exc_info.value)
+        assert "has no metadata" in error_msg
+        assert "old pipeline" in error_msg.lower()
+
+    @patch('search_tools.initialize_chromadb_client')
+    @patch('search_tools.apply_context_mode')
+    def test_search_missing_dimension_in_metadata(self, mock_context, mock_init_client):
+        """Test search succeeds when collection metadata exists but dimension is missing (skips validation)."""
+        mock_client = Mock()
+        mock_init_client.return_value = mock_client
+
+        mock_collection = Mock()
+        mock_collection.name = "test_notes"
+        mock_collection.metadata = {
+            'embedding_provider': 'ollama',
+            'embedding_model': 'mxbai-embed-large:latest'
+        }
+        mock_client.list_collections.return_value = [mock_collection]
+        mock_client.get_collection.return_value = mock_collection
+
+        mock_provider = Mock(spec=AIProvider)
+        mock_provider.generate_embedding.return_value = [0.1] * 768
+
+        mock_collection.query.return_value = {
+            'ids': [['chunk1']],
+            'documents': [['Content']],
+            'metadatas': [[{
+                'title': 'Note',
+                'noteId': 'id1',
+                'chunkIndex': 0,
+                'modificationDate': '2024-01-01T00:00:00Z'
+            }]],
+            'distances': [[0.2]]
+        }
+
+        mock_context.return_value = [{
+            'noteTitle': 'Note',
+            'noteId': 'id1',
+            'chunkIndex': 0,
+            'modificationDate': '2024-01-01T00:00:00Z',
+            'collectionName': 'test_notes',
+            'similarityScore': 0.8,
+            'content': 'Content',
+            'totalChunks': 1
+        }]
+
+        results = search_knowledge_base(
+            query="test query",
+            collection_name="test_notes",
+            chromadb_path="/fake/path",
+            provider=mock_provider
+        )
+
+        assert len(results) == 1

@@ -6,8 +6,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "markdown-notes-cag-data-creator"))
 
 import chromadb
-from embedding import generate_embedding, OllamaServiceError
 from storage import initialize_chromadb_client, ChromaDBConnectionError
+from ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
 
 from context_retrieval import apply_context_mode
 
@@ -48,9 +48,9 @@ def search_knowledge_base(
     query: str,
     collection_name: str,
     chromadb_path: str,
+    provider: AIProvider,
     context_mode: str = "enhanced",
-    max_results: int = 5,
-    embedding_model: str = "mxbai-embed-large:latest"
+    max_results: int = 5
 ) -> List[Dict[str, Any]]:
     if not query or not query.strip():
         raise SearchError("Query cannot be empty")
@@ -71,23 +71,46 @@ def search_knowledge_base(
         # Step 2: Validate collection exists
         collection = validate_collection_exists(client, collection_name)
 
-        # Step 3: Generate query embedding
-        try:
-            query_embedding = generate_embedding(query, model=embedding_model)
-        except OllamaServiceError as error:
-            raise OllamaServiceError(
-                f"Ollama service unavailable: {error}\n"
-                f"Suggestion: Run 'ollama serve' to start the Ollama service."
+        # Step 3: Retrieve expected embedding dimension from collection metadata
+        collection_metadata = collection.metadata
+        if not collection_metadata:
+            raise SearchError(
+                f"Collection '{collection_name}' has no metadata. "
+                f"This collection was created with an old pipeline version and is not compatible. "
+                f"Please recreate the collection using the updated pipeline with AI provider metadata."
             )
 
-        # Step 4: Perform semantic search
+        expected_dimension = collection_metadata.get('embedding_dimension')
+
+        # Step 4: Generate query embedding using provider
+        try:
+            query_embedding = provider.generate_embedding(query)
+        except ProviderUnavailableError as error:
+            raise SearchError(
+                f"AI provider unavailable: {error}\n"
+                f"Suggestion: Ensure the provider service is running and accessible."
+            )
+        except AIProviderError as error:
+            raise SearchError(f"Failed to generate query embedding: {error}")
+
+        # Step 5: Validate embedding dimension matches collection's expected dimension
+        actual_dimension = len(query_embedding)
+        if expected_dimension is not None and actual_dimension != expected_dimension:
+            raise SearchError(
+                f"Embedding dimension mismatch! Query: {actual_dimension}, Collection: {expected_dimension}\n"
+                f"The collection was created with a different embedding model.\n"
+                f"Collection provider: {collection_metadata.get('embedding_provider')}\n"
+                f"Collection model: {collection_metadata.get('embedding_model')}"
+            )
+
+        # Step 6: Perform semantic search
         results = collection.query(
             query_embeddings=[query_embedding],
             n_results=max_results,
             include=["documents", "metadatas", "distances"]
         )
 
-        # Step 5: Format results
+        # Step 7: Format results
         formatted_results = []
 
         if results and results['ids'] and len(results['ids']) > 0:
@@ -98,18 +121,20 @@ def search_knowledge_base(
                     'chunkIndex': results['metadatas'][0][i].get('chunkIndex', 0),
                     'modificationDate': results['metadatas'][0][i].get('modificationDate', ''),
                     'collectionName': collection_name,
-                    'similarityScore': 1.0 - results['distances'][0][i],  # Convert distance to similarity
+                    'similarityScore': 1.0 - results['distances'][0][i],
                     'content': results['documents'][0][i],
-                    'totalChunks': 1  # Will be updated by context retrieval
+                    'totalChunks': 1
                 }
                 formatted_results.append(result)
 
-        # Step 6: Apply context retrieval based on context_mode
+        # Step 8: Apply context retrieval based on context_mode
         enhanced_results = apply_context_mode(collection, formatted_results, context_mode)
 
         return enhanced_results
 
-    except (CollectionNotFoundError, OllamaServiceError):
+    except CollectionNotFoundError:
+        raise
+    except SearchError:
         raise
     except ChromaDBConnectionError as error:
         raise SearchError(f"ChromaDB connection failed: {error}")
