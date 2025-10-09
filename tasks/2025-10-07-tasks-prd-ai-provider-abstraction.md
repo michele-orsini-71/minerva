@@ -117,24 +117,24 @@
   - [x] 5.12 Update unit tests in `tests/test_full_pipeline.py` to test config-driven provider initialization
   - [x] 5.13 Add integration test for complete pipeline flow with Ollama (no API keys required)
 
-- [ ] 6.0 Implement MCP Server Dynamic Collection Discovery
-  - [ ] 6.1 Update `collection_discovery.py` to read collection metadata and extract AI provider fields
-  - [ ] 6.2 Create `reconstruct_provider_from_metadata(metadata: Dict) -> Optional[AIProvider]` function
-  - [ ] 6.3 Extract provider config from metadata: type, embedding_model, base_url, api_key_ref, llm_model
-  - [ ] 6.4 Resolve environment variables in api_key_ref templates at runtime using `os.environ.get()`
-  - [ ] 6.5 Instantiate `AIProvider` with reconstructed config
-  - [ ] 6.6 Call `provider.check_availability()` to test provider connectivity (generate test embedding)
-  - [ ] 6.7 Return provider instance if available, or None if unavailable (with reason)
-  - [ ] 6.8 Update `list_collections()` to return availability status for each collection
-  - [ ] 6.9 Mark collections without AI metadata as unavailable with reason "Missing AI provider metadata (created with old pipeline)"
-  - [ ] 6.10 Update MCP server startup in `server.py` to call enhanced collection discovery
-  - [ ] 6.11 Store map of available collections to their provider instances in server state
-  - [ ] 6.12 Print detailed startup log showing each collection's provider, model, availability status, and failure reasons
-  - [ ] 6.13 Print summary: total collections, available count, unavailable count
-  - [ ] 6.14 If zero collections are available, exit with error and troubleshooting guidance
-  - [ ] 6.15 Update `list_knowledge_bases` tool to return only available collections
-  - [ ] 6.16 Update unit tests in `tests/test_collection_discovery.py` for provider reconstruction and availability checking
-  - [ ] 6.17 Add test cases for missing API keys, invalid metadata, and mixed availability scenarios
+- [x] 6.0 Implement MCP Server Dynamic Collection Discovery
+  - [x] 6.1 Update `collection_discovery.py` to read collection metadata and extract AI provider fields
+  - [x] 6.2 Create `reconstruct_provider_from_metadata(metadata: Dict) -> Optional[AIProvider]` function
+  - [x] 6.3 Extract provider config from metadata: type, embedding_model, base_url, api_key_ref, llm_model
+  - [x] 6.4 Resolve environment variables in api_key_ref templates at runtime using `os.environ.get()`
+  - [x] 6.5 Instantiate `AIProvider` with reconstructed config
+  - [x] 6.6 Call `provider.check_availability()` to test provider connectivity (generate test embedding)
+  - [x] 6.7 Return provider instance if available, or None if unavailable (with reason)
+  - [x] 6.8 Update `list_collections()` to return availability status for each collection
+  - [x] 6.9 Mark collections without AI metadata as unavailable with reason "Missing AI provider metadata (created with old pipeline)"
+  - [x] 6.10 Update MCP server startup in `server.py` to call enhanced collection discovery
+  - [x] 6.11 Store map of available collections to their provider instances in server state
+  - [x] 6.12 Print detailed startup log showing each collection's provider, model, availability status, and failure reasons
+  - [x] 6.13 Print summary: total collections, available count, unavailable count
+  - [x] 6.14 If zero collections are available, exit with error and troubleshooting guidance
+  - [x] 6.15 Update `list_knowledge_bases` tool to return only available collections
+  - [x] 6.16 Update unit tests in `tests/test_collection_discovery.py` for provider reconstruction and availability checking
+  - [x] 6.17 Add test cases for missing API keys, invalid metadata, and mixed availability scenarios
 
 - [ ] 7.0 Update MCP Search Tools for Provider-Aware Queries
   - [ ] 7.1 Update `search_knowledge_base()` in `search_tools.py` to accept `provider: AIProvider` parameter

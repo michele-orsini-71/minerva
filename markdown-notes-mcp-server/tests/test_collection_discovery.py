@@ -9,6 +9,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from collection_discovery import (
     list_collections,
+    reconstruct_provider_from_metadata,
+    discover_collections_with_providers,
     CollectionDiscoveryError
 )
 
@@ -386,6 +388,282 @@ class TestCollectionDiscoveryErrorMessages:
         assert "Troubleshooting:" in error_msg
         error_msg_lower = error_msg.lower()
         assert any(keyword in error_msg_lower for keyword in ["verify", "check", "ensure"])
+
+
+class TestReconstructProviderFromMetadata:
+    """Test provider reconstruction from collection metadata."""
+
+    @patch('collection_discovery.AIProvider')
+    @patch('collection_discovery.AIProviderConfig')
+    def test_successful_provider_reconstruction(self, mock_config_class, mock_provider_class):
+        """Test successful reconstruction of provider from complete metadata."""
+        metadata = {
+            'embedding_provider': 'ollama',
+            'embedding_model': 'mxbai-embed-large:latest',
+            'llm_model': 'llama3.1:8b',
+            'embedding_base_url': 'http://localhost:11434',
+            'embedding_api_key_ref': None
+        }
+
+        mock_config = Mock()
+        mock_config_class.return_value = mock_config
+
+        mock_provider = Mock()
+        mock_provider.check_availability.return_value = {'available': True, 'dimension': 1024}
+        mock_provider_class.return_value = mock_provider
+
+        provider, error = reconstruct_provider_from_metadata(metadata)
+
+        assert provider is not None
+        assert error is None
+        mock_config_class.assert_called_once_with(
+            provider_type='ollama',
+            embedding_model='mxbai-embed-large:latest',
+            llm_model='llama3.1:8b',
+            base_url='http://localhost:11434',
+            api_key=None
+        )
+
+    def test_missing_provider_type(self):
+        """Test reconstruction fails gracefully when provider_type is missing."""
+        metadata = {
+            'embedding_model': 'mxbai-embed-large:latest',
+            'llm_model': 'llama3.1:8b'
+        }
+
+        provider, error = reconstruct_provider_from_metadata(metadata)
+
+        assert provider is None
+        assert error == "Missing AI provider metadata (created with old pipeline)"
+
+    def test_missing_embedding_model(self):
+        """Test reconstruction fails gracefully when embedding_model is missing."""
+        metadata = {
+            'embedding_provider': 'ollama',
+            'llm_model': 'llama3.1:8b'
+        }
+
+        provider, error = reconstruct_provider_from_metadata(metadata)
+
+        assert provider is None
+        assert error == "Missing AI provider metadata (created with old pipeline)"
+
+    def test_missing_llm_model(self):
+        """Test reconstruction fails gracefully when llm_model is missing."""
+        metadata = {
+            'embedding_provider': 'ollama',
+            'embedding_model': 'mxbai-embed-large:latest'
+        }
+
+        provider, error = reconstruct_provider_from_metadata(metadata)
+
+        assert provider is None
+        assert error == "Missing AI provider metadata (created with old pipeline)"
+
+    def test_empty_metadata(self):
+        """Test reconstruction with empty metadata."""
+        metadata = {}
+
+        provider, error = reconstruct_provider_from_metadata(metadata)
+
+        assert provider is None
+        assert error == "Missing AI provider metadata (created with old pipeline)"
+
+    @patch('collection_discovery.AIProvider')
+    @patch('collection_discovery.AIProviderConfig')
+    def test_provider_unavailable(self, mock_config_class, mock_provider_class):
+        """Test handling when provider check_availability returns unavailable."""
+        metadata = {
+            'embedding_provider': 'ollama',
+            'embedding_model': 'mxbai-embed-large:latest',
+            'llm_model': 'llama3.1:8b'
+        }
+
+        mock_config = Mock()
+        mock_config_class.return_value = mock_config
+
+        mock_provider = Mock()
+        mock_provider.check_availability.return_value = {
+            'available': False,
+            'error': 'Provider unavailable: connection refused'
+        }
+        mock_provider_class.return_value = mock_provider
+
+        provider, error = reconstruct_provider_from_metadata(metadata)
+
+        assert provider is None
+        assert error == 'Provider unavailable: connection refused'
+
+    @patch('collection_discovery.AIProviderConfig')
+    def test_api_key_missing_error(self, mock_config_class):
+        """Test handling of missing API key errors."""
+        from ai_config import APIKeyMissingError
+
+        metadata = {
+            'embedding_provider': 'openai',
+            'embedding_model': 'text-embedding-3-small',
+            'llm_model': 'gpt-4o-mini',
+            'embedding_api_key_ref': '${OPENAI_API_KEY}'
+        }
+
+        mock_config_class.side_effect = APIKeyMissingError("Environment variable 'OPENAI_API_KEY' is not set")
+
+        provider, error = reconstruct_provider_from_metadata(metadata)
+
+        assert provider is None
+        assert "Environment variable 'OPENAI_API_KEY' is not set" in error
+
+    @patch('collection_discovery.AIProvider')
+    @patch('collection_discovery.AIProviderConfig')
+    def test_provider_initialization_error(self, mock_config_class, mock_provider_class):
+        """Test handling of provider initialization errors."""
+        from ai_provider import AIProviderError
+
+        metadata = {
+            'embedding_provider': 'ollama',
+            'embedding_model': 'mxbai-embed-large:latest',
+            'llm_model': 'llama3.1:8b'
+        }
+
+        mock_config = Mock()
+        mock_config_class.return_value = mock_config
+
+        mock_provider_class.side_effect = AIProviderError("LiteLLM is not installed")
+
+        provider, error = reconstruct_provider_from_metadata(metadata)
+
+        assert provider is None
+        assert "Provider initialization failed" in error
+
+    @patch('collection_discovery.AIProvider')
+    @patch('collection_discovery.AIProviderConfig')
+    def test_unexpected_error(self, mock_config_class, mock_provider_class):
+        """Test handling of unexpected errors during reconstruction."""
+        metadata = {
+            'embedding_provider': 'ollama',
+            'embedding_model': 'mxbai-embed-large:latest',
+            'llm_model': 'llama3.1:8b'
+        }
+
+        mock_config_class.side_effect = Exception("Unexpected error")
+
+        provider, error = reconstruct_provider_from_metadata(metadata)
+
+        assert provider is None
+        assert "Unexpected error during provider reconstruction" in error
+
+
+class TestDiscoverCollectionsWithProviders:
+    """Test discovery of collections with provider instances."""
+
+    @patch('collection_discovery.initialize_chromadb_client')
+    @patch('collection_discovery.reconstruct_provider_from_metadata')
+    def test_discover_with_available_providers(self, mock_reconstruct, mock_init_client):
+        """Test discovering collections where all providers are available."""
+        mock_client = Mock()
+        mock_init_client.return_value = mock_client
+
+        mock_collection1 = Mock()
+        mock_collection1.name = "collection1"
+        mock_collection1.metadata = {
+            'embedding_provider': 'ollama',
+            'embedding_model': 'model1',
+            'llm_model': 'llm1',
+            'description': 'Collection 1'
+        }
+        mock_collection1.count.return_value = 100
+
+        mock_collection2 = Mock()
+        mock_collection2.name = "collection2"
+        mock_collection2.metadata = {
+            'embedding_provider': 'openai',
+            'embedding_model': 'model2',
+            'llm_model': 'llm2',
+            'description': 'Collection 2'
+        }
+        mock_collection2.count.return_value = 200
+
+        mock_client.list_collections.return_value = [mock_collection1, mock_collection2]
+
+        mock_provider1 = Mock()
+        mock_provider2 = Mock()
+
+        mock_reconstruct.side_effect = [
+            (mock_provider1, None),
+            (mock_provider2, None)
+        ]
+
+        provider_map, collections = discover_collections_with_providers("/fake/path")
+
+        assert len(provider_map) == 2
+        assert "collection1" in provider_map
+        assert "collection2" in provider_map
+        assert provider_map["collection1"] == mock_provider1
+        assert provider_map["collection2"] == mock_provider2
+
+        assert len(collections) == 2
+        assert collections[0]['available'] is True
+        assert collections[1]['available'] is True
+
+    @patch('collection_discovery.initialize_chromadb_client')
+    @patch('collection_discovery.reconstruct_provider_from_metadata')
+    def test_discover_with_unavailable_providers(self, mock_reconstruct, mock_init_client):
+        """Test discovering collections where some providers are unavailable."""
+        mock_client = Mock()
+        mock_init_client.return_value = mock_client
+
+        mock_collection1 = Mock()
+        mock_collection1.name = "available_collection"
+        mock_collection1.metadata = {'embedding_provider': 'ollama', 'embedding_model': 'model1', 'llm_model': 'llm1'}
+        mock_collection1.count.return_value = 100
+
+        mock_collection2 = Mock()
+        mock_collection2.name = "unavailable_collection"
+        mock_collection2.metadata = {'embedding_provider': 'openai', 'embedding_model': 'model2', 'llm_model': 'llm2'}
+        mock_collection2.count.return_value = 200
+
+        mock_client.list_collections.return_value = [mock_collection1, mock_collection2]
+
+        mock_provider1 = Mock()
+
+        mock_reconstruct.side_effect = [
+            (mock_provider1, None),
+            (None, "API key missing")
+        ]
+
+        provider_map, collections = discover_collections_with_providers("/fake/path")
+
+        assert len(provider_map) == 1
+        assert "available_collection" in provider_map
+        assert "unavailable_collection" not in provider_map
+
+        assert len(collections) == 2
+        assert collections[0]['available'] is True
+        assert collections[1]['available'] is False
+        assert collections[1]['unavailable_reason'] == "API key missing"
+
+    @patch('collection_discovery.initialize_chromadb_client')
+    @patch('collection_discovery.reconstruct_provider_from_metadata')
+    def test_discover_with_old_collections(self, mock_reconstruct, mock_init_client):
+        """Test discovering collections created with old pipeline (no metadata)."""
+        mock_client = Mock()
+        mock_init_client.return_value = mock_client
+
+        mock_collection = Mock()
+        mock_collection.name = "old_collection"
+        mock_collection.metadata = {}
+        mock_collection.count.return_value = 50
+
+        mock_client.list_collections.return_value = [mock_collection]
+
+        mock_reconstruct.return_value = (None, "Missing AI provider metadata (created with old pipeline)")
+
+        provider_map, collections = discover_collections_with_providers("/fake/path")
+
+        assert len(provider_map) == 0
+        assert len(collections) == 1
+        assert collections[0]['available'] is False
+        assert "old pipeline" in collections[0]['unavailable_reason']
 
 
 if __name__ == "__main__":

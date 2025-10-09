@@ -31,13 +31,14 @@ except ImportError:
 # Import configuration and validation modules
 from config import load_config, get_config_file_path, ConfigError, ConfigValidationError
 from startup_validation import validate_server_prerequisites
-from collection_discovery import list_collections, CollectionDiscoveryError
+from collection_discovery import discover_collections_with_providers, CollectionDiscoveryError
 from search_tools import (
     search_knowledge_base as search_kb,
     SearchError,
     CollectionNotFoundError
 )
 from embedding import OllamaServiceError
+from ai_provider import AIProvider
 
 # Configure logging
 logging.basicConfig(
@@ -51,19 +52,19 @@ mcp = FastMCP("markdown-notes-mcp-server")
 
 # Global configuration (loaded at startup)
 CONFIG: Dict[str, Any] = {}
+PROVIDER_MAP: Dict[str, AIProvider] = {}
+AVAILABLE_COLLECTIONS: List[Dict[str, Any]] = []
 
 def initialize_server() -> None:
-    global CONFIG
+    global CONFIG, PROVIDER_MAP, AVAILABLE_COLLECTIONS
 
     try:
-        # Step 1: Load configuration
         logger.info("Loading configuration...")
         config_path = get_config_file_path()
         CONFIG = load_config(config_path)
         logger.info(f"✓ Configuration loaded from {config_path}")
         logger.info(f"  ChromaDB path: {CONFIG['chromadb_path']}")
         logger.info(f"  Default max results: {CONFIG['default_max_results']}")
-        logger.info(f"  Embedding model: {CONFIG['embedding_model']}")
 
     except (ConfigError, ConfigValidationError) as e:
         logger.error("Configuration loading failed:")
@@ -72,7 +73,6 @@ def initialize_server() -> None:
         sys.exit(1)
 
     try:
-        # Step 2: Validate server prerequisites
         logger.info("\nValidating server prerequisites...")
         success, error = validate_server_prerequisites(CONFIG)
 
@@ -83,11 +83,68 @@ def initialize_server() -> None:
             sys.exit(1)
 
         logger.info("✓ All validation checks passed")
-        logger.info("\nServer is ready to accept requests\n")
 
     except Exception as e:
         logger.error(f"Unexpected error during validation: {e}")
         print(f"\n✗ Validation Error:\n{e}\n", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        logger.info("\nDiscovering collections and initializing AI providers...")
+        PROVIDER_MAP, all_collections = discover_collections_with_providers(CONFIG['chromadb_path'])
+
+        total_count = len(all_collections)
+        available_count = sum(1 for c in all_collections if c['available'])
+        unavailable_count = total_count - available_count
+
+        AVAILABLE_COLLECTIONS = [c for c in all_collections if c['available']]
+
+        logger.info(f"\n{'='*60}")
+        logger.info("Collection Discovery Results")
+        logger.info(f"{'='*60}")
+
+        for collection in all_collections:
+            status = "✓ AVAILABLE" if collection['available'] else "✗ UNAVAILABLE"
+            logger.info(f"\n{status}: {collection['name']}")
+            logger.info(f"  Description: {collection['description']}")
+            logger.info(f"  Chunks: {collection['chunk_count']}")
+
+            if collection['available']:
+                logger.info(f"  Provider: {collection['provider_type']}")
+                logger.info(f"  Embedding Model: {collection['embedding_model']}")
+                logger.info(f"  LLM Model: {collection['llm_model']}")
+                if collection.get('embedding_dimension'):
+                    logger.info(f"  Embedding Dimension: {collection['embedding_dimension']}")
+            else:
+                logger.info(f"  Reason: {collection['unavailable_reason']}")
+
+        logger.info(f"\n{'='*60}")
+        logger.info(f"Summary: {total_count} total, {available_count} available, {unavailable_count} unavailable")
+        logger.info(f"{'='*60}\n")
+
+        if available_count == 0:
+            error_msg = (
+                "No collections are available!\n\n"
+                "Troubleshooting:\n"
+                "1. Ensure collections were created with the updated pipeline that includes AI provider metadata\n"
+                "2. Check that required API keys are set as environment variables\n"
+                "3. For Ollama collections, ensure the Ollama service is running: ollama serve\n"
+                "4. Verify provider configurations in your collection metadata\n\n"
+                "Run the pipeline with --verbose to create collections with proper metadata."
+            )
+            logger.error(error_msg)
+            print(f"\n✗ {error_msg}\n", file=sys.stderr)
+            sys.exit(1)
+
+        logger.info("Server is ready to accept requests\n")
+
+    except CollectionDiscoveryError as e:
+        logger.error(f"Collection discovery failed: {e}")
+        print(f"\n✗ Collection Discovery Error:\n\n{e}\n", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        logger.error(f"Unexpected error during collection discovery: {e}")
+        print(f"\n✗ Collection Discovery Error:\n{e}\n", file=sys.stderr)
         sys.exit(1)
 
 
@@ -98,19 +155,13 @@ def initialize_server() -> None:
 def list_knowledge_bases() -> List[Dict[str, Any]]:
     try:
         logger.info("Tool invoked: list_knowledge_bases")
-        chromadb_path = CONFIG['chromadb_path']
 
-        collections = list_collections(chromadb_path)
-
-        logger.info(f"✓ Found {len(collections)} collection(s)")
-        for col in collections:
+        logger.info(f"✓ Returning {len(AVAILABLE_COLLECTIONS)} available collection(s)")
+        for col in AVAILABLE_COLLECTIONS:
             logger.info(f"  - {col['name']}: {col['chunk_count']} chunks")
 
-        return collections
+        return AVAILABLE_COLLECTIONS
 
-    except CollectionDiscoveryError as e:
-        logger.error(f"Collection discovery failed: {e}")
-        raise
     except Exception as e:
         logger.error(f"Unexpected error in list_knowledge_bases: {e}")
         raise CollectionDiscoveryError(f"Failed to list knowledge bases: {e}")
