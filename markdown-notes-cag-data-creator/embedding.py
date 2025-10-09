@@ -12,16 +12,12 @@ from config_loader import CollectionConfig
 DEFAULT_MAX_RETRIES = 3
 DEFAULT_RETRY_DELAY = 1.0
 
-_provider: Optional[AIProvider] = None
-
 
 class EmbeddingError(Exception):
     pass
 
 
 def initialize_provider(config: CollectionConfig) -> AIProvider:
-    global _provider
-
     ai_provider_config = config.ai_provider
 
     provider_config = AIProviderConfig(
@@ -33,28 +29,18 @@ def initialize_provider(config: CollectionConfig) -> AIProvider:
     )
 
     try:
-        _provider = AIProvider(provider_config)
-        return _provider
+        provider = AIProvider(provider_config)
+        return provider
     except AIProviderError as error:
         raise EmbeddingError(f"Failed to initialize AI provider: {error}")
 
 
-def get_embedding_metadata() -> Dict[str, Any]:
-    assert _provider is not None, "Provider not initialized. Call initialize_provider() first"
-    return _provider.get_embedding_metadata()
-
-
-def validate_description(description: str) -> Dict[str, Any]:
-    assert _provider is not None, "Provider not initialized. Call initialize_provider() first"
-    return _provider.validate_description(description)
-
-
 def generate_embedding(
+    provider: AIProvider,
     text: str,
     max_retries: int = DEFAULT_MAX_RETRIES,
     retry_delay: float = DEFAULT_RETRY_DELAY
 ) -> List[float]:
-    assert _provider is not None, "Provider not initialized. Call initialize_provider() first"
 
     if not text or not text.strip():
         raise ValueError(
@@ -65,7 +51,7 @@ def generate_embedding(
 
     for attempt in range(max_retries + 1):
         try:
-            return _provider.generate_embedding(text)
+            return provider.generate_embedding(text)
 
         except AIProviderError as error:
             if attempt < max_retries:
@@ -107,22 +93,21 @@ def validate_embedding_consistency(embeddings: List[List[float]]) -> bool:
 
 
 def generate_embeddings(
+    provider: AIProvider,
     chunks: ChunkList,
     max_retries: int = DEFAULT_MAX_RETRIES,
     retry_delay: float = DEFAULT_RETRY_DELAY,
     progress_callback: Optional[Callable[[int, int], None]] = None
 ) -> ChunkWithEmbeddingList:
-    assert _provider is not None, "Provider not initialized. Call initialize_provider() first"
-
     if not chunks:
         return []
 
-    provider_type = _provider.provider_type
-    embedding_model = _provider.embedding_model
+    provider_type = provider.provider_type
+    embedding_model = provider.embedding_model
     print(f"Generating embeddings for {len(chunks)} chunks using {provider_type}/{embedding_model}...")
 
     try:
-        availability = _provider.check_availability()
+        availability = provider.check_availability()
         if not availability['available']:
             raise EmbeddingError(f"Provider unavailable: {availability.get('error', 'Unknown error')}")
         print(f"   Provider ready: {provider_type}/{embedding_model}")
@@ -138,6 +123,7 @@ def generate_embeddings(
 
         try:
             embedding = generate_embedding(
+                provider=provider,
                 text=chunk.content,
                 max_retries=max_retries,
                 retry_delay=retry_delay

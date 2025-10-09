@@ -86,9 +86,14 @@ def test_pipeline_dry_run_collection_exists_error(monkeypatch: MonkeyPatch):
 
 def test_pipeline_full_run_success(monkeypatch: MonkeyPatch):
     patch_common_dependencies(monkeypatch, dry_run=False)
-    monkeypatch.setattr(full_pipeline, "initialize_ai_provider", lambda config, args: (object(), {'embedding_model': 'test'}))
+
+    class MockProvider:
+        def get_embedding_metadata(self):
+            return {'embedding_model': 'test', 'dimension': 1024}
+
+    monkeypatch.setattr(full_pipeline, "initialize_ai_provider", lambda config, args: MockProvider())
     monkeypatch.setattr(full_pipeline, "create_chunks_from_notes", lambda notes, target_chars: [build_chunk(0)])
-    monkeypatch.setattr(full_pipeline, "generate_embeddings", lambda chunks: [build_chunk_with_embedding(0)])
+    monkeypatch.setattr(full_pipeline, "generate_embeddings", lambda provider, chunks: [build_chunk_with_embedding(0)])
     monkeypatch.setattr(full_pipeline, "create_collection", lambda client, collection_name, description, embedding_metadata: object())
     def fake_insert(collection, chunks_with_embeddings, batch_size=64, progress_callback=None):
         return {
@@ -106,9 +111,14 @@ def test_pipeline_full_run_success(monkeypatch: MonkeyPatch):
 
 def test_pipeline_handles_embedding_error(monkeypatch: MonkeyPatch):
     patch_common_dependencies(monkeypatch, dry_run=False)
-    monkeypatch.setattr(full_pipeline, "initialize_ai_provider", lambda config, args: (object(), {'embedding_model': 'test'}))
+
+    class MockProvider:
+        def get_embedding_metadata(self):
+            return {'embedding_model': 'test', 'dimension': 1024}
+
+    monkeypatch.setattr(full_pipeline, "initialize_ai_provider", lambda config, args: MockProvider())
     monkeypatch.setattr(full_pipeline, "create_chunks_from_notes", lambda notes, target_chars: [build_chunk(0)])
-    def raise_embedding_error(_chunks):
+    def raise_embedding_error(_provider, _chunks):
         raise EmbeddingError("boom")
 
     monkeypatch.setattr(full_pipeline, "generate_embeddings", raise_embedding_error)
@@ -126,9 +136,14 @@ def test_pipeline_handles_embedding_error(monkeypatch: MonkeyPatch):
 
 def test_pipeline_handles_storage_error(monkeypatch: MonkeyPatch):
     patch_common_dependencies(monkeypatch, dry_run=False)
-    monkeypatch.setattr(full_pipeline, "initialize_ai_provider", lambda config, args: (object(), {'embedding_model': 'test'}))
+
+    class MockProvider:
+        def get_embedding_metadata(self):
+            return {'embedding_model': 'test', 'dimension': 1024}
+
+    monkeypatch.setattr(full_pipeline, "initialize_ai_provider", lambda config, args: MockProvider())
     monkeypatch.setattr(full_pipeline, "create_chunks_from_notes", lambda notes, target_chars: [build_chunk(0)])
-    monkeypatch.setattr(full_pipeline, "generate_embeddings", lambda chunks: [build_chunk_with_embedding(0)])
+    monkeypatch.setattr(full_pipeline, "generate_embeddings", lambda provider, chunks: [build_chunk_with_embedding(0)])
 
     def raise_storage_error(_client, *, collection_name, description, embedding_metadata):
         raise StorageError("fail")
@@ -232,10 +247,14 @@ def test_run_normal_pipeline_force_recreate(monkeypatch: MonkeyPatch, capsys):
     def fake_create_chunks(notes_arg, target_chars, overlap_chars=200):
         return chunks
 
-    monkeypatch.setattr(full_pipeline, "initialize_ai_provider", lambda config, args: (object(), {'embedding_model': 'test'}))
+    class MockProvider:
+        def get_embedding_metadata(self):
+            return {'embedding_model': 'test', 'dimension': 1024}
+
+    monkeypatch.setattr(full_pipeline, "initialize_ai_provider", lambda config, args: MockProvider())
     monkeypatch.setattr(full_pipeline, "create_chunks_from_notes", fake_create_chunks)
     monkeypatch.setattr(full_pipeline, "initialize_chromadb_client", lambda path: object())
-    monkeypatch.setattr(full_pipeline, "generate_embeddings", lambda *_: embeddings)
+    monkeypatch.setattr(full_pipeline, "generate_embeddings", lambda provider, chunks: embeddings)
     monkeypatch.setattr(full_pipeline, "recreate_collection", lambda *args, **kwargs: object())
 
     def fake_insert(collection, chunks_with_embeddings, batch_size=64, progress_callback=None):
@@ -484,15 +503,13 @@ def test_initialize_ai_provider_success(monkeypatch: MonkeyPatch, capsys):
     mock_provider = MockProvider()
 
     monkeypatch.setattr(full_pipeline, "initialize_provider", lambda config: mock_provider)
-    monkeypatch.setattr(full_pipeline, "get_embedding_metadata", lambda: mock_provider.get_embedding_metadata())
 
-    provider, metadata = full_pipeline.initialize_ai_provider(config, args)
+    provider = full_pipeline.initialize_ai_provider(config, args)
 
     captured = capsys.readouterr()
     assert "Initializing AI provider" in captured.out
     assert "Provider: ollama" in captured.out
     assert provider == mock_provider
-    assert metadata['embedding_model'] == 'mxbai-embed-large:latest'
 
 
 def test_initialize_ai_provider_unavailable(monkeypatch: MonkeyPatch, capsys):
@@ -534,13 +551,14 @@ def test_initialize_ai_provider_with_validation(monkeypatch: MonkeyPatch, capsys
         def get_embedding_metadata(self):
             return {'embedding_model': 'mxbai-embed-large:latest', 'dimension': 1024}
 
+        def validate_description(self, desc):
+            return {'score': 8, 'feedback': 'Good description'}
+
     mock_provider = MockProvider()
 
     monkeypatch.setattr(full_pipeline, "initialize_provider", lambda config: mock_provider)
-    monkeypatch.setattr(full_pipeline, "get_embedding_metadata", lambda: mock_provider.get_embedding_metadata())
-    monkeypatch.setattr(full_pipeline, "validate_description", lambda desc: {'score': 8, 'feedback': 'Good description'})
 
-    provider, metadata = full_pipeline.initialize_ai_provider(config, args)
+    provider = full_pipeline.initialize_ai_provider(config, args)
 
     captured = capsys.readouterr()
     assert "Validating collection description" in captured.out
@@ -564,13 +582,14 @@ def test_initialize_ai_provider_low_score_warning(monkeypatch: MonkeyPatch, caps
         def get_embedding_metadata(self):
             return {'embedding_model': 'mxbai-embed-large:latest', 'dimension': 1024}
 
+        def validate_description(self, desc):
+            return {'score': 5, 'feedback': 'Needs improvement'}
+
     mock_provider = MockProvider()
 
     monkeypatch.setattr(full_pipeline, "initialize_provider", lambda config: mock_provider)
-    monkeypatch.setattr(full_pipeline, "get_embedding_metadata", lambda: mock_provider.get_embedding_metadata())
-    monkeypatch.setattr(full_pipeline, "validate_description", lambda desc: {'score': 5, 'feedback': 'Needs improvement'})
 
-    provider, metadata = full_pipeline.initialize_ai_provider(config, args)
+    provider = full_pipeline.initialize_ai_provider(config, args)
 
     captured = capsys.readouterr()
     assert "WARNING: Description score is below 7" in captured.out

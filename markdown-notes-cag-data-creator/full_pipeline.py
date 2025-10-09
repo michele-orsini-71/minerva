@@ -13,8 +13,7 @@ from chunk_creator import create_chunks_from_notes
 from config_validator import load_and_validate_config
 from dry_run import run_dry_run_mode
 from embedding import (EmbeddingError, generate_embeddings,
-                       get_embedding_metadata, initialize_provider,
-                       validate_description)
+                       initialize_provider)
 from json_loader import load_json_notes
 from storage import (StorageError, create_collection,
                      initialize_chromadb_client, insert_chunks,
@@ -22,7 +21,6 @@ from storage import (StorageError, create_collection,
 
 
 def initialize_ai_provider(config, args):
-    """Initialize and validate AI provider before processing."""
     print("Initializing AI provider...")
 
     try:
@@ -53,7 +51,7 @@ def initialize_ai_provider(config, args):
 
         if not config.skip_ai_validation:
             print("Validating collection description...")
-            validation_result = validate_description(config.description)
+            validation_result = provider.validate_description(config.description)
             score = validation_result.get('score', 0)
             feedback = validation_result.get('feedback', 'No feedback available')
 
@@ -64,8 +62,7 @@ def initialize_ai_provider(config, args):
                 print(f"   WARNING: Description score is below 7. Consider improving the description.")
             print()
 
-        metadata = get_embedding_metadata()
-        return provider, metadata
+        return provider
 
     except AIProviderError as error:
         print(f"\n{'=' * 60}", file=sys.stderr)
@@ -77,9 +74,11 @@ def initialize_ai_provider(config, args):
 
 
 def run_normal_pipeline(config, args, notes, start_time):
-    """Execute the normal RAG pipeline with chunking, embedding, and storage."""
-    # Initialize provider and get metadata
-    provider, embedding_metadata = initialize_ai_provider(config, args)
+    # Initialize provider
+    provider = initialize_ai_provider(config, args)
+
+    # Get embedding metadata from provider instance
+    embedding_metadata = provider.get_embedding_metadata()
 
     # Create chunks (immutable)
     print("Creating semantic chunks...")
@@ -90,9 +89,9 @@ def run_normal_pipeline(config, args, notes, start_time):
     # Initialize storage
     client = initialize_chromadb_client(config.chromadb_path)
 
-    # Generate embeddings (immutable)
-    print("Generating embeddings with Ollama...")
-    chunks_with_embeddings = generate_embeddings(chunks)
+    # Generate embeddings using provider instance
+    print("Generating embeddings...")
+    chunks_with_embeddings = generate_embeddings(provider, chunks)
     print(f"   Generated {len(chunks_with_embeddings)} embeddings")
     print()
 
