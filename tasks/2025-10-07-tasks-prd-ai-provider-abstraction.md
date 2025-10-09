@@ -136,18 +136,18 @@
   - [x] 6.16 Update unit tests in `tests/test_collection_discovery.py` for provider reconstruction and availability checking
   - [x] 6.17 Add test cases for missing API keys, invalid metadata, and mixed availability scenarios
 
-- [ ] 7.0 Update MCP Search Tools for Provider-Aware Queries
-  - [ ] 7.1 Update `search_knowledge_base()` in `search_tools.py` to accept `provider: AIProvider` parameter
-  - [ ] 7.2 Replace direct `generate_embedding()` call with `provider.generate_embedding(query)`
-  - [ ] 7.3 Retrieve expected embedding dimension from collection metadata
-  - [ ] 7.4 Validate generated embedding dimension matches collection's expected dimension
-  - [ ] 7.5 Raise hard error if dimensions mismatch: "Embedding dimension mismatch! Query: {actual}, Collection: {expected}"
-  - [ ] 7.6 Update MCP server's `search_knowledge_base` tool to look up provider for target collection
-  - [ ] 7.7 Pass collection-specific provider to `search_knowledge_base()` function
-  - [ ] 7.8 Add error handling for queries to unavailable collections: "Collection not available. Use list_knowledge_bases() to see available collections"
-  - [ ] 7.9 Update unit tests in `tests/test_search_tools.py` to mock provider-based embedding generation
-  - [ ] 7.10 Add test for embedding dimension validation (both matching and mismatching scenarios)
-  - [ ] 7.11 Add test for unavailable collection query attempts
+- [x] 7.0 Update MCP Search Tools for Provider-Aware Queries
+  - [x] 7.1 Update `search_knowledge_base()` in `search_tools.py` to accept `provider: AIProvider` parameter
+  - [x] 7.2 Replace direct `generate_embedding()` call with `provider.generate_embedding(query)`
+  - [x] 7.3 Retrieve expected embedding dimension from collection metadata
+  - [x] 7.4 Validate generated embedding dimension matches collection's expected dimension
+  - [x] 7.5 Raise hard error if dimensions mismatch: "Embedding dimension mismatch! Query: {actual}, Collection: {expected}"
+  - [x] 7.6 Update MCP server's `search_knowledge_base` tool to look up provider for target collection
+  - [x] 7.7 Pass collection-specific provider to `search_knowledge_base()` function
+  - [x] 7.8 Add error handling for queries to unavailable collections: "Collection not available. Use list_knowledge_bases() to see available collections"
+  - [x] 7.9 Update unit tests in `tests/test_search_tools.py` to mock provider-based embedding generation
+  - [x] 7.10 Add test for embedding dimension validation (both matching and mismatching scenarios)
+  - [x] 7.11 Add test for unavailable collection query attempts
 
 - [ ] 8.0 Create Example Configuration Files
   - [ ] 8.1 Create `configs/` directory at project root if it doesn't exist
