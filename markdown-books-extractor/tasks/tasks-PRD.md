@@ -7,11 +7,11 @@ Generated from: `PRD.md`
 - `markdown-books-extractor/markdown_to_cag.py` - Main CLI script and orchestration logic
 - `markdown-books-extractor/book_parser.py` - Book file parsing and metadata extraction module
 - `markdown-books-extractor/chapter_detector.py` - Chapter boundary detection and splitting logic
-- `markdown-books-extractor/json_generator.py` - Bear Notes JSON format output generator
+- `markdown-books-extractor/json_generator.py` - Bear Notes JSON format output generator [COMPLETED]
 - `markdown-books-extractor/models.py` - Data models for Book, Chapter, and ChapterEntry (optional, for type safety)
+- `markdown-books-extractor/tests/test_integration.py` - Integration test suite [COMPLETED]
 - `markdown-books-extractor/tests/test_castle_of_otranto.py` - Manual test script for primary test file
 - `markdown-books-extractor/tests/test_edge_cases.py` - Manual test script for edge cases
-- `markdown-books-extractor/tests/test_integration.py` - End-to-end integration test with CAG pipeline
 
 ### Notes
 
@@ -27,48 +27,48 @@ Generated from: `PRD.md`
 ## Tasks
 
 - [ ] 1.0 Create core book parser module with metadata extraction
-  - [ ] 1.1 Create `book_parser.py` module with function `parse_book_file(file_path: str) -> dict`
-  - [ ] 1.2 Implement file existence and readability validation using `pathlib.Path`
-  - [ ] 1.3 Read entire file content with UTF-8 encoding (fail on encoding errors)
-  - [ ] 1.4 Split content into header section and body using `-------` delimiter (use `str.split()` with maxsplit=1)
-  - [ ] 1.5 Extract metadata from header using regex patterns:
+  - [x] 1.1 Create `book_parser.py` module with function `parse_book_file(file_path: str) -> dict`
+  - [x] 1.2 Implement file existence and readability validation using `pathlib.Path`
+  - [x] 1.3 Read entire file content with UTF-8 encoding (fail on encoding errors)
+  - [x] 1.4 Split content into header section and body using `-------` delimiter (use `str.split()` with maxsplit=1)
+  - [x] 1.5 Extract metadata from header using regex patterns:
     - Pattern for title: `r'^#\s+Title:\s*(.+)$'` (multiline mode)
     - Pattern for author: `r'^##\s+Author:\s*(.+)$'` (multiline mode)
     - Pattern for year: `r'^##\s+Year:\s*(\d{4})$'` (multiline mode)
-  - [ ] 1.6 Validate required fields (title, author, year) are present and non-empty after stripping whitespace
-  - [ ] 1.7 Validate year is a 4-digit number and convert to integer
-  - [ ] 1.8 Return dictionary: `{"title": str, "author": str, "year": int, "content": str}` where content is the body after `-------`
-  - [ ] 1.9 Add docstring with example usage and error behavior
+  - [x] 1.6 Validate required fields (title, author, year) are present and non-empty after stripping whitespace
+  - [x] 1.7 Validate year is a 4-digit number and convert to integer
+  - [x] 1.8 Return dictionary: `{"title": str, "author": str, "year": int, "content": str}` where content is the body after `-------`
+  - [x] 1.9 Add docstring with example usage and error behavior
 
 - [ ] 2.0 Implement chapter detection and splitting logic
-  - [ ] 2.1 Create `chapter_detector.py` module with function `detect_chapters(content: str, book_metadata: dict) -> list[dict]`
-  - [ ] 2.2 Define regex pattern to match level 2-4 headers: `r'^(#{2,4})\s+(.+)$'` (multiline mode)
-  - [ ] 2.3 Use `re.finditer()` to find all chapter boundaries, storing match position and chapter title
-  - [ ] 2.4 Validate at least one chapter was detected (if zero, raise ValueError with clear message)
-  - [ ] 2.5 Extract content between chapter boundaries:
+  - [x] 2.1 Create `chapter_detector.py` module with function `detect_chapters(content: str, book_metadata: dict) -> list[dict]`
+  - [x] 2.2 Define regex pattern to match level 2-4 headers: `r'^(#{2,4})\s+(.+)$'` (multiline mode)
+  - [x] 2.3 Use `re.finditer()` to find all chapter boundaries, storing match position and chapter title
+  - [x] 2.4 Validate at least one chapter was detected (if zero, raise ValueError with clear message)
+  - [x] 2.5 Extract content between chapter boundaries:
     - For each chapter, start position is after the header line (use `match.end()` to skip past newline)
     - End position is the start of the next chapter (or end of content for last chapter)
     - Strip leading/trailing whitespace from chapter content
-  - [ ] 2.6 Build list of chapter dictionaries: `[{"title": str, "content": str, "index": int}, ...]`
-  - [ ] 2.7 Handle edge case: empty chapter content (skip chapters with no content after stripping)
-  - [ ] 2.8 Add docstring explaining the detection algorithm and expected input format
+  - [x] 2.6 Build list of chapter dictionaries: `[{"title": str, "content": str, "index": int}, ...]`
+  - [x] 2.7 Handle edge case: empty chapter content (skip chapters with no content after stripping)
+  - [x] 2.8 Add docstring explaining the detection algorithm and expected input format
 
-- [ ] 3.0 Build JSON output generator with Bear Notes format compliance
-  - [ ] 3.1 Create `json_generator.py` module with function `create_chapter_entries(chapters: list[dict], book_metadata: dict) -> list[dict]`
-  - [ ] 3.2 For each chapter, construct the combined title: `f"{book_metadata['title']} - {chapter['title']}"`
-  - [ ] 3.3 Build markdown content with metadata header:
+- [x] 3.0 Build JSON output generator with Bear Notes format compliance
+  - [x] 3.1 Create `json_generator.py` module with function `create_chapter_entries(chapters: list[dict], book_metadata: dict) -> list[dict]`
+  - [x] 3.2 For each chapter, construct the combined title: `f"{book_metadata['title']} - {chapter['title']}"`
+  - [x] 3.3 Build markdown content with metadata header:
     - Line 1: `f"# {combined_title}\n"`
     - Line 2: `f"**Author:** {book_metadata['author']} | **Year:** {book_metadata['year']}\n\n"`
     - Lines 3+: Original chapter content
-  - [ ] 3.4 Calculate UTF-8 byte size: `len(markdown_content.encode('utf-8'))`
-  - [ ] 3.5 Generate ISO 8601 timestamps using `datetime` module:
+  - [x] 3.4 Calculate UTF-8 byte size: `len(markdown_content.encode('utf-8'))`
+  - [x] 3.5 Generate ISO 8601 timestamps using `datetime` module:
     - Import: `from datetime import datetime, timezone`
     - Creation date: `datetime(year, 1, 1, 0, 0, 0, tzinfo=timezone.utc).isoformat().replace('+00:00', 'Z')`
     - Modification date: same as creation date (books don't change)
-  - [ ] 3.6 Build chapter entry dictionary matching Bear Notes format (title, markdown, size, modificationDate, creationDate)
-  - [ ] 3.7 Return list of all chapter entries
-  - [ ] 3.8 Add function `write_json_output(entries: list[dict], output_path: str) -> None` to write JSON file
-  - [ ] 3.9 In write function: validate output path is writable, write with UTF-8 encoding, use `json.dump()` with `indent=2` and `ensure_ascii=False`
+  - [x] 3.6 Build chapter entry dictionary matching Bear Notes format (title, markdown, size, modificationDate, creationDate)
+  - [x] 3.7 Return list of all chapter entries
+  - [x] 3.8 Add function `write_json_output(entries: list[dict], output_path: str) -> None` to write JSON file
+  - [x] 3.9 In write function: validate output path is writable, write with UTF-8 encoding, use `json.dump()` with `indent=2` and `ensure_ascii=False`
 
 - [ ] 4.0 Develop command-line interface with argument parsing
   - [ ] 4.1 Create main script `markdown_to_cag.py` with `if __name__ == "__main__":` entry point
