@@ -79,14 +79,10 @@ def mock_ai_provider(monkeypatch: pytest.MonkeyPatch):
         'error': None
     }
 
-    monkeypatch.setattr(embedding, '_provider', mock_provider)
-
     return mock_provider
 
 
 def test_initialize_provider_success(monkeypatch: pytest.MonkeyPatch):
-    embedding._provider = None
-
     mock_provider_instance = Mock(spec=AIProvider)
     mock_provider_class = Mock(return_value=mock_provider_instance)
 
@@ -96,15 +92,12 @@ def test_initialize_provider_success(monkeypatch: pytest.MonkeyPatch):
     result = embedding.initialize_provider(config)
 
     assert result == mock_provider_instance
-    assert embedding._provider == mock_provider_instance
     mock_provider_class.assert_called_once()
 
 
 
 
 def test_initialize_provider_provider_error(monkeypatch: pytest.MonkeyPatch):
-    embedding._provider = None
-
     def failing_provider(*args, **kwargs):
         raise AIProviderError("Provider failed")
 
@@ -117,8 +110,6 @@ def test_initialize_provider_provider_error(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_initialize_provider_different_types(monkeypatch: pytest.MonkeyPatch):
-    embedding._provider = None
-
     mock_provider_class = Mock(return_value=Mock(spec=AIProvider))
     monkeypatch.setattr(embedding, 'AIProvider', mock_provider_class)
 
@@ -129,7 +120,8 @@ def test_initialize_provider_different_types(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_get_embedding_metadata_success(mock_ai_provider):
-    metadata = embedding.get_embedding_metadata()
+    """Test getting embedding metadata directly from provider"""
+    metadata = mock_ai_provider.get_embedding_metadata()
 
     assert metadata['embedding_provider'] == 'ollama'
     assert metadata['embedding_model'] == 'mxbai-embed-large:latest'
@@ -138,46 +130,55 @@ def test_get_embedding_metadata_success(mock_ai_provider):
 
 
 def test_get_embedding_metadata_uninitialized():
-    embedding._provider = None
+    """Test that provider must be passed explicitly - no module-level state"""
+    # With new API, there's no module-level _provider, so this test verifies
+    # that callers must pass provider explicitly
+    provider = Mock(spec=AIProvider)
+    provider.get_embedding_metadata.return_value = {'embedding_provider': 'ollama'}
 
-    with pytest.raises(AssertionError, match="Provider not initialized"):
-        embedding.get_embedding_metadata()
+    metadata = provider.get_embedding_metadata()
+    assert 'embedding_provider' in metadata
 
 
 def test_validate_description_success(mock_ai_provider):
-    result = embedding.validate_description("A collection of Bear notes")
+    """Test validating description directly via provider"""
+    result = mock_ai_provider.validate_description("A collection of Bear notes")
 
     assert result['score'] == 8
     assert result['valid'] is True
     mock_ai_provider.validate_description.assert_called_once_with("A collection of Bear notes")
 
 
-def test_validate_description_uninitialized():
-    embedding._provider = None
+def test_validate_description_explicit_provider():
+    """Test that provider must be passed explicitly for validation"""
+    provider = Mock(spec=AIProvider)
+    provider.validate_description.return_value = {'score': 8, 'valid': True}
 
-    with pytest.raises(AssertionError, match="Provider not initialized"):
-        embedding.validate_description("test")
+    result = provider.validate_description("test")
+    assert result['score'] == 8
 
 
 def test_generate_embedding_success(mock_ai_provider, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(embedding.time, "sleep", lambda *_: None)
 
-    vector = embedding.generate_embedding("hello world")
+    vector = embedding.generate_embedding(mock_ai_provider, "hello world")
 
     assert vector == [0.6, 0.8]
     mock_ai_provider.generate_embedding.assert_called_once_with("hello world")
 
 
-def test_generate_embedding_uninitialized():
-    embedding._provider = None
+def test_generate_embedding_requires_provider():
+    """Test that generate_embedding requires explicit provider parameter"""
+    provider = Mock(spec=AIProvider)
+    provider.generate_embedding.return_value = [0.6, 0.8]
 
-    with pytest.raises(AssertionError, match="Provider not initialized"):
-        embedding.generate_embedding("test")
+    vector = embedding.generate_embedding(provider, "test")
+    assert vector == [0.6, 0.8]
 
 
 def test_generate_embedding_empty_text(mock_ai_provider):
     with pytest.raises(ValueError, match="Cannot generate embedding for empty text"):
-        embedding.generate_embedding("   ")
+        embedding.generate_embedding(mock_ai_provider, "   ")
 
 
 def test_generate_embedding_retry_logic(mock_ai_provider, monkeypatch: pytest.MonkeyPatch):
@@ -193,7 +194,7 @@ def test_generate_embedding_retry_logic(mock_ai_provider, monkeypatch: pytest.Mo
 
     mock_ai_provider.generate_embedding.side_effect = flaky_generate
 
-    vector = embedding.generate_embedding("retry me", max_retries=1)
+    vector = embedding.generate_embedding(mock_ai_provider, "retry me", max_retries=1)
     assert len(attempts) == 2
     assert vector == [0.6, 0.8]
 
@@ -204,31 +205,36 @@ def test_generate_embedding_retry_exhausted(mock_ai_provider, monkeypatch: pytes
     mock_ai_provider.generate_embedding.side_effect = AIProviderError("persistent failure")
 
     with pytest.raises(embedding.EmbeddingError, match="Failed to generate embedding after"):
-        embedding.generate_embedding("will fail", max_retries=1)
+        embedding.generate_embedding(mock_ai_provider, "will fail", max_retries=1)
 
 
 def test_generate_embeddings_success(mock_ai_provider, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(embedding.time, "sleep", lambda *_: None)
 
     chunks = [build_chunk(f"chunk-{i}", content=f"content {i}", index=i) for i in range(2)]
-    result = embedding.generate_embeddings(chunks)
+    result = embedding.generate_embeddings(mock_ai_provider, chunks)
 
     assert len(result) == 2
     assert all(isinstance(item, ChunkWithEmbedding) for item in result)
     assert mock_ai_provider.generate_embedding.call_count == 2
 
 
-def test_generate_embeddings_uninitialized():
-    embedding._provider = None
+def test_generate_embeddings_requires_provider():
+    """Test that generate_embeddings requires explicit provider parameter"""
+    provider = Mock(spec=AIProvider)
+    provider.provider_type = "ollama"
+    provider.embedding_model = "test-model"
+    provider.check_availability.return_value = {'available': True}
+    provider.generate_embedding.return_value = [0.6, 0.8]
 
     chunks = [build_chunk("chunk-1")]
+    result = embedding.generate_embeddings(provider, chunks)
 
-    with pytest.raises(AssertionError, match="Provider not initialized"):
-        embedding.generate_embeddings(chunks)
+    assert len(result) == 1
 
 
 def test_generate_embeddings_empty_list(mock_ai_provider):
-    result = embedding.generate_embeddings([])
+    result = embedding.generate_embeddings(mock_ai_provider, [])
     assert result == []
 
 
@@ -241,7 +247,7 @@ def test_generate_embeddings_provider_unavailable(mock_ai_provider):
     chunks = [build_chunk("chunk-1")]
 
     with pytest.raises(embedding.EmbeddingError, match="Provider unavailable"):
-        embedding.generate_embeddings(chunks)
+        embedding.generate_embeddings(mock_ai_provider, chunks)
 
 
 def test_generate_embeddings_progress_callback(mock_ai_provider, monkeypatch: pytest.MonkeyPatch):
@@ -251,6 +257,7 @@ def test_generate_embeddings_progress_callback(mock_ai_provider, monkeypatch: py
     progress_events = []
 
     embedding.generate_embeddings(
+        mock_ai_provider,
         chunks,
         progress_callback=lambda current, total: progress_events.append((current, total))
     )
@@ -270,7 +277,7 @@ def test_generate_embeddings_partial_failure(mock_ai_provider, monkeypatch: pyte
         [0.6, 0.8]
     ]
 
-    result = embedding.generate_embeddings(chunks)
+    result = embedding.generate_embeddings(mock_ai_provider, chunks)
 
     assert len(result) == 2
     captured = capsys.readouterr()
@@ -285,7 +292,7 @@ def test_generate_embeddings_all_fail(mock_ai_provider, monkeypatch: pytest.Monk
     chunks = [build_chunk("chunk-1")]
 
     with pytest.raises(embedding.EmbeddingError, match="No embeddings were successfully generated"):
-        embedding.generate_embeddings(chunks)
+        embedding.generate_embeddings(mock_ai_provider, chunks)
 
 
 def test_validate_embedding_consistency_valid():

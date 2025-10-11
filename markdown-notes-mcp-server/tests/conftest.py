@@ -76,36 +76,36 @@ def sample_chunks():
             "id": "chunk_001",
             "content": "Python async/await provides a clean way to write concurrent code. The asyncio library is built into Python 3.7+.",
             "metadata": {
-                "note_id": "note_abc123",
+                "noteId": "note_abc123",
                 "title": "Python Concurrency Patterns",
-                "chunk_index": 2,
-                "total_chunks": 5,
-                "modification_date": "2025-09-15T10:30:00Z",
-                "collection_name": "bear_notes"
+                "chunkIndex": 2,
+                "totalChunks": 5,
+                "modificationDate": "2025-09-15T10:30:00Z",
+                "collectionName": "bear_notes"
             }
         },
         {
             "id": "chunk_002",
             "content": "Context managers in Python use the __enter__ and __exit__ methods to manage resources efficiently.",
             "metadata": {
-                "note_id": "note_def456",
+                "noteId": "note_def456",
                 "title": "Python Design Patterns",
-                "chunk_index": 1,
-                "total_chunks": 3,
-                "modification_date": "2025-09-18T14:20:00Z",
-                "collection_name": "bear_notes"
+                "chunkIndex": 1,
+                "totalChunks": 3,
+                "modificationDate": "2025-09-18T14:20:00Z",
+                "collectionName": "bear_notes"
             }
         },
         {
             "id": "chunk_003",
             "content": "The Battle of Waterloo in 1815 marked the end of Napoleon's rule as Emperor of France.",
             "metadata": {
-                "note_id": "note_xyz789",
+                "noteId": "note_xyz789",
                 "title": "Napoleonic Wars",
-                "chunk_index": 0,
-                "total_chunks": 1,
-                "modification_date": "2025-09-22T09:15:00Z",
-                "collection_name": "wikipedia_history"
+                "chunkIndex": 0,
+                "totalChunks": 1,
+                "modificationDate": "2025-09-22T09:15:00Z",
+                "collectionName": "wikipedia_history"
             }
         }
     ]
