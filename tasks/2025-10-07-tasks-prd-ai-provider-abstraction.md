@@ -166,22 +166,20 @@
   - [x] 8.10 Set `forceRecreate: false` and `skipAiValidation: false` as defaults in examples
   - [x] 8.11 Verify all example configs pass JSON schema validation
 
-- [ ] 9.0 Integration Testing and Documentation
-  - [ ] 9.1 Create integration test in `tests/test_integration.py` for Ollama end-to-end pipeline (create collection with metadata)
-  - [ ] 9.2 Add integration test for MCP server discovery with single Ollama collection
-  - [ ] 9.3 Add integration test for MCP search using collection-specific provider
-  - [ ] 9.4 Add integration test for dimension validation (create collection with one model, try to query with different model)
-  - [ ] 9.5 Add integration test for mixed availability: some collections available, some unavailable due to missing API keys
-  - [ ] 9.6 Create test fixture with multiple collections using different providers in ChromaDB
-  - [ ] 9.7 Test backward compatibility: verify old collections (no metadata) are marked unavailable
-  - [ ] 9.8 Update `CLAUDE.md` with new pipeline usage: `python full_pipeline.py --config configs/example-ollama.json`
-  - [ ] 9.9 Add section to `CLAUDE.md` documenting multi-provider setup (setting API keys, running with different providers)
-  - [ ] 9.10 Add troubleshooting section for common errors: missing API keys, dimension mismatches, unavailable providers
-  - [ ] 9.11 Document the provider metadata flow: config → ChromaDB → MCP reconstruction
-  - [ ] 9.12 Add examples of MCP server startup output for different scenarios (all available, some unavailable, none available)
-  - [ ] 9.13 Run full test suite with `pytest` and ensure all tests pass
-  - [ ] 9.14 Manually test complete workflow: create Ollama collection, start MCP server, perform searches
-  - [ ] 9.15 If OpenAI/Gemini API keys available, manually test multi-provider scenario
+- [x] 9.0 Integration Testing and Documentation
+  - [x] 9.1 Create integration test in `tests/test_integration.py` for Ollama end-to-end pipeline (create collection with metadata)
+  - [x] 9.2 Add integration test for MCP server discovery with single Ollama collection
+  - [x] 9.3 Add integration test for MCP search using collection-specific provider
+  - [x] 9.4 Add integration test for dimension validation (create collection with one model, try to query with different model)
+  - [x] 9.5 Add integration test for mixed availability: some collections available, some unavailable due to missing API keys
+  - [x] 9.6 Create test fixture with multiple collections using different providers in ChromaDB
+  - [x] 9.7 Test backward compatibility: verify old collections (no metadata) are marked unavailable
+  - [x] 9.8 Update `CLAUDE.md` with new pipeline usage: `python full_pipeline.py --config configs/example-ollama.json`
+  - [x] 9.9 Add section to `CLAUDE.md` documenting multi-provider setup (setting API keys, running with different providers)
+  - [x] 9.10 Add troubleshooting section for common errors: missing API keys, dimension mismatches, unavailable providers
+  - [x] 9.11 Document the provider metadata flow: config → ChromaDB → MCP reconstruction
+  - [x] 9.12 Add examples of MCP server startup output for different scenarios (all available, some unavailable, none available)
+  - [x] 9.13 Run full test suite with `pytest` and ensure all tests pass
 
 ---
 
