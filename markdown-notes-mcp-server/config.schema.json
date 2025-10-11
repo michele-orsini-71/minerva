@@ -1,12 +1,11 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "MCP Server Configuration",
-  "description": "Configuration schema for the markdown notes MCP server",
+  "description": "Configuration schema for the markdown notes MCP server. Note: AI provider configuration (embedding models, LLM models) is stored in collection metadata and does not need to be specified here.",
   "type": "object",
   "required": [
     "chromadb_path",
-    "default_max_results",
-    "embedding_model"
+    "default_max_results"
   ],
   "properties": {
     "chromadb_path": {
@@ -25,17 +24,6 @@
       "minimum": 1,
       "maximum": 100,
       "default": 5
-    },
-    "embedding_model": {
-      "type": "string",
-      "description": "Name of the Ollama embedding model to use (format: model-name:version)",
-      "minLength": 1,
-      "pattern": "^[a-z0-9][a-z0-9._-]*:[a-z0-9][a-z0-9._-]*$|^[a-z0-9][a-z0-9._-]*$",
-      "examples": [
-        "mxbai-embed-large:latest",
-        "nomic-embed-text:latest",
-        "all-minilm:latest"
-      ]
     }
   },
   "additionalProperties": false

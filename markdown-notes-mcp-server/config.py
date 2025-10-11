@@ -30,8 +30,7 @@ def load_json_file(config_path: str) -> Dict[str, Any]:
             f"  Example configuration:\n"
             f"  {{\n"
             f"    \"chromadb_path\": \"/absolute/path/to/chromadb_data\",\n"
-            f"    \"default_max_results\": 5,\n"
-            f"    \"embedding_model\": \"mxbai-embed-large:latest\"\n"
+            f"    \"default_max_results\": 5\n"
             f"  }}"
         )
     except json.JSONDecodeError as e:
@@ -137,63 +136,9 @@ def validate_default_max_results(config: Dict[str, Any]) -> None:
         )
 
 
-def validate_embedding_model(config: Dict[str, Any]) -> None:
-    if 'embedding_model' not in config:
-        raise ConfigValidationError(
-            "Missing required field: 'embedding_model'\n"
-            f"\n"
-            f"  This specifies which Ollama model to use for embeddings.\n"
-            f"\n"
-            f"  Add this to your config.json:\n"
-            f"  {{\n"
-            f"    \"embedding_model\": \"mxbai-embed-large:latest\",\n"
-            f"    ...\n"
-            f"  }}\n"
-            f"\n"
-            f"  Before using, ensure the model is available:\n"
-            f"  ollama pull mxbai-embed-large:latest"
-        )
-
-    model = config['embedding_model']
-
-    if not isinstance(model, str):
-        raise ConfigValidationError(
-            f"Invalid 'embedding_model': must be a string\n"
-            f"  Got: {type(model).__name__}"
-        )
-
-    if not model or not model.strip():
-        raise ConfigValidationError(
-            "Invalid 'embedding_model': cannot be empty\n"
-            f"\n"
-            f"  Recommended model: \"mxbai-embed-large:latest\""
-        )
-
-    # Validate Ollama model naming convention: model:version or just model
-    # Model names can contain lowercase letters, numbers, dots, hyphens, underscores
-    model_pattern = r'^[a-z0-9][a-z0-9._-]*(?::[a-z0-9][a-z0-9._-]*)?$'
-
-    if not re.match(model_pattern, model):
-        raise ConfigValidationError(
-            f"Invalid 'embedding_model': does not match Ollama naming convention\n"
-            f"  Got: {model}\n"
-            f"\n"
-            f"  Ollama model names must:\n"
-            f"  - Use lowercase letters, numbers, dots, hyphens, underscores\n"
-            f"  - Optionally include version after colon (model:version)\n"
-            f"\n"
-            f"  Valid examples:\n"
-            f"  - \"mxbai-embed-large:latest\"\n"
-            f"  - \"nomic-embed-text:latest\"\n"
-            f"  - \"all-minilm\"\n"
-            f"\n"
-            f"  See available models: ollama list"
-        )
-
-
 def validate_config(config: Dict[str, Any]) -> None:
     # Check for unexpected fields (helps catch typos)
-    expected_fields = {'chromadb_path', 'default_max_results', 'embedding_model'}
+    expected_fields = {'chromadb_path', 'default_max_results'}
     unexpected_fields = set(config.keys()) - expected_fields
 
     if unexpected_fields:
@@ -203,13 +148,16 @@ def validate_config(config: Dict[str, Any]) -> None:
             f"  Expected fields: {', '.join(sorted(expected_fields))}\n"
             f"\n"
             f"  Please check for typos in your config.json file.\n"
-            f"  Remove or correct the unexpected fields."
+            f"  Remove or correct the unexpected fields.\n"
+            f"\n"
+            f"  Note: The MCP server no longer requires 'embedding_model' in its config.\n"
+            f"  AI provider information is now read from each collection's metadata,\n"
+            f"  which was set when the collection was created by the pipeline."
         )
 
     # Validate each field
     validate_chromadb_path(config)
     validate_default_max_results(config)
-    validate_embedding_model(config)
 
 
 def load_config(config_path: str = "config.json") -> Dict[str, Any]:

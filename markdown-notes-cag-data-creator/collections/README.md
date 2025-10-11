@@ -2,18 +2,55 @@
 
 This directory contains JSON configuration files for different ChromaDB collections in the multi-collection RAG pipeline.
 
+**⚠️ Note**: These configuration files use the **legacy format** without AI provider configuration. For new collections, we recommend using the **new format** with AI provider specifications. See examples in `../../configs/` directory.
+
 ## File Format
 
-Each configuration file must be a valid JSON file with the following structure:
+### Legacy Format (This Directory)
+
+Files in this directory use the simplified format:
 
 ```json
 {
   "collection_name": "your_collection_name",
   "description": "Detailed description of when to use this collection...",
+  "chromadb_path": "/absolute/path/to/chromadb_data",
+  "json_file": "/path/to/notes.json",
   "forceRecreate": false,
   "skipAiValidation": false
 }
 ```
+
+### New Format (Recommended - See `../../configs/`)
+
+New configuration files should include AI provider specifications:
+
+```json
+{
+  "collection_name": "your_collection_name",
+  "description": "Detailed description...",
+  "chromadb_path": "./chromadb_data",
+  "json_file": "./test-data/notes.json",
+  "chunk_size": 1200,
+  "forceRecreate": false,
+  "skipAiValidation": false,
+  "ai_provider": {
+    "type": "ollama",
+    "embedding": {
+      "model": "mxbai-embed-large:latest",
+      "base_url": "http://localhost:11434",
+      "api_key": null
+    },
+    "llm": {
+      "model": "llama3.1:8b",
+      "base_url": "http://localhost:11434",
+      "api_key": null
+    }
+  }
+}
+```
+
+**See**: `../../CONFIGURATION_GUIDE.md` for complete multi-provider setup instructions.
 
 ## Field Specifications
 
