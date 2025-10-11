@@ -1,9 +1,7 @@
 import pytest
 import os
 import tempfile
-import shutil
-from pathlib import Path
-from unittest.mock import patch, MagicMock, Mock
+from unittest.mock import patch, MagicMock
 import sys
 
 # Add parent directory to path for imports
@@ -12,8 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from startup_validation import (
     validate_chromadb_path,
     validate_collection_availability,
-    validate_server_prerequisites,
-    ValidationError
+    validate_server_prerequisites
 )
 
 
@@ -229,7 +226,7 @@ class TestValidateServerPrerequisites:
 
         config = {'chromadb_path': '/mock/chromadb'}
 
-        success, error = validate_server_prerequisites(config)
+        _ = validate_server_prerequisites(config)
 
         mock_path.assert_called_once_with('/mock/chromadb')
         mock_collections.assert_called_once_with('/mock/chromadb')

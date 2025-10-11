@@ -3,7 +3,13 @@
     "allow": [
       "Bash(for f in *.py tests/*.py)",
       "Bash(do [ -f \"$f\" ])",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(mkdir:*)",
+      "Bash(source:*)",
+      "Bash(python:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(pytest:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

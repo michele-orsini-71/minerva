@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 import sys
 
 # Add parent directory to path to import search_tools module
@@ -12,7 +12,7 @@ from search_tools import (
     SearchError,
     CollectionNotFoundError
 )
-from ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
+from ai_provider import AIProvider, ProviderUnavailableError
 
 
 class TestValidateCollectionExists:
@@ -302,6 +302,8 @@ class TestSearchKnowledgeBase:
 
         # Capture what gets passed to context mode
         def capture_results(collection, results, mode):
+            _ = collection
+            _ = mode
             assert results[0]['similarityScore'] == 0.75
             return results
 

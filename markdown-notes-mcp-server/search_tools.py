@@ -1,5 +1,5 @@
 import sys
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from pathlib import Path
 
 # Add parent directory to path for imports from markdown-notes-cag-data-creator

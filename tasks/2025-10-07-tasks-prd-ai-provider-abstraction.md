@@ -15,11 +15,15 @@
 - `configs/example-openai.json` - Example configuration file for OpenAI provider
 - `configs/example-gemini.json` - Example configuration file for Google Gemini provider
 
-**Files Created (Tasks 1.1-1.12):**
+**Files Created (Tasks 1.1-1.12 & 8.1-8.11):**
 
 - `requirements.txt` - Project-level dependency file listing all core dependencies including litellm
 - `markdown-notes-cag-data-creator/ai_provider.py` - Core abstraction layer for multi-provider AI support with LiteLLM integration
 - `markdown-notes-cag-data-creator/tests/test_ai_provider.py` - Comprehensive unit tests for AI provider abstraction layer
+- `configs/example-ollama.json` - Example configuration for local Ollama provider (no API keys required)
+- `configs/example-openai.json` - Example configuration for OpenAI provider with environment variable templates
+- `configs/example-gemini.json` - Example configuration for Google Gemini provider with environment variable templates
+- `configs/README.md` - Comprehensive documentation explaining all configuration fields, usage examples, security best practices, and troubleshooting guide
 
 **Files Modified (Tasks 2.1-2.8):**
 
@@ -149,18 +153,18 @@
   - [x] 7.10 Add test for embedding dimension validation (both matching and mismatching scenarios)
   - [x] 7.11 Add test for unavailable collection query attempts
 
-- [ ] 8.0 Create Example Configuration Files
-  - [ ] 8.1 Create `configs/` directory at project root if it doesn't exist
-  - [ ] 8.2 Create `configs/example-ollama.json` with local Ollama configuration (no API keys, base_url: http://localhost:11434)
-  - [ ] 8.3 Use `mxbai-embed-large:latest` for embeddings and `llama3.1:8b` for LLM in Ollama config
-  - [ ] 8.4 Create `configs/example-openai.json` with OpenAI configuration using `${OPENAI_API_KEY}` template
-  - [ ] 8.5 Use `text-embedding-3-small` for embeddings and `gpt-4o-mini` for LLM in OpenAI config
-  - [ ] 8.6 Create `configs/example-gemini.json` with Google Gemini configuration using `${GEMINI_API_KEY}` template
-  - [ ] 8.7 Use `text-embedding-004` for embeddings and `gemini-1.5-flash` for LLM in Gemini config
-  - [ ] 8.8 Add comments in JSON files (if possible) or create accompanying README explaining each field
-  - [ ] 8.9 Ensure all config files use relative paths for `chromadb_path` and `json_file`
-  - [ ] 8.10 Set `forceRecreate: false` and `skipAiValidation: false` as defaults in examples
-  - [ ] 8.11 Verify all example configs pass JSON schema validation
+- [x] 8.0 Create Example Configuration Files
+  - [x] 8.1 Create `configs/` directory at project root if it doesn't exist
+  - [x] 8.2 Create `configs/example-ollama.json` with local Ollama configuration (no API keys, base_url: http://localhost:11434)
+  - [x] 8.3 Use `mxbai-embed-large:latest` for embeddings and `llama3.1:8b` for LLM in Ollama config
+  - [x] 8.4 Create `configs/example-openai.json` with OpenAI configuration using `${OPENAI_API_KEY}` template
+  - [x] 8.5 Use `text-embedding-3-small` for embeddings and `gpt-4o-mini` for LLM in OpenAI config
+  - [x] 8.6 Create `configs/example-gemini.json` with Google Gemini configuration using `${GEMINI_API_KEY}` template
+  - [x] 8.7 Use `text-embedding-004` for embeddings and `gemini-1.5-flash` for LLM in Gemini config
+  - [x] 8.8 Add comments in JSON files (if possible) or create accompanying README explaining each field
+  - [x] 8.9 Ensure all config files use relative paths for `chromadb_path` and `json_file`
+  - [x] 8.10 Set `forceRecreate: false` and `skipAiValidation: false` as defaults in examples
+  - [x] 8.11 Verify all example configs pass JSON schema validation
 
 - [ ] 9.0 Integration Testing and Documentation
   - [ ] 9.1 Create integration test in `tests/test_integration.py` for Ollama end-to-end pipeline (create collection with metadata)

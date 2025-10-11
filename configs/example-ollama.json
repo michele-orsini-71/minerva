@@ -1,0 +1,22 @@
+{
+  "collection_name": "bear_notes",
+  "description": "Personal notes exported from Bear app covering software development, project management, meeting notes, research findings, and technical documentation. Use this collection to search across all personal knowledge base entries.",
+  "chromadb_path": "./chromadb_data",
+  "json_file": "./test-data/sample.json",
+  "chunk_size": 1200,
+  "forceRecreate": false,
+  "skipAiValidation": false,
+  "ai_provider": {
+    "type": "ollama",
+    "embedding": {
+      "model": "mxbai-embed-large:latest",
+      "base_url": "http://localhost:11434",
+      "api_key": null
+    },
+    "llm": {
+      "model": "llama3.1:8b",
+      "base_url": "http://localhost:11434",
+      "api_key": null
+    }
+  }
+}
