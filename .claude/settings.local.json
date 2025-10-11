@@ -10,7 +10,8 @@
       "mcp__ide__getDiagnostics",
       "Bash(pytest:*)",
       "Bash(git checkout:*)",
-      "Read(//Users/michele/.pyenv/versions/3.12.0/bin/**)"
+      "Read(//Users/michele/.pyenv/versions/3.12.0/bin/**)",
+      "Read(//Users/michele/my-code/classic-books-markdown/**)"
     ],
     "deny": [],
     "ask": []
