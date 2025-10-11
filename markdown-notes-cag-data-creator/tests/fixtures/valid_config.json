@@ -1,9 +1,0 @@
-{
-  "collection_name": "sample_notes",
-  "description": "Sample notes collection used for unit tests.",
-  "chromadb_path": "/tmp/chromadb",
-  "json_file": "tests/fixtures/sample_notes.json",
-  "forceRecreate": false,
-  "skipAiValidation": true,
-  "chunk_size": 1200
-}

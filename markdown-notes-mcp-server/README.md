@@ -5,10 +5,12 @@ An MCP (Model Context Protocol) server that enables AI agents like Claude Deskto
 ## Features
 
 - **Dynamic Collection Discovery**: AI agents can list all available knowledge bases without hardcoded configuration
-- **Intelligent Search**: Semantic search powered by local Ollama embeddings
+- **Multi-Provider AI Support**: Each collection can use different embedding providers (Ollama, OpenAI, Gemini)
+- **Intelligent Search**: Semantic search with provider-specific embeddings (local or cloud)
 - **Flexible Context Modes**: Choose between minimal (`chunk_only`), balanced (`enhanced`), or maximum (`full_note`) context
 - **Multi-Source Support**: Search across Bear notes, Zim wikis, documentation sites, and any markdown-based knowledge base
 - **Zero Configuration**: New collections automatically available without server restarts or manifest updates
+- **Provider Metadata Travel**: AI provider config stored with collections, no server reconfiguration needed
 
 ## Architecture
 
@@ -18,9 +20,28 @@ AI Agent (Claude Desktop)
 MCP Protocol (JSON-RPC)
     ↓
 FastMCP Server (server.py)
+    ├─ Reads provider metadata from ChromaDB
+    └─ Reconstructs AI providers (Ollama/OpenAI/Gemini)
     ↓
-ChromaDB Collections ← Ollama Embeddings
+ChromaDB Collections
+    ├─ Collection A (Ollama provider) → mxbai-embed-large
+    ├─ Collection B (OpenAI provider) → text-embedding-3-small
+    └─ Collection C (Gemini provider) → text-embedding-004
 ```
+
+### Multi-Provider Architecture
+
+The MCP server supports **heterogeneous AI providers** across collections:
+
+1. **Pipeline Stage**: When you create a collection using `full_pipeline.py`, the AI provider configuration (type, models, API keys) is stored in the collection's metadata
+2. **Discovery Stage**: When the MCP server starts, it reads all collections and reconstructs their AI providers from metadata
+3. **Validation Stage**: The server checks each provider's availability (Ollama running, API keys set, models accessible)
+4. **Query Stage**: When searching, the server uses the collection-specific provider to generate embeddings
+
+**This architecture allows:**
+- Different collections with different embedding models in the same database
+- Mixing local (Ollama) and cloud (OpenAI, Gemini) providers
+- No server reconfiguration when adding collections - metadata travels with the data
 
 ### Why FastMCP?
 
@@ -36,8 +57,11 @@ FastMCP simplifies the MCP server implementation by providing:
 ### Prerequisites
 
 - Python 3.13+
-- Ollama running locally with `mxbai-embed-large:latest` model
 - ChromaDB database populated by `markdown-notes-cag-data-creator` pipeline
+- **AI Provider** (depending on what your collections use):
+  - For Ollama collections: Ollama service running locally (`ollama serve`)
+  - For OpenAI collections: `OPENAI_API_KEY` environment variable set
+  - For Gemini collections: `GEMINI_API_KEY` environment variable set
 
 ### Setup
 
@@ -50,19 +74,35 @@ FastMCP simplifies the MCP server implementation by providing:
    pip install mcp
    ```
 
-2. **Ensure Ollama is running:**
+2. **Set up AI providers (based on your collections):**
+
+   **For Ollama collections:**
    ```bash
+   # Start Ollama service in a separate terminal
    ollama serve
 
-   # Verify the embedding model is available
-   ollama list | grep mxbai-embed-large
+   # Pull required models (if not already present)
+   ollama pull mxbai-embed-large:latest
+   ollama pull llama3.1:8b
+   ```
+
+   **For OpenAI collections:**
+   ```bash
+   # Set your OpenAI API key
+   export OPENAI_API_KEY="sk-your-key-here"
+   ```
+
+   **For Gemini collections:**
+   ```bash
+   # Set your Google Gemini API key
+   export GEMINI_API_KEY="your-key-here"
    ```
 
 3. **Verify ChromaDB has collections:**
    ```bash
-   # Use the existing query client to test
-   cd ../test-files
-   python chromadb_query_client.py
+   # List collections and their providers
+   cd markdown-notes-mcp-server
+   python collection_discovery.py /absolute/path/to/chromadb_data
    ```
 
 ## Configuration
@@ -84,8 +124,7 @@ cp config.json.example config.json
 ```json
 {
   "chromadb_path": "/absolute/path/to/chromadb_data",
-  "default_max_results": 3,
-  "embedding_model": "mxbai-embed-large:latest"
+  "default_max_results": 3
 }
 ```
 
@@ -95,7 +134,29 @@ cp config.json.example config.json
 |-------|------|----------|-------------|------------|
 | `chromadb_path` | string | ✅ Yes | Absolute path to ChromaDB database directory | Must be absolute path (no `~` or `../`), directory must exist |
 | `default_max_results` | integer | ✅ Yes | Default number of search results to return | Must be between 1 and 100 |
-| `embedding_model` | string | ✅ Yes | Ollama model name for embeddings | Must match pattern `model-name:tag` (e.g., `mxbai-embed-large:latest`) |
+
+### How AI Provider Configuration Works
+
+**The MCP server does NOT need AI provider configuration** - it reads provider metadata directly from ChromaDB collections!
+
+When you create a collection using the pipeline (e.g., `python full_pipeline.py --config ../configs/example-ollama.json`), the pipeline stores AI provider metadata in the collection:
+- Provider type (ollama/openai/gemini)
+- Embedding model name and dimension
+- LLM model name
+- Base URL and API key reference
+
+When the MCP server starts, it:
+1. Discovers all collections in ChromaDB
+2. Reads AI provider metadata from each collection
+3. Reconstructs the appropriate AI provider for each collection
+4. Checks provider availability (Ollama running, API keys set, etc.)
+5. Marks collections as available/unavailable based on provider status
+
+**This means:**
+- Different collections can use different AI providers (Ollama, OpenAI, Gemini)
+- The same MCP server can serve collections with different embedding models
+- No need to restart the server when switching providers - just create collections with different configs
+- Each collection remembers which provider it was created with
 
 ### Configuration Validation
 
@@ -104,7 +165,6 @@ The server validates configuration on startup:
 - **Invalid path**: `ChromaDB path must be an absolute path (e.g., /Users/name/chromadb), not a relative path`
 - **Missing field**: `Missing required configuration field: 'chromadb_path'. Please check config.json`
 - **Out of range**: `default_max_results must be between 1 and 100, got: 500`
-- **Invalid model**: `embedding_model must follow Ollama naming format (e.g., 'mxbai-embed-large:latest'), got: 'invalid'`
 
 ## Usage
 
@@ -120,9 +180,11 @@ python server.py
 The server will:
 1. Load `config.json` from the current directory
 2. Validate configuration fields
-3. Check ChromaDB connection and collections
-4. Verify Ollama service and model availability
-5. Start MCP server in stdio mode
+3. Check ChromaDB connection and discover all collections
+4. Read AI provider metadata from each collection
+5. Reconstruct and validate AI providers (checks Ollama service, API keys, etc.)
+6. Display collection availability status
+7. Start MCP server in stdio mode (only serving available collections)
 
 ### Claude Desktop Integration
 
@@ -379,17 +441,41 @@ markdown-notes-mcp-server/
 
 ### Adding New Collections
 
-No code changes needed! Just run the pipeline with a new collection name:
+No code changes needed! Just run the pipeline with a configuration file:
 
 ```bash
-cd ../bear-notes-cag-data-creator
-python full_pipeline.py \
-    --collection-name "my_new_collection" \
-    --collection-description "Description for AI to understand when to use this collection" \
-    ../data/my_new_notes.json
+cd markdown-notes-cag-data-creator
+
+# Create a new config file (or copy from configs/ directory)
+# Edit: collection_name, description, json_file, and ai_provider settings
+python full_pipeline.py --config ../configs/my-collection.json
 ```
 
-The new collection will automatically appear in `list_knowledge_bases()` results.
+**Example config file** (`configs/my-collection.json`):
+```json
+{
+  "collection_name": "project_docs",
+  "description": "Technical documentation for my software projects",
+  "chromadb_path": "./chromadb_data",
+  "json_file": "./data/project_notes.json",
+  "chunk_size": 1200,
+  "ai_provider": {
+    "type": "ollama",
+    "embedding": {
+      "model": "mxbai-embed-large:latest",
+      "base_url": "http://localhost:11434"
+    },
+    "llm": {
+      "model": "llama3.1:8b"
+    }
+  }
+}
+```
+
+The new collection will automatically:
+1. Store the AI provider metadata in ChromaDB
+2. Appear in `list_knowledge_bases()` results when the MCP server starts
+3. Be available for search if the provider is available (Ollama running, API keys set, etc.)
 
 ## Error Handling
 
@@ -402,16 +488,39 @@ Failed to connect to ChromaDB at /path/to/chromadb.
 Please check that the path exists and contains valid ChromaDB data.
 ```
 
-**Solution:** Verify `CHROMADB_PATH` environment variable or run the pipeline to create collections.
+**Solution:** Verify `chromadb_path` in `config.json` or run the pipeline to create collections.
 
-### Ollama Service Errors
+### AI Provider Unavailable Errors
 
+When the server starts, it checks each collection's AI provider availability. Collections may be marked as unavailable for these reasons:
+
+**Ollama collections:**
 ```
-Ollama embedding service is unavailable.
-Please ensure Ollama is running (run 'ollama serve' in another terminal).
+✗ UNAVAILABLE: bear_notes
+  Reason: Failed to connect to Ollama service at http://localhost:11434
 ```
+**Solution:** Start Ollama with `ollama serve` in a separate terminal
 
-**Solution:** Start Ollama with `ollama serve`
+**OpenAI collections:**
+```
+✗ UNAVAILABLE: research_notes
+  Reason: Missing API key - OPENAI_API_KEY not found in environment
+```
+**Solution:** Set environment variable: `export OPENAI_API_KEY="sk-your-key-here"`
+
+**Gemini collections:**
+```
+✗ UNAVAILABLE: wikipedia_archive
+  Reason: Missing API key - GEMINI_API_KEY not found in environment
+```
+**Solution:** Set environment variable: `export GEMINI_API_KEY="your-key-here"`
+
+**Old pipeline collections:**
+```
+✗ UNAVAILABLE: legacy_notes
+  Reason: Missing AI provider metadata (created with old pipeline)
+```
+**Solution:** Recreate the collection using the updated pipeline with a config file
 
 ### Collection Not Found
 
@@ -574,68 +683,61 @@ Please run the pipeline to create at least one collection
    "
    ```
 
-### "Ollama embedding service is unavailable" Error
+### "Collection unavailable" - Provider Issues
 
 **Symptoms:**
-```
-Ollama embedding service is unavailable.
-Please ensure Ollama is running (run 'ollama serve' in another terminal).
-```
+The server starts but reports some collections as unavailable.
 
-**Solution:**
+**For Ollama collections:**
 
 1. **Check if Ollama is running:**
    ```bash
    curl http://localhost:11434/api/version
    ```
-
    Should return version info. If not, Ollama is not running.
 
 2. **Start Ollama service:**
    ```bash
    # In a separate terminal, run:
    ollama serve
-
    # Keep this terminal open
    ```
 
-3. **Verify Ollama is accessible:**
+3. **Verify required models are available:**
    ```bash
    ollama list
-   ```
+   # Check for the models your collection uses (check server startup logs)
 
-### "Embedding model not available" Error
-
-**Symptoms:**
-```
-Embedding model 'mxbai-embed-large:latest' is not available in Ollama.
-Please run: ollama pull mxbai-embed-large:latest
-```
-
-**Solution:**
-
-1. **Pull the required model:**
-   ```bash
+   # If missing, pull them:
    ollama pull mxbai-embed-large:latest
+   ollama pull llama3.1:8b
    ```
 
-   This will download ~700MB.
+4. **Restart MCP server** (if using Claude Desktop, restart Claude Desktop)
 
-2. **Verify model is available:**
+**For OpenAI collections:**
+
+1. **Set API key:**
    ```bash
-   ollama list | grep mxbai-embed-large
+   export OPENAI_API_KEY="sk-your-key-here"
    ```
 
-   Should show: `mxbai-embed-large:latest`
-
-3. **Test embedding generation:**
+2. **Verify API key is valid:**
    ```bash
-   python -c "
-   from ollama import embeddings
-   result = embeddings(model='mxbai-embed-large:latest', prompt='test')
-   print(f'Embedding dimension: {len(result[\"embedding\"])}')
-   "
+   curl https://api.openai.com/v1/models \
+     -H "Authorization: Bearer $OPENAI_API_KEY"
    ```
+
+3. **Restart MCP server**
+
+**For Gemini collections:**
+
+1. **Set API key:**
+   ```bash
+   export GEMINI_API_KEY="your-key-here"
+   ```
+
+2. **Restart MCP server**
 
 ### Search Returns No Results
 
@@ -669,13 +771,10 @@ Please run: ollama pull mxbai-embed-large:latest
    )
    ```
 
-3. **Check embedding model matches:**
-   - Pipeline and server must use same embedding model
-   - If you created embeddings with different model, rebuild:
-     ```bash
-     cd bear-notes-cag-data-creator
-     python full_pipeline.py --embedding-model mxbai-embed-large:latest ...
-     ```
+3. **Check if collection's AI provider is available:**
+   - The MCP server only serves collections whose AI providers are available
+   - Check server startup logs for collection availability status
+   - Ensure required API keys are set or Ollama is running
 
 ### Slow Search Performance
 
@@ -689,15 +788,10 @@ Please run: ollama pull mxbai-embed-large:latest
    - Use more specific queries
    - Reduce `max_results` parameter
 
-2. **Check Ollama performance:**
-   ```bash
-   time python -c "
-   from ollama import embeddings
-   embeddings(model='mxbai-embed-large:latest', prompt='test query')
-   "
-   ```
-
-   Should take <1 second. If slower, Ollama may be CPU-bound.
+2. **Check AI provider performance:**
+   - For Ollama: Embedding generation happens locally, may be CPU-bound
+   - For cloud providers (OpenAI, Gemini): Network latency and rate limits apply
+   - Check server logs for timing information
 
 3. **Verify ChromaDB HNSW index:**
    ```python

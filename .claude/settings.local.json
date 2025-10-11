@@ -9,7 +9,8 @@
       "Bash(python:*)",
       "mcp__ide__getDiagnostics",
       "Bash(pytest:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Read(//Users/michele/.pyenv/versions/3.12.0/bin/**)"
     ],
     "deny": [],
     "ask": []
