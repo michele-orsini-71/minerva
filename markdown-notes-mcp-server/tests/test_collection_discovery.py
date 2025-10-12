@@ -551,6 +551,106 @@ class TestReconstructProviderFromMetadata:
         assert provider is None
         assert "Unexpected error during provider reconstruction" in error
 
+    @patch('collection_discovery.AIProvider')
+    @patch('collection_discovery.AIProviderConfig')
+    def test_missing_optional_api_key_field(self, mock_config_class: MagicMock, mock_provider_class: MagicMock) -> None:
+        """Test reconstruction when api_key field is missing (Ollama use case)."""
+        # Ollama doesn't need API key - field may be omitted from metadata
+        metadata = {
+            'embedding_provider': 'ollama',
+            'embedding_model': 'mxbai-embed-large:latest',
+            'llm_model': 'llama3.1:8b',
+            'embedding_base_url': 'http://localhost:11434'
+            # No embedding_api_key_ref field
+        }
+
+        mock_config = Mock()
+        mock_config_class.return_value = mock_config
+
+        mock_provider = Mock()
+        mock_provider.check_availability.return_value = {'available': True, 'dimension': 1024}
+        mock_provider_class.return_value = mock_provider
+
+        provider, error = reconstruct_provider_from_metadata(metadata)
+
+        # Should succeed - api_key is optional
+        assert provider is not None
+        assert error is None
+        # AIProviderConfig should receive None for missing api_key
+        mock_config_class.assert_called_once_with(
+            provider_type='ollama',
+            embedding_model='mxbai-embed-large:latest',
+            llm_model='llama3.1:8b',
+            base_url='http://localhost:11434',
+            api_key=None  # .get() returns None for missing key
+        )
+
+    @patch('collection_discovery.AIProvider')
+    @patch('collection_discovery.AIProviderConfig')
+    def test_missing_optional_base_url_field(self, mock_config_class: MagicMock, mock_provider_class: MagicMock) -> None:
+        """Test reconstruction when base_url field is missing (cloud providers)."""
+        # Cloud providers use default URLs - base_url may be omitted
+        metadata = {
+            'embedding_provider': 'openai',
+            'embedding_model': 'text-embedding-3-small',
+            'llm_model': 'gpt-4o-mini',
+            'embedding_api_key_ref': '${OPENAI_API_KEY}'
+            # No embedding_base_url field
+        }
+
+        mock_config = Mock()
+        mock_config_class.return_value = mock_config
+
+        mock_provider = Mock()
+        mock_provider.check_availability.return_value = {'available': True, 'dimension': 1536}
+        mock_provider_class.return_value = mock_provider
+
+        provider, error = reconstruct_provider_from_metadata(metadata)
+
+        # Should succeed - base_url is optional
+        assert provider is not None
+        assert error is None
+        # AIProviderConfig should receive None for missing base_url
+        mock_config_class.assert_called_once_with(
+            provider_type='openai',
+            embedding_model='text-embedding-3-small',
+            llm_model='gpt-4o-mini',
+            base_url=None,  # .get() returns None for missing key
+            api_key='${OPENAI_API_KEY}'
+        )
+
+    @patch('collection_discovery.AIProvider')
+    @patch('collection_discovery.AIProviderConfig')
+    def test_missing_multiple_optional_fields(self, mock_config_class: MagicMock, mock_provider_class: MagicMock) -> None:
+        """Test reconstruction when multiple optional fields are missing."""
+        # Minimal metadata with only required fields
+        metadata = {
+            'embedding_provider': 'ollama',
+            'embedding_model': 'mxbai-embed-large:latest',
+            'llm_model': 'llama3.1:8b'
+            # No embedding_base_url, no embedding_api_key_ref
+        }
+
+        mock_config = Mock()
+        mock_config_class.return_value = mock_config
+
+        mock_provider = Mock()
+        mock_provider.check_availability.return_value = {'available': True, 'dimension': 1024}
+        mock_provider_class.return_value = mock_provider
+
+        provider, error = reconstruct_provider_from_metadata(metadata)
+
+        # Should succeed with minimal metadata
+        assert provider is not None
+        assert error is None
+        mock_config_class.assert_called_once_with(
+            provider_type='ollama',
+            embedding_model='mxbai-embed-large:latest',
+            llm_model='llama3.1:8b',
+            base_url=None,
+            api_key=None
+        )
+
 
 class TestDiscoverCollectionsWithProviders:
     """Test discovery of collections with provider instances."""

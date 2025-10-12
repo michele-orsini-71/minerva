@@ -440,3 +440,96 @@ def test_build_collection_metadata_rejects_actual_api_key():
     with pytest.raises(storage.StorageError) as exc_info:
         storage.build_collection_metadata("Test", embedding_metadata)
     assert "API keys must be stored as environment variable templates" in str(exc_info.value)
+
+
+def test_build_collection_metadata_filters_none_api_key():
+    """Test that None values for api_key are filtered out (Ollama use case)."""
+    embedding_metadata = {
+        'embedding_model': 'mxbai-embed-large:latest',
+        'embedding_provider': 'ollama',
+        'embedding_dimension': 1024,
+        'embedding_base_url': 'http://localhost:11434',
+        'embedding_api_key_ref': None,  # Ollama doesn't need API key
+        'llm_model': 'llama3.1:8b'
+    }
+    metadata = storage.build_collection_metadata("Test collection", embedding_metadata)
+
+    # None values should be filtered out
+    assert 'embedding_api_key_ref' not in metadata
+    # Other values should be preserved
+    assert metadata['embedding_model'] == 'mxbai-embed-large:latest'
+    assert metadata['embedding_provider'] == 'ollama'
+    assert metadata['embedding_dimension'] == 1024
+    assert metadata['embedding_base_url'] == 'http://localhost:11434'
+    assert metadata['llm_model'] == 'llama3.1:8b'
+
+
+def test_build_collection_metadata_filters_none_dimension():
+    """Test that None dimension is filtered out (when test embedding fails)."""
+    embedding_metadata = {
+        'embedding_model': 'test-model',
+        'embedding_provider': 'ollama',
+        'embedding_dimension': None,  # Test embedding failed
+        'llm_model': 'test-llm'
+    }
+    metadata = storage.build_collection_metadata("Test collection", embedding_metadata)
+
+    # None dimension should be filtered out
+    assert 'embedding_dimension' not in metadata
+    # Required fields should still be present
+    assert metadata['embedding_model'] == 'test-model'
+    assert metadata['embedding_provider'] == 'ollama'
+
+
+def test_build_collection_metadata_filters_none_base_url():
+    """Test that None base_url is filtered out (default provider URLs)."""
+    embedding_metadata = {
+        'embedding_model': 'text-embedding-3-small',
+        'embedding_provider': 'openai',
+        'embedding_dimension': 1536,
+        'embedding_base_url': None,  # Using default OpenAI URL
+        'embedding_api_key_ref': '${OPENAI_API_KEY}',
+        'llm_model': 'gpt-4o-mini'
+    }
+    metadata = storage.build_collection_metadata("Test collection", embedding_metadata)
+
+    # None base_url should be filtered out
+    assert 'embedding_base_url' not in metadata
+    # Other values should be preserved
+    assert metadata['embedding_provider'] == 'openai'
+    assert metadata['embedding_api_key_ref'] == '${OPENAI_API_KEY}'
+
+
+def test_build_collection_metadata_filters_multiple_none_values():
+    """Test that multiple None values are filtered out simultaneously."""
+    embedding_metadata = {
+        'embedding_model': 'test-model',
+        'embedding_provider': 'ollama',
+        'embedding_dimension': None,
+        'embedding_base_url': None,
+        'embedding_api_key_ref': None,
+        'llm_model': None
+    }
+    metadata = storage.build_collection_metadata("Test collection", embedding_metadata)
+
+    # All None values should be filtered out
+    assert 'embedding_dimension' not in metadata
+    assert 'embedding_base_url' not in metadata
+    assert 'embedding_api_key_ref' not in metadata
+    assert 'llm_model' not in metadata
+    # Required fields should still be present
+    assert metadata['embedding_model'] == 'test-model'
+    assert metadata['embedding_provider'] == 'ollama'
+
+
+def test_build_collection_metadata_dimension_not_required():
+    """Test that embedding_dimension is no longer a required field."""
+    embedding_metadata = {
+        'embedding_model': 'test-model',
+        'embedding_provider': 'ollama'
+        # No embedding_dimension provided
+    }
+    # Should not raise error - dimension is optional
+    metadata = storage.build_collection_metadata("Test collection", embedding_metadata)
+    assert metadata['embedding_model'] == 'test-model'
+    assert metadata['embedding_provider'] == 'ollama'

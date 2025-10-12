@@ -402,6 +402,62 @@ class TestSearchKnowledgeBase:
         mock_provider.generate_embedding.assert_called_once_with("test query")
 
     @patch('search_tools.initialize_chromadb_client')
+    @patch('search_tools.apply_context_mode')
+    def test_search_missing_dimension_skips_validation(self, mock_context, mock_init_client):
+        """Test search succeeds when embedding_dimension is missing (test embedding failed during creation)."""
+        mock_client = Mock()
+        mock_init_client.return_value = mock_client
+
+        mock_collection = Mock()
+        mock_collection.name = "test_notes"
+        mock_collection.metadata = {
+            # No embedding_dimension field (was None, filtered out during storage)
+            'embedding_provider': 'ollama',
+            'embedding_model': 'mxbai-embed-large:latest'
+        }
+        mock_client.list_collections.return_value = [mock_collection]
+        mock_client.get_collection.return_value = mock_collection
+
+        mock_provider = Mock(spec=AIProvider)
+        # Generate embedding with any dimension - should not be validated
+        mock_provider.generate_embedding.return_value = [0.1] * 1024
+
+        mock_collection.query.return_value = {
+            'ids': [['chunk1']],
+            'documents': [['Content']],
+            'metadatas': [[{
+                'title': 'Note',
+                'noteId': 'id1',
+                'chunkIndex': 0,
+                'modificationDate': '2024-01-01T00:00:00Z'
+            }]],
+            'distances': [[0.2]]
+        }
+
+        mock_context.return_value = [{
+            'noteTitle': 'Note',
+            'noteId': 'id1',
+            'chunkIndex': 0,
+            'modificationDate': '2024-01-01T00:00:00Z',
+            'collectionName': 'test_notes',
+            'similarityScore': 0.8,
+            'content': 'Content',
+            'totalChunks': 1
+        }]
+
+        # Should succeed without dimension validation
+        results = search_knowledge_base(
+            query="test query",
+            collection_name="test_notes",
+            chromadb_path="/fake/path",
+            provider=mock_provider
+        )
+
+        # Search should complete successfully
+        assert len(results) == 1
+        mock_provider.generate_embedding.assert_called_once_with("test query")
+
+    @patch('search_tools.initialize_chromadb_client')
     def test_search_no_metadata_error(self, mock_init_client):
         """Test search fails when collection has no metadata (old collections not supported)."""
         mock_client = Mock()

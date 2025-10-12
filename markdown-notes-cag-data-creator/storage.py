@@ -124,12 +124,18 @@ def build_collection_metadata(description: str, embedding_metadata: Dict[str, An
         if field in embedding_metadata:
             value = embedding_metadata[field]
 
+            # Skip None values - ChromaDB doesn't accept null metadata
+            # MCP server handles missing keys via .get() which returns None
+            if value is None:
+                continue
+
             if field == 'embedding_api_key_ref':
                 _validate_no_actual_api_keys(value, field)
 
             metadata[field] = value
 
-    required_fields = ['embedding_model', 'embedding_provider', 'embedding_dimension']
+    # Required fields (embedding_dimension is optional - may be None if test embedding fails)
+    required_fields = ['embedding_model', 'embedding_provider']
     missing_fields = [f for f in required_fields if f not in metadata]
 
     if missing_fields:
