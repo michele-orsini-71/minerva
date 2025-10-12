@@ -4,7 +4,7 @@ Generated from: `PRD.md`
 
 ## Relevant Files
 
-- `markdown-books-extractor/markdown_to_cag.py` - Main CLI script and orchestration logic
+- `markdown-books-extractor/markdown_to_cag.py` - Main CLI script and orchestration logic [COMPLETED]
 - `markdown-books-extractor/book_parser.py` - Book file parsing and metadata extraction module
 - `markdown-books-extractor/chapter_detector.py` - Chapter boundary detection and splitting logic
 - `markdown-books-extractor/json_generator.py` - Bear Notes JSON format output generator [COMPLETED]
@@ -70,22 +70,22 @@ Generated from: `PRD.md`
   - [x] 3.8 Add function `write_json_output(entries: list[dict], output_path: str) -> None` to write JSON file
   - [x] 3.9 In write function: validate output path is writable, write with UTF-8 encoding, use `json.dump()` with `indent=2` and `ensure_ascii=False`
 
-- [ ] 4.0 Develop command-line interface with argument parsing
-  - [ ] 4.1 Create main script `markdown_to_cag.py` with `if __name__ == "__main__":` entry point
-  - [ ] 4.2 Set up `argparse.ArgumentParser` with description: "Convert classic book markdown files to CAG-compatible JSON format"
-  - [ ] 4.3 Add positional argument `input_file` with help text: "Path to input markdown file"
-  - [ ] 4.4 Add optional argument `--output` with help text: "Path to output JSON file (default: same directory as input with .json extension)"
-  - [ ] 4.5 Add `-h/--help` flag support (automatic with argparse)
-  - [ ] 4.6 Implement output path derivation logic:
+- [x] 4.0 Develop command-line interface with argument parsing
+  - [x] 4.1 Create main script `markdown_to_cag.py` with `if __name__ == "__main__":` entry point
+  - [x] 4.2 Set up `argparse.ArgumentParser` with description: "Convert classic book markdown files to CAG-compatible JSON format"
+  - [x] 4.3 Add positional argument `input_file` with help text: "Path to input markdown file"
+  - [x] 4.4 Add optional argument `--output` with help text: "Path to output JSON file (default: same directory as input with .json extension)"
+  - [x] 4.5 Add `-h/--help` flag support (automatic with argparse)
+  - [x] 4.6 Implement output path derivation logic:
     - If `--output` provided, use it as-is
     - Otherwise: `Path(input_file).with_suffix('.json')`
-  - [ ] 4.7 Create `main()` function that orchestrates the pipeline:
+  - [x] 4.7 Create `main()` function that orchestrates the pipeline:
     - Call `parse_book_file()` → get book metadata and content
     - Call `detect_chapters()` → get chapter list
     - Call `create_chapter_entries()` → get JSON entries
     - Call `write_json_output()` → write to file
-  - [ ] 4.8 Add example usage in help text (use `epilog` parameter): Show basic usage and usage with custom output path
-  - [ ] 4.9 Ensure all functions are imported at top of script
+  - [x] 4.8 Add example usage in help text (use `epilog` parameter): Show basic usage and usage with custom output path
+  - [x] 4.9 Ensure all functions are imported at top of script
 
 - [ ] 5.0 Add comprehensive error handling and validation
   - [ ] 5.1 In `parse_book_file()`: Handle `FileNotFoundError` → print "Input file not found: {path}" to stderr and exit(1)
