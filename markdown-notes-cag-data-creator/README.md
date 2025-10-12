@@ -4,14 +4,15 @@ A complete end-to-end pipeline for building a multi-collection RAG (Retrieval-Au
 
 ## Overview
 
-This is a **complete multi-collection RAG pipeline** that takes markdown notes JSON and produces fully populated ChromaDB vector database collections ready for AI-powered search and retrieval. The pipeline uses local AI models via Ollama, ensuring privacy and eliminating external API dependencies. Collections are intelligently named and described for accurate routing in multi-collection RAG systems.
+This is a **complete multi-collection RAG pipeline** that takes markdown notes JSON and produces fully populated ChromaDB vector database collections ready for AI-powered search and retrieval. The pipeline supports **multiple AI providers** including local models via Ollama (privacy-focused, no API keys) and cloud services like OpenAI and Google Gemini (higher quality embeddings). Collections are intelligently named and described for accurate routing in multi-collection RAG systems, with provider metadata stored for seamless MCP server integration.
 
 ## Features
 
 - **Multi-Collection Architecture**: Named collections with rich descriptions for intelligent routing
+- **Multi-Provider AI Support**: Flexible AI provider abstraction supporting Ollama (local), OpenAI, Google Gemini, Azure, and more
 - **Config-Based Workflow**: JSON configuration files for reproducible, version-controlled pipelines
 - **Complete RAG Pipeline**: Full end-to-end processing from JSON to searchable vector database
-- **Local AI Processing**: Uses Ollama for embeddings (mxbai-embed-large) - no external API calls
+- **Local & Cloud AI**: Choose between local processing (Ollama) or cloud services (OpenAI, Gemini) per collection
 - **AI-Powered Validation**: Optional AI validation of collection descriptions for quality assurance
 - **Semantic Chunking**: LangChain text splitters with intelligent markdown structure preservation
 - **ChromaDB Integration**: Persistent vector storage with metadata and cosine similarity search
@@ -26,16 +27,19 @@ This is a **complete multi-collection RAG pipeline** that takes markdown notes J
 
 - Python 3.13 or higher
 - Virtual environment activated (recommended)
-- **Ollama installed and running** (`ollama serve`)
-- Required AI models:
-  - Embeddings: `ollama pull mxbai-embed-large:latest`
-  - Validation (optional): `ollama pull llama3.1:8b`
+- **AI Provider Setup** (choose one or more):
+  - **Ollama (local)**: Install and run `ollama serve`, then pull models:
+    - Embeddings: `ollama pull mxbai-embed-large:latest`
+    - Validation (optional): `ollama pull llama3.1:8b`
+  - **OpenAI (cloud)**: Set `OPENAI_API_KEY` environment variable
+  - **Google Gemini (cloud)**: Set `GEMINI_API_KEY` environment variable
+  - **Azure OpenAI**: Set `AZURE_API_KEY` and `AZURE_API_BASE` environment variables
 
 ### Dependencies
 
 ```bash
 # All dependencies should already be installed in the shared .venv
-pip install langchain-text-splitters chromadb ollama numpy nltk tiktoken jsonschema
+pip install langchain-text-splitters chromadb ollama litellm numpy nltk tiktoken jsonschema
 ```
 
 ## Usage
@@ -52,7 +56,20 @@ pip install langchain-text-splitters chromadb ollama numpy nltk tiktoken jsonsch
   "json_file": "/path/to/notes.json",
   "chunk_size": 1200,
   "forceRecreate": false,
-  "skipAiValidation": false
+  "skipAiValidation": false,
+  "ai_provider": {
+    "type": "ollama",
+    "embedding": {
+      "model": "mxbai-embed-large:latest",
+      "base_url": "http://localhost:11434",
+      "api_key": null
+    },
+    "llm": {
+      "model": "llama3.1:8b",
+      "base_url": "http://localhost:11434",
+      "api_key": null
+    }
+  }
 }
 ```
 
@@ -79,12 +96,78 @@ The JSON configuration file supports the following fields:
 - `description` (string): Detailed description of when to use this collection (10-1000 chars)
 - `chromadb_path` (string): Path to ChromaDB storage location
 - `json_file` (string): Path to markdown notes JSON file
+- `ai_provider` (object): AI provider configuration (see below)
 
 **Optional Fields:**
 
 - `chunk_size` (number): Target chunk size in characters (default: 1200, range: 300-20000)
 - `forceRecreate` (boolean): Delete and recreate collection if it exists (default: false)
 - `skipAiValidation` (boolean): Skip AI validation of collection description (default: false)
+
+**AI Provider Configuration (`ai_provider`):**
+
+- `type` (string): Provider type - `"ollama"`, `"openai"`, `"gemini"`, or `"azure"`
+- `embedding` (object): Embedding model configuration
+  - `model` (string): Model identifier (e.g., `"mxbai-embed-large:latest"`, `"text-embedding-3-small"`)
+  - `base_url` (string|null): API base URL (required for Ollama, optional for others)
+  - `api_key` (string|null): API key or environment variable reference (e.g., `"${OPENAI_API_KEY}"`)
+- `llm` (object): LLM model configuration (same structure as embedding)
+  - `model` (string): Model identifier for text generation/validation
+  - `base_url` (string|null): API base URL
+  - `api_key` (string|null): API key or environment variable reference
+
+### AI Provider Examples
+
+**Ollama (Local, No API Keys):**
+```json
+"ai_provider": {
+  "type": "ollama",
+  "embedding": {
+    "model": "mxbai-embed-large:latest",
+    "base_url": "http://localhost:11434",
+    "api_key": null
+  },
+  "llm": {
+    "model": "llama3.1:8b",
+    "base_url": "http://localhost:11434",
+    "api_key": null
+  }
+}
+```
+
+**OpenAI (Cloud):**
+```json
+"ai_provider": {
+  "type": "openai",
+  "embedding": {
+    "model": "text-embedding-3-small",
+    "base_url": null,
+    "api_key": "${OPENAI_API_KEY}"
+  },
+  "llm": {
+    "model": "gpt-4o-mini",
+    "base_url": null,
+    "api_key": "${OPENAI_API_KEY}"
+  }
+}
+```
+
+**Google Gemini (Cloud):**
+```json
+"ai_provider": {
+  "type": "gemini",
+  "embedding": {
+    "model": "text-embedding-004",
+    "base_url": null,
+    "api_key": "${GEMINI_API_KEY}"
+  },
+  "llm": {
+    "model": "gemini-1.5-flash",
+    "base_url": null,
+    "api_key": "${GEMINI_API_KEY}"
+  }
+}
+```
 
 ### Command Line Options
 
@@ -180,9 +263,24 @@ Config JSON → config_loader → config_validator → Notes JSON → chunk_crea
 - **Collection**: User-defined name with rich description for AI routing
 - **Chunk IDs**: SHA256-based stable identifiers
 - **Documents**: Chunk text content
-- **Embeddings**: 1024-dimensional vectors from mxbai-embed-large
-- **Metadata**: Rich metadata for each chunk
+- **Embeddings**: Provider-specific dimensional vectors (1024 for Ollama, 1536 for OpenAI, 768 for Gemini)
+- **Collection Metadata**: AI provider information stored for MCP server reconstruction
 
+**Collection Metadata (stored in ChromaDB):**
+```json
+{
+  "embedding_provider": "ollama",
+  "embedding_model": "mxbai-embed-large:latest",
+  "embedding_dimension": 1024,
+  "embedding_base_url": "http://localhost:11434",
+  "embedding_api_key_ref": null,
+  "llm_model": "llama3.1:8b",
+  "llm_base_url": "http://localhost:11434",
+  "llm_api_key_ref": null
+}
+```
+
+**Chunk Metadata (per document):**
 ```json
 {
   "note_id": "sha1_hash_of_note_title",
@@ -249,12 +347,21 @@ Collection 'my_notes' ready for RAG queries
 - **Structure preservation**: Code blocks, tables, and paragraph boundaries maintained
 - **Immutable**: Returns new chunk objects without modifying input
 
-**Embedding Configuration (Ollama)**:
+**Embedding Configuration (Multi-Provider)**:
 
-- **Model**: mxbai-embed-large:latest (1024 dimensions)
-- **Processing**: Individual text chunks with batch coordination
-- **Normalization**: L2 normalization for cosine similarity
-- **Connection**: Local Ollama service (http://localhost:11434)
+- **Provider Type**: Configurable via `ai_provider.type` (`ollama`, `openai`, `gemini`, `azure`)
+- **Local (Ollama)**:
+  - Model: `mxbai-embed-large:latest` (1024 dimensions)
+  - Connection: http://localhost:11434 (no API key required)
+- **OpenAI**:
+  - Model: `text-embedding-3-small` (1536 dimensions) or `text-embedding-3-large`
+  - API Key: Requires `OPENAI_API_KEY` environment variable
+- **Google Gemini**:
+  - Model: `text-embedding-004` (768 dimensions)
+  - API Key: Requires `GEMINI_API_KEY` environment variable
+- **Processing**: Batch coordination with provider-specific clients (via LiteLLM)
+- **Normalization**: L2 normalization for cosine similarity compatibility
+- **Metadata Storage**: Provider info stored in ChromaDB collection metadata for MCP server reconstruction
 - **Immutable**: Returns enriched chunks without modifying input
 
 **Storage Configuration (ChromaDB)**:
@@ -284,10 +391,17 @@ Collection 'my_notes' ready for RAG queries
 cd ../bear-notes-parser
 python cli.py "Bear Notes 2025-10-04 at 15.00.bear2bk"
 
-# Step 2: Ensure Ollama is running with required models
+# Step 2: Choose and setup AI provider
+# Option A: Ollama (local, no API keys)
 ollama serve  # In separate terminal
 ollama pull mxbai-embed-large:latest
 ollama pull llama3.1:8b  # Optional: for AI validation
+
+# Option B: OpenAI (cloud, requires API key)
+export OPENAI_API_KEY="sk-your-api-key-here"
+
+# Option C: Google Gemini (cloud, requires API key)
+export GEMINI_API_KEY="your-gemini-api-key-here"
 
 # Step 3: Create collection configuration
 cd ../markdown-notes-cag-data-creator
@@ -299,7 +413,20 @@ cat > collections/my_bear_notes.json <<EOF
   "json_file": "/path/to/Bear Notes 2025-10-04 at 15.00.json",
   "chunk_size": 1200,
   "forceRecreate": false,
-  "skipAiValidation": false
+  "skipAiValidation": false,
+  "ai_provider": {
+    "type": "ollama",
+    "embedding": {
+      "model": "mxbai-embed-large:latest",
+      "base_url": "http://localhost:11434",
+      "api_key": null
+    },
+    "llm": {
+      "model": "llama3.1:8b",
+      "base_url": "http://localhost:11434",
+      "api_key": null
+    }
+  }
 }
 EOF
 
@@ -505,12 +632,28 @@ print(f"Stored {stats['successful']} chunks in collection '{config.collection_na
 - Use `--dry-run` to preview the operation first
 - Be careful: `forceRecreate: true` deletes existing data!
 
-**"Connection to Ollama failed"**
+**"Connection to Ollama failed"** (when using Ollama provider)
 
 - Ensure Ollama is running: `ollama serve`
 - Check embedding model: `ollama list | grep mxbai-embed-large`
 - Check validation model (if used): `ollama list | grep llama3.1`
 - Pull models if missing: `ollama pull mxbai-embed-large:latest`
+
+**"Missing API key"** (when using cloud providers)
+
+- Ensure environment variable is set: `echo $OPENAI_API_KEY` or `echo $GEMINI_API_KEY`
+- Export the variable in your terminal session before running pipeline
+- Check config file uses correct variable reference: `"${OPENAI_API_KEY}"`
+- Verify API key is valid and has appropriate permissions
+
+**"Embedding dimension mismatch"**
+
+- Each AI provider generates different embedding dimensions:
+  - Ollama `mxbai-embed-large:latest`: 1024 dimensions
+  - OpenAI `text-embedding-3-small`: 1536 dimensions
+  - Google Gemini `text-embedding-004`: 768 dimensions
+- Cannot query a collection with a different provider than it was created with
+- Either use the same provider or recreate the collection with `forceRecreate: true`
 
 **"Description validation failed" (AI validation)**
 
