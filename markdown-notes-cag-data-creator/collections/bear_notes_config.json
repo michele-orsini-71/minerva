@@ -1,8 +1,0 @@
-{
-  "collection_name": "bear_notes_personal",
-  "description": "Use this collection when searching through personal notes from Bear Notes app. Contains my private notes about projects, ideas, research, and daily thoughts collected over time. This is ideal for finding specific information within my personal knowledge base, retrieving past ideas, or discovering connections between different topics I've explored.",
-  "forceRecreate": false,
-  "skipAiValidation": false,
-  "chromadb_path": "/Users/michele/my-code/search-markdown-notes/chromadb_data",
-  "json_file": "/Users/michele/my-code/search-markdown-notes/test-data/Bear Notes 2025-10-04 at 15.00.json"
-}

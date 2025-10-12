@@ -13,7 +13,8 @@
       "Read(//Users/michele/.pyenv/versions/3.12.0/bin/**)",
       "Read(//Users/michele/my-code/classic-books-markdown/**)",
       "Bash(python3:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []

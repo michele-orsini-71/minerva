@@ -87,32 +87,32 @@ Generated from: `PRD.md`
   - [x] 4.8 Add example usage in help text (use `epilog` parameter): Show basic usage and usage with custom output path
   - [x] 4.9 Ensure all functions are imported at top of script
 
-- [ ] 5.0 Add comprehensive error handling and validation
-  - [ ] 5.1 In `parse_book_file()`: Handle `FileNotFoundError` → print "Input file not found: {path}" to stderr and exit(1)
-  - [ ] 5.2 In `parse_book_file()`: Handle `PermissionError` → print "Cannot read input file: {path}" to stderr and exit(1)
-  - [ ] 5.3 In `parse_book_file()`: Handle `UnicodeDecodeError` → print "File encoding error in {path}: {error}" to stderr and exit(1)
-  - [ ] 5.4 In `parse_book_file()`: Validate title present → raise ValueError("Missing required field: Title")
-  - [ ] 5.5 In `parse_book_file()`: Validate author present → raise ValueError("Missing required field: Author")
-  - [ ] 5.6 In `parse_book_file()`: Validate year present → raise ValueError("Missing required field: Year")
-  - [ ] 5.7 In `parse_book_file()`: Validate year is 4-digit number → raise ValueError(f"Invalid year format: {year_value}")
-  - [ ] 5.8 In `detect_chapters()`: Validate at least one chapter found → raise ValueError(f"No chapters detected in file. Expected headers (##, ###, or ####)")
-  - [ ] 5.9 In `write_json_output()`: Handle `PermissionError` → print "Cannot write to output path: {path}" to stderr and exit(1)
-  - [ ] 5.10 In `write_json_output()`: Handle `OSError` (disk full, etc.) → print "Error writing output file: {error}" to stderr and exit(1)
-  - [ ] 5.11 In `main()`: Wrap entire pipeline in try-except to catch ValueError and print error to stderr, then exit(1)
-  - [ ] 5.12 Test all error paths manually by creating test files with: missing fields, invalid year, no chapters, unreadable files
+- [x] 5.0 Add comprehensive error handling and validation
+  - [x] 5.1 In `parse_book_file()`: Handle `FileNotFoundError` → print "Input file not found: {path}" to stderr and exit(1)
+  - [x] 5.2 In `parse_book_file()`: Handle `PermissionError` → print "Cannot read input file: {path}" to stderr and exit(1)
+  - [x] 5.3 In `parse_book_file()`: Handle `UnicodeDecodeError` → print "File encoding error in {path}: {error}" to stderr and exit(1)
+  - [x] 5.4 In `parse_book_file()`: Validate title present → raise ValueError("Missing required field: Title")
+  - [x] 5.5 In `parse_book_file()`: Validate author present → raise ValueError("Missing required field: Author")
+  - [x] 5.6 In `parse_book_file()`: Validate year present → raise ValueError("Missing required field: Year")
+  - [x] 5.7 In `parse_book_file()`: Validate year is 4-digit number → raise ValueError(f"Invalid year format: {year_value}")
+  - [x] 5.8 In `detect_chapters()`: Validate at least one chapter found → raise ValueError(f"No chapters detected in file. Expected headers (##, ###, or ####)")
+  - [x] 5.9 In `write_json_output()`: Handle `PermissionError` → print "Cannot write to output path: {path}" to stderr and exit(1)
+  - [x] 5.10 In `write_json_output()`: Handle `OSError` (disk full, etc.) → print "Error writing output file: {error}" to stderr and exit(1)
+  - [x] 5.11 In `main()`: Wrap entire pipeline in try-except to catch ValueError and print error to stderr, then exit(1)
+  - [x] 5.12 Test all error paths manually by creating test files with: missing fields, invalid year, no chapters, unreadable files
 
-- [ ] 6.0 Implement progress feedback system
-  - [ ] 6.1 In `main()` after parsing: Print to stdout: "Parsing {filename}..." (use `Path(input_file).name` for filename only)
-  - [ ] 6.2 In `main()` after metadata extraction: Print to stdout: 'Extracted metadata: Title="{title}", Author="{author}", Year={year}'
-  - [ ] 6.3 In `main()` after chapter detection: Print to stdout: "Detected {count} chapters"
-  - [ ] 6.4 In `main()` during chapter processing: For each chapter, print to stdout: "Processing chapter {current}/{total}: {chapter_title}"
-  - [ ] 6.5 In `main()` after successful write: Print to stdout: "Successfully created {output_filename} with {count} chapters" (use `Path(output_path).name`)
-  - [ ] 6.6 Ensure all progress messages go to stdout (use `print()` without `file=` parameter)
-  - [ ] 6.7 Ensure all error messages go to stderr (use `print(..., file=sys.stderr)`)
-  - [ ] 6.8 Test progress output by running with real book file and observing console output
+- [x] 6.0 Implement progress feedback system
+  - [x] 6.1 In `main()` after parsing: Print to stdout: "Parsing {filename}..." (use `Path(input_file).name` for filename only)
+  - [x] 6.2 In `main()` after metadata extraction: Print to stdout: 'Extracted metadata: Title="{title}", Author="{author}", Year={year}'
+  - [x] 6.3 In `main()` after chapter detection: Print to stdout: "Detected {count} chapters"
+  - [x] 6.4 In `main()` during chapter processing: For each chapter, print to stdout: "Processing chapter {current}/{total}: {chapter_title}"
+  - [x] 6.5 In `main()` after successful write: Print to stdout: "Successfully created {output_filename} with {count} chapters" (use `Path(output_path).name`)
+  - [x] 6.6 Ensure all progress messages go to stdout (use `print()` without `file=` parameter)
+  - [x] 6.7 Ensure all error messages go to stderr (use `print(..., file=sys.stderr)`)
+  - [x] 6.8 Test progress output by running with real book file and observing console output
 
-- [ ] 7.0 Create manual test suite and validate with real book files
-  - [ ] 7.1 **Happy path test**: Run script on "The Castle of Otranto.md"
+- [x] 7.0 Create manual test suite and validate with real book files
+  - [x] 7.1 **Happy path test**: Run script on "The Castle of Otranto.md"
     - Verify: Script completes without errors
     - Verify: Output JSON file created in same directory
     - Verify: JSON contains exactly 5 chapter entries (manually count chapters in source file)
@@ -120,31 +120,31 @@ Generated from: `PRD.md`
     - Verify: First chapter title is "The Castle of Otranto - CHAPTER I."
     - Verify: Markdown content includes metadata header: "**Author:** Horace Walpole | **Year:** 1764"
     - Verify: Dates are "1764-01-01T00:00:00Z"
-  - [ ] 7.2 **Custom output path test**: Run script with `--output /tmp/test_output.json`
+  - [x] 7.2 **Custom output path test**: Run script with `--output /tmp/test_output.json`
     - Verify: Output created at specified path, not in source directory
-  - [ ] 7.3 **Error test - missing title**: Create test file without "# Title:" line
+  - [x] 7.3 **Error test - missing title**: Create test file without "# Title:" line
     - Verify: Script exits with error "Missing required field: Title"
     - Verify: Error goes to stderr (redirect stderr to file and check contents)
-  - [ ] 7.4 **Error test - missing author**: Create test file without "## Author:" line
+  - [x] 7.4 **Error test - missing author**: Create test file without "## Author:" line
     - Verify: Script exits with error "Missing required field: Author"
-  - [ ] 7.5 **Error test - missing year**: Create test file without "## Year:" line
+  - [x] 7.5 **Error test - missing year**: Create test file without "## Year:" line
     - Verify: Script exits with error "Missing required field: Year"
-  - [ ] 7.6 **Error test - invalid year**: Create test file with "## Year: ABC"
+  - [x] 7.6 **Error test - invalid year**: Create test file with "## Year: ABC"
     - Verify: Script exits with error "Invalid year format: ABC"
-  - [ ] 7.7 **Error test - no chapters**: Create test file with valid header but no ## headers in content
+  - [x] 7.7 **Error test - no chapters**: Create test file with valid header but no ## headers in content
     - Verify: Script exits with error "No chapters detected in file"
-  - [ ] 7.8 **Error test - file not found**: Run script with non-existent file path
+  - [x] 7.8 **Error test - file not found**: Run script with non-existent file path
     - Verify: Script exits with error "Input file not found: {path}"
-  - [ ] 7.9 **Edge case test - single chapter**: Create test file with valid header and only one ## chapter
+  - [x] 7.9 **Edge case test - single chapter**: Create test file with valid header and only one ## chapter
     - Verify: Output JSON contains 1 entry
     - Verify: All fields are correct
-  - [ ] 7.10 **Edge case test - mixed header levels**: Create test file with ##, ###, and #### headers
+  - [x] 7.10 **Edge case test - mixed header levels**: Create test file with ##, ###, and #### headers
     - Verify: All header levels are detected as chapters (flattened hierarchy)
     - Verify: Chapter count matches total number of level 2-4 headers
-  - [ ] 7.11 **Edge case test - Unicode characters**: Create test file with accented characters, em dashes, quotes in title/content
+  - [x] 7.11 **Edge case test - Unicode characters**: Create test file with accented characters, em dashes, quotes in title/content
     - Verify: All Unicode characters preserved in output JSON
     - Verify: Size calculation is correct (UTF-8 byte length)
-  - [ ] 7.12 **Integration test - CAG pipeline**:
+  - [x] 7.12 **Integration test - CAG pipeline**:
     - Run markdown_to_cag.py on "The Castle of Otranto.md"
     - Create/update config file in `configs/` to point to output JSON
     - Run `cd ../markdown-notes-cag-data-creator && python full_pipeline.py --config ../configs/test-books.json`

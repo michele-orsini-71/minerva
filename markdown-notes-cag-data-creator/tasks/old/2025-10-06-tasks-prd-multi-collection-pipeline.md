@@ -9,8 +9,8 @@ Generated from: [prd-multi-collection-pipeline.md](2025-10-06-prd-multi-collecti
 - [markdown-notes-cag-data-creator/config_loader.py](../../config_loader.py) - JSON configuration file loading and schema validation
 - [markdown-notes-cag-data-creator/validation.py](../../validation.py) - Collection name and description validation (regex + AI)
 - [markdown-notes-cag-data-creator/collections/](../../collections) - Directory for storing collection configuration JSON files (create examples)
-- [markdown-notes-cag-data-creator/collections/bear_notes_config.json](../../collections/bear_notes_config.json) - Example configuration for Bear notes collection
-- [markdown-notes-cag-data-creator/collections/wikipedia_history_config.json](../../collections/wikipedia_history_config.json) - Example configuration for Wikipedia collection
+- [markdown-notes-cag-data-creator/collections/bear_notes_config.json](../../configs/bear_notes_config.json) - Example configuration for Bear notes collection
+- [markdown-notes-cag-data-creator/collections/wikipedia_history_config.json](../../configs/wikipedia_history_config.json) - Example configuration for Wikipedia collection
 
 ### Files to Modify
 
