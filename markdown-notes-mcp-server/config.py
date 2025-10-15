@@ -4,6 +4,11 @@ import re
 import sys
 from pathlib import Path
 from typing import Dict, Any, Optional
+from console_logger import get_logger
+
+# Initialize console logger (simple mode for CLI usage)
+console_logger = get_logger(__name__, simple=True)
+
 
 class ConfigError(Exception):
     pass
@@ -180,8 +185,8 @@ if __name__ == "__main__":
 
     try:
         config = load_config(config_file)
-        print("✓ Configuration loaded successfully!")
-        print(json.dumps(config, indent=2))
+        console_logger.success("✓ Configuration loaded successfully!")
+        console_logger.info(json.dumps(config, indent=2))
     except (ConfigError, ConfigValidationError) as e:
-        print(f"Configuration error:\n{e}", file=sys.stderr)
+        console_logger.error(f"Configuration error:\n{e}")
         sys.exit(1)

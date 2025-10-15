@@ -6,6 +6,10 @@ from typing import Tuple, Optional, Dict, Any
 # Import ChromaDB client initialization from existing pipeline
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'markdown-notes-cag-data-creator'))
 from storage import initialize_chromadb_client
+from console_logger import get_logger
+
+# Initialize console logger (simple mode for CLI usage)
+console_logger = get_logger(__name__, simple=True)
 
 
 class ValidationError(Exception):
@@ -162,20 +166,19 @@ if __name__ == "__main__":
         config_path = sys.argv[1] if len(sys.argv) > 1 else get_config_file_path()
         config = load_config(config_path)
 
-        print("Running server validation checks...\n")
+        console_logger.info("Running server validation checks...\n")
 
         # Run validation
         success, error = validate_server_prerequisites(config)
 
         if success:
-            print("✓ All validation checks passed!")
-            print("\nServer is ready to start.")
+            console_logger.success("✓ All validation checks passed!")
+            console_logger.info("\nServer is ready to start.")
             sys.exit(0)
         else:
-            print("✗ Validation failed:\n")
-            print(error)
+            console_logger.error(f"Validation failed:\n\n{error}")
             sys.exit(1)
 
     except Exception as e:
-        print(f"✗ Validation error: {e}", file=sys.stderr)
+        console_logger.error(f"Validation error: {e}")
         sys.exit(1)

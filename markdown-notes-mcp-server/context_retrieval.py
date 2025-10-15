@@ -1,5 +1,10 @@
 from typing import List, Dict, Any
 import chromadb
+from console_logger import get_logger
+
+# Initialize console logger
+console_logger = get_logger(__name__)
+
 
 class ContextRetrievalError(Exception):
     """Base exception for context retrieval errors."""
@@ -71,7 +76,7 @@ def get_enhanced_content(
 
     except Exception as error:
         # Fallback to chunk_only on error
-        print(f"Warning: Enhanced context retrieval failed: {error}. Falling back to chunk_only mode.")
+        console_logger.warning(f"Enhanced context retrieval failed: {error}. Falling back to chunk_only mode.")
         return get_chunk_only_content(collection, result)
 
 
@@ -117,7 +122,7 @@ def get_full_note_content(
 
     except Exception as error:
         # Fallback to chunk_only on error
-        print(f"Warning: Full note retrieval failed: {error}. Falling back to chunk_only mode.")
+        console_logger.warning(f"Full note retrieval failed: {error}. Falling back to chunk_only mode.")
         return get_chunk_only_content(collection, result)
 
 

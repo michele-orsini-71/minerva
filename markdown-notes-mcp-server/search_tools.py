@@ -10,6 +10,10 @@ from storage import initialize_chromadb_client, ChromaDBConnectionError
 from ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
 
 from context_retrieval import apply_context_mode
+from console_logger import get_logger
+
+# Initialize console logger for performance tracking
+console_logger = get_logger(__name__)
 
 
 class SearchError(Exception):
@@ -83,8 +87,10 @@ def search_knowledge_base(
         expected_dimension = collection_metadata.get('embedding_dimension')
 
         # Step 4: Generate query embedding using provider
+        console_logger.info("  → Generating query embedding...")
         try:
             query_embedding = provider.generate_embedding(query)
+            console_logger.info(f"  ✓ Embedding generated (dimension: {len(query_embedding)})")
         except ProviderUnavailableError as error:
             raise SearchError(
                 f"AI provider unavailable: {error}\n"
@@ -104,11 +110,16 @@ def search_knowledge_base(
             )
 
         # Step 6: Perform semantic search
+        console_logger.info(f"  → Querying ChromaDB (max_results: {max_results})...")
         results = collection.query(
             query_embeddings=[query_embedding],
             n_results=max_results,
             include=["documents", "metadatas", "distances"]
         )
+
+        # Log how many results were found
+        num_results = len(results['ids'][0]) if results and results['ids'] else 0
+        console_logger.info(f"  ✓ ChromaDB query completed ({num_results} results found)")
 
         # Step 7: Format results
         formatted_results = []
@@ -128,7 +139,9 @@ def search_knowledge_base(
                 formatted_results.append(result)
 
         # Step 8: Apply context retrieval based on context_mode
+        console_logger.info(f"  → Applying context mode: {context_mode}...")
         enhanced_results = apply_context_mode(collection, formatted_results, context_mode)
+        console_logger.info(f"  ✓ Context retrieval completed")
 
         return enhanced_results
 

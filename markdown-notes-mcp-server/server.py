@@ -17,13 +17,13 @@ Architecture:
 """
 
 import sys
-import logging
 from typing import List, Dict, Any, Optional
 
 # Import FastMCP framework
 try:
     from mcp.server.fastmcp import FastMCP
 except ImportError:
+    # Use print here as ConsoleLogger isn't available yet
     print("Error: FastMCP not installed. Run: pip install mcp", file=sys.stderr)
     sys.exit(1)
 
@@ -37,13 +37,10 @@ from search_tools import (
     CollectionNotFoundError
 )
 from ai_provider import AIProvider
+from console_logger import get_logger
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Initialize console logger
+console_logger = get_logger(__name__)
 
 # Initialize FastMCP server
 mcp = FastMCP("markdown-notes-mcp-server")
@@ -57,38 +54,33 @@ def initialize_server() -> None:
     global CONFIG, PROVIDER_MAP, AVAILABLE_COLLECTIONS
 
     try:
-        logger.info("Loading configuration...")
+        console_logger.info("Loading configuration...")
         config_path = get_config_file_path()
         CONFIG = load_config(config_path)
-        logger.info(f"✓ Configuration loaded from {config_path}")
-        logger.info(f"  ChromaDB path: {CONFIG['chromadb_path']}")
-        logger.info(f"  Default max results: {CONFIG['default_max_results']}")
+        console_logger.success(f"✓ Configuration loaded from {config_path}")
+        console_logger.info(f"  ChromaDB path: {CONFIG['chromadb_path']}")
+        console_logger.info(f"  Default max results: {CONFIG['default_max_results']}")
 
     except (ConfigError, ConfigValidationError) as e:
-        logger.error("Configuration loading failed:")
-        logger.error(str(e))
-        print(f"\n✗ Configuration Error:\n\n{e}\n", file=sys.stderr)
+        console_logger.error(f"Configuration Error:\n\n{e}")
         sys.exit(1)
 
     try:
-        logger.info("\nValidating server prerequisites...")
+        console_logger.info("\nValidating server prerequisites...")
         success, error = validate_server_prerequisites(CONFIG)
 
         if not success:
-            logger.error("Server validation failed:")
-            logger.error(error)
-            print(f"\n✗ Server Validation Failed:\n\n{error}\n", file=sys.stderr)
+            console_logger.error(f"Server Validation Failed:\n\n{error}")
             sys.exit(1)
 
-        logger.info("✓ All validation checks passed")
+        console_logger.success("✓ All validation checks passed")
 
     except Exception as e:
-        logger.error(f"Unexpected error during validation: {e}")
-        print(f"\n✗ Validation Error:\n{e}\n", file=sys.stderr)
+        console_logger.error(f"Validation Error:\n{e}")
         sys.exit(1)
 
     try:
-        logger.info("\nDiscovering collections and initializing AI providers...")
+        console_logger.info("\nDiscovering collections and initializing AI providers...")
         PROVIDER_MAP, all_collections = discover_collections_with_providers(CONFIG['chromadb_path'])
 
         total_count = len(all_collections)
@@ -97,28 +89,28 @@ def initialize_server() -> None:
 
         AVAILABLE_COLLECTIONS = [c for c in all_collections if c['available']]
 
-        logger.info(f"\n{'='*60}")
-        logger.info("Collection Discovery Results")
-        logger.info(f"{'='*60}")
+        console_logger.info(f"\n{'='*60}")
+        console_logger.info("Collection Discovery Results")
+        console_logger.info(f"{'='*60}")
 
         for collection in all_collections:
             status = "✓ AVAILABLE" if collection['available'] else "✗ UNAVAILABLE"
-            logger.info(f"\n{status}: {collection['name']}")
-            logger.info(f"  Description: {collection['description']}")
-            logger.info(f"  Chunks: {collection['chunk_count']}")
+            console_logger.info(f"\n{status}: {collection['name']}")
+            console_logger.info(f"  Description: {collection['description']}")
+            console_logger.info(f"  Chunks: {collection['chunk_count']}")
 
             if collection['available']:
-                logger.info(f"  Provider: {collection['provider_type']}")
-                logger.info(f"  Embedding Model: {collection['embedding_model']}")
-                logger.info(f"  LLM Model: {collection['llm_model']}")
+                console_logger.info(f"  Provider: {collection['provider_type']}")
+                console_logger.info(f"  Embedding Model: {collection['embedding_model']}")
+                console_logger.info(f"  LLM Model: {collection['llm_model']}")
                 if collection.get('embedding_dimension'):
-                    logger.info(f"  Embedding Dimension: {collection['embedding_dimension']}")
+                    console_logger.info(f"  Embedding Dimension: {collection['embedding_dimension']}")
             else:
-                logger.info(f"  Reason: {collection['unavailable_reason']}")
+                console_logger.info(f"  Reason: {collection['unavailable_reason']}")
 
-        logger.info(f"\n{'='*60}")
-        logger.info(f"Summary: {total_count} total, {available_count} available, {unavailable_count} unavailable")
-        logger.info(f"{'='*60}\n")
+        console_logger.info(f"\n{'='*60}")
+        console_logger.info(f"Summary: {total_count} total, {available_count} available, {unavailable_count} unavailable")
+        console_logger.info(f"{'='*60}\n")
 
         if available_count == 0:
             error_msg = (
@@ -130,19 +122,16 @@ def initialize_server() -> None:
                 "4. Verify provider configurations in your collection metadata\n\n"
                 "Run the pipeline with --verbose to create collections with proper metadata."
             )
-            logger.error(error_msg)
-            print(f"\n✗ {error_msg}\n", file=sys.stderr)
+            console_logger.error(error_msg)
             sys.exit(1)
 
-        logger.info("Server is ready to accept requests\n")
+        console_logger.info("Server is ready to accept requests\n")
 
     except CollectionDiscoveryError as e:
-        logger.error(f"Collection discovery failed: {e}")
-        print(f"\n✗ Collection Discovery Error:\n\n{e}\n", file=sys.stderr)
+        console_logger.error(f"Collection Discovery Error:\n\n{e}")
         sys.exit(1)
     except Exception as e:
-        logger.error(f"Unexpected error during collection discovery: {e}")
-        print(f"\n✗ Collection Discovery Error:\n{e}\n", file=sys.stderr)
+        console_logger.error(f"Collection Discovery Error:\n{e}")
         sys.exit(1)
 
 
@@ -152,16 +141,16 @@ def initialize_server() -> None:
 )
 def list_knowledge_bases() -> List[Dict[str, Any]]:
     try:
-        logger.info("Tool invoked: list_knowledge_bases")
+        console_logger.info("Tool invoked: list_knowledge_bases")
 
-        logger.info(f"✓ Returning {len(AVAILABLE_COLLECTIONS)} available collection(s)")
+        console_logger.success(f"✓ Returning {len(AVAILABLE_COLLECTIONS)} available collection(s)")
         for col in AVAILABLE_COLLECTIONS:
-            logger.info(f"  - {col['name']}: {col['chunk_count']} chunks")
+            console_logger.info(f"  - {col['name']}: {col['chunk_count']} chunks")
 
         return AVAILABLE_COLLECTIONS
 
     except Exception as e:
-        logger.error(f"Unexpected error in list_knowledge_bases: {e}")
+        console_logger.error(f"Unexpected error in list_knowledge_bases: {e}", print_to_stderr=False)
         raise CollectionDiscoveryError(f"Failed to list knowledge bases: {e}")
 
 
@@ -183,11 +172,11 @@ def search_knowledge_base(
         if max_results is None:
             max_results = CONFIG['default_max_results']
 
-        logger.info(f"Tool invoked: search_knowledge_base")
-        logger.info(f"  Query: {query[:80]}{'...' if len(query) > 80 else ''}")
-        logger.info(f"  Collection: {collection_name}")
-        logger.info(f"  Context mode: {context_mode}")
-        logger.info(f"  Max results: {max_results}")
+        console_logger.info(f"Tool invoked: search_knowledge_base")
+        console_logger.info(f"  Query: {query[:80]}{'...' if len(query) > 80 else ''}")
+        console_logger.info(f"  Collection: {collection_name}")
+        console_logger.info(f"  Context mode: {context_mode}")
+        console_logger.info(f"  Max results: {max_results}")
 
         # Look up provider for target collection
         if collection_name not in PROVIDER_MAP:
@@ -210,42 +199,42 @@ def search_knowledge_base(
             max_results=max_results
         )
 
-        logger.info(f"✓ Search completed: {len(results)} result(s)")
+        console_logger.success(f"✓ Search completed: {len(results)} result(s)")
         for i, result in enumerate(results):
-            logger.info(f"  {i+1}. {result['noteTitle']} (score: {result['similarityScore']:.3f})")
+            console_logger.info(f"  {i+1}. {result['noteTitle']} (score: {result['similarityScore']:.3f})")
 
         return results
 
     except CollectionNotFoundError as e:
-        logger.error(f"Collection not found: {e}")
+        console_logger.error(f"Collection not found: {e}", print_to_stderr=False)
         raise
     except SearchError as e:
-        logger.error(f"Search error: {e}")
+        console_logger.error(f"Search error: {e}", print_to_stderr=False)
         raise
     except Exception as e:
-        logger.error(f"Unexpected error in search_knowledge_base: {e}")
+        console_logger.error(f"Unexpected error in search_knowledge_base: {e}", print_to_stderr=False)
         raise SearchError(f"Search failed: {e}")
 
 
 def main():
-    logger.info("=" * 60)
-    logger.info("Multi-Collection MCP Server for Markdown Notes")
-    logger.info("=" * 60)
+    console_logger.info("=" * 60)
+    console_logger.info("Multi-Collection MCP Server for Markdown Notes")
+    console_logger.info("=" * 60)
 
     # Initialize server (load config and validate prerequisites)
     initialize_server()
 
     # Run FastMCP server in stdio mode
-    logger.info("Starting FastMCP server in stdio mode...")
-    logger.info("Waiting for MCP protocol requests...\n")
+    console_logger.info("Starting FastMCP server in stdio mode...")
+    console_logger.info("Waiting for MCP protocol requests...\n")
 
     try:
         mcp.run()
     except KeyboardInterrupt:
-        logger.info("\n\nServer shutting down (keyboard interrupt)")
+        console_logger.info("\n\nServer shutting down (keyboard interrupt)")
         sys.exit(0)
     except Exception as e:
-        logger.error(f"Server error: {e}")
+        console_logger.error(f"Server error: {e}")
         sys.exit(1)
 
 

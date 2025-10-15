@@ -14,7 +14,10 @@
       "Read(//Users/michele/my-code/classic-books-markdown/**)",
       "Bash(python3:*)",
       "Bash(chmod:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

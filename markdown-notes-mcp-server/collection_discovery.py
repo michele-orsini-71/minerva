@@ -8,12 +8,17 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "markdown-notes-cag-data-c
 try:
     import chromadb
 except ImportError:
+    # Use print here as ConsoleLogger isn't available yet during import
     print("Error: chromadb library not installed. Run: pip install chromadb", file=sys.stderr)
     sys.exit(1)
 
 from storage import initialize_chromadb_client, ChromaDBConnectionError
 from ai_config import AIProviderConfig, APIKeyMissingError
 from ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
+from console_logger import get_logger
+
+# Initialize console logger (simple mode for CLI usage)
+console_logger = get_logger(__name__, simple=True)
 
 
 class CollectionDiscoveryError(Exception):
@@ -169,7 +174,7 @@ if __name__ == "__main__":
     import json
 
     if len(sys.argv) < 2:
-        print("Usage: python collection_discovery.py <chromadb_path>", file=sys.stderr)
+        console_logger.error("Usage: python collection_discovery.py <chromadb_path>")
         sys.exit(1)
 
     chromadb_path = sys.argv[1]
@@ -177,9 +182,9 @@ if __name__ == "__main__":
     try:
         collections = list_collections(chromadb_path)
 
-        print(f"Found {len(collections)} collection(s):\n")
-        print(json.dumps(collections, indent=2))
+        console_logger.info(f"Found {len(collections)} collection(s):\n")
+        console_logger.info(json.dumps(collections, indent=2))
 
     except CollectionDiscoveryError as error:
-        print(f"Collection discovery error:\n{error}", file=sys.stderr)
+        console_logger.error(f"Collection discovery error:\n{error}")
         sys.exit(1)
