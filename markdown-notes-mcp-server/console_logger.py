@@ -13,7 +13,6 @@ Design rationale:
 
 import sys
 import logging
-from typing import Optional
 
 
 class ConsoleLogger:
@@ -60,6 +59,10 @@ class ConsoleLogger:
 
             python_logger.addHandler(handler)
 
+            # Disable propagation to root logger to avoid duplicate output
+            # (FastMCP adds a RichHandler to the root logger)
+            python_logger.propagate = False
+
         # Wrap in ConsoleLogger and return
         return ConsoleLogger(python_logger)
 
@@ -81,6 +84,10 @@ class ConsoleLogger:
             handler.setFormatter(formatter)
 
             python_logger.addHandler(handler)
+
+            # Disable propagation to root logger to avoid duplicate output
+            # (FastMCP adds a RichHandler to the root logger)
+            python_logger.propagate = False
 
         return ConsoleLogger(python_logger)
 

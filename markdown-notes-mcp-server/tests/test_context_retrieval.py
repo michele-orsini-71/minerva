@@ -361,14 +361,15 @@ class TestApplyContextMode:
         assert enhanced[0]['totalChunks'] == 1
 
     def test_apply_enhanced_mode(self):
-        """Test applying enhanced mode."""
+        """Test applying enhanced mode (now uses batch processing)."""
         mock_collection = Mock()
 
-        # Mock get() for enhanced retrieval
+        # Mock get() for batch enhanced retrieval
+        # Batch processing requires noteId in metadata
         mock_collection.get.return_value = {
             'ids': ['chunk0'],
             'documents': ['Enhanced content'],
-            'metadatas': [{'chunkIndex': 0}]
+            'metadatas': [{'noteId': 'note1', 'chunkIndex': 0}]
         }
 
         results = [{'noteId': 'note1', 'chunkIndex': 0, 'content': 'Content'}]
@@ -376,8 +377,9 @@ class TestApplyContextMode:
         enhanced = apply_context_mode(mock_collection, results, "enhanced")
 
         assert len(enhanced) == 1
-        # Should have called get_enhanced_content which adds markers
+        # Should have called batch_get_enhanced_content which adds markers
         assert '[MATCH START]' in enhanced[0]['content']
+        assert 'Enhanced content' in enhanced[0]['content']
 
     def test_apply_full_note_mode(self):
         """Test applying full_note mode."""
