@@ -127,6 +127,7 @@ def search_knowledge_base(
         if results and results['ids'] and len(results['ids']) > 0:
             for i in range(len(results['ids'][0])):
                 result = {
+                    'chunkId': results['ids'][0][i],  # Include chunk ID for Strategy 4
                     'noteTitle': results['metadatas'][0][i].get('title', 'Unknown'),
                     'noteId': results['metadatas'][0][i].get('noteId', 'unknown'),
                     'chunkIndex': results['metadatas'][0][i].get('chunkIndex', 0),

@@ -270,13 +270,42 @@ def get_or_create_collection(
         return create_collection(client, collection_name, description, embedding_metadata)
 
 
-def prepare_chunk_batch_data(batch):
-    """Prepare a batch of chunks for ChromaDB insertion."""
+def compute_adjacent_chunk_ids(chunks_with_embeddings: ChunkWithEmbeddingList) -> Dict[str, Dict[str, Optional[str]]]:
+    # Group chunks by noteId
+    chunks_by_note: Dict[str, List[ChunkWithEmbedding]] = {}
+    for chunk in chunks_with_embeddings:
+        note_id = chunk.noteId
+        if note_id not in chunks_by_note:
+            chunks_by_note[note_id] = []
+        chunks_by_note[note_id].append(chunk)
+
+    # Sort each note's chunks by chunkIndex
+    for note_id in chunks_by_note:
+        chunks_by_note[note_id].sort(key=lambda c: c.chunkIndex)
+
+    # Compute adjacent IDs for each chunk
+    adjacent_ids: Dict[str, Dict[str, Optional[str]]] = {}
+
+    for note_id, note_chunks in chunks_by_note.items():
+        for i, chunk in enumerate(note_chunks):
+            adjacent_ids[chunk.id] = {
+                'prev2': note_chunks[i-2].id if i >= 2 else None,
+                'prev1': note_chunks[i-1].id if i >= 1 else None,
+                'next1': note_chunks[i+1].id if i < len(note_chunks) - 1 else None,
+                'next2': note_chunks[i+2].id if i < len(note_chunks) - 2 else None
+            }
+
+    return adjacent_ids
+
+
+def prepare_chunk_batch_data(batch, adjacent_ids_map: Optional[Dict[str, Dict[str, Optional[str]]]] = None):
     ids = [chunk.id for chunk in batch]
     documents = [chunk.content for chunk in batch]
     embeddings = [chunk.embedding for chunk in batch]
-    metadatas = [
-        {
+
+    metadatas = []
+    for chunk in batch:
+        metadata = {
             'noteId': chunk.noteId,
             'title': chunk.title,
             'modificationDate': chunk.modificationDate,
@@ -284,15 +313,27 @@ def prepare_chunk_batch_data(batch):
             'size': chunk.size,
             'chunkIndex': chunk.chunkIndex
         }
-        for chunk in batch
-    ]
+
+        # Add adjacent chunk IDs as a delimited string (schema-flexible for future extensions)
+        # Format: "prev2:prev1:next1:next2" where None becomes empty string
+        if adjacent_ids_map and chunk.id in adjacent_ids_map:
+            adjacent_ids = adjacent_ids_map[chunk.id]
+            adjacent_ids_str = ':'.join([
+                adjacent_ids.get('prev2') or '',
+                adjacent_ids.get('prev1') or '',
+                adjacent_ids.get('next1') or '',
+                adjacent_ids.get('next2') or ''
+            ])
+            metadata['adjacent_chunk_ids'] = adjacent_ids_str
+
+        metadatas.append(metadata)
+
     return ids, documents, embeddings, metadatas
 
 
-def insert_batch_to_collection(collection, batch, batch_num, stats):
-    """Insert a single batch of chunks into ChromaDB collection."""
+def insert_batch_to_collection(collection, batch, batch_num, stats, adjacent_ids_map=None):
     try:
-        ids, documents, embeddings, metadatas = prepare_chunk_batch_data(batch)
+        ids, documents, embeddings, metadatas = prepare_chunk_batch_data(batch, adjacent_ids_map)
 
         collection.add(
             ids=ids,
@@ -337,6 +378,11 @@ def insert_chunks(
 
     print(f"   Storing {len(chunks_with_embeddings)} chunks in ChromaDB...")
 
+    # Pre-compute adjacent chunk IDs for all chunks (enables fast context retrieval)
+    print(f"   Computing adjacent chunk IDs for context retrieval...")
+    adjacent_ids_map = compute_adjacent_chunk_ids(chunks_with_embeddings)
+    print(f"   ✓ Computed adjacency relationships for {len(adjacent_ids_map)} chunks")
+
     stats = {
         "total_chunks": len(chunks_with_embeddings),
         "batches": 0,
@@ -351,8 +397,8 @@ def insert_chunks(
             batch = chunks_with_embeddings[i:i + batch_size]
             batch_num = stats["batches"] + 1
 
-            # Insert batch and update stats
-            insert_batch_to_collection(collection, batch, batch_num, stats)
+            # Insert batch with adjacent IDs and update stats
+            insert_batch_to_collection(collection, batch, batch_num, stats, adjacent_ids_map)
 
             # Progress callback
             if progress_callback:

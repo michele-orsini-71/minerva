@@ -89,6 +89,163 @@ def get_enhanced_content(
         return get_chunk_only_content(collection, result)
 
 
+def batch_get_enhanced_content_with_ids(
+    collection: chromadb.Collection,
+    results: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    if not results:
+        return results
+
+    try:
+        start_time = time.time()
+
+        # Step 1: Collect all chunk IDs we need to fetch (matched + adjacent)
+        ids_to_fetch = set()
+        result_map = {}  # Map matched chunk ID to result
+
+        for result in results:
+            matched_chunk_id = result.get('chunkId')
+            if not matched_chunk_id:
+                # If we don't have chunk ID in result, we'll need to fall back
+                console_logger.warning("Result missing chunkId field. Falling back to metadata query.")
+                return batch_get_enhanced_content(collection, results)
+
+            ids_to_fetch.add(matched_chunk_id)
+            result_map[matched_chunk_id] = result
+
+        # Step 2: Fetch matched chunks to get their adjacentChunkIds metadata
+        console_logger.info(f"  → Fetching {len(ids_to_fetch)} matched chunks...")
+        matched_chunks = collection.get(
+            ids=list(ids_to_fetch),
+            include=["documents", "metadatas"]
+        )
+
+        if not matched_chunks or not matched_chunks['ids']:
+            console_logger.warning("No matched chunks found. Falling back to chunk_only mode.")
+            return [get_chunk_only_content(collection, r) for r in results]
+
+        # Step 3: Extract adjacent chunk IDs from metadata
+        all_ids_to_fetch = set(ids_to_fetch)  # Start with matched IDs
+        chunk_metadata_map = {}  # Map chunk_id -> metadata
+
+        for i, chunk_id in enumerate(matched_chunks['ids']):
+            if matched_chunks['metadatas'] and i < len(matched_chunks['metadatas']):
+                metadata = matched_chunks['metadatas'][i]
+                chunk_metadata_map[chunk_id] = metadata
+
+                # Add adjacent IDs if available (parse from delimited string)
+                adjacent_ids_str = metadata.get('adjacent_chunk_ids') if isinstance(metadata, dict) else None
+                if adjacent_ids_str and isinstance(adjacent_ids_str, str):
+                    # Parse format: "prev2:prev1:next1:next2" where empty string means None
+                    parts = adjacent_ids_str.split(':')
+                    if len(parts) == 4:
+                        for adj_id in parts:
+                            if adj_id:  # Skip empty strings
+                                all_ids_to_fetch.add(adj_id)
+
+        # If no adjacent IDs found in any chunk, fall back to metadata query
+        if len(all_ids_to_fetch) == len(ids_to_fetch):
+            console_logger.info("  → No adjacent_chunk_ids found in metadata. Falling back to metadata query.")
+            return batch_get_enhanced_content(collection, results)
+
+        # Step 4: Fetch all chunks (matched + adjacent) in one query
+        console_logger.info(f"  → Fetching {len(all_ids_to_fetch)} chunks (matched + adjacent)...")
+        all_chunks = collection.get(
+            ids=list(all_ids_to_fetch),
+            include=["documents", "metadatas"]
+        )
+
+        query_time = time.time() - start_time
+        console_logger.info(f"  → ID-based query completed in {query_time*1000:.1f}ms ({len(results)} results)")
+
+        if not all_chunks or not all_chunks['ids']:
+            console_logger.warning("Failed to fetch chunks by ID. Falling back to chunk_only mode.")
+            return [get_chunk_only_content(collection, r) for r in results]
+
+        # Step 5: Build lookup map for all chunks
+        chunks_by_id = {}
+        for i, chunk_id in enumerate(all_chunks['ids']):
+            if all_chunks['documents'] and all_chunks['metadatas']:
+                metadata = all_chunks['metadatas'][i]
+                chunks_by_id[chunk_id] = {
+                    'content': all_chunks['documents'][i],
+                    'chunkIndex': metadata.get('chunkIndex', 0) if metadata else 0
+                }
+
+        # Step 6: Build enhanced content for each result
+        enhanced_results = []
+
+        for result in results:
+            matched_chunk_id = result.get('chunkId')
+            matched_metadata = chunk_metadata_map.get(matched_chunk_id)
+
+            if not matched_metadata or 'adjacent_chunk_ids' not in matched_metadata:
+                # Fall back to chunk_only for this specific result
+                enhanced_results.append(get_chunk_only_content(collection, result))
+                continue
+
+            # Parse adjacent IDs from delimited string: "prev2:prev1:next1:next2"
+            adjacent_ids_str = matched_metadata['adjacent_chunk_ids']
+            parts = adjacent_ids_str.split(':')
+
+            if len(parts) != 4:
+                # Invalid format, fall back to chunk_only
+                enhanced_results.append(get_chunk_only_content(collection, result))
+                continue
+
+            # Collect chunks in order: prev2, prev1, matched, next1, next2
+            ordered_chunk_ids = [
+                parts[0] if parts[0] else None,  # prev2
+                parts[1] if parts[1] else None,  # prev1
+                matched_chunk_id,
+                parts[2] if parts[2] else None,  # next1
+                parts[3] if parts[3] else None   # next2
+            ]
+
+            # Filter out None values and fetch chunk data
+            chunks_in_order = []
+            for chunk_id in ordered_chunk_ids:
+                if chunk_id and chunk_id in chunks_by_id:
+                    chunk_data = chunks_by_id[chunk_id]
+                    chunks_in_order.append({
+                        'id': chunk_id,
+                        'content': chunk_data['content'],
+                        'index': chunk_data['chunkIndex']
+                    })
+
+            if not chunks_in_order:
+                enhanced_results.append(get_chunk_only_content(collection, result))
+                continue
+
+            # Build content with markers
+            content_parts = []
+
+            for chunk in chunks_in_order:
+                if chunk['id'] == matched_chunk_id:
+                    content_parts.append("[MATCH START]")
+                    content_parts.append(chunk['content'])
+                    content_parts.append("[MATCH END]")
+                else:
+                    content_parts.append(chunk['content'])
+
+            result['content'] = "\n\n".join(content_parts)
+            result['totalChunks'] = len(chunks_in_order)
+            enhanced_results.append(result)
+
+        total_time = time.time() - start_time
+        console_logger.info(f"  → Total ID-based processing: {total_time*1000:.1f}ms")
+
+        if total_time > 2.0:
+            console_logger.warning(f"ID-based context retrieval took {total_time:.2f}s - performance may need optimization")
+
+        return enhanced_results
+
+    except Exception as error:
+        # Fallback to metadata-based batch processing
+        console_logger.warning(f"ID-based enhanced context retrieval failed: {error}. Falling back to metadata query.")
+        return batch_get_enhanced_content(collection, results)
+
+
 def batch_get_enhanced_content(
     collection: chromadb.Collection,
     results: List[Dict[str, Any]]
@@ -271,12 +428,14 @@ def apply_context_mode(
     results: List[Dict[str, Any]],
     context_mode: str
 ) -> List[Dict[str, Any]]:
+
     if not results:
         return results
 
-    # Use batch processing for enhanced mode (significant performance improvement)
+    # Use optimized ID-based batch processing for enhanced mode
     if context_mode == "enhanced":
-        return batch_get_enhanced_content(collection, results)
+        # Try Strategy 4 (ID-based) first - it will auto-fallback to Strategy 1 if needed
+        return batch_get_enhanced_content_with_ids(collection, results)
 
     # For other modes, process individually
     enhanced_results = []
