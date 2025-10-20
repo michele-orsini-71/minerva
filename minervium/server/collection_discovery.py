@@ -1,21 +1,20 @@
 import sys
 from typing import List, Dict, Any, Optional, Tuple
-from pathlib import Path
+
+from minervium.common.logger import get_logger
+
+# Initialize console logger (simple mode for CLI usage) before optional imports
+console_logger = get_logger(__name__, simple=True)
 
 try:
     import chromadb
-except ImportError:
-    # Use print here as ConsoleLogger isn't available yet during import
-    print("Error: chromadb library not installed. Run: pip install chromadb", file=sys.stderr)
-    sys.exit(1)
+except ImportError as error:
+    console_logger.error("chromadb library not installed. Run: pip install chromadb")
+    raise SystemExit(1) from error
 
 from minervium.indexing.storage import initialize_chromadb_client, ChromaDBConnectionError
 from minervium.common.ai_config import AIProviderConfig, APIKeyMissingError
 from minervium.common.ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
-from minervium.common.logger import get_logger
-
-# Initialize console logger (simple mode for CLI usage)
-console_logger = get_logger(__name__, simple=True)
 
 
 class CollectionDiscoveryError(Exception):

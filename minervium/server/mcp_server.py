@@ -19,13 +19,17 @@ Architecture:
 import sys
 from typing import List, Dict, Any, Optional
 
+from minervium.common.logger import get_logger
+
+# Initialize console logger before optional dependencies are imported
+console_logger = get_logger(__name__)
+
 # Import FastMCP framework
 try:
     from mcp.server.fastmcp import FastMCP
-except ImportError:
-    # Use print here as ConsoleLogger isn't available yet
-    print("Error: FastMCP not installed. Run: pip install mcp", file=sys.stderr)
-    sys.exit(1)
+except ImportError as error:
+    console_logger.error("FastMCP not installed. Run: pip install mcp")
+    raise SystemExit(1) from error
 
 # Import configuration and validation modules
 from minervium.common.config import load_config, ConfigError, ConfigValidationError
@@ -37,10 +41,6 @@ from minervium.server.search_tools import (
     CollectionNotFoundError
 )
 from minervium.common.ai_provider import AIProvider
-from minervium.common.logger import get_logger
-
-# Initialize console logger
-console_logger = get_logger(__name__)
 
 # Initialize FastMCP server
 mcp = FastMCP("markdown-notes-mcp-server")
