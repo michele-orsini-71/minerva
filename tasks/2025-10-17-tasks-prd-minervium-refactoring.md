@@ -130,9 +130,9 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
   - [x] 4.5 Reorganize Zim extractor: create `extractors/zim-extractor/zim_extractor/` package structure
   - [x] 4.6 Migrate Zim extractor files (zim_parser.py → parser.py, zim_cli.py → cli.py) and remove any Minervium imports
   - [x] 4.7 Create `extractors/zim-extractor/setup.py` with console_scripts entry point: `zim-extractor`
-  - [ ] 4.8 Reorganize Markdown Books extractor: create `extractors/markdown-books-extractor/markdown_books_extractor/` package structure
-  - [ ] 4.9 Migrate Books extractor files (book_parser.py → parser.py, create cli.py) and remove any Minervium imports
-  - [ ] 4.10 Create `extractors/markdown-books-extractor/setup.py` with console_scripts entry point: `markdown-books-extractor`
+  - [x] 4.8 Reorganize Markdown Books extractor: create `extractors/markdown-books-extractor/markdown_books_extractor/` package structure
+  - [x] 4.9 Migrate Books extractor files (book_parser.py → parser.py, create cli.py) and remove any Minervium imports
+  - [x] 4.10 Create `extractors/markdown-books-extractor/setup.py` with console_scripts entry point: `markdown-books-extractor`
   - [ ] 4.11 Verify all extractors support -o/--output flag for file output and stdout by default
   - [ ] 4.12 Verify all extractors support -v/--verbose flag for progress output
   - [ ] 4.13 Test each extractor CLI independently (install with `pip install -e` and run command)
