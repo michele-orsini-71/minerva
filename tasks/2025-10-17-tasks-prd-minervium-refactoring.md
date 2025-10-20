@@ -100,16 +100,16 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
   - [x] 1.8 Test for circular import dependencies by importing all modules
   - [x] 1.9 Verify all migrated modules can be imported without errors
 
-- [ ] 2.0 CLI Implementation - Build argparse-based CLI with all four commands (index, serve, peek, validate)
+- [x] 2.0 CLI Implementation - Build argparse-based CLI with all four commands (index, serve, peek, validate)
   - [x] 2.1 Create `minervium/cli.py` with argparse setup and subparser structure
   - [x] 2.2 Implement `minervium/commands/index.py` with --config, --verbose, --dry-run flags
   - [x] 2.3 Implement `minervium/commands/serve.py` with --config flag for MCP server startup
   - [x] 2.4 Implement `minervium/commands/peek.py` with collection_name positional arg and --chromadb, --format flags
   - [x] 2.5 Implement `minervium/commands/validate.py` as wrapper around index command with dry_run=True
-  - [ ] 2.6 Create `minervium/__main__.py` to enable `python -m minervium` execution
-  - [ ] 2.7 Create root `setup.py` with console_scripts entry point: `minervium = minervium.cli:main`
-  - [ ] 2.8 Test all four CLI commands work end-to-end with sample data
-  - [ ] 2.9 Verify `--help` text is clear and accurate for all commands and flags
+  - [x] 2.6 Create `minervium/__main__.py` to enable `python -m minervium` execution
+  - [x] 2.7 Create root `setup.py` with console_scripts entry point: `minervium = minervium.cli:main`
+  - [x] 2.8 Test all four CLI commands work end-to-end with sample data
+  - [x] 2.9 Verify `--help` text is clear and accurate for all commands and flags
 
 - [ ] 3.0 Logging System Migration - Migrate and standardize logging across the entire codebase
   - [ ] 3.1 Migrate `markdown-notes-mcp-server/console_logger.py` to `minervium/common/logger.py`

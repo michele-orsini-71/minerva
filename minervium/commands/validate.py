@@ -6,6 +6,7 @@ import json
 import sys
 from argparse import Namespace
 from pathlib import Path
+from typing import Any
 
 from minervium.common.schemas import validate_notes_array, get_schema_summary
 
@@ -16,7 +17,7 @@ def print_banner() -> None:
     print("=" * 60)
 
 
-def load_json_file(json_path: Path) -> any:
+def load_json_file(json_path: Path) -> Any:
     """Load and parse JSON file."""
     try:
         with open(json_path, 'r', encoding='utf-8') as f:
