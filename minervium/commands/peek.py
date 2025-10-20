@@ -7,7 +7,10 @@ import sys
 from argparse import Namespace
 from typing import Dict, Any, List
 
+from minervium.common.logger import get_logger
 from minervium.indexing.storage import initialize_chromadb_client, ChromaDBConnectionError
+
+logger = get_logger(__name__, simple=True, mode="cli")
 
 
 def get_collection_info(collection) -> Dict[str, Any]:
@@ -153,20 +156,21 @@ def run_peek(args: Namespace) -> int:
         output_format = args.format
         collection_name = args.collection_name
 
-        print(f"Connecting to ChromaDB at: {chromadb_path}\n")
+        logger.info(f"Connecting to ChromaDB at: {chromadb_path}")
+        logger.info("")
         client = initialize_chromadb_client(chromadb_path)
 
         # Check if collection exists
         existing_collections = [c.name for c in client.list_collections()]
         if collection_name not in existing_collections:
-            print(f"✗ Collection '{collection_name}' not found", file=sys.stderr)
+            logger.error(f"Collection '{collection_name}' not found")
             if existing_collections:
-                print(f"\nAvailable collections:", file=sys.stderr)
+                logger.error("Available collections:", print_to_stderr=False)
                 for name in existing_collections:
-                    print(f"  • {name}", file=sys.stderr)
+                    logger.error(f"  • {name}", print_to_stderr=False)
             else:
-                print(f"\nNo collections found in ChromaDB", file=sys.stderr)
-                print(f"   Suggestion: Use 'minervium index' to create collections", file=sys.stderr)
+                logger.error("No collections found in ChromaDB", print_to_stderr=False)
+                logger.error("   Suggestion: Use 'minervium index' to create collections", print_to_stderr=False)
             return 1
 
         # Get the collection
@@ -177,20 +181,20 @@ def run_peek(args: Namespace) -> int:
 
         # Format and print
         if output_format == "json":
-            print(format_collection_info_json(info))
+            logger.info(format_collection_info_json(info))
         else:
-            print(format_collection_info_text(info))
+            logger.info(format_collection_info_text(info))
 
         return 0
 
     except ChromaDBConnectionError as e:
-        print(f"\n✗ ChromaDB connection error: {e}", file=sys.stderr)
+        logger.error(f"ChromaDB connection error: {e}")
         return 1
 
     except KeyboardInterrupt:
-        print("\n\n✗ Operation cancelled by user", file=sys.stderr)
+        logger.error("Operation cancelled by user")
         return 130
 
     except Exception as e:
-        print(f"\n✗ Unexpected error: {e}", file=sys.stderr)
+        logger.error(f"Unexpected error: {e}")
         return 1

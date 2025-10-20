@@ -118,7 +118,7 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
   - [x] 3.4 Add semantic methods to logger: info(), success(), warning(), error()
   - [x] 3.5 Replace all `print()` statements in indexing modules with logger calls
   - [x] 3.6 Replace all `print()` statements in server modules with logger calls
-  - [ ] 3.7 Replace all `print()` statements in CLI commands with logger calls
+  - [x] 3.7 Replace all `print()` statements in CLI commands with logger calls
   - [ ] 3.8 Test logger output routing in different contexts (CLI vs MCP server)
   - [ ] 3.9 Verify no `print()` statements remain in codebase (grep search)
 

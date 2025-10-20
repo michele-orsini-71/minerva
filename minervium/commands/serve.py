@@ -4,7 +4,11 @@ Serve command - Start the MCP server for AI integration.
 
 import sys
 from argparse import Namespace
+
+from minervium.common.logger import get_logger
 from minervium.server.mcp_server import main as mcp_main
+
+logger = get_logger(__name__, simple=True, mode="cli")
 
 
 def run_serve(args: Namespace) -> int:
@@ -28,10 +32,9 @@ def run_serve(args: Namespace) -> int:
         return 0
 
     except KeyboardInterrupt:
-        # Graceful shutdown on Ctrl+C
-        print("\n\n✗ Server shutting down (keyboard interrupt)", file=sys.stderr)
+        logger.error("Server shutting down (keyboard interrupt)")
         return 130
 
     except Exception as e:
-        print(f"\n✗ Server error: {e}", file=sys.stderr)
+        logger.error(f"Server error: {e}")
         return 1

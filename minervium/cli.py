@@ -8,10 +8,14 @@ import argparse
 import sys
 from pathlib import Path
 
+from minervium.common.logger import get_logger
+
 from minervium.commands.index import run_index
 from minervium.commands.serve import run_serve
 from minervium.commands.peek import run_peek
 from minervium.commands.validate import run_validate
+
+logger = get_logger(__name__, simple=True, mode="cli")
 
 
 def create_parser():
@@ -216,11 +220,11 @@ def main():
             return 1
 
     except KeyboardInterrupt:
-        print("\n\nInterrupted by user", file=sys.stderr)
+        logger.error("Interrupted by user")
         return 130  # Standard exit code for SIGINT
 
     except Exception as e:
-        print(f"\nError: {e}", file=sys.stderr)
+        logger.error(f"Unexpected error: {e}")
         if '--verbose' in sys.argv:
             import traceback
             traceback.print_exc()

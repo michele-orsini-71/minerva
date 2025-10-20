@@ -19,51 +19,57 @@ from minervium.indexing.storage import (
     insert_chunks,
     StorageError
 )
+from minervium.common.logger import get_logger
+
+logger = get_logger(__name__, simple=True, mode="cli")
 
 
 def print_banner(is_dry_run: bool) -> None:
     """Print command banner."""
-    print("\nMinervium Index Command")
+    logger.info("")
+    logger.info("Minervium Index Command")
     if is_dry_run:
-        print("DRY-RUN MODE: Validation only, no data will be modified")
-    print("=" * 60)
+        logger.warning("DRY-RUN MODE: Validation only, no data will be modified")
+    logger.info("=" * 60)
 
 
 def load_and_print_config(config_path: str, verbose: bool) -> CollectionConfig:
     """Load configuration and optionally print details."""
-    print(f"\nLoading configuration from: {config_path}")
+    logger.info("")
+    logger.info(f"Loading configuration from: {config_path}")
 
     try:
         config = load_collection_config(str(config_path))
 
         if verbose:
-            print(f"   Collection name: {config.collection_name}")
-            print(f"   Description: {config.description[:80]}...")
-            print(f"   ChromaDB path: {config.chromadb_path}")
-            print(f"   JSON file: {config.json_file}")
-            print(f"   Chunk size: {config.chunk_size} characters")
-            print(f"   Force recreate: {config.force_recreate}")
-            print(f"   Skip AI validation: {config.skip_ai_validation}")
+            logger.info(f"   Collection name: {config.collection_name}")
+            logger.info(f"   Description: {config.description[:80]}...")
+            logger.info(f"   ChromaDB path: {config.chromadb_path}")
+            logger.info(f"   JSON file: {config.json_file}")
+            logger.info(f"   Chunk size: {config.chunk_size} characters")
+            logger.info(f"   Force recreate: {config.force_recreate}")
+            logger.info(f"   Skip AI validation: {config.skip_ai_validation}")
 
             if config.ai_provider:
                 provider_type = config.ai_provider.get('type', 'unknown')
                 embedding_model = config.ai_provider.get('embedding', {}).get('model', 'unknown')
                 llm_model = config.ai_provider.get('llm', {}).get('model', 'unknown')
-                print(f"   AI provider: {provider_type}")
-                print(f"   Embedding model: {embedding_model}")
-                print(f"   LLM model: {llm_model}")
+                logger.info(f"   AI provider: {provider_type}")
+                logger.info(f"   Embedding model: {embedding_model}")
+                logger.info(f"   LLM model: {llm_model}")
 
-        print("   ✓ Configuration loaded successfully\n")
+        logger.success("   ✓ Configuration loaded successfully")
+        logger.info("")
         return config
 
     except ConfigError as e:
-        print(f"\n✗ Configuration Error:\n{e}", file=sys.stderr)
+        logger.error(f"Configuration Error:\n{e}")
         sys.exit(1)
 
 
 def load_and_print_notes(config: CollectionConfig, verbose: bool) -> List[Dict[str, Any]]:
     """Load notes from JSON file and optionally print statistics."""
-    print("Loading notes from JSON file...")
+    logger.info("Loading notes from JSON file...")
 
     try:
         notes = load_json_notes(config.json_file)
@@ -71,23 +77,23 @@ def load_and_print_notes(config: CollectionConfig, verbose: bool) -> List[Dict[s
         if verbose:
             total_chars = sum(len(note['markdown']) for note in notes)
             avg_chars = total_chars / len(notes) if notes else 0
-            print(f"   Loaded {len(notes)} notes")
-            print(f"   Total content: {total_chars:,} characters")
-            print(f"   Average note size: {avg_chars:.0f} characters")
+            logger.info(f"   Loaded {len(notes)} notes")
+            logger.info(f"   Total content: {total_chars:,} characters")
+            logger.info(f"   Average note size: {avg_chars:.0f} characters")
         else:
-            print(f"   ✓ Loaded {len(notes)} notes")
+            logger.success(f"   ✓ Loaded {len(notes)} notes")
 
-        print()
+        logger.info("")
         return notes
 
     except Exception as e:
-        print(f"\n✗ Error loading notes: {e}", file=sys.stderr)
+        logger.error(f"Error loading notes: {e}")
         sys.exit(1)
 
 
 def initialize_and_validate_provider(config: CollectionConfig, verbose: bool) -> AIProvider:
     """Initialize AI provider and check availability."""
-    print("Initializing AI provider...")
+    logger.info("Initializing AI provider...")
 
     try:
         provider = initialize_provider(config)
@@ -96,74 +102,78 @@ def initialize_and_validate_provider(config: CollectionConfig, verbose: bool) ->
         availability = provider.check_availability()
         if not availability['available']:
             error_msg = availability.get('error', 'Unknown error')
-            print(f"\n{'=' * 60}", file=sys.stderr)
-            print(f"PROVIDER UNAVAILABLE", file=sys.stderr)
-            print(f"{'=' * 60}", file=sys.stderr)
-            print(f"\nProvider: {provider.provider_type}", file=sys.stderr)
-            print(f"Model: {provider.embedding_model}", file=sys.stderr)
-            print(f"Error: {error_msg}", file=sys.stderr)
-            print(f"\nSuggestion: Check that the provider service is running", file=sys.stderr)
+            logger.error("", print_to_stderr=False)
+            logger.error("=" * 60, print_to_stderr=False)
+            logger.error("PROVIDER UNAVAILABLE", print_to_stderr=False)
+            logger.error("=" * 60, print_to_stderr=False)
+            logger.error("", print_to_stderr=False)
+            logger.error(f"Provider: {provider.provider_type}", print_to_stderr=False)
+            logger.error(f"Model: {provider.embedding_model}", print_to_stderr=False)
+            logger.error(f"Error: {error_msg}", print_to_stderr=False)
+            logger.error("", print_to_stderr=False)
+            logger.error("Suggestion: Check that the provider service is running", print_to_stderr=False)
             if provider.provider_type == 'ollama':
-                print(f"  $ ollama serve", file=sys.stderr)
-                print(f"  $ ollama pull {provider.embedding_model}", file=sys.stderr)
+                logger.error("  $ ollama serve", print_to_stderr=False)
+                logger.error(f"  $ ollama pull {provider.embedding_model}", print_to_stderr=False)
             sys.exit(1)
 
         # Print provider details
         dimension = availability.get('dimension', 'unknown')
-        print(f"   Provider: {provider.provider_type}")
-        print(f"   Embedding model: {provider.embedding_model}")
-        print(f"   LLM model: {provider.llm_model}")
-        print(f"   Embedding dimension: {dimension}")
-        print(f"   Status: ✓ Available")
+        logger.info(f"   Provider: {provider.provider_type}")
+        logger.info(f"   Embedding model: {provider.embedding_model}")
+        logger.info(f"   LLM model: {provider.llm_model}")
+        logger.info(f"   Embedding dimension: {dimension}")
+        logger.success("   Status: ✓ Available")
 
         # Validate description if not skipped
         if not config.skip_ai_validation:
             if verbose:
-                print("\n   Validating collection description with AI...")
+                logger.info("")
+                logger.info("   Validating collection description with AI...")
             validation_result = provider.validate_description(config.description)
             score = validation_result.get('score', 0)
             feedback = validation_result.get('feedback', 'No feedback available')
 
             if verbose:
-                print(f"   Description score: {score}/10")
-                print(f"   Feedback: {feedback}")
+                logger.info(f"   Description score: {score}/10")
+                logger.info(f"   Feedback: {feedback}")
 
             if score < 7:
-                print(f"   ⚠ Warning: Description score is below 7", file=sys.stderr)
+                logger.warning("   ⚠ Warning: Description score is below 7")
 
-        print()
+        logger.info("")
         return provider
 
     except AIProviderError as e:
-        print(f"\n✗ Provider initialization error: {e}", file=sys.stderr)
+        logger.error(f"Provider initialization error: {e}")
         sys.exit(1)
 
 
 def run_dry_run(config: CollectionConfig, notes: List[Dict[str, Any]], verbose: bool) -> None:
     """Run dry-run validation mode."""
-    print("Running dry-run validation...")
-    print()
+    logger.info("Running dry-run validation...")
+    logger.info("")
 
     # Validate provider (but don't generate embeddings)
     _ = initialize_and_validate_provider(config, verbose)
 
     # Create chunks to validate the chunking process
-    print("Creating semantic chunks (validation only)...")
+    logger.info("Creating semantic chunks (validation only)...")
     chunks = create_chunks_from_notes(notes, target_chars=config.chunk_size)
-    print(f"   ✓ Would create {len(chunks)} chunks from {len(notes)} notes")
-    print()
+    logger.success(f"   ✓ Would create {len(chunks)} chunks from {len(notes)} notes")
+    logger.info("")
 
     # Estimate what would happen
-    print("Dry-run summary:")
-    print(f"   Collection: {config.collection_name}")
-    print(f"   Notes to process: {len(notes)}")
-    print(f"   Chunks to create: {len(chunks)}")
-    print(f"   Embeddings to generate: {len(chunks)}")
-    print(f"   ChromaDB location: {config.chromadb_path}")
-    print(f"   Force recreate: {config.force_recreate}")
-    print()
-    print("✓ Dry-run validation completed successfully!")
-    print("   Run without --dry-run to perform actual indexing")
+    logger.info("Dry-run summary:")
+    logger.info(f"   Collection: {config.collection_name}")
+    logger.info(f"   Notes to process: {len(notes)}")
+    logger.info(f"   Chunks to create: {len(chunks)}")
+    logger.info(f"   Embeddings to generate: {len(chunks)}")
+    logger.info(f"   ChromaDB location: {config.chromadb_path}")
+    logger.info(f"   Force recreate: {config.force_recreate}")
+    logger.info("")
+    logger.success("✓ Dry-run validation completed successfully!")
+    logger.info("   Run without --dry-run to perform actual indexing")
 
 
 def run_full_indexing(
@@ -179,33 +189,33 @@ def run_full_indexing(
     embedding_metadata = provider.get_embedding_metadata()
 
     # Create chunks
-    print("Creating semantic chunks...")
+    logger.info("Creating semantic chunks...")
     chunks = create_chunks_from_notes(notes, target_chars=config.chunk_size)
-    print(f"   ✓ Created {len(chunks)} chunks from {len(notes)} notes")
-    print()
+    logger.success(f"   ✓ Created {len(chunks)} chunks from {len(notes)} notes")
+    logger.info("")
 
     # Generate embeddings
-    print("Generating embeddings...")
+    logger.info("Generating embeddings...")
     try:
         chunks_with_embeddings = generate_embeddings(provider, chunks)
-        print(f"   ✓ Generated {len(chunks_with_embeddings)} embeddings")
-        print()
+        logger.success(f"   ✓ Generated {len(chunks_with_embeddings)} embeddings")
+        logger.info("")
     except EmbeddingError as e:
-        print(f"\n✗ Embedding generation error: {e}", file=sys.stderr)
+        logger.error(f"Embedding generation error: {e}")
         sys.exit(1)
 
     # Initialize ChromaDB
-    print(f"Initializing ChromaDB at: {config.chromadb_path}")
+    logger.info(f"Initializing ChromaDB at: {config.chromadb_path}")
     try:
         client = initialize_chromadb_client(config.chromadb_path)
-        print(f"   ✓ ChromaDB client initialized")
-        print()
+        logger.success("   ✓ ChromaDB client initialized")
+        logger.info("")
     except Exception as e:
-        print(f"\n✗ ChromaDB initialization error: {e}", file=sys.stderr)
+        logger.error(f"ChromaDB initialization error: {e}")
         sys.exit(1)
 
     # Create or recreate collection
-    print(f"Preparing collection '{config.collection_name}'...")
+    logger.info(f"Preparing collection '{config.collection_name}'...")
     try:
         if config.force_recreate:
             collection = recreate_collection(
@@ -214,7 +224,7 @@ def run_full_indexing(
                 description=config.description,
                 embedding_metadata=embedding_metadata
             )
-            print(f"   ✓ Collection recreated")
+            logger.success("   ✓ Collection recreated")
         else:
             collection = create_collection(
                 client,
@@ -222,28 +232,28 @@ def run_full_indexing(
                 description=config.description,
                 embedding_metadata=embedding_metadata
             )
-            print(f"   ✓ Collection ready")
-        print()
+            logger.success("   ✓ Collection ready")
+        logger.info("")
     except StorageError as e:
-        print(f"\n✗ Collection creation error: {e}", file=sys.stderr)
+        logger.error(f"Collection creation error: {e}")
         sys.exit(1)
 
     # Insert chunks
-    print("Storing chunks in ChromaDB...")
+    logger.info("Storing chunks in ChromaDB...")
 
     def progress_callback(current, total):
         if verbose:
             percentage = (current / total * 100) if total > 0 else 0
-            print(f"   Progress: {current}/{total} chunks ({percentage:.1f}%)")
+            logger.info(f"   Progress: {current}/{total} chunks ({percentage:.1f}%)")
 
     try:
         stats = insert_chunks(collection, chunks_with_embeddings, progress_callback=progress_callback)
-        print(f"   ✓ Stored {stats['successful']} chunks")
+        logger.success(f"   ✓ Stored {stats['successful']} chunks")
         if stats['failed'] > 0:
-            print(f"   ⚠ Failed to store {stats['failed']} chunks", file=sys.stderr)
-        print()
+            logger.warning(f"   ⚠ Failed to store {stats['failed']} chunks")
+        logger.info("")
     except StorageError as e:
-        print(f"\n✗ Storage error: {e}", file=sys.stderr)
+        logger.error(f"Storage error: {e}")
         sys.exit(1)
 
     # Print final summary
@@ -260,24 +270,24 @@ def print_final_summary(
     processing_time: float
 ) -> None:
     """Print final indexing summary."""
-    print("=" * 60)
-    print("✓ Indexing completed successfully!")
-    print("=" * 60)
-    print(f"Collection: {config.collection_name}")
-    print(f"Description: {config.description[:60]}...")
-    print(f"Notes processed: {len(notes)}")
-    print(f"Chunks created: {len(chunks)}")
-    print(f"Embeddings generated: {len(chunks_with_embeddings)}")
-    print(f"Chunks stored: {stats['successful']}")
-    print(f"Processing time: {processing_time:.1f} seconds")
+    logger.info("=" * 60)
+    logger.success("✓ Indexing completed successfully!")
+    logger.info("=" * 60)
+    logger.info(f"Collection: {config.collection_name}")
+    logger.info(f"Description: {config.description[:60]}...")
+    logger.info(f"Notes processed: {len(notes)}")
+    logger.info(f"Chunks created: {len(chunks)}")
+    logger.info(f"Embeddings generated: {len(chunks_with_embeddings)}")
+    logger.info(f"Chunks stored: {stats['successful']}")
+    logger.info(f"Processing time: {processing_time:.1f} seconds")
 
     if len(chunks) > 0 and processing_time > 0:
-        print(f"Performance: {len(chunks) / processing_time:.1f} chunks/second")
+        logger.info(f"Performance: {len(chunks) / processing_time:.1f} chunks/second")
 
-    print()
-    print(f"Collection '{config.collection_name}' is ready for queries")
-    print(f"Database location: {config.chromadb_path}")
-    print()
+    logger.info("")
+    logger.info(f"Collection '{config.collection_name}' is ready for queries")
+    logger.info(f"Database location: {config.chromadb_path}")
+    logger.info("")
 
 
 def run_index(args: Namespace) -> int:
@@ -314,11 +324,11 @@ def run_index(args: Namespace) -> int:
         return 0
 
     except KeyboardInterrupt:
-        print("\n\n✗ Operation cancelled by user", file=sys.stderr)
+        logger.error("Operation cancelled by user")
         return 130
 
     except Exception as e:
-        print(f"\n✗ Unexpected error: {e}", file=sys.stderr)
+        logger.error(f"Unexpected error: {e}")
         if args.verbose:
             import traceback
             traceback.print_exc()
