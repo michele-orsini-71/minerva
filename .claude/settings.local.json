@@ -20,7 +20,9 @@
       "Bash(git push:*)",
       "Bash(bash -c:*)",
       "Read(//Users/michele/my-code/**)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(awk:*)"
     ],
     "deny": [],
     "ask": []
