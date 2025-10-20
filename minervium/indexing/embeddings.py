@@ -4,10 +4,10 @@ import sys
 
 import numpy as np
 
-from models import Chunk, ChunkWithEmbedding, ChunkList, ChunkWithEmbeddingList
-from ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
-from ai_config import AIProviderConfig
-from config_loader import CollectionConfig
+from minervium.common.models import Chunk, ChunkWithEmbedding, ChunkList, ChunkWithEmbeddingList
+from minervium.common.ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
+from minervium.common.ai_config import AIProviderConfig
+from minervium.common.config_loader import CollectionConfig
 
 DEFAULT_MAX_RETRIES = 3
 DEFAULT_RETRY_DELAY = 1.0

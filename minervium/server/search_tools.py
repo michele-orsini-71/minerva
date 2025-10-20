@@ -2,15 +2,12 @@ import sys
 from typing import List, Dict, Any
 from pathlib import Path
 
-# Add parent directory to path for imports from markdown-notes-cag-data-creator
-sys.path.insert(0, str(Path(__file__).parent.parent / "markdown-notes-cag-data-creator"))
-
 import chromadb
-from storage import initialize_chromadb_client, ChromaDBConnectionError
-from ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
+from minervium.indexing.storage import initialize_chromadb_client, ChromaDBConnectionError
+from minervium.common.ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
 
-from context_retrieval import apply_context_mode
-from console_logger import get_logger
+from minervium.server.context_retrieval import apply_context_mode
+from minervium.common.logger import get_logger
 
 # Initialize console logger for performance tracking
 console_logger = get_logger(__name__)

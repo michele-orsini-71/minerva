@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Tuple
 import chromadb
 import time
-from console_logger import get_logger
+from minervium.common.logger import get_logger
 
 # Initialize console logger
 console_logger = get_logger(__name__)

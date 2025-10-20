@@ -4,7 +4,7 @@ import re
 import sys
 from pathlib import Path
 from typing import Dict, Any, Optional
-from console_logger import get_logger
+from minervium.common.logger import get_logger
 
 # Initialize console logger (simple mode for CLI usage)
 console_logger = get_logger(__name__, simple=True)

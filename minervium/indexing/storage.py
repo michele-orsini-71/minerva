@@ -12,7 +12,7 @@ except ImportError:
     sys.exit(1)
 
 # Import our immutable models
-from models import ChunkWithEmbedding, ChunkWithEmbeddingList
+from minervium.common.models import ChunkWithEmbedding, ChunkWithEmbeddingList
 
 # Configuration constants
 DEFAULT_BATCH_SIZE = 64

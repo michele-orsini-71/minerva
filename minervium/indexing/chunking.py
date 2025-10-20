@@ -3,7 +3,7 @@ import hashlib
 from typing import List, Dict, Any
 
 # Import our immutable models
-from models import Chunk, ChunkList
+from minervium.common.models import Chunk, ChunkList
 
 try:
     from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter

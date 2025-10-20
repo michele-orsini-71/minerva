@@ -89,16 +89,16 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
 
 ## Tasks
 
-- [ ] 1.0 Core Package Reorganization - Create unified `minervium` package structure with all core RAG and MCP functionality
+- [x] 1.0 Core Package Reorganization - Create unified `minervium` package structure with all core RAG and MCP functionality
   - [x] 1.1 Create unified directory structure (`minervium/`, `minervium/commands/`, `minervium/indexing/`, `minervium/server/`, `minervium/common/`)
   - [x] 1.2 Create all `__init__.py` files for package initialization
   - [x] 1.3 Migrate RAG pipeline files from `markdown-notes-cag-data-creator/` to `minervium/indexing/` (chunk_creator.py → chunking.py, embedding.py → embeddings.py, storage.py, json_loader.py)
   - [x] 1.4 Migrate MCP server files from `markdown-notes-mcp-server/` to `minervium/server/` (server.py → mcp_server.py, search_tools.py, collection_discovery.py, context_retrieval.py, startup_validation.py)
   - [x] 1.5 Migrate shared components to `minervium/common/` (ai_provider.py, config files → config.py, console_logger.py → logger.py)
   - [x] 1.6 Create `minervium/common/schemas.py` with JSON schema definition and validation functions
-  - [ ] 1.7 Update all import paths throughout migrated files to use `minervium.*` namespace
-  - [ ] 1.8 Test for circular import dependencies by importing all modules
-  - [ ] 1.9 Verify all migrated modules can be imported without errors
+  - [x] 1.7 Update all import paths throughout migrated files to use `minervium.*` namespace
+  - [x] 1.8 Test for circular import dependencies by importing all modules
+  - [x] 1.9 Verify all migrated modules can be imported without errors
 
 - [ ] 2.0 CLI Implementation - Build argparse-based CLI with all four commands (index, serve, peek, validate)
   - [ ] 2.1 Create `minervium/cli.py` with argparse setup and subparser structure

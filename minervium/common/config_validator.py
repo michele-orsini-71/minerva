@@ -1,6 +1,6 @@
 import sys
-from config_loader import load_collection_config, ConfigError
-from validation import validate_collection_name, validate_description_regex_only, validate_description_with_ai, ValidationError
+from minervium.common.config_loader import load_collection_config, ConfigError
+from minervium.common.validation import validate_collection_name, validate_description_regex_only, validate_description_with_ai, ValidationError
 
 def load_and_validate_config(config_path: str, verbose: bool = False):
     # Step 1: Load configuration

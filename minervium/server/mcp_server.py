@@ -28,16 +28,16 @@ except ImportError:
     sys.exit(1)
 
 # Import configuration and validation modules
-from config import load_config, get_config_file_path, ConfigError, ConfigValidationError
-from startup_validation import validate_server_prerequisites
-from collection_discovery import discover_collections_with_providers, CollectionDiscoveryError
-from search_tools import (
+from minervium.common.config import load_config, get_config_file_path, ConfigError, ConfigValidationError
+from minervium.server.startup_validation import validate_server_prerequisites
+from minervium.server.collection_discovery import discover_collections_with_providers, CollectionDiscoveryError
+from minervium.server.search_tools import (
     search_knowledge_base as search_kb,
     SearchError,
     CollectionNotFoundError
 )
-from ai_provider import AIProvider
-from console_logger import get_logger
+from minervium.common.ai_provider import AIProvider
+from minervium.common.logger import get_logger
 
 # Initialize console logger
 console_logger = get_logger(__name__)

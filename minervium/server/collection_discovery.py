@@ -2,9 +2,6 @@ import sys
 from typing import List, Dict, Any, Optional, Tuple
 from pathlib import Path
 
-# Add parent directory to path to import from markdown-notes-cag-data-creator
-sys.path.insert(0, str(Path(__file__).parent.parent / "markdown-notes-cag-data-creator"))
-
 try:
     import chromadb
 except ImportError:
@@ -12,10 +9,10 @@ except ImportError:
     print("Error: chromadb library not installed. Run: pip install chromadb", file=sys.stderr)
     sys.exit(1)
 
-from storage import initialize_chromadb_client, ChromaDBConnectionError
-from ai_config import AIProviderConfig, APIKeyMissingError
-from ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
-from console_logger import get_logger
+from minervium.indexing.storage import initialize_chromadb_client, ChromaDBConnectionError
+from minervium.common.ai_config import AIProviderConfig, APIKeyMissingError
+from minervium.common.ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
+from minervium.common.logger import get_logger
 
 # Initialize console logger (simple mode for CLI usage)
 console_logger = get_logger(__name__, simple=True)

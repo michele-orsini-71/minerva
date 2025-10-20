@@ -4,9 +4,8 @@ from pathlib import Path
 from typing import Tuple, Optional, Dict, Any
 
 # Import ChromaDB client initialization from existing pipeline
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'markdown-notes-cag-data-creator'))
-from storage import initialize_chromadb_client
-from console_logger import get_logger
+from minervium.indexing.storage import initialize_chromadb_client
+from minervium.common.logger import get_logger
 
 # Initialize console logger (simple mode for CLI usage)
 console_logger = get_logger(__name__, simple=True)
