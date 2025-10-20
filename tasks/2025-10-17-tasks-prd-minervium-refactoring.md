@@ -123,10 +123,10 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
   - [x] 3.9 Verify no `print()` statements remain in codebase (grep search)
 
 - [ ] 4.0 Extractor Independence - Reorganize extractors into standalone packages with independent CLIs
-  - [ ] 4.1 Create `extractors/` directory structure with subdirectories for each extractor
-  - [ ] 4.2 Reorganize Bear extractor: create `extractors/bear-notes-extractor/bear_extractor/` package structure
-  - [ ] 4.3 Migrate Bear extractor files (bear_parser.py → parser.py, cli.py) and remove any Minervium imports
-  - [ ] 4.4 Create `extractors/bear-notes-extractor/setup.py` with console_scripts entry point: `bear-extractor`
+  - [x] 4.1 Create `extractors/` directory structure with subdirectories for each extractor
+  - [x] 4.2 Reorganize Bear extractor: create `extractors/bear-notes-extractor/bear_extractor/` package structure
+  - [x] 4.3 Migrate Bear extractor files (bear_parser.py → parser.py, cli.py) and remove any Minervium imports
+  - [x] 4.4 Create `extractors/bear-notes-extractor/setup.py` with console_scripts entry point: `bear-extractor`
   - [ ] 4.5 Reorganize Zim extractor: create `extractors/zim-extractor/zim_extractor/` package structure
   - [ ] 4.6 Migrate Zim extractor files (zim_parser.py → parser.py, zim_cli.py → cli.py) and remove any Minervium imports
   - [ ] 4.7 Create `extractors/zim-extractor/setup.py` with console_scripts entry point: `zim-extractor`
