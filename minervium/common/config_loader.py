@@ -4,12 +4,16 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
 
+from minervium.common.logger import get_logger
+
+logger = get_logger(__name__, simple=True)
+
 try:
     from jsonschema import validate, ValidationError as JsonSchemaValidationError
     from jsonschema import Draft7Validator
-except ImportError:
-    print("Error: jsonschema library not installed. Run: pip install jsonschema", file=sys.stderr)
-    sys.exit(1)
+except ImportError as error:
+    logger.error("jsonschema library not installed. Run: pip install jsonschema")
+    raise SystemExit(1) from error
 
 
 @dataclass(frozen=True)

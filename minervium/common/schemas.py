@@ -8,6 +8,10 @@ and provides validation utilities to ensure data integrity.
 from typing import List, Dict, Any, Tuple
 import sys
 
+from minervium.common.logger import get_logger
+
+logger = get_logger(__name__, simple=True, mode="cli")
+
 
 # JSON Schema definition for a single note
 NOTE_SCHEMA = {
@@ -152,13 +156,17 @@ def validate_notes_file(data: Any, filepath: str = "input") -> bool:
     is_valid, errors = validate_notes_array(data, strict=False)
 
     if not is_valid:
-        print(f"\n❌ Validation failed for {filepath}:", file=sys.stderr)
+        logger.error(f"Validation failed for {filepath}")
         for error in errors:
-            print(f"   • {error}", file=sys.stderr)
-        print(f"\nFound {len(errors)} error(s). Please fix them and try again.\n", file=sys.stderr)
+            logger.error(f"   • {error}", print_to_stderr=False)
+        logger.error("", print_to_stderr=False)
+        logger.error(
+            f"Found {len(errors)} error(s). Please fix them and try again.",
+            print_to_stderr=False
+        )
         return False
 
-    print(f"✅ Validation successful: {filepath} contains {len(data)} valid note(s)")
+    logger.success(f"✅ Validation successful: {filepath} contains {len(data)} valid note(s)")
     return True
 
 
@@ -215,4 +223,4 @@ Recommended timezone: UTC (suffix with 'Z')
 
 if __name__ == "__main__":
     # Print schema information when run directly
-    print(get_schema_summary())
+    logger.info(get_schema_summary())

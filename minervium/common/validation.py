@@ -2,12 +2,16 @@ import re
 import sys
 from typing import Dict, Any, Optional, Tuple
 
+from minervium.common.logger import get_logger
+
+logger = get_logger(__name__, simple=True, mode="cli")
+
 try:
     from ollama import chat as ollama_chat
     from ollama import list as ollama_list
-except ImportError:
-    print("Error: ollama library not installed. Run: pip install ollama", file=sys.stderr)
-    sys.exit(1)
+except ImportError as error:
+    logger.error("ollama library not installed. Run: pip install ollama")
+    raise SystemExit(1) from error
 
 
 class ValidationError(Exception):
@@ -312,12 +316,12 @@ def validate_description_regex_only(
     # Mandatory regex validation
     validate_description_regex(description, collection_name)
 
-    print(f"   Description validated (regex only)")
-    print(f"   NOTE: AI validation was skipped")
-    print(f"   Ensure your description is:")
-    print(f"     - Clear and specific (not vague)")
-    print(f"     - Actionable (explains when to use this collection)")
-    print(f"     - Distinguishable from other collections")
+    logger.info("   Description validated (regex only)")
+    logger.warning("   NOTE: AI validation was skipped")
+    logger.warning("   Ensure your description is:")
+    logger.warning("     - Clear and specific (not vague)")
+    logger.warning("     - Actionable (explains when to use this collection)")
+    logger.warning("     - Distinguishable from other collections")
 
 
 def validate_description_with_ai(
@@ -329,11 +333,11 @@ def validate_description_with_ai(
     validate_description_regex(description, collection_name)
 
     # Step 2: AI validation
-    print(f"Running AI validation for collection '{collection_name}'...")
+    logger.info(f"Running AI validation for collection '{collection_name}'...")
     score, reasoning, suggestions = validate_with_ai(description, collection_name, model)
 
-    print(f"   AI Score: {score}/10")
-    print(f"   Reasoning: {reasoning}")
+    logger.info(f"   AI Score: {score}/10")
+    logger.info(f"   Reasoning: {reasoning}")
 
     if score < AI_VALIDATION_THRESHOLD:
         error_msg = (
@@ -354,7 +358,7 @@ def validate_description_with_ai(
 
         raise ValidationError(error_msg)
 
-    print(f"   Description passed AI validation")
+    logger.success("   Description passed AI validation")
 
     return {
         'score': score,
@@ -384,87 +388,95 @@ def validate_description_hybrid(
 
 if __name__ == "__main__":
     # Simple tests when run directly
-    print("Testing validation.py module")
-    print("=" * 60)
+    logger.info("Testing validation.py module")
+    logger.info("=" * 60)
 
     # Test 1: Valid collection name
-    print("\n📋 Test 1: Valid collection names")
+    logger.info("")
+    logger.info("📋 Test 1: Valid collection names")
     try:
         validate_collection_name("bear_notes")
         validate_collection_name("project-docs")
         validate_collection_name("team123")
         validate_collection_name("research_papers_2024")
-        print("   All valid names passed")
+        logger.success("   All valid names passed")
     except ValidationError as error:
-        print(f"   Valid names failed: {error}")
+        logger.error(f"   Valid names failed: {error}", print_to_stderr=False)
         sys.exit(1)
 
     # Test 2: Invalid collection names
-    print("\n📋 Test 2: Invalid collection names")
+    logger.info("")
+    logger.info("📋 Test 2: Invalid collection names")
     invalid_names = ["-invalid", "_invalid", "invalid space", "invalid@name", "a" * 64]
     for name in invalid_names:
         try:
             validate_collection_name(name)
-            print(f"   Should have rejected: {name}")
+            logger.error(f"   Should have rejected: {name}", print_to_stderr=False)
             sys.exit(1)
         except ValidationError:
-            print(f"   Correctly rejected: {name}")
+            logger.success(f"   Correctly rejected: {name}")
 
     # Test 3: Description too short
-    print("\n📋 Test 3: Description length validation")
+    logger.info("")
+    logger.info("📋 Test 3: Description length validation")
     try:
         validate_description_regex("short", "test")
-        print("   Should have rejected short description")
+        logger.error("   Should have rejected short description", print_to_stderr=False)
         sys.exit(1)
     except ValidationError:
-        print("   Correctly rejected short description")
+        logger.success("   Correctly rejected short description")
 
     # Test 4: Description missing required phrase
-    print("\n📋 Test 4: Required phrase validation")
+    logger.info("")
+    logger.info("📋 Test 4: Required phrase validation")
     try:
         validate_description_regex("A" * 100, "test")  # Long but no required phrase
-        print("   Should have rejected description without required phrase")
+        logger.error("   Should have rejected description without required phrase", print_to_stderr=False)
         sys.exit(1)
     except ValidationError:
-        print("   Correctly rejected description without required phrase")
+        logger.success("   Correctly rejected description without required phrase")
 
     # Test 5: Valid description
-    print("\n📋 Test 5: Valid description")
+    logger.info("")
+    logger.info("📋 Test 5: Valid description")
     try:
         validate_description_regex(
             "Use this collection when searching for personal notes and ideas from Bear Notes app. "
             "Contains project notes, research, and daily thoughts.",
             "bear_notes"
         )
-        print("   Valid description passed")
+        logger.success("   Valid description passed")
     except ValidationError as error:
-        print(f"   Valid description failed: {error}")
+        logger.error(f"   Valid description failed: {error}", print_to_stderr=False)
         sys.exit(1)
 
     # Test 6: Check model availability
-    print("\n📋 Test 6: Check AI model availability")
+    logger.info("")
+    logger.info("📋 Test 6: Check AI model availability")
     is_available = check_model_availability(AI_MODEL)
     if is_available:
-        print(f"   AI model '{AI_MODEL}' is available")
+        logger.success(f"   AI model '{AI_MODEL}' is available")
     else:
-        print(f"   AI model '{AI_MODEL}' is not available")
-        print(f"   Run: ollama pull {AI_MODEL}")
+        logger.warning(f"   AI model '{AI_MODEL}' is not available")
+        logger.warning(f"   Run: ollama pull {AI_MODEL}")
 
     # Test 7: AI validation (only if model is available)
     if is_available:
-        print("\n📋 Test 7: AI validation")
+        logger.info("")
+        logger.info("📋 Test 7: AI validation")
         try:
             score, reasoning, suggestions = validate_with_ai(
                 "Use this collection when searching through personal notes from Bear Notes app. "
                 "Contains my private notes about projects, ideas, research, and daily thoughts.",
                 "bear_notes"
             )
-            print(f"   AI validation completed:")
-            print(f"   Score: {score}/10")
-            print(f"   Reasoning: {reasoning[:80]}...")
+            logger.success("   AI validation completed:")
+            logger.info(f"   Score: {score}/10")
+            logger.info(f"   Reasoning: {reasoning[:80]}...")
         except ValidationError as error:
-            print(f"   AI validation error: {error}")
+            logger.error(f"   AI validation error: {error}", print_to_stderr=False)
     else:
-        print("\n📋 Test 7: Skipping AI validation (model not available)")
+        logger.info("")
+        logger.info("📋 Test 7: Skipping AI validation (model not available)")
 
-    print("\n🎉 All validation.py tests completed!")
+    logger.success("\n🎉 All validation.py tests completed!")
