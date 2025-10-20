@@ -1,101 +1,96 @@
-#!/usr/bin/env python3
-"""
-Command-line interface for ZIM articles extractor.
+"""Command-line interface for the Zim archive extractor."""
 
-This script extracts articles from ZIM files (Kiwix/Wikipedia offline format)
-and outputs structured article data in JSON format, optionally extracting
-markdown files to a directory.
-"""
+from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
+
 from .parser import extract_zim
 
 
-def main():
-    """Main entry point for the ZIM articles extractor CLI."""
+def _write_output(records: list[dict[str, object]], output: Path | None) -> None:
+    payload = json.dumps(records, ensure_ascii=False, indent=2)
+    if output:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(payload + "\n", encoding="utf-8")
+    else:
+        sys.stdout.write(payload + "\n")
+
+
+def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Extract articles from ZIM files and convert to JSON/Markdown",
-        epilog="Example: extract-zim-articles wikipedia.zim --json catalog.json --limit 1000"
+        description="Extract markdown and JSON notes from a ZIM archive in Minervium format.",
+        epilog="Example: zim-extractor archive.zim -o notes.json --markdown-dir ./markdown --limit 1000",
     )
-
+    parser.add_argument("zim_file", help="Path to the ZIM archive to extract")
     parser.add_argument(
-        "zim_file",
-        help="Path to the ZIM file to extract articles from"
+        "-o",
+        "--output",
+        type=Path,
+        help="Write JSON catalog to the provided path; defaults to stdout",
     )
-
     parser.add_argument(
-        "--output-dir", "-o",
-        help="Directory to write markdown files (optional, JSON-only if not specified)"
+        "-m",
+        "--markdown-dir",
+        type=Path,
+        help="Optional directory to write markdown files extracted from the archive",
     )
-
     parser.add_argument(
-        "--json", "-j",
-        help="Path to write JSON catalog file (required for downstream RAG processing)"
-    )
-
-    parser.add_argument(
-        "--limit", "-l",
+        "-l",
+        "--limit",
         type=int,
-        help="Maximum number of articles to extract (useful for testing)"
+        help="Maximum number of articles to extract (useful for sampling)",
     )
-
     parser.add_argument(
-        "--verbose", "-v",
+        "-v",
+        "--verbose",
         action="store_true",
-        help="Enable verbose progress output"
+        help="Emit progress information to stderr",
     )
 
     args = parser.parse_args()
-
-    # Validate input file
     zim_path = Path(args.zim_file)
-    if not zim_path.exists():
-        print(f"Error: ZIM file '{zim_path}' does not exist", file=sys.stderr)
-        sys.exit(1)
 
-    # Ensure JSON output is specified (required for RAG pipeline compatibility)
-    if not args.json:
-        print("Error: --json output path is required", file=sys.stderr)
-        sys.exit(1)
+    if not zim_path.exists() or not zim_path.is_file():
+        print(f"Error: ZIM file '{zim_path}' not found", file=sys.stderr)
+        return 1
 
-    # Validate output directory if specified
-    if args.output_dir:
-        output_dir = Path(args.output_dir)
+    if args.markdown_dir:
         try:
-            output_dir.mkdir(parents=True, exist_ok=True)
-        except (OSError, PermissionError) as e:
-            print(f"Error: Cannot create output directory '{output_dir}': {e}", file=sys.stderr)
-            sys.exit(1)
+            args.markdown_dir.mkdir(parents=True, exist_ok=True)
+        except (OSError, PermissionError) as exc:
+            print(f"Error creating markdown directory: {exc}", file=sys.stderr)
+            return 1
 
     if args.verbose:
-        print(f"Extracting articles from: {zim_path}")
-        if args.output_dir:
-            print(f"Markdown output directory: {args.output_dir}")
-        print(f"JSON catalog output: {args.json}")
-        if args.limit:
-            print(f"Article limit: {args.limit}")
-        print()
-
-    try:
-        extract_zim(
-            zim_path=str(zim_path),
-            out_dir=args.output_dir,
-            limit=args.limit,
-            json_path=args.json
+        print(
+            f"Extracting notes from {zim_path} (limit={args.limit or 'all'})",
+            file=sys.stderr,
         )
 
-        if args.verbose:
-            print(f"\n✓ Extraction completed successfully")
-            print(f"JSON catalog written to: {args.json}")
-            if args.output_dir:
-                print(f"Markdown files written to: {args.output_dir}")
+    try:
+        records = extract_zim(
+            zim_path=str(zim_path),
+            markdown_dir=str(args.markdown_dir) if args.markdown_dir else None,
+            limit=args.limit,
+            verbose=args.verbose,
+        )
+    except RuntimeError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+    except Exception as exc:  # noqa: BLE001
+        print(f"Unexpected error: {exc}", file=sys.stderr)
+        return 1
 
-    except Exception as e:
-        print(f"Error during extraction: {e}", file=sys.stderr)
-        sys.exit(1)
+    _write_output(records, args.output)
+
+    if args.verbose:
+        print(f"Exported {len(records)} records", file=sys.stderr)
+
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

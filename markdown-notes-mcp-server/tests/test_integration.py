@@ -61,8 +61,68 @@ class TestCompleteFlow:
             }
         bear_collection.query.side_effect = mock_query
 
+        # Prepare chunk fixtures for context retrieval
+        note_chunks = [
+            {
+                "id": "chunk_000",
+                "content": "Introduction to Python concurrency.",
+                "metadata": {
+                    "noteId": "note_abc123",
+                    "title": "Python Concurrency Patterns",
+                    "chunkIndex": 0,
+                    "totalChunks": 5,
+                    "modificationDate": "2025-09-15T10:30:00Z"
+                }
+            },
+            {
+                "id": "chunk_001",
+                "content": "Threading vs multiprocessing trade-offs.",
+                "metadata": {
+                    "noteId": "note_abc123",
+                    "title": "Python Concurrency Patterns",
+                    "chunkIndex": 1,
+                    "totalChunks": 5,
+                    "modificationDate": "2025-09-15T10:30:00Z"
+                }
+            },
+            sample_chunks[0],  # chunkIndex: 2 (matched chunk)
+            {
+                "id": "chunk_003",
+                "content": "Best practices for async error handling.",
+                "metadata": {
+                    "noteId": "note_abc123",
+                    "title": "Python Concurrency Patterns",
+                    "chunkIndex": 3,
+                    "totalChunks": 5,
+                    "modificationDate": "2025-09-15T10:30:00Z"
+                }
+            },
+            {
+                "id": "chunk_004",
+                "content": "Conclusion and further resources.",
+                "metadata": {
+                    "noteId": "note_abc123",
+                    "title": "Python Concurrency Patterns",
+                    "chunkIndex": 4,
+                    "totalChunks": 5,
+                    "modificationDate": "2025-09-15T10:30:00Z"
+                }
+            }
+        ]
+        chunks_by_id = {chunk["id"]: chunk for chunk in note_chunks}
+
         # Configure get method for context retrieval
         def mock_get(where=None, ids=None, include=None):
+            if ids:
+                matching = [chunks_by_id.get(chunk_id) for chunk_id in ids if chunk_id in chunks_by_id]
+                if not matching:
+                    return {"ids": [], "documents": [], "metadatas": []}
+                return {
+                    "ids": [chunk["id"] for chunk in matching],
+                    "documents": [chunk["content"] for chunk in matching],
+                    "metadatas": [chunk["metadata"] for chunk in matching]
+                }
+
             if not where:
                 return {"ids": [], "documents": [], "metadatas": []}
 
@@ -71,7 +131,6 @@ class TestCompleteFlow:
             chunk_index_gte = None
             chunk_index_lte = None
 
-            # Check for $and queries (used by enhanced and full_note modes)
             if "$and" in where:
                 for condition in where["$and"]:
                     if "noteId" in condition and "$eq" in condition["noteId"]:
@@ -81,64 +140,12 @@ class TestCompleteFlow:
                             chunk_index_gte = condition["chunkIndex"]["$gte"]
                         if "$lte" in condition["chunkIndex"]:
                             chunk_index_lte = condition["chunkIndex"]["$lte"]
-            # Check for simple noteId query (used by full_note mode)
             elif "noteId" in where and "$eq" in where["noteId"]:
                 note_id_to_match = where["noteId"]["$eq"]
 
-            # Only return chunks if querying for note_abc123
             if note_id_to_match != "note_abc123":
                 return {"ids": [], "documents": [], "metadatas": []}
 
-            # Return all chunks for the matched note (using camelCase metadata)
-            note_chunks = [
-                {
-                    "id": "chunk_000",
-                    "content": "Introduction to Python concurrency.",
-                    "metadata": {
-                        "noteId": "note_abc123",
-                        "title": "Python Concurrency Patterns",
-                        "chunkIndex": 0,
-                        "totalChunks": 5,
-                        "modificationDate": "2025-09-15T10:30:00Z"
-                    }
-                },
-                {
-                    "id": "chunk_001",
-                    "content": "Threading vs multiprocessing trade-offs.",
-                    "metadata": {
-                        "noteId": "note_abc123",
-                        "title": "Python Concurrency Patterns",
-                        "chunkIndex": 1,
-                        "totalChunks": 5,
-                        "modificationDate": "2025-09-15T10:30:00Z"
-                    }
-                },
-                sample_chunks[0],  # chunkIndex: 2 (matched chunk)
-                {
-                    "id": "chunk_003",
-                    "content": "Best practices for async error handling.",
-                    "metadata": {
-                        "noteId": "note_abc123",
-                        "title": "Python Concurrency Patterns",
-                        "chunkIndex": 3,
-                        "totalChunks": 5,
-                        "modificationDate": "2025-09-15T10:30:00Z"
-                    }
-                },
-                {
-                    "id": "chunk_004",
-                    "content": "Conclusion and further resources.",
-                    "metadata": {
-                        "noteId": "note_abc123",
-                        "title": "Python Concurrency Patterns",
-                        "chunkIndex": 4,
-                        "totalChunks": 5,
-                        "modificationDate": "2025-09-15T10:30:00Z"
-                    }
-                }
-            ]
-
-            # Filter by chunkIndex range if specified
             if chunk_index_gte is not None or chunk_index_lte is not None:
                 filtered = [
                     c for c in note_chunks
@@ -255,16 +262,41 @@ class TestCompleteFlow:
             "distances": [[0.15]]
         }
 
+        all_chunks = [
+            {
+                "id": f"chunk_{i:03d}",
+                "content": f"Content of chunk {i}",
+                "metadata": {
+                    "noteId": "note_abc123",
+                    "title": "Python Concurrency Patterns",
+                    "chunkIndex": i,
+                    "totalChunks": 5,
+                    "modificationDate": "2025-09-15T10:30:00Z"
+                }
+            }
+            for i in range(5)
+        ]
+        all_chunks[2]["content"] = sample_chunks[0]["content"]
+        chunks_by_id = {chunk["id"]: chunk for chunk in all_chunks}
+
         def mock_get(where=None, ids=None, include=None):
+            if ids:
+                matching = [chunks_by_id.get(chunk_id) for chunk_id in ids if chunk_id in chunks_by_id]
+                if not matching:
+                    return {"ids": [], "documents": [], "metadatas": []}
+                return {
+                    "ids": [chunk["id"] for chunk in matching],
+                    "documents": [chunk["content"] for chunk in matching],
+                    "metadatas": [chunk["metadata"] for chunk in matching]
+                }
+
             if not where:
                 return {"ids": [], "documents": [], "metadatas": []}
 
-            # Handle both simple queries and $and queries
             note_id_to_match = None
             chunk_index_gte = None
             chunk_index_lte = None
 
-            # Check for $and queries (used by enhanced and full_note modes)
             if "$and" in where:
                 for condition in where["$and"]:
                     if "noteId" in condition and "$eq" in condition["noteId"]:
@@ -274,33 +306,12 @@ class TestCompleteFlow:
                             chunk_index_gte = condition["chunkIndex"]["$gte"]
                         if "$lte" in condition["chunkIndex"]:
                             chunk_index_lte = condition["chunkIndex"]["$lte"]
-            # Check for simple noteId query (used by full_note mode)
             elif "noteId" in where and "$eq" in where["noteId"]:
                 note_id_to_match = where["noteId"]["$eq"]
 
-            # Only return chunks if querying for note_abc123
             if note_id_to_match != "note_abc123":
                 return {"ids": [], "documents": [], "metadatas": []}
 
-            # Return all chunks for the note (using camelCase metadata)
-            all_chunks = [
-                {
-                    "id": f"chunk_{i:03d}",
-                    "content": f"Content of chunk {i}",
-                    "metadata": {
-                        "noteId": "note_abc123",
-                        "title": "Python Concurrency Patterns",
-                        "chunkIndex": i,
-                        "totalChunks": 5,
-                        "modificationDate": "2025-09-15T10:30:00Z"
-                    }
-                }
-                for i in range(5)
-            ]
-            # Match chunk at index 2 with sample content
-            all_chunks[2]["content"] = sample_chunks[0]["content"]
-
-            # Filter by chunkIndex range if specified
             if chunk_index_gte is not None or chunk_index_lte is not None:
                 filtered = [
                     c for c in all_chunks
@@ -539,15 +550,13 @@ class TestConfigurationIntegration:
         config_file = tmp_path / "config.json"
         config_file.write_text('''{
             "chromadb_path": "/absolute/path/to/chromadb",
-            "default_max_results": 5,
-            "embedding_model": "mxbai-embed-large:latest"
+            "default_max_results": 5
         }''')
 
         config = load_config(str(config_file))
 
         assert config["chromadb_path"] == "/absolute/path/to/chromadb"
         assert config["default_max_results"] == 5
-        assert config["embedding_model"] == "mxbai-embed-large:latest"
 
     def test_load_config_with_missing_fields(self, tmp_path):
         """Test loading config with missing required fields."""

@@ -122,7 +122,7 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
   - [x] 3.8 Test logger output routing in different contexts (CLI vs MCP server)
   - [x] 3.9 Verify no `print()` statements remain in codebase (grep search)
 
-- [ ] 4.0 Extractor Independence - Reorganize extractors into standalone packages with independent CLIs
+- [x] 4.0 Extractor Independence - Reorganize extractors into standalone packages with independent CLIs
   - [x] 4.1 Create `extractors/` directory structure with subdirectories for each extractor
   - [x] 4.2 Reorganize Bear extractor: create `extractors/bear-notes-extractor/bear_extractor/` package structure
   - [x] 4.3 Migrate Bear extractor files (bear_parser.py → parser.py, cli.py) and remove any Minervium imports
@@ -133,11 +133,11 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
   - [x] 4.8 Reorganize Markdown Books extractor: create `extractors/markdown-books-extractor/markdown_books_extractor/` package structure
   - [x] 4.9 Migrate Books extractor files (book_parser.py → parser.py, create cli.py) and remove any Minervium imports
   - [x] 4.10 Create `extractors/markdown-books-extractor/setup.py` with console_scripts entry point: `markdown-books-extractor`
-  - [ ] 4.11 Verify all extractors support -o/--output flag for file output and stdout by default
-  - [ ] 4.12 Verify all extractors support -v/--verbose flag for progress output
-  - [ ] 4.13 Test each extractor CLI independently (install with `pip install -e` and run command)
-  - [ ] 4.14 Verify extractors output valid JSON conforming to Minervium schema (test with sample data)
-  - [ ] 4.15 Verify extractors have NO dependencies on Minervium core package (check imports)
+  - [x] 4.11 Verify all extractors support -o/--output flag for file output and stdout by default
+  - [x] 4.12 Verify all extractors support -v/--verbose flag for progress output
+  - [x] 4.13 Test each extractor CLI independently (install with `pip install -e` and run command)
+  - [x] 4.14 Verify extractors output valid JSON conforming to Minervium schema (test with sample data)
+  - [x] 4.15 Verify extractors have NO dependencies on Minervium core package (check imports)
 
 - [ ] 5.0 Documentation - Create comprehensive documentation covering installation, usage, and extractor development
   - [ ] 5.1 Write comprehensive main `README.md` with Minervium overview, architecture diagram, and quick start

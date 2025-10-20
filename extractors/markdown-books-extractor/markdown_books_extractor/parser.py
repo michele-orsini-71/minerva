@@ -3,20 +3,25 @@
 from __future__ import annotations
 
 import re
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 HEADER_DELIMITER = "-------"
 
 
-def parse_book_file(file_path: str) -> Dict[str, object]:
+class BookParseError(ValueError):
+    """Raised when the markdown book file cannot be parsed."""
+
+
+def parse_book_file(file_path: str) -> List[Dict[str, object]]:
     path = Path(file_path)
 
     if not path.exists():
         raise FileNotFoundError(f"Input file not found: {file_path}")
 
     if not path.is_file():
-        raise ValueError(f"Path is not a file: {file_path}")
+        raise BookParseError(f"Path is not a file: {file_path}")
 
     try:
         content = path.read_text(encoding="utf-8")
@@ -27,7 +32,7 @@ def parse_book_file(file_path: str) -> Dict[str, object]:
 
     parts = content.split(HEADER_DELIMITER, maxsplit=1)
     if len(parts) != 2:
-        raise ValueError("File must contain '-------' delimiter separating header from body")
+        raise BookParseError("File must contain '-------' delimiter separating header from body")
 
     header, body = parts
 
@@ -38,18 +43,33 @@ def parse_book_file(file_path: str) -> Dict[str, object]:
     try:
         year = int(year_str)
     except ValueError as exc:
-        raise ValueError(f"Invalid year format: {year_str}") from exc
+        raise BookParseError(f"Invalid year format: {year_str}") from exc
 
-    return {
+    markdown_content = (
+        f"# {title}\n\n"
+        f"**Author:** {author} | **Year:** {year}\n\n"
+        f"{body.strip()}"
+    )
+    size = len(markdown_content.encode("utf-8"))
+
+    timestamp = datetime(year, 1, 1, tzinfo=timezone.utc).replace(microsecond=0)
+    iso_timestamp = timestamp.isoformat().replace("+00:00", "Z")
+
+    note = {
         "title": title,
+        "markdown": markdown_content,
+        "size": size,
+        "modificationDate": iso_timestamp,
+        "creationDate": iso_timestamp,
         "author": author,
         "year": year,
-        "content": body.strip(),
     }
+
+    return [note]
 
 
 def _extract_header_value(header: str, pattern: str, field_name: str) -> str:
     match = re.search(pattern, header, re.MULTILINE)
     if not match or not match.group(1).strip():
-        raise ValueError(f"Missing required field: {field_name}")
+        raise BookParseError(f"Missing required field: {field_name}")
     return match.group(1).strip()

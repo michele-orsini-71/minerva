@@ -9,7 +9,6 @@ Tests cover:
 - Invalid field types
 - Out-of-range values
 - Invalid path formats
-- Invalid model naming
 """
 
 import json
@@ -27,7 +26,6 @@ from config import (
     validate_config,
     validate_chromadb_path,
     validate_default_max_results,
-    validate_embedding_model,
     ConfigError,
     ConfigValidationError
 )
@@ -41,8 +39,7 @@ class TestLoadConfig:
         config_file = tmp_path / "config.json"
         config_data = {
             "chromadb_path": "/absolute/path/to/chromadb",
-            "default_max_results": 5,
-            "embedding_model": "mxbai-embed-large:latest"
+            "default_max_results": 5
         }
         config_file.write_text(json.dumps(config_data))
 
@@ -51,7 +48,6 @@ class TestLoadConfig:
         assert config == config_data
         assert config['chromadb_path'] == "/absolute/path/to/chromadb"
         assert config['default_max_results'] == 5
-        assert config['embedding_model'] == "mxbai-embed-large:latest"
 
     def test_load_config_file_not_found(self):
         """Test error when configuration file does not exist."""
@@ -214,85 +210,6 @@ class TestValidateDefaultMaxResults:
             assert "must be between 1 and 100" in str(exc_info.value)
 
 
-class TestValidateEmbeddingModel:
-    """Test embedding_model validation."""
-
-    def test_valid_model_names(self):
-        """Test validation passes for valid Ollama model names."""
-        valid_models = [
-            "mxbai-embed-large:latest",
-            "nomic-embed-text:latest",
-            "all-minilm:latest",
-            "llama3.1:8b",
-            "model-name",
-            "model_name",
-            "model.name",
-            "model123:v1.0"
-        ]
-
-        for model in valid_models:
-            config = {"embedding_model": model}
-            validate_embedding_model(config)  # Should not raise
-
-    def test_missing_embedding_model(self):
-        """Test error when embedding_model is missing."""
-        config = {}
-
-        with pytest.raises(ConfigValidationError) as exc_info:
-            validate_embedding_model(config)
-
-        assert "Missing required field: 'embedding_model'" in str(exc_info.value)
-        assert "ollama pull" in str(exc_info.value)
-
-    def test_embedding_model_not_string(self):
-        """Test error when embedding_model is not a string."""
-        configs = [
-            {"embedding_model": 123},
-            {"embedding_model": ["model"]},
-            {"embedding_model": None}
-        ]
-
-        for config in configs:
-            with pytest.raises(ConfigValidationError) as exc_info:
-                validate_embedding_model(config)
-
-            assert "must be a string" in str(exc_info.value)
-
-    def test_embedding_model_empty(self):
-        """Test error when embedding_model is empty."""
-        configs = [
-            {"embedding_model": ""},
-            {"embedding_model": "   "}
-        ]
-
-        for config in configs:
-            with pytest.raises(ConfigValidationError) as exc_info:
-                validate_embedding_model(config)
-
-            assert "cannot be empty" in str(exc_info.value)
-
-    def test_embedding_model_invalid_format(self):
-        """Test error when model name doesn't match Ollama convention."""
-        invalid_models = [
-            "MODEL-NAME:latest",  # Uppercase not allowed
-            "model name:latest",  # Spaces not allowed
-            ":latest",  # Missing model name
-            "model:",  # Missing version
-            "model::version",  # Double colon
-            "model:version:extra",  # Too many colons
-            "-model:latest",  # Cannot start with hyphen
-            ".model:latest",  # Cannot start with dot
-            "_model:latest",  # Cannot start with underscore
-        ]
-
-        for model in invalid_models:
-            config = {"embedding_model": model}
-            with pytest.raises(ConfigValidationError) as exc_info:
-                validate_embedding_model(config)
-
-            assert "does not match Ollama naming convention" in str(exc_info.value)
-
-
 class TestValidateConfig:
     """Test complete configuration validation."""
 
@@ -300,8 +217,7 @@ class TestValidateConfig:
         """Test validation of a complete valid configuration."""
         config = {
             "chromadb_path": "/absolute/path/to/chromadb",
-            "default_max_results": 5,
-            "embedding_model": "mxbai-embed-large:latest"
+            "default_max_results": 5
         }
 
         validate_config(config)  # Should not raise
@@ -312,8 +228,7 @@ class TestValidateConfig:
             "chromadb_path": "/absolute/path/to/chromadb",
             "default_max_results": 5,
             "embedding_model": "mxbai-embed-large:latest",
-            "unexpected_field": "value",
-            "another_field": 123
+            "unexpected_field": "value"
         }
 
         with pytest.raises(ConfigValidationError) as exc_info:
@@ -321,15 +236,14 @@ class TestValidateConfig:
 
         error_msg = str(exc_info.value)
         assert "Unexpected field(s)" in error_msg
-        assert "unexpected_field" in error_msg or "another_field" in error_msg
-        assert "check for typos" in error_msg.lower()
+        assert "embedding_model" in error_msg
+        assert "unexpected_field" in error_msg
 
     def test_validate_config_multiple_errors(self):
         """Test that validation reports the first error encountered."""
         config = {
             "chromadb_path": "relative/path",  # Invalid: relative path
-            "default_max_results": 0,  # Invalid: below minimum
-            "embedding_model": "INVALID:MODEL"  # Invalid: uppercase
+            "default_max_results": 0  # Invalid: below minimum
         }
 
         # Should raise on first validation error (chromadb_path)
@@ -345,44 +259,23 @@ class TestConfigEdgeCases:
         # Test minimum valid value
         config_min = {
             "chromadb_path": "/path",
-            "default_max_results": 1,
-            "embedding_model": "model:latest"
+            "default_max_results": 1
         }
         validate_config(config_min)
 
         # Test maximum valid value
         config_max = {
             "chromadb_path": "/path",
-            "default_max_results": 100,
-            "embedding_model": "model:latest"
+            "default_max_results": 100
         }
         validate_config(config_max)
-
-    def test_model_name_without_version(self):
-        """Test that model names without version are valid."""
-        config = {
-            "chromadb_path": "/path",
-            "default_max_results": 5,
-            "embedding_model": "model-name"
-        }
-        validate_config(config)
-
-    def test_model_name_with_dots_and_underscores(self):
-        """Test model names with dots and underscores."""
-        config = {
-            "chromadb_path": "/path",
-            "default_max_results": 5,
-            "embedding_model": "model.name_123:v1.0"
-        }
-        validate_config(config)
 
     def test_very_long_absolute_path(self):
         """Test very long absolute paths are accepted."""
         long_path = "/" + "/".join(["very"] * 50 + ["long", "path", "to", "chromadb"])
         config = {
             "chromadb_path": long_path,
-            "default_max_results": 5,
-            "embedding_model": "model:latest"
+            "default_max_results": 5
         }
         validate_config(config)
 
@@ -395,8 +288,7 @@ class TestConfigIntegration:
         config_file = tmp_path / "config.json"
         config_data = {
             "chromadb_path": "/Users/test/chromadb_data",
-            "default_max_results": 10,
-            "embedding_model": "mxbai-embed-large:latest"
+            "default_max_results": 10
         }
 
         # Write config file
@@ -409,7 +301,6 @@ class TestConfigIntegration:
         assert loaded_config == config_data
         assert isinstance(loaded_config['chromadb_path'], str)
         assert isinstance(loaded_config['default_max_results'], int)
-        assert isinstance(loaded_config['embedding_model'], str)
 
     def test_error_messages_are_helpful(self, tmp_path):
         """Test that error messages include remediation steps."""
@@ -422,8 +313,7 @@ class TestConfigIntegration:
         config_file = tmp_path / "config.json"
         config_data = {
             "chromadb_path": "relative/path",
-            "default_max_results": 5,
-            "embedding_model": "model:latest"
+            "default_max_results": 5
         }
         config_file.write_text(json.dumps(config_data))
 

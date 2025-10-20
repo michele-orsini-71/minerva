@@ -356,7 +356,7 @@ def test_recreate_collection_wraps_unexpected_exception(monkeypatch: pytest.Monk
 
 
 def test_insert_chunks_progress_callback(monkeypatch: pytest.MonkeyPatch):
-    def fake_insert_batch(collection, batch, batch_num, stats_dict):
+    def fake_insert_batch(collection, batch, batch_num, stats_dict, adjacent_ids_map=None):
         stats_dict["successful"] += len(batch)
         stats_dict["batches"] += 1
         return True
