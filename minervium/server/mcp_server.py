@@ -28,7 +28,7 @@ except ImportError:
     sys.exit(1)
 
 # Import configuration and validation modules
-from minervium.common.config import load_config, get_config_file_path, ConfigError, ConfigValidationError
+from minervium.common.config import load_config, ConfigError, ConfigValidationError
 from minervium.server.startup_validation import validate_server_prerequisites
 from minervium.server.collection_discovery import discover_collections_with_providers, CollectionDiscoveryError
 from minervium.server.search_tools import (
