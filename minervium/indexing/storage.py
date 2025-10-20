@@ -3,12 +3,15 @@ import re
 import sys
 from typing import List, Dict, Any, Optional, Callable
 from pathlib import Path
+from minervium.common.logger import get_logger
+
+logger = get_logger(__name__, mode="cli")
 
 try:
     import chromadb
     from chromadb.config import Settings
 except ImportError:
-    print("Error: chromadb library not installed. Run: pip install chromadb", file=sys.stderr)
+    logger.error("chromadb library not installed. Run: pip install chromadb")
     sys.exit(1)
 
 # Import our immutable models
@@ -64,8 +67,8 @@ def delete_existing_collection(client: chromadb.PersistentClient, collection_nam
     if exists:
         try:
             client.delete_collection(collection_name)
-            print(f"   Deleted existing collection '{collection_name}'")
-            print(f"   WARNING: All existing data in this collection has been permanently deleted!")
+            logger.warning(f"   Deleted existing collection '{collection_name}'")
+            logger.warning(f"   WARNING: All existing data in this collection has been permanently deleted!")
         except Exception as error:
             raise StorageError(
                 f"Failed to delete existing collection '{collection_name}': {error}\n"
@@ -162,10 +165,10 @@ def create_new_collection(client: chromadb.PersistentClient, collection_name: st
 
 def print_collection_creation_summary(collection_name: str, description: str, created_at: str) -> None:
     """Print summary of collection creation."""
-    print(f"   Created new collection '{collection_name}'")
+    logger.success(f"   Created new collection '{collection_name}'")
     if description:
-        print(f"   Description: {description[:80]}...")
-    print(f"   Created at: {created_at}")
+        logger.info(f"   Description: {description[:80]}...")
+    logger.info(f"   Created at: {created_at}")
 
 
 def create_collection(
@@ -350,21 +353,21 @@ def insert_batch_to_collection(collection, batch, batch_num, stats, adjacent_ids
         error_msg = f"Batch {batch_num} failed: {error}"
         stats["errors"].append(error_msg)
         stats["failed"] += len(batch)
-        print(f"   {error_msg}", file=sys.stderr)
+        logger.error(f"   {error_msg}")
         return False
 
 
 def print_storage_summary(stats):
     """Print comprehensive summary of storage operation."""
-    print(f"   Storage complete:")
-    print(f"  Successfully stored: {stats['successful']} chunks")
-    print(f"  Failed: {stats['failed']} chunks")
-    print(f"  Batches processed: {stats['batches']}")
+    logger.info(f"   Storage complete:")
+    logger.info(f"  Successfully stored: {stats['successful']} chunks")
+    logger.info(f"  Failed: {stats['failed']} chunks")
+    logger.info(f"  Batches processed: {stats['batches']}")
 
     if stats["errors"]:
-        print(f"\n   Storage errors:")
+        logger.warning(f"\n   Storage errors:")
         for error in stats["errors"]:
-            print(f"  - {error}")
+            logger.warning(f"  - {error}")
 
 
 def insert_chunks(
@@ -376,12 +379,12 @@ def insert_chunks(
     if not chunks_with_embeddings:
         return {"total_chunks": 0, "batches": 0, "successful": 0, "failed": 0}
 
-    print(f"   Storing {len(chunks_with_embeddings)} chunks in ChromaDB...")
+    logger.info(f"   Storing {len(chunks_with_embeddings)} chunks in ChromaDB...")
 
     # Pre-compute adjacent chunk IDs for all chunks (enables fast context retrieval)
-    print(f"   Computing adjacent chunk IDs for context retrieval...")
+    logger.info(f"   Computing adjacent chunk IDs for context retrieval...")
     adjacent_ids_map = compute_adjacent_chunk_ids(chunks_with_embeddings)
-    print(f"   ✓ Computed adjacency relationships for {len(adjacent_ids_map)} chunks")
+    logger.success(f"   ✓ Computed adjacency relationships for {len(adjacent_ids_map)} chunks")
 
     stats = {
         "total_chunks": len(chunks_with_embeddings),

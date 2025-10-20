@@ -1,6 +1,9 @@
 import sys
 import hashlib
 from typing import List, Dict, Any
+from minervium.common.logger import get_logger
+
+logger = get_logger(__name__, mode="cli")
 
 # Import our immutable models
 from minervium.common.models import Chunk, ChunkList
@@ -8,7 +11,7 @@ from minervium.common.models import Chunk, ChunkList
 try:
     from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 except ImportError:
-    print("Error: langchain-text-splitters library not installed. Run: pip install langchain-text-splitters", file=sys.stderr)
+    logger.error("langchain-text-splitters library not installed. Run: pip install langchain-text-splitters")
     sys.exit(1)
 
 
@@ -74,7 +77,7 @@ def chunk_markdown_content(markdown: str, target_chars: int = 1200, overlap_char
         header_splits = header_splitter.split_text(markdown)
     except Exception as error:
         # Fallback to recursive splitting only if header splitting fails
-        print(f"Warning: Header splitting failed, using recursive only: {error}", file=sys.stderr)
+        logger.warning(f"Header splitting failed, using recursive only: {error}")
         header_splits = [FallbackDocument(markdown)]
 
     # Step 2: Further split large sections with recursive splitter
@@ -129,23 +132,23 @@ def calculate_chunk_statistics(chunks: List[Chunk]) -> Dict[str, Any]:
 def log_chunking_progress(current: int, total: int, chunks_created: int) -> None:
     """Log progress during chunking operation."""
     percentage = (current / total * 100) if total > 0 else 0
-    print(f"  Progress: {current}/{total} notes ({percentage:.1f}%) - {chunks_created} chunks created")
+    logger.info(f"  Progress: {current}/{total} notes ({percentage:.1f}%) - {chunks_created} chunks created")
 
 
 def print_chunking_summary(stats: Dict[str, Any], failed_notes: List[Dict[str, str]], total_chunks: int) -> None:
     """Print comprehensive summary of chunking operation."""
-    print(f"   Chunking complete:")
-    print(f"  Successfully processed: {stats['unique_note_ids']} notes")
-    print(f"  Failed: {len(failed_notes)} notes")
-    print(f"  Total chunks created: {total_chunks}")
-    print(f"  Average chunks per note: {stats['avg_chunks_per_note']:.1f}")
-    print(f"  Average chunk size: {stats['avg_chunk_size']:.0f} chars")
-    print(f"  Chunk size range: {stats['min_chunk_size']}-{stats['max_chunk_size']} chars")
+    logger.info(f"   Chunking complete:")
+    logger.info(f"  Successfully processed: {stats['unique_note_ids']} notes")
+    logger.info(f"  Failed: {len(failed_notes)} notes")
+    logger.info(f"  Total chunks created: {total_chunks}")
+    logger.info(f"  Average chunks per note: {stats['avg_chunks_per_note']:.1f}")
+    logger.info(f"  Average chunk size: {stats['avg_chunk_size']:.0f} chars")
+    logger.info(f"  Chunk size range: {stats['min_chunk_size']}-{stats['max_chunk_size']} chars")
 
     if failed_notes:
-        print(f"\n   Failed notes:")
+        logger.warning(f"\n   Failed notes:")
         for failed in failed_notes:
-            print(f"  - {failed['title']}: {failed['error']}")
+            logger.warning(f"  - {failed['title']}: {failed['error']}")
 
 
 def build_chunks_from_note(note: Dict[str, Any], target_chars: int, overlap_chars: int) -> List[Chunk]:
@@ -186,8 +189,8 @@ def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 12
     chunks = []
     failed_notes = []
 
-    print(f"Processing {len(notes)} notes with LangChain text splitters...")
-    print(f"   Configuration: {target_chars} chars target, {overlap_chars} chars overlap")
+    logger.info(f"Processing {len(notes)} notes with LangChain text splitters...")
+    logger.info(f"   Configuration: {target_chars} chars target, {overlap_chars} chars overlap")
 
     for i, note in enumerate(notes):
         try:
@@ -201,14 +204,14 @@ def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 12
                 'title': note.get('title', 'Unknown'),
                 'error': str(error)
             })
-            print(f"   Failed to process note '{note.get('title', 'Unknown')}': {error}", file=sys.stderr)
+            logger.error(f"   Failed to process note '{note.get('title', 'Unknown')}': {error}")
 
     # Calculate statistics and print summary
     stats = calculate_chunk_statistics(chunks)
     print_chunking_summary(stats, failed_notes, len(chunks))
 
     if not chunks:
-        print("Error: No chunks were successfully created", file=sys.stderr)
+        logger.error("No chunks were successfully created")
         sys.exit(1)
 
     return chunks

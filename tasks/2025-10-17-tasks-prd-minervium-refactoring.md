@@ -116,7 +116,7 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
   - [x] 3.2 Add context-aware output routing to logger (stdout for CLI commands, stderr for MCP server)
   - [x] 3.3 Implement both detailed mode (timestamp + module + level + message) and simple mode (message only)
   - [x] 3.4 Add semantic methods to logger: info(), success(), warning(), error()
-  - [ ] 3.5 Replace all `print()` statements in indexing modules with logger calls
+  - [x] 3.5 Replace all `print()` statements in indexing modules with logger calls
   - [ ] 3.6 Replace all `print()` statements in server modules with logger calls
   - [ ] 3.7 Replace all `print()` statements in CLI commands with logger calls
   - [ ] 3.8 Test logger output routing in different contexts (CLI vs MCP server)
