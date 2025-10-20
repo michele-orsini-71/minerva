@@ -50,12 +50,11 @@ CONFIG: Dict[str, Any] = {}
 PROVIDER_MAP: Dict[str, AIProvider] = {}
 AVAILABLE_COLLECTIONS: List[Dict[str, Any]] = []
 
-def initialize_server() -> None:
+def initialize_server(config_path: str) -> None:
     global CONFIG, PROVIDER_MAP, AVAILABLE_COLLECTIONS
 
     try:
         console_logger.info("Loading configuration...")
-        config_path = get_config_file_path()
         CONFIG = load_config(config_path)
         console_logger.success(f"✓ Configuration loaded from {config_path}")
         console_logger.info(f"  ChromaDB path: {CONFIG['chromadb_path']}")
@@ -169,14 +168,13 @@ def search_knowledge_base(
 ) -> List[Dict[str, Any]]:
     try:
         # Use default max_results from config if not provided
-        if max_results is None:
-            max_results = CONFIG['default_max_results']
+        effective_max_results: int = max_results if max_results is not None else CONFIG['default_max_results']
 
         console_logger.info(f"Tool invoked: search_knowledge_base")
         console_logger.info(f"  Query: {query[:80]}{'...' if len(query) > 80 else ''}")
         console_logger.info(f"  Collection: {collection_name}")
         console_logger.info(f"  Context mode: {context_mode}")
-        console_logger.info(f"  Max results: {max_results}")
+        console_logger.info(f"  Max results: {effective_max_results}")
 
         # Look up provider for target collection
         if collection_name not in PROVIDER_MAP:
@@ -196,7 +194,7 @@ def search_knowledge_base(
             chromadb_path=CONFIG['chromadb_path'],
             provider=provider,
             context_mode=context_mode,
-            max_results=max_results
+            max_results=effective_max_results
         )
 
         console_logger.success(f"✓ Search completed: {len(results)} result(s)")
@@ -216,13 +214,13 @@ def search_knowledge_base(
         raise SearchError(f"Search failed: {e}")
 
 
-def main():
+def main(config_path: str):
     console_logger.info("=" * 60)
     console_logger.info("Multi-Collection MCP Server for Markdown Notes")
     console_logger.info("=" * 60)
 
     # Initialize server (load config and validate prerequisites)
-    initialize_server()
+    initialize_server(config_path)
 
     # Run FastMCP server in stdio mode
     console_logger.info("Starting FastMCP server in stdio mode...")
@@ -236,7 +234,3 @@ def main():
     except Exception as e:
         console_logger.error(f"Server error: {e}")
         sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()

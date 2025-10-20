@@ -145,7 +145,7 @@ def run_dry_run(config: CollectionConfig, notes: List[Dict[str, Any]], verbose: 
     print()
 
     # Validate provider (but don't generate embeddings)
-    provider = initialize_and_validate_provider(config, verbose)
+    _ = initialize_and_validate_provider(config, verbose)
 
     # Create chunks to validate the chunking process
     print("Creating semantic chunks (validation only)...")

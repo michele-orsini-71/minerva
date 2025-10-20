@@ -115,8 +115,9 @@ Examples:
     serve_parser.add_argument(
         '--config',
         type=Path,
+        required=True,
         metavar='FILE',
-        help='Path to server configuration JSON file (optional)'
+        help='Path to server configuration JSON file'
     )
 
     # ========================================

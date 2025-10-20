@@ -103,8 +103,8 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
 - [ ] 2.0 CLI Implementation - Build argparse-based CLI with all four commands (index, serve, peek, validate)
   - [x] 2.1 Create `minervium/cli.py` with argparse setup and subparser structure
   - [x] 2.2 Implement `minervium/commands/index.py` with --config, --verbose, --dry-run flags
-  - [ ] 2.3 Implement `minervium/commands/serve.py` with --config flag for MCP server startup
-  - [ ] 2.4 Implement `minervium/commands/peek.py` with collection_name positional arg and --chromadb, --format flags
+  - [x] 2.3 Implement `minervium/commands/serve.py` with --config flag for MCP server startup
+  - [x] 2.4 Implement `minervium/commands/peek.py` with collection_name positional arg and --chromadb, --format flags
   - [ ] 2.5 Implement `minervium/commands/validate.py` as wrapper around index command with dry_run=True
   - [ ] 2.6 Create `minervium/__main__.py` to enable `python -m minervium` execution
   - [ ] 2.7 Create root `setup.py` with console_scripts entry point: `minervium = minervium.cli:main`
