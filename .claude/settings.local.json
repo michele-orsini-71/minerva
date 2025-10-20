@@ -28,7 +28,8 @@
       "Bash(done)",
       "Bash(git add:*)",
       "Bash(git log:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(timeout 3 python:*)"
     ],
     "deny": [],
     "ask": []

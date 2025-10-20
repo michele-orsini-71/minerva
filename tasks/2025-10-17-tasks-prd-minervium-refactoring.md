@@ -112,10 +112,10 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
   - [x] 2.9 Verify `--help` text is clear and accurate for all commands and flags
 
 - [ ] 3.0 Logging System Migration - Migrate and standardize logging across the entire codebase
-  - [ ] 3.1 Migrate `markdown-notes-mcp-server/console_logger.py` to `minervium/common/logger.py`
-  - [ ] 3.2 Add context-aware output routing to logger (stdout for CLI commands, stderr for MCP server)
-  - [ ] 3.3 Implement both detailed mode (timestamp + module + level + message) and simple mode (message only)
-  - [ ] 3.4 Add semantic methods to logger: info(), success(), warning(), error()
+  - [x] 3.1 Migrate `markdown-notes-mcp-server/console_logger.py` to `minervium/common/logger.py`
+  - [x] 3.2 Add context-aware output routing to logger (stdout for CLI commands, stderr for MCP server)
+  - [x] 3.3 Implement both detailed mode (timestamp + module + level + message) and simple mode (message only)
+  - [x] 3.4 Add semantic methods to logger: info(), success(), warning(), error()
   - [ ] 3.5 Replace all `print()` statements in indexing modules with logger calls
   - [ ] 3.6 Replace all `print()` statements in server modules with logger calls
   - [ ] 3.7 Replace all `print()` statements in CLI commands with logger calls
@@ -172,18 +172,19 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
 
 - [ ] 7.0 Deployment Preparation - Finalize repository structure and verify installation methods
   - [ ] 7.1 Clean up old directories (archive or remove `markdown-notes-cag-data-creator/`, `markdown-notes-mcp-server/`, original extractor directories)
-  - [ ] 7.2 Update `.gitignore` for new structure (ignore `minervium.egg-info/`, `dist/`, `build/`, `*.pyc`, `__pycache__/`)
-  - [ ] 7.3 Create installation testing script that verifies both pipx and pip+alias methods
-  - [ ] 7.4 Test pipx installation method on fresh system (or fresh virtual environment)
-  - [ ] 7.5 Verify `minervium --help` works without venv activation after pipx install
-  - [ ] 7.6 Test pip+alias installation method on fresh system (or fresh virtual environment)
-  - [ ] 7.7 Verify `minervium --help` works without venv activation after pip+alias setup
-  - [ ] 7.8 Test all four commands (index, serve, peek, validate) work with both installation methods
-  - [ ] 7.9 Verify MCP server integration with Claude Desktop using `minervium serve`
-  - [ ] 7.10 Verify installation documentation matches actual installation process
-  - [ ] 7.11 Run final end-to-end workflow test: extract → validate → index → peek → serve
-  - [ ] 7.12 Create git tag for version 1.0.0 with release notes
-  - [ ] 7.13 Mark migration as complete and celebrate! 🎉
+  - [ ] 7.2 Remove all docstring comments and review code comments in order to implement Clean Code comments policy (if a function is difficult to understand, rewrite it, use a better name, but do not add a commen)
+  - [ ] 7.3 Update `.gitignore` for new structure (ignore `minervium.egg-info/`, `dist/`, `build/`, `*.pyc`, `__pycache__/`)
+  - [ ] 7.4 Create installation testing script that verifies both pipx and pip+alias methods
+  - [ ] 7.5 Test pipx installation method on fresh system (or fresh virtual environment)
+  - [ ] 7.6 Verify `minervium --help` works without venv activation after pipx install
+  - [ ] 7.7 Test pip+alias installation method on fresh system (or fresh virtual environment)
+  - [ ] 7.8 Verify `minervium --help` works without venv activation after pip+alias setup
+  - [ ] 7.9 Test all four commands (index, serve, peek, validate) work with both installation methods
+  - [ ] 7.10 Verify MCP server integration with Claude Desktop using `minervium serve`
+  - [ ] 7.11 Verify installation documentation matches actual installation process
+  - [ ] 7.12 Run final end-to-end workflow test: extract → validate → index → peek → serve
+  - [ ] 7.13 Create git tag for version 1.0.0 with release notes
+  - [ ] 7.14 Mark migration as complete and celebrate! 🎉
 
 ---
 
