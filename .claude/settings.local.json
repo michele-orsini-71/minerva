@@ -29,7 +29,8 @@
       "Bash(git add:*)",
       "Bash(git log:*)",
       "Bash(tree:*)",
-      "Bash(timeout 3 python:*)"
+      "Bash(timeout 3 python:*)",
+      "Bash(for f in minervium/common/*.py minervium/commands/*.py)"
     ],
     "deny": [],
     "ask": []

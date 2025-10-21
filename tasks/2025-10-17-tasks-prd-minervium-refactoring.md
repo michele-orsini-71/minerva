@@ -157,11 +157,11 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
 
 - [ ] 6.0 Testing & Validation - Implement unit tests and verify all workflows work end-to-end
   - [x] 6.1 Create top-level `tests/` directory and `tests/conftest.py` with pytest fixtures
-  - [ ] 6.2 Write unit tests for JSON schema validation logic in `tests/test_schema_validation.py`
-  - [ ] 6.3 Write unit tests for CLI argument parsing in `tests/test_cli_parsing.py`
-  - [ ] 6.4 Write unit tests for import path validation in `tests/test_import_paths.py`
-  - [ ] 6.5 Write unit tests for each CLI command (test_index_command.py, test_serve_command.py, test_peek_command.py, test_validate_command.py)
-  - [ ] 6.6 Write unit tests for logger output routing in `tests/test_logger.py`
+  - [x] 6.2 Write unit tests for JSON schema validation logic in `tests/test_schema_validation.py`
+  - [x] 6.3 Write unit tests for CLI argument parsing in `tests/test_cli_parsing.py`
+  - [x] 6.4 Write unit tests for import path validation in `tests/test_import_paths.py`
+  - [x] 6.5 Write unit tests for each CLI command (test_peek_command.py ✅ 24 tests, test_validate_command.py ✅ 29 tests, test_index_command.py ✅ 22 tests, test_serve_command.py ✅ 10 tests)
+  - [x] 6.6 Write unit tests for logger output routing in `tests/test_logger.py` (✅ 32 tests)
   - [ ] 6.7 Write integration test for Bear workflow in `tests/test_integration_bear_workflow.py` (extract → validate → index → serve)
   - [ ] 6.8 Write integration test for multi-source indexing in `tests/test_integration_multi_source.py`
   - [ ] 6.9 Create test suites for each extractor in `extractors/{extractor-name}/tests/`
