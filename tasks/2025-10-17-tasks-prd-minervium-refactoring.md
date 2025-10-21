@@ -139,24 +139,24 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
   - [x] 4.14 Verify extractors output valid JSON conforming to Minervium schema (test with sample data)
   - [x] 4.15 Verify extractors have NO dependencies on Minervium core package (check imports)
 
-- [ ] 5.0 Documentation - Create comprehensive documentation covering installation, usage, and extractor development
-  - [ ] 5.1 Write comprehensive main `README.md` with Minervium overview, architecture diagram, and quick start
-  - [ ] 5.2 Add installation instructions to README for both pipx (recommended) and pip+alias methods
-  - [ ] 5.3 Add clear explanation to README that venv activation is not needed after initial setup
-  - [ ] 5.4 Add installation verification steps to README (`minervium --help` should work)
-  - [ ] 5.5 Add basic usage examples to README for all four commands with sample workflows
-  - [ ] 5.6 Create `docs/NOTE_SCHEMA.md` with complete JSON schema specification, field requirements, validation rules, and examples
-  - [ ] 5.7 Create `docs/EXTRACTOR_GUIDE.md` with step-by-step tutorial, multi-language examples, and testing guidelines using `minervium validate`
-  - [ ] 5.8 Create `extractors/README.md` with overview of all official extractors and links to development guide
-  - [ ] 5.9 Write `extractors/bear-notes-extractor/README.md` with usage instructions, supported formats, and examples
-  - [ ] 5.10 Write `extractors/zim-extractor/README.md` with usage instructions, supported formats, and examples
-  - [ ] 5.11 Write `extractors/markdown-books-extractor/README.md` with usage instructions, supported formats, and examples
-  - [ ] 5.12 Update `CLAUDE.md` with new directory structure, updated command examples, extractor development section, and updated troubleshooting
-  - [ ] 5.13 Update `CONFIGURATION_GUIDE.md` with new config file paths, updated command examples, and multi-collection setup guide
-  - [ ] 5.14 Verify all documentation links are valid and examples work when copy-pasted
+- [x] 5.0 Documentation - Create comprehensive documentation covering installation, usage, and extractor development
+  - [x] 5.1 Write comprehensive main `README.md` with Minervium overview, architecture diagram, and quick start
+  - [x] 5.2 Add installation instructions to README for both pipx (recommended) and pip+alias methods
+  - [x] 5.3 Add clear explanation to README that venv activation is not needed after initial setup
+  - [x] 5.4 Add installation verification steps to README (`minervium --help` should work)
+  - [x] 5.5 Add basic usage examples to README for all four commands with sample workflows
+  - [x] 5.6 Create `docs/NOTE_SCHEMA.md` with complete JSON schema specification, field requirements, validation rules, and examples
+  - [x] 5.7 Create `docs/EXTRACTOR_GUIDE.md` with step-by-step tutorial, multi-language examples, and testing guidelines using `minervium validate`
+  - [x] 5.8 Create `extractors/README.md` with overview of all official extractors and links to development guide
+  - [x] 5.9 Write `extractors/bear-notes-extractor/README.md` with usage instructions, supported formats, and examples
+  - [x] 5.10 Write `extractors/zim-extractor/README.md` with usage instructions, supported formats, and examples
+  - [x] 5.11 Write `extractors/markdown-books-extractor/README.md` with usage instructions, supported formats, and examples
+  - [x] 5.12 Update `CLAUDE.md` with new directory structure, updated command examples, extractor development section, and updated troubleshooting
+  - [x] 5.13 Update `CONFIGURATION_GUIDE.md` with new config file paths, updated command examples, and multi-collection setup guide
+  - [x] 5.14 Verify all documentation links are valid and examples work when copy-pasted
 
 - [ ] 6.0 Testing & Validation - Implement unit tests and verify all workflows work end-to-end
-  - [ ] 6.1 Create top-level `tests/` directory and `tests/conftest.py` with pytest fixtures
+  - [x] 6.1 Create top-level `tests/` directory and `tests/conftest.py` with pytest fixtures
   - [ ] 6.2 Write unit tests for JSON schema validation logic in `tests/test_schema_validation.py`
   - [ ] 6.3 Write unit tests for CLI argument parsing in `tests/test_cli_parsing.py`
   - [ ] 6.4 Write unit tests for import path validation in `tests/test_import_paths.py`

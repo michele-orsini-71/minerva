@@ -1,425 +1,825 @@
-# Configuration Guide - Multi-Provider AI RAG System
+# Minervium Configuration Guide
 
-This guide explains how to configure the Bear Notes RAG (Retrieval-Augmented Generation) system with support for multiple AI providers (Ollama, OpenAI, Google Gemini, Azure OpenAI).
+This guide explains how to configure Minervium for indexing notes and serving them through the MCP server, with support for multiple AI providers (Ollama, OpenAI, Google Gemini, Azure OpenAI).
 
 ## Table of Contents
 
-1. [Architecture Overview](#architecture-overview)
-2. [Pipeline Configuration (Creating Collections)](#pipeline-configuration)
-3. [MCP Server Configuration (Querying Collections)](#mcp-server-configuration)
-4. [Multi-Provider Setup](#multi-provider-setup)
-5. [Example Workflows](#example-workflows)
+1. [Overview](#overview)
+2. [Index Configuration](#index-configuration)
+3. [Server Configuration](#server-configuration)
+4. [AI Provider Setup](#ai-provider-setup)
+5. [Multi-Collection Setup](#multi-collection-setup)
+6. [Complete Examples](#complete-examples)
+7. [Troubleshooting](#troubleshooting)
 
 ---
 
-## Architecture Overview
+## Overview
 
-The system has two main components with **separate configuration files**:
+Minervium uses JSON configuration files for two main operations:
 
-### 1. Pipeline (`markdown-notes-cag-data-creator`)
-**Purpose**: Creates ChromaDB collections with embeddings
-**Config Location**: `configs/*.json` or `markdown-notes-cag-data-creator/collections/*.json`
-**Key Decision**: **Which AI provider to use for embeddings and LLM**
+### 1. Indexing (`minervium index`)
+**Purpose**: Create ChromaDB collections with AI embeddings
+**Command**: `minervium index --config index-config.json`
+**Config specifies**: Source data, AI provider, collection settings
 
-### 2. MCP Server (`markdown-notes-mcp-server`)
-**Purpose**: Queries existing collections via Claude Desktop
-**Config Location**: `markdown-notes-mcp-server/config.json`
-**Key Decision**: **Where ChromaDB data is stored**
+### 2. Serving (`minervium serve`)
+**Purpose**: Expose collections via MCP server for Claude Desktop
+**Command**: `minervium serve --config server-config.json`
+**Config specifies**: ChromaDB location, logging settings
 
-### Important Distinction
+### Key Design Principle
 
-- **Pipeline config** specifies AI models → creates collections → stores provider metadata IN the collection
-- **MCP server config** does NOT specify AI models → reads provider metadata FROM each collection → uses the correct provider automatically
-
-This design allows multiple collections to use different providers (e.g., one collection with Ollama, another with OpenAI).
+**AI provider metadata is stored IN each collection** during indexing. The MCP server reads this metadata and uses the correct provider automatically. This allows:
+- Multiple collections with different AI providers
+- No provider configuration needed for the server
+- Consistent embeddings for queries and indexed content
 
 ---
 
-## Pipeline Configuration
+## Index Configuration
 
 ### Basic Structure
 
-Pipeline configurations are JSON files that specify how to create a ChromaDB collection:
+Create a JSON configuration file (e.g., `my-config.json`):
 
 ```json
 {
   "collection_name": "my_notes",
-  "description": "Personal notes about software development and project management",
+  "description": "Personal notes about software development, project management, and research",
   "chromadb_path": "./chromadb_data",
-  "json_file": "./test-data/my-notes.json",
-  "chunk_size": 1200,
+  "json_file": "./notes.json",
   "forceRecreate": false,
-  "skipAiValidation": false,
-  "ai_provider": {
-    "type": "ollama",
-    "embedding": {
-      "model": "mxbai-embed-large:latest",
-      "base_url": "http://localhost:11434",
-      "api_key": null
-    },
-    "llm": {
-      "model": "llama3.1:8b",
-      "base_url": "http://localhost:11434",
-      "api_key": null
-    }
-  }
+  "skipAiValidation": false
 }
 ```
 
-### Field Reference
+Then index:
+```bash
+minervium index --config my-config.json --verbose
+```
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `collection_name` | string | ✅ | Unique identifier (alphanumeric, `-`, `_`) |
-| `description` | string | ✅ | When to use this collection (for AI agents) |
-| `chromadb_path` | string | ✅ | Path to ChromaDB storage directory |
-| `json_file` | string | ✅ | Path to Bear notes JSON file |
-| `chunk_size` | integer | ❌ | Characters per chunk (default: 1200) |
-| `forceRecreate` | boolean | ❌ | Delete existing collection (default: false) |
-| `skipAiValidation` | boolean | ❌ | Skip description quality check (default: false) |
-| `ai_provider` | object | ✅ | AI provider configuration (see below) |
+### Required Fields
 
-### AI Provider Configuration
+| Field | Type | Description | Example |
+|-------|------|-------------|---------|
+| `collection_name` | string | Unique collection identifier (alphanumeric, `-`, `_`) | `"bear_notes"` |
+| `description` | string | When to use this collection (guides AI on content) | `"Personal notes from Bear app"` |
+| `chromadb_path` | string | Path to ChromaDB storage directory | `"./chromadb_data"` |
+| `json_file` | string | Path to notes JSON file | `"./bear-notes.json"` |
 
-The `ai_provider` section specifies which AI service to use:
+### Optional Fields
 
-#### Ollama (Local, No API Key)
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `forceRecreate` | boolean | `false` | Delete and recreate collection if it exists |
+| `skipAiValidation` | boolean | `false` | Skip description quality validation |
+
+### Collection Naming
+
+**Valid names**:
+- `bear_notes` ✅
+- `wikipedia-history` ✅
+- `my_collection_v2` ✅
+
+**Invalid names**:
+- `bear notes` ❌ (spaces)
+- `my/collection` ❌ (slashes)
+- `col.2025` ❌ (periods)
+
+### Description Guidelines
+
+The description guides the AI on when to search this collection. Be specific:
+
+**Good descriptions**:
+```json
+"Personal notes from Bear app covering software development, project management, meeting notes, and technical documentation from 2020-2025"
+```
 
 ```json
-"ai_provider": {
-  "type": "ollama",
-  "embedding": {
-    "model": "mxbai-embed-large:latest",
-    "base_url": "http://localhost:11434",
-    "api_key": null
-  },
-  "llm": {
-    "model": "llama3.1:8b",
-    "base_url": "http://localhost:11434",
-    "api_key": null
-  }
-}
+"Wikipedia articles about world history, major events, historical figures, and civilizations"
 ```
 
-**Prerequisites**:
-```bash
-# Start Ollama service
-ollama serve
-
-# Pull required models
-ollama pull mxbai-embed-large:latest
-ollama pull llama3.1:8b
+**Poor descriptions**:
+```json
+"My notes"  // Too vague
 ```
-
-#### OpenAI (Cloud, Requires API Key)
 
 ```json
-"ai_provider": {
-  "type": "openai",
-  "embedding": {
-    "model": "text-embedding-3-small",
-    "base_url": "https://api.openai.com/v1",
-    "api_key": "${OPENAI_API_KEY}"
-  },
-  "llm": {
-    "model": "gpt-4o-mini",
-    "base_url": "https://api.openai.com/v1",
-    "api_key": "${OPENAI_API_KEY}"
-  }
-}
-```
-
-**Prerequisites**:
-```bash
-# Set environment variable (before running pipeline)
-export OPENAI_API_KEY="sk-your-api-key-here"
-```
-
-**Note**: The `${OPENAI_API_KEY}` syntax is a template - the pipeline resolves it from environment variables at runtime.
-
-#### Google Gemini (Cloud, Requires API Key)
-
-```json
-"ai_provider": {
-  "type": "gemini",
-  "embedding": {
-    "model": "text-embedding-004",
-    "base_url": null,
-    "api_key": "${GEMINI_API_KEY}"
-  },
-  "llm": {
-    "model": "gemini-1.5-flash",
-    "base_url": null,
-    "api_key": "${GEMINI_API_KEY}"
-  }
-}
-```
-
-**Prerequisites**:
-```bash
-# Set environment variable
-export GEMINI_API_KEY="your-gemini-api-key-here"
+"Notes"  // Doesn't indicate content
 ```
 
 ---
 
-## MCP Server Configuration
+## Server Configuration
 
-### File Location
+### Basic Structure
 
-`markdown-notes-mcp-server/config.json`
-
-### Simple Structure
+Create server configuration (e.g., `server-config.json`):
 
 ```json
 {
-  "chromadb_path": "/absolute/path/to/chromadb_data",
-  "default_max_results": 3
+  "chromadb_path": "./chromadb_data",
+  "log_level": "INFO"
 }
 ```
 
-### Field Reference
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `chromadb_path` | string | ✅ | **Absolute path** to ChromaDB directory |
-| `default_max_results` | integer | ✅ | Number of search results (1-100) |
-
-### Why No AI Provider Configuration?
-
-The MCP server **reads AI provider information from collection metadata**. When you create a collection with the pipeline, it stores:
-
-- `embedding_provider`: "ollama" / "openai" / "gemini"
-- `embedding_model`: "mxbai-embed-large:latest"
-- `embedding_dimension`: 1024
-- `embedding_base_url`: "http://localhost:11434"
-- `embedding_api_key_ref`: "${OPENAI_API_KEY}" or null
-- `llm_model`: "llama3.1:8b"
-
-The MCP server automatically uses the correct provider for each collection when searching.
-
----
-
-## Multi-Provider Setup
-
-### Example: Multiple Collections with Different Providers
-
-You can have collections using different AI providers in the same ChromaDB database:
-
+Then start server:
 ```bash
-# Collection 1: Personal notes with Ollama (local, free)
-python full_pipeline.py --config configs/bear-notes-ollama.json
-
-# Collection 2: Work docs with OpenAI (cloud, requires API key)
-export OPENAI_API_KEY="sk-..."
-python full_pipeline.py --config configs/work-docs-openai.json
-
-# Collection 3: Research with Gemini (cloud, requires API key)
-export GEMINI_API_KEY="..."
-python full_pipeline.py --config configs/research-gemini.json
+minervium serve --config server-config.json
 ```
 
-All three collections coexist in the same ChromaDB database. The MCP server handles them transparently.
+### Fields
 
-### MCP Server Behavior
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `chromadb_path` | string | ✅ | - | Path to ChromaDB storage |
+| `log_level` | string | ❌ | `"INFO"` | Logging level: `DEBUG`, `INFO`, `WARNING`, `ERROR` |
 
-When the MCP server starts, it discovers all collections and checks provider availability:
+### What the Server Does
+
+When started, the server:
+1. Scans `chromadb_path` for collections
+2. Reads AI provider metadata from each collection
+3. Checks provider availability (API keys, Ollama running, etc.)
+4. Marks collections as available/unavailable
+5. Exposes available collections via MCP
+
+### Server Output Example
 
 ```
 [INFO] Discovering collections in ChromaDB...
 [INFO] Found 3 collections
 
-[INFO] Collection: bear_notes_ollama
+[INFO] Collection: bear_notes
 [INFO]   Provider: ollama (mxbai-embed-large:latest)
 [INFO]   Status: ✓ Available (dimension: 1024)
 
-[INFO] Collection: work_docs_openai
+[INFO] Collection: wikipedia_history
 [INFO]   Provider: openai (text-embedding-3-small)
 [INFO]   Status: ✗ Unavailable
 [INFO]   Reason: Missing API key - OPENAI_API_KEY not found
 
-[INFO] Collection: research_gemini
-[INFO]   Provider: gemini (text-embedding-004)
-[INFO]   Status: ✓ Available (dimension: 768)
-
-[INFO] Summary: 2 available, 1 unavailable
-[INFO] MCP server ready (some collections unavailable)
+[INFO] Summary: 1 available, 2 unavailable
+[INFO] MCP server ready
 ```
-
-Collections with unavailable providers are marked and skipped during searches.
 
 ---
 
-## Example Workflows
+## AI Provider Setup
 
-### Workflow 1: Local-Only Setup (Ollama)
+Minervium supports multiple AI providers through environment variables. Collections remember which provider they used during indexing.
 
-**Best for**: Privacy, no internet dependency, no costs
+### Local: Ollama (No API Keys)
 
+**Configuration**: Not needed in config file (default provider)
+
+**Setup**:
 ```bash
-# 1. Start Ollama
+# Start Ollama service
 ollama serve
 
-# 2. Pull models
+# Pull models (in separate terminal)
 ollama pull mxbai-embed-large:latest
 ollama pull llama3.1:8b
 
-# 3. Create collection
-cd markdown-notes-cag-data-creator
-python full_pipeline.py --config ../configs/example-ollama.json
-
-# 4. Configure MCP server
-# Edit markdown-notes-mcp-server/config.json:
-{
-  "chromadb_path": "/absolute/path/to/chromadb_data",
-  "default_max_results": 3
-}
-
-# 5. Run MCP server in Claude Desktop
-# (see README for Claude Desktop integration)
+# Verify
+ollama list
 ```
 
-### Workflow 2: Cloud Setup (OpenAI)
-
-**Best for**: Better embedding quality, faster processing
-
+**Index with Ollama**:
 ```bash
-# 1. Set API key
-export OPENAI_API_KEY="sk-your-key-here"
+# Create config (no AI provider specified = uses Ollama)
+cat > ollama-config.json << 'EOF'
+{
+  "collection_name": "my_notes_local",
+  "description": "Personal notes indexed with local Ollama",
+  "chromadb_path": "./chromadb_data",
+  "json_file": "./notes.json"
+}
+EOF
 
-# 2. Create collection
-cd markdown-notes-cag-data-creator
-python full_pipeline.py --config ../configs/example-openai.json
-
-# 3. MCP server config (same as above)
-# No changes needed - server reads provider from collection metadata
-
-# 4. When starting Claude Desktop, ensure API key is set:
-# Add to ~/.zshrc or ~/.bashrc:
-export OPENAI_API_KEY="sk-your-key-here"
+# Index
+minervium index --config ollama-config.json --verbose
 ```
 
-### Workflow 3: Hybrid Setup (Multiple Providers)
+**Models used** (default):
+- Embeddings: `mxbai-embed-large:latest` (1024 dimensions)
+- LLM: `llama3.1:8b`
 
-**Best for**: Flexibility - use local for personal notes, cloud for work
+### Cloud: OpenAI
+
+**Configuration**: Set environment variable
+
+**Setup**:
+```bash
+# Set API key
+export OPENAI_API_KEY="sk-your-openai-api-key-here"
+
+# Verify (optional)
+echo $OPENAI_API_KEY
+```
+
+**Index with OpenAI**:
+```bash
+# Create config - provider auto-detected from env
+cat > openai-config.json << 'EOF'
+{
+  "collection_name": "my_notes_openai",
+  "description": "Personal notes indexed with OpenAI embeddings",
+  "chromadb_path": "./chromadb_data",
+  "json_file": "./notes.json"
+}
+EOF
+
+# Index (OpenAI used if API key is set)
+minervium index --config openai-config.json --verbose
+```
+
+**Models used** (when `OPENAI_API_KEY` is set):
+- Embeddings: `text-embedding-3-small` (1536 dimensions)
+- LLM: `gpt-4o-mini`
+
+### Cloud: Google Gemini
+
+**Configuration**: Set environment variable
+
+**Setup**:
+```bash
+# Set API key
+export GEMINI_API_KEY="your-gemini-api-key-here"
+
+# Verify
+echo $GEMINI_API_KEY
+```
+
+**Index with Gemini**:
+```bash
+# Create config
+cat > gemini-config.json << 'EOF'
+{
+  "collection_name": "my_notes_gemini",
+  "description": "Personal notes indexed with Gemini embeddings",
+  "chromadb_path": "./chromadb_data",
+  "json_file": "./notes.json"
+}
+EOF
+
+# Index (Gemini used if API key is set)
+minervium index --config gemini-config.json --verbose
+```
+
+**Models used** (when `GEMINI_API_KEY` is set):
+- Embeddings: `text-embedding-004` (768 dimensions)
+- LLM: `gemini-1.5-flash`
+
+### Provider Selection Logic
+
+Minervium selects the AI provider based on environment variables:
+
+1. If `OPENAI_API_KEY` is set → Use OpenAI
+2. Else if `GEMINI_API_KEY` is set → Use Gemini
+3. Else → Use Ollama (default, requires `ollama serve`)
+
+**Priority**: OpenAI > Gemini > Ollama
+
+To force a specific provider, unset other API keys:
+```bash
+# Force Ollama
+unset OPENAI_API_KEY
+unset GEMINI_API_KEY
+minervium index --config config.json
+
+# Force Gemini (even if OpenAI key is set)
+unset OPENAI_API_KEY
+export GEMINI_API_KEY="your-key"
+minervium index --config config.json
+```
+
+---
+
+## Multi-Collection Setup
+
+### Why Multiple Collections?
+
+Use separate collections for:
+- **Different sources**: Bear notes, Wikipedia, books
+- **Different topics**: Work notes, personal notes, research
+- **Different languages**: English Wikipedia, Spanish Wikipedia
+- **Testing**: Production collection vs. test samples
+
+### Creating Multiple Collections
 
 ```bash
-# Personal notes - Ollama (free, local)
-ollama serve
-python full_pipeline.py --config configs/personal-ollama.json
+# Extract from different sources
+bear-extractor "Bear.bear2bk" -o bear.json
+zim-extractor "wikipedia_history.zim" -l 5000 -o wiki.json
+markdown-books-extractor "alice.md" -o alice.json
 
-# Work notes - OpenAI (cloud, better quality)
-export OPENAI_API_KEY="sk-..."
-python full_pipeline.py --config configs/work-openai.json
-
-# Configure MCP server (points to shared ChromaDB)
+# Create configs for each
+cat > bear-config.json << 'EOF'
 {
-  "chromadb_path": "/absolute/path/to/shared/chromadb_data",
-  "default_max_results": 3
+  "collection_name": "bear_notes",
+  "description": "Personal notes from Bear app about software development and projects",
+  "chromadb_path": "./chromadb_data",
+  "json_file": "bear.json"
 }
+EOF
 
-# When querying, MCP server automatically uses the right provider per collection
+cat > wiki-config.json << 'EOF'
+{
+  "collection_name": "wikipedia_history",
+  "description": "Wikipedia articles about world history, historical events, and civilizations",
+  "chromadb_path": "./chromadb_data",
+  "json_file": "wiki.json"
+}
+EOF
+
+cat > alice-config.json << 'EOF'
+{
+  "collection_name": "alice_in_wonderland",
+  "description": "Lewis Carroll's Alice's Adventures in Wonderland - classic literature",
+  "chromadb_path": "./chromadb_data",
+  "json_file": "alice.json"
+}
+EOF
+
+# Index all collections
+minervium index --config bear-config.json --verbose
+minervium index --config wiki-config.json --verbose
+minervium index --config alice-config.json --verbose
+
+# Single server serves all
+minervium serve --config server-config.json
+```
+
+### Using Different Providers per Collection
+
+```bash
+# Collection 1: Ollama (local, free)
+# Ensure no API keys are set
+unset OPENAI_API_KEY
+unset GEMINI_API_KEY
+
+minervium index --config bear-config.json --verbose
+# → Uses Ollama
+
+# Collection 2: OpenAI (cloud, better quality)
+export OPENAI_API_KEY="sk-your-key"
+
+minervium index --config wiki-config.json --verbose
+# → Uses OpenAI
+
+# Both collections work together
+minervium serve --config server-config.json
+# → Server auto-detects provider for each collection
+```
+
+### Managing Multiple Collections
+
+```bash
+# List all collections
+minervium peek --chromadb ./chromadb_data
+
+# Peek at specific collection
+minervium peek bear_notes --chromadb ./chromadb_data --format table
+
+# Compare collection metadata
+python -c "
+import chromadb
+client = chromadb.PersistentClient(path='./chromadb_data')
+for coll in client.list_collections():
+    meta = coll.metadata
+    print(f'{coll.name}: {meta.get(\"embedding_provider\")}/{meta.get(\"embedding_model\")}')
+"
+```
+
+### Shared ChromaDB Path
+
+All collections share the same `chromadb_path`:
+
+```
+chromadb_data/
+├── bear_notes/          # Collection 1
+│   ├── data/
+│   └── metadata
+├── wikipedia_history/   # Collection 2
+│   ├── data/
+│   └── metadata
+└── alice_in_wonderland/ # Collection 3
+    ├── data/
+    └── metadata
+```
+
+Benefits:
+- One server serves all collections
+- Simpler backup (backup one directory)
+- Collections don't interfere with each other
+
+---
+
+## Complete Examples
+
+### Example 1: Single Collection with Ollama
+
+```bash
+# 1. Start Ollama
+ollama serve &
+
+# 2. Extract notes
+bear-extractor "Bear Notes.bear2bk" -o notes.json -v
+
+# 3. Validate
+minervium validate notes.json
+
+# 4. Create config
+cat > config.json << 'EOF'
+{
+  "collection_name": "my_notes",
+  "description": "Personal notes covering software development, project management, and technical documentation",
+  "chromadb_path": "./chromadb_data",
+  "json_file": "notes.json"
+}
+EOF
+
+# 5. Index
+minervium index --config config.json --verbose
+
+# 6. Peek
+minervium peek my_notes --chromadb ./chromadb_data --format table
+
+# 7. Create server config
+cat > server-config.json << 'EOF'
+{
+  "chromadb_path": "./chromadb_data",
+  "log_level": "INFO"
+}
+EOF
+
+# 8. Start server
+minervium serve --config server-config.json
+```
+
+### Example 2: Multiple Collections, Mixed Providers
+
+```bash
+# Setup: Ollama running, OpenAI API key set
+ollama serve &
+export OPENAI_API_KEY="sk-your-key"
+
+# Extract from sources
+bear-extractor "Bear.bear2bk" -o bear.json
+zim-extractor "wikipedia.zim" -l 1000 -o wiki.json
+
+# Config 1: Bear notes with Ollama (free)
+unset OPENAI_API_KEY  # Force Ollama
+cat > bear-config.json << 'EOF'
+{
+  "collection_name": "bear_notes",
+  "description": "Personal notes from Bear app",
+  "chromadb_path": "./chromadb_data",
+  "json_file": "bear.json"
+}
+EOF
+minervium index --config bear-config.json --verbose
+
+# Config 2: Wikipedia with OpenAI (better quality)
+export OPENAI_API_KEY="sk-your-key"  # Use OpenAI
+cat > wiki-config.json << 'EOF'
+{
+  "collection_name": "wikipedia",
+  "description": "Wikipedia articles about various topics",
+  "chromadb_path": "./chromadb_data",
+  "json_file": "wiki.json"
+}
+EOF
+minervium index --config wiki-config.json --verbose
+
+# Server auto-detects providers
+cat > server-config.json << 'EOF'
+{
+  "chromadb_path": "./chromadb_data",
+  "log_level": "INFO"
+}
+EOF
+minervium serve --config server-config.json
+# Output:
+# Collection: bear_notes (ollama) ✓ Available
+# Collection: wikipedia (openai) ✓ Available
+```
+
+### Example 3: Test → Production Workflow
+
+```bash
+# 1. Test with sample (1000 notes)
+zim-extractor "large-archive.zim" -l 1000 -o sample.json
+
+cat > test-config.json << 'EOF'
+{
+  "collection_name": "test_sample",
+  "description": "Test collection for validation",
+  "chromadb_path": "./test_chromadb",
+  "json_file": "sample.json"
+}
+EOF
+
+minervium index --config test-config.json --dry-run  # Validate only
+minervium index --config test-config.json --verbose  # Actually index
+
+# 2. Verify quality
+minervium peek test_sample --chromadb ./test_chromadb --format table
+
+# 3. If good, index full dataset
+zim-extractor "large-archive.zim" -o full.json
+
+cat > prod-config.json << 'EOF'
+{
+  "collection_name": "production_collection",
+  "description": "Full production collection",
+  "chromadb_path": "./chromadb_data",
+  "json_file": "full.json"
+}
+EOF
+
+minervium index --config prod-config.json --verbose
+```
+
+### Example 4: Recreating a Collection
+
+```bash
+# Situation: Need to recreate collection with new data
+
+# Option 1: Force recreate in config
+cat > config.json << 'EOF'
+{
+  "collection_name": "my_notes",
+  "description": "Updated notes",
+  "chromadb_path": "./chromadb_data",
+  "json_file": "new-notes.json",
+  "forceRecreate": true  // ← Deletes existing collection
+}
+EOF
+
+minervium index --config config.json --verbose
+
+# Option 2: Delete manually
+python -c "
+import chromadb
+client = chromadb.PersistentClient(path='./chromadb_data')
+client.delete_collection('my_notes')
+print('Deleted')
+"
+
+# Then index normally
+minervium index --config config.json --verbose
 ```
 
 ---
 
 ## Troubleshooting
 
-### "Missing API key" Error During Pipeline
+### Issue: "Collection already exists"
 
-**Problem**: Pipeline fails with `APIKeyMissingError`
+**Error**: `Collection 'my_notes' already exists`
+
+**Cause**: Collection name is already in use.
+
+**Solutions**:
+```bash
+# Option 1: Use different name
+# Edit config.json: "collection_name": "my_notes_v2"
+
+# Option 2: Force recreate
+# Edit config.json: "forceRecreate": true
+
+# Option 3: Delete manually
+python -c "
+import chromadb
+client = chromadb.PersistentClient(path='./chromadb_data')
+client.delete_collection('my_notes')
+"
+```
+
+### Issue: "Missing API key"
+
+**Error**: `Missing required environment variable: OPENAI_API_KEY`
+
+**Cause**: Config expects OpenAI but API key not set.
 
 **Solution**:
 ```bash
-# Check which provider you're using in config file
-cat configs/your-config.json | grep '"type"'
+# Option 1: Set API key
+export OPENAI_API_KEY="sk-your-key"
 
-# Set the corresponding environment variable
-export OPENAI_API_KEY="sk-..."  # For OpenAI
-export GEMINI_API_KEY="..."      # For Gemini
-
-# Verify it's set
-echo $OPENAI_API_KEY
-
-# Rerun pipeline
-python full_pipeline.py --config configs/your-config.json
+# Option 2: Use Ollama instead
+unset OPENAI_API_KEY
+minervium index --config config.json
 ```
 
-### "Collection unavailable" in MCP Server
+### Issue: Server shows "Collection unavailable"
 
-**Problem**: MCP server marks collection as unavailable
+**Situation**: MCP server starts but collection marked unavailable.
 
-**Diagnosis**:
+**Possible causes**:
+
+1. **Ollama not running** (collection uses Ollama):
+```bash
+ollama serve
+```
+
+2. **Missing API key** (collection uses OpenAI/Gemini):
+```bash
+export OPENAI_API_KEY="sk-your-key"
+# Restart server
+minervium serve --config server-config.json
+```
+
+3. **Wrong ChromaDB path**:
+```bash
+# Check config
+cat server-config.json
+# Verify path exists
+ls -la ./chromadb_data
+```
+
+### Issue: "Embedding dimension mismatch"
+
+**Error**: `Embedding dimension mismatch! Query: 1536, Collection: 1024`
+
+**Cause**: Trying to query collection with different provider than used during indexing.
+
+**Explanation**:
+- Collection created with Ollama (1024 dims)
+- Server trying to use OpenAI (1536 dims)
+
+**Solution**: This shouldn't happen - server reads provider from collection metadata. If it does:
 ```bash
 # Check collection metadata
 python -c "
 import chromadb
-client = chromadb.PersistentClient(path='chromadb_data')
-collection = client.get_collection('your_collection')
-print(collection.metadata)
+client = chromadb.PersistentClient(path='./chromadb_data')
+coll = client.get_collection('collection_name')
+print(coll.metadata)
 "
 
-# Look for:
-# - embedding_provider: which provider is needed
-# - embedding_api_key_ref: which env var is needed
+# If metadata is missing/corrupted, recreate collection
 ```
 
-**Solution**:
+### Issue: Slow indexing
+
+**Symptoms**: Indexing takes very long
+
+**Solutions**:
+
+1. **Check AI provider**:
 ```bash
-# For Ollama collections
-ollama serve
+# Ollama (fast, local):
+ps aux | grep ollama  # Should be running
 
-# For OpenAI/Gemini collections
-export OPENAI_API_KEY="sk-..."  # or GEMINI_API_KEY
-# Restart Claude Desktop to pick up environment variable
+# OpenAI/Gemini (slower, rate limited):
+# Consider using Ollama for large collections
+unset OPENAI_API_KEY
+unset GEMINI_API_KEY
 ```
 
-### "Embedding dimension mismatch" Error
+2. **Test with sample first**:
+```bash
+# Extract small sample
+zim-extractor archive.zim -l 100 -o sample.json
+minervium index --config sample-config.json
+# If fast, proceed with full dataset
+```
 
-**Problem**: Trying to query with different embedding model than collection was created with
+3. **Check system resources**:
+```bash
+# Monitor CPU/RAM
+top
 
-**Solution**: You must recreate the collection with `forceRecreate: true`:
+# Check disk I/O
+iostat -x 1
+```
 
+### Issue: Description validation fails
+
+**Warning**: `Description validation score < 7 - consider improving`
+
+**Cause**: Description too generic or unclear.
+
+**Solutions**:
+```bash
+# Option 1: Improve description
+# Bad:  "My notes"
+# Good: "Personal notes about software development, covering Python, JavaScript, system design, and best practices from 2020-2025"
+
+# Option 2: Skip validation
+# Edit config.json: "skipAiValidation": true
+```
+
+---
+
+## Environment Variables Reference
+
+| Variable | Purpose | Example |
+|----------|---------|---------|
+| `OPENAI_API_KEY` | OpenAI API access | `sk-proj-abc123...` |
+| `GEMINI_API_KEY` | Google Gemini API access | `AIza...` |
+| `OLLAMA_HOST` | Custom Ollama endpoint | `http://192.168.1.100:11434` |
+| `MINERVIUM_DEBUG` | Enable debug logging | `1` |
+
+---
+
+## Configuration File Locations
+
+**Recommended structure**:
+```
+project/
+├── configs/                # All config files
+│   ├── bear-config.json
+│   ├── wiki-config.json
+│   └── server-config.json
+├── chromadb_data/          # ChromaDB storage
+│   ├── bear_notes/
+│   └── wikipedia/
+└── notes/                  # Extracted JSON
+    ├── bear.json
+    └── wiki.json
+```
+
+**Usage**:
+```bash
+# Index from configs directory
+minervium index --config configs/bear-config.json
+
+# Or use absolute paths
+minervium index --config /path/to/config.json
+```
+
+---
+
+## Best Practices
+
+### 1. Descriptive Collection Names
+
+Use meaningful names that indicate content:
+- ✅ `bear_notes_work_2025`
+- ✅ `wikipedia_history_en`
+- ✅ `classic_literature`
+- ❌ `collection1`
+- ❌ `test`
+- ❌ `notes`
+
+### 2. Clear Descriptions
+
+Help the AI understand when to use each collection:
 ```json
 {
-  "collection_name": "my_notes",
-  "forceRecreate": true,
-  "ai_provider": {
-    "type": "openai",  // Changed from ollama
-    ...
-  }
+  "description": "Personal notes from Bear app covering software development (Python, JavaScript, Rust), system design patterns, database architecture, and API development. Includes meeting notes, project planning documents, and technical research from 2020-2025."
 }
 ```
 
-⚠️ **Warning**: This deletes all existing data in the collection.
+### 3. Consistent ChromaDB Path
+
+Use the same `chromadb_path` for all collections:
+```json
+{
+  "chromadb_path": "./chromadb_data"  // Same for all configs
+}
+```
+
+### 4. Backup Strategy
+
+```bash
+# Backup ChromaDB regularly
+tar -czf chromadb-backup-$(date +%Y%m%d).tar.gz chromadb_data/
+
+# Backup config files
+tar -czf configs-backup-$(date +%Y%m%d).tar.gz configs/
+```
+
+### 5. Version Control
+
+```bash
+# Add to .gitignore:
+chromadb_data/
+*.json.bak
+test_chromadb/
+
+# Track config files:
+git add configs/*.json
+git commit -m "feat: add collection configs"
+```
 
 ---
 
-## Configuration File Locations Reference
+## Resources
 
-```
-search-markdown-notes/
-├── configs/                              # Pipeline configs (recommended location)
-│   ├── example-ollama.json              # Ollama template
-│   ├── example-openai.json              # OpenAI template
-│   └── example-gemini.json              # Gemini template
-│
-├── markdown-notes-cag-data-creator/
-│   └── collections/                      # Alternative pipeline config location
-│       ├── bear_notes_config.json       # Legacy format (no ai_provider section)
-│       └── wikipedia_history_config.json
-│
-├── markdown-notes-mcp-server/
-│   ├── config.json                       # MCP server config (simple)
-│   └── config.schema.json                # JSON schema for validation
-│
-└── chromadb_data/                        # ChromaDB storage (created by pipeline)
-```
+- **Schema Documentation**: See `docs/NOTE_SCHEMA.md` for JSON format
+- **Extractor Guide**: See `docs/EXTRACTOR_GUIDE.md` for creating extractors
+- **Developer Guide**: See `CLAUDE.md` for development workflows
 
 ---
 
-## See Also
+## Support
 
-- **Pipeline README**: `markdown-notes-cag-data-creator/README.md`
-- **MCP Server README**: `markdown-notes-mcp-server/README.md`
-- **Main CLAUDE.md**: Project-wide documentation
+- Report issues: [GitHub Issues](https://github.com/yourusername/minervium/issues)
+- Ask questions: [GitHub Discussions](https://github.com/yourusername/minervium/discussions)

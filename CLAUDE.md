@@ -2,668 +2,266 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Commands
+## Project Overview
 
-### Environment Setup
+**Minervium** is a unified RAG (Retrieval-Augmented Generation) system for personal knowledge management. It provides tools for extracting notes from various sources, indexing them with AI-powered embeddings, and serving them through an MCP server for semantic search via Claude Desktop.
+
+## Quick Reference
+
+### Installation
 
 ```bash
-# Activate the virtual environment (Python 3.13)
-source .venv/bin/activate
+# Install Minervium from project root
+pip install -e .
 
-# Check Python version
-python --version
+# Verify installation
+minervium --version
+minervium --help
 
-# Verify required dependencies are installed
-pip list | grep -E "(chromadb|ollama|numpy|nltk|tiktoken)"
+# Install extractors (optional, as needed)
+cd extractors/bear-notes-extractor && pip install -e .
+cd extractors/zim-extractor && pip install -e .
+cd extractors/markdown-books-extractor && pip install -e .
 ```
 
-### Running Ollama Services (Required for AI Operations)
+### Core Commands
 
 ```bash
-# Start Ollama service (required for embeddings and AI queries)
-ollama serve
+# Validate extracted notes
+minervium validate notes.json [--verbose]
 
-# Pull required models
-ollama pull mxbai-embed-large:latest
-ollama pull llama3.1:8b
+# Index notes into ChromaDB
+minervium index --config config.json [--verbose] [--dry-run]
+
+# Peek at indexed collection
+minervium peek COLLECTION_NAME --chromadb PATH [--format table|json]
+
+# Start MCP server
+minervium serve --config server-config.json
 ```
 
-### Bear Notes Parser Operations
+### Extractor Commands
 
 ```bash
-# Process Bear backup files
-cd bear-notes-parser
-python cli.py "Bear Notes 2025-09-20 at 08.49.bear2bk"
+# Extract Bear notes
+bear-extractor "Bear Notes.bear2bk" -o notes.json [-v]
 
-# Programmatic usage example
-python -c "from bear_parser import parse_bear_backup; notes = parse_bear_backup('Bear Notes 2025-09-20 at 08.49.bear2bk'); print(f'Extracted {len(notes)} notes')"
-```
+# Extract from ZIM archive
+zim-extractor wikipedia.zim -o wiki.json [-l LIMIT] [-v]
 
-### Complete RAG Pipeline Operations
-
-#### New Config-Driven Pipeline (Recommended)
-
-The pipeline now supports **multi-provider AI abstraction** with JSON configuration files:
-
-```bash
-# Run pipeline with Ollama (local, no API keys needed)
-cd markdown-notes-cag-data-creator
-python full_pipeline.py --config ../configs/example-ollama.json
-
-# Run pipeline with OpenAI (requires OPENAI_API_KEY environment variable)
-export OPENAI_API_KEY="sk-your-key-here"
-python full_pipeline.py --config ../configs/example-openai.json
-
-# Run pipeline with Google Gemini (requires GEMINI_API_KEY environment variable)
-export GEMINI_API_KEY="your-key-here"
-python full_pipeline.py --config ../configs/example-gemini.json
-
-# Verbose mode shows detailed provider initialization and progress
-python full_pipeline.py --config ../configs/example-ollama.json --verbose
-
-# Dry run mode validates configuration without processing
-python full_pipeline.py --config ../configs/example-ollama.json --dry-run
-```
-
-#### Legacy Command-Line Arguments (Deprecated)
-
-```bash
-# Old style: direct command-line arguments (still supported for backward compatibility)
-python full_pipeline.py --verbose "../test-data/Bear Notes 2025-09-20 at 08.49.json"
-
-# Custom chunk size and ChromaDB path
-python full_pipeline.py --chunk-size 1200 --chromadb-path ../chromadb_data --verbose "../test-data/Bear Notes 2025-09-20 at 08.49.json"
-```
-
-### Testing and Development
-
-```bash
-# Test ChromaDB connection
-python test-files/test-connect.py
-
-# Test complete RAG pipeline
-cd bear-notes-cag-data-creator
-python full_pipeline.py --verbose ../test-data/sample.json
-
-# Test individual components
-python json_loader.py ../test-data/sample.json
-python chunk_creator.py
-python embedding.py  # Test Ollama connection
-python storage.py    # Test ChromaDB operations
-
-# Run Bear parser tests
-cd bear-notes-parser
-python cli.py "Bear Notes 2025-09-20 at 08.49.bear2bk"
+# Extract markdown book
+markdown-books-extractor book.md -o book.json [-v]
 ```
 
 ## Architecture
 
-This repository implements a **Bear Notes RAG (Retrieval-Augmented Generation) system** for personal knowledge management. The system extracts notes from Bear backups, processes them into semantic chunks, generates embeddings using local AI models, and stores them in a vector database for intelligent search and retrieval.
+### System Overview
 
-### High-Level Data Flow
+Minervium follows a three-stage pipeline architecture:
 
 ```
-Bear Backup (.bear2bk) → Parse Notes → Chunk Content → Generate Embeddings → Store in ChromaDB → Query/Search
+┌─────────────┐     ┌────────────┐     ┌──────────────┐     ┌──────────┐
+│   Sources   │ ──▶ │ Extractors │ ──▶ │  Minervium   │ ──▶ │   MCP    │
+│ (Bear, Zim, │     │  (JSON)    │     │   (Index)    │     │  Server  │
+│   Books)    │     └────────────┘     └──────────────┘     └──────────┘
+└─────────────┘                               │                    │
+                                               ▼                    ▼
+                                        ┌──────────────┐     ┌──────────┐
+                                        │   ChromaDB   │     │  Claude  │
+                                        │   (Vector)   │     │ Desktop  │
+                                        └──────────────┘     └──────────┘
 ```
 
-### Project Structure
+### Directory Structure
 
-The repository is organized into several specialized components:
+```
+minervium/                     # Core package
+├── __init__.py
+├── __main__.py
+├── cli.py                     # Main CLI entry point
+├── commands/                  # CLI command implementations
+│   ├── index.py              # Index command
+│   ├── serve.py              # MCP server command
+│   ├── peek.py               # Collection inspection
+│   └── validate.py           # Schema validation
+├── common/                    # Shared utilities
+│   ├── schemas.py            # JSON schema definitions
+│   ├── logger.py             # Logging system
+│   ├── config.py             # Configuration handling
+│   └── ai_provider.py        # Multi-provider AI abstraction
+├── indexing/                  # Indexing pipeline
+│   ├── chunking.py           # Document chunking
+│   ├── embeddings.py         # Embedding generation
+│   ├── storage.py            # ChromaDB operations
+│   └── json_loader.py        # JSON loading
+└── server/                    # MCP server
+    ├── mcp_server.py         # FastMCP server
+    ├── search_tools.py       # Search implementations
+    ├── collection_discovery.py
+    └── startup_validation.py
 
-#### Core Components
+extractors/                    # Independent extractor packages
+├── bear-notes-extractor/
+│   ├── bear_extractor/
+│   │   ├── cli.py
+│   │   └── parser.py
+│   └── setup.py
+├── zim-extractor/
+│   ├── zim_extractor/
+│   │   ├── cli.py
+│   │   └── parser.py
+│   └── setup.py
+└── markdown-books-extractor/
+    ├── markdown_books_extractor/
+    │   ├── cli.py
+    │   └── parser.py
+    └── setup.py
 
-- **`bear-notes-parser/`**: Bear backup file parser and CLI utility
-- **`bear-notes-cag-data-creator/`**: Complete RAG pipeline (chunking + embeddings + storage)
-- **`chromadb_data/`**: Persistent vector database storage (ChromaDB)
-- **`test-files/`**: Example implementations and integration tests
-- **`.venv/`**: Shared Python virtual environment (Python 3.13)
-- **`chroma-peek/`**: Visual exploration tool for ChromaDB databases
+docs/                          # Documentation
+├── NOTE_SCHEMA.md            # Schema specification
+└── EXTRACTOR_GUIDE.md        # Extractor development
 
-#### Auxiliary Components
-
-- **`bear-notes-mcp-server/`**: MCP server placeholder (future development)
-- **`bear-notes-cag-mcp/`**: MCP integration placeholder
-- **`prompts/`**: AI prompt templates for content generation
-
-### Core Architecture Patterns
-
-#### Offline-First AI Stack
-
-- **No internet dependency**: All AI processing runs locally using Ollama
-- **Local models**: `mxbai-embed-large:latest` for embeddings, `llama3.1:8b` for queries
-- **Persistent storage**: ChromaDB maintains vector database between sessions
-- **Self-contained**: Complete knowledge management system runs on local machine
-
-#### Complete RAG Pipeline (`bear-notes-cag-data-creator/full_pipeline.py`)
-
-**Stage 1: Note Extraction (`bear-notes-parser/`)**
-
-- Processes Bear backup files (.bear2bk format - ZIP archives with TextBundle folders)
-- Filters out trashed notes automatically
-- Normalizes timestamps to UTC ISO format
-- Outputs structured JSON with note metadata
-
-**Stage 2: Content Chunking (`chunk_creator.py`)**
-
-- LangChain-based semantic chunking that preserves markdown structure
-- Smart boundary detection (respects code blocks, headings, paragraphs)
-- Configurable chunk size (1200 characters default) with auto-calculated overlap
-- Maintains heading context for better retrieval accuracy
-- Stable SHA256-based chunk IDs for incremental updates
-
-**Stage 3: Embedding Generation (`embedding.py`)**
-
-- Local AI embeddings using `mxbai-embed-large:latest` via Ollama
-- L2 normalization for cosine similarity compatibility
-- Batch processing with progress feedback and error handling
-- No external API dependencies - completely offline
-
-**Stage 4: Vector Storage (`storage.py`)**
-
-- ChromaDB with HNSW index and cosine similarity metric
-- Rich metadata schema for provenance and filtering
-- Batch insertion with progress callbacks
-- Persistent file-based storage with efficient querying
-
-**Complete Pipeline Integration**
-
-- End-to-end processing in single command: `python full_pipeline.py notes.json`
-- Real-time progress tracking across all stages
-- Comprehensive error handling with graceful degradation
-- Performance metrics and statistics reporting
-
-### Key Technical Decisions
-
-#### Chunking Strategy
-
-- **Character-based**: 1200 characters target chunks (configurable via `--chunk-size`)
-- **LangChain-powered**: Uses MarkdownHeaderTextSplitter + RecursiveCharacterTextSplitter
-- **Structure-preserving**: Maintains code blocks, tables, and markdown elements as atomic units
-- **Heading-aware**: Respects markdown heading hierarchy for semantic boundaries
-- **Smart overlap**: Auto-calculated overlap (typically 200 characters) for context continuity
-- **Stable IDs**: SHA256-based chunk identifiers enable incremental updates
-
-#### Vector Database Design
-
-- **Stable IDs**: SHA256-based chunk IDs enable incremental updates
-- **Metadata schema**: `note_id`, `title`, `modificationDate`, `size`, `chunk_index`
-- **Distance metric**: Cosine similarity (with L2-normalized embeddings)
-- **Batch operations**: Optimized for 32-128 chunks per operation
-
-#### Error Resilience
-
-- **Note-level tolerance**: Continues processing if individual notes fail
-- **Graceful degradation**: Skips corrupted chunks and continues
-- **Progress tracking**: Real-time feedback for long-running operations
-- **Automatic cleanup**: Temporary directories cleaned up automatically
-
-### Integration Points
-
-#### Complete Pipeline Integration
-
-```python
-# Full pipeline programmatic usage
-from json_loader import load_json_notes
-from chunk_creator import create_chunks_for_notes
-from embedding import generate_embeddings_batch
-from storage import initialize_chromadb_client, get_or_create_collection, insert_chunks_batch
-
-# Load and process
-notes = load_json_notes("notes.json")
-enriched_notes = create_chunks_for_notes(notes, target_chars=1200)
-
-# Generate embeddings and store
-all_chunks = [chunk for note in enriched_notes for chunk in note['chunks']]
-embeddings = generate_embeddings_batch([chunk['content'] for chunk in all_chunks])
-client = initialize_chromadb_client("./chromadb_data")
-collection = get_or_create_collection(client)
-insert_chunks_batch(collection, chunks_with_embeddings)
+chromadb_data/                 # ChromaDB storage (persistent)
+test-data/                     # Test files and sample data
 ```
 
-#### Bear Notes Parser Integration
+## Development Workflows
 
-```python
-# Core function usage
-from bear_parser import parse_bear_backup
-notes = parse_bear_backup("backup.bear2bk", progress_callback=show_progress)
-# Returns: [{"title", "markdown", "size", "modificationDate", "creationDate"}, ...]
-```
-
-#### ChromaDB Integration
-
-```python
-# Vector database operations
-import chromadb
-client = chromadb.PersistentClient(path="chromadb_data")
-collection = client.get_or_create_collection("bear_notes", metadata={"hnsw:space": "cosine"})
-```
-
-#### Ollama AI Integration
-
-```python
-# Local embedding generation
-from ollama import embeddings as ollama_embeddings
-embeddings = ollama_embeddings(model="mxbai-embed-large:latest", prompt=text)
-```
-
-### Development Workflow
-
-#### Complete RAG Pipeline Processing
-
-1. Extract notes using `bear-notes-parser/cli.py`
-2. Ensure Ollama is running with required models
-3. Run complete pipeline: `cd bear-notes-cag-data-creator && python full_pipeline.py --verbose notes.json`
-4. Verify ChromaDB results with `chroma-peek` tool
-
-#### Individual Component Testing
-
-1. Test chunking: `python chunk_creator.py`
-2. Test embeddings: `python embedding.py`
-3. Test storage: `python storage.py`
-4. Test complete integration: `python full_pipeline.py --verbose test_data.json`
-
-#### Model Management
-
-- Ensure Ollama service is running (`ollama serve`)
-- Verify required models are available (`ollama list`)
-- Pull new models as needed (`ollama pull <model>`)
-
-#### Database Maintenance
-
-- ChromaDB data persists in `chromadb_data/` directory
-- Collection management through ChromaDB client API
-- Backup database directory for data preservation
-
-### Configuration and Dependencies
-
-#### Python Environment
-
-- **Python version**: 3.13 (configured in `.venv/`)
-- **Key dependencies**: chromadb, ollama, litellm, numpy, nltk, tiktoken
-- **Multi-provider support**: LiteLLM enables unified interface to Ollama, OpenAI, Gemini, Azure, Anthropic
-
-#### AI Models
-
-**Local (Ollama)**:
-- **Embedding model**: `mxbai-embed-large:latest` (1024 dimensions)
-- **LLM models**: `llama3.1:8b`, `gpt-oss:20b`, `gemma3:12b-it-qat`
-- **Model storage**: Managed by Ollama (~/.ollama/)
-
-**Cloud Providers**:
-- **OpenAI**: `text-embedding-3-small` (1536 dim), `gpt-4o-mini`
-- **Google Gemini**: `text-embedding-004` (768 dim), `gemini-1.5-flash`
-- **Azure OpenAI**: Custom deployments
-- **Anthropic**: Via LiteLLM proxy
-
-#### Storage Configuration
-
-- **Vector database**: `chromadb_data/` (persistent ChromaDB)
-- **Provider metadata**: Stored in collection metadata for MCP server reconstruction
-- **Temporary processing**: System temp directories (auto-cleanup)
-- **Note outputs**: JSON files alongside input backups
-
-## Multi-Provider AI Setup
-
-### Configuration Files
-
-The system uses JSON configuration files located in `configs/` directory. Each file specifies:
-- **Collection metadata**: name, description, database paths
-- **AI provider**: type (ollama/openai/gemini), models, API keys
-- **Processing options**: chunk size, force recreate, skip validation
-
-Example configurations are provided:
-- `configs/example-ollama.json` - Local Ollama (no API keys)
-- `configs/example-openai.json` - OpenAI cloud service
-- `configs/example-gemini.json` - Google Gemini cloud service
-
-### Setting Up API Keys
-
-Cloud providers require API keys stored as **environment variables**:
+### Complete Workflow: Extract → Index → Serve
 
 ```bash
-# OpenAI
-export OPENAI_API_KEY="sk-your-openai-api-key-here"
+# 1. Extract notes from Bear
+bear-extractor "Bear Notes 2025-10-20.bear2bk" -v -o bear-notes.json
 
-# Google Gemini
-export GEMINI_API_KEY="your-gemini-api-key-here"
+# 2. Validate
+minervium validate bear-notes.json --verbose
 
-# Azure OpenAI (if using Azure)
-export AZURE_API_KEY="your-azure-key-here"
-export AZURE_API_BASE="https://your-resource.openai.azure.com"
+# 3. Create index configuration
+cat > bear-config.json << 'EOF'
+{
+  "collection_name": "bear_notes",
+  "description": "Personal notes from Bear app",
+  "chromadb_path": "./chromadb_data",
+  "json_file": "bear-notes.json"
+}
+EOF
+
+# 4. Index
+minervium index --config bear-config.json --verbose
+
+# 5. Peek at results
+minervium peek bear_notes --chromadb ./chromadb_data --format table
+
+# 6. Start MCP server
+cat > server-config.json << 'EOF'
+{
+  "chromadb_path": "./chromadb_data",
+  "log_level": "INFO"
+}
+EOF
+
+minervium serve --config server-config.json
 ```
 
-**Security Note**: API keys are stored in config files as environment variable templates (e.g., `${OPENAI_API_KEY}`), not as actual secrets. The pipeline resolves these at runtime.
+### Working with Multiple Sources
 
-### Provider Metadata Flow
-
-The multi-provider system follows this metadata flow:
-
-```
-1. Config File (configs/*.json)
-   ↓
-   Contains: provider type, models, API key templates
-
-2. Pipeline Execution (full_pipeline.py)
-   ↓
-   - Initializes AI provider from config
-   - Generates embeddings with provider
-   - Extracts provider metadata
-
-3. ChromaDB Storage (chromadb_data/)
-   ↓
-   Collection metadata includes:
-   - embedding_provider: "ollama" / "openai" / "gemini"
-   - embedding_model: "mxbai-embed-large:latest"
-   - embedding_dimension: 1024
-   - embedding_base_url: "http://localhost:11434"
-   - embedding_api_key_ref: "${OPENAI_API_KEY}" or null
-   - llm_model: "llama3.1:8b"
-
-4. MCP Server Startup (markdown-notes-mcp-server/)
-   ↓
-   - Reads collection metadata from ChromaDB
-   - Reconstructs AI provider for each collection
-   - Resolves environment variables at runtime
-   - Checks provider availability
-   - Marks collections as available/unavailable
-
-5. MCP Search Queries
-   ↓
-   - Uses collection-specific provider
-   - Validates embedding dimensions match
-   - Generates query embeddings with correct provider
-```
-
-### MCP Server Multi-Provider Behavior
-
-When the MCP server starts, it discovers all collections and checks provider availability:
-
-#### Example: All Collections Available
-
-```
-[INFO] Discovering collections in ChromaDB...
-[INFO] Found 2 collections
-
-[INFO] Collection: bear_notes_ollama
-[INFO]   Provider: ollama (mxbai-embed-large:latest)
-[INFO]   Status: ✓ Available (dimension: 1024)
-
-[INFO] Collection: bear_notes_openai
-[INFO]   Provider: openai (text-embedding-3-small)
-[INFO]   Status: ✓ Available (dimension: 1536)
-
-[INFO] Summary: 2 available, 0 unavailable
-[INFO] MCP server ready
-```
-
-#### Example: Mixed Availability
-
-```
-[INFO] Discovering collections in ChromaDB...
-[INFO] Found 3 collections
-
-[INFO] Collection: bear_notes_ollama
-[INFO]   Provider: ollama (mxbai-embed-large:latest)
-[INFO]   Status: ✓ Available (dimension: 1024)
-
-[INFO] Collection: bear_notes_openai
-[INFO]   Provider: openai (text-embedding-3-small)
-[INFO]   Status: ✗ Unavailable
-[INFO]   Reason: Missing API key - OPENAI_API_KEY not found in environment
-
-[INFO] Collection: bear_notes_gemini
-[INFO]   Provider: gemini (text-embedding-004)
-[INFO]   Status: ✗ Unavailable
-[INFO]   Reason: Missing API key - GEMINI_API_KEY not found in environment
-
-[INFO] Summary: 1 available, 2 unavailable
-[INFO] MCP server ready (some collections unavailable)
-```
-
-#### Example: No Collections Available
-
-```
-[ERROR] No collections are available!
-
-Troubleshooting:
-1. Check that ChromaDB path is correct and contains collections
-2. For Ollama collections: Ensure 'ollama serve' is running
-3. For OpenAI collections: Set OPENAI_API_KEY environment variable
-4. For Gemini collections: Set GEMINI_API_KEY environment variable
-5. Run the pipeline to create new collections
-
-[ERROR] Exiting - no collections available for queries
-```
-
-## Troubleshooting
-
-### Common Errors and Solutions
-
-#### Error: "Missing API key"
-
-**Symptom**: Pipeline fails with `APIKeyMissingError` or provider marked as unavailable
-
-**Cause**: Required environment variable for cloud provider is not set
-
-**Solution**:
 ```bash
-# Check which API key is needed (look at error message or config file)
-# Set the environment variable:
-export OPENAI_API_KEY="sk-your-key-here"
-export GEMINI_API_KEY="your-key-here"
+# Extract from different sources
+bear-extractor "Bear.bear2bk" -o bear.json
+zim-extractor "wikipedia_history.zim" -l 1000 -o wiki.json
+markdown-books-extractor "alice.md" -o alice.json
 
-# Verify it's set
-echo $OPENAI_API_KEY
+# Validate all
+minervium validate bear.json
+minervium validate wiki.json
+minervium validate alice.json
 
-# Then rerun the pipeline
-python full_pipeline.py --config ../configs/example-openai.json
+# Index as separate collections
+minervium index --config bear-config.json
+minervium index --config wiki-config.json
+minervium index --config alice-config.json
+
+# All available through single MCP server
+minervium serve --config server-config.json
 ```
 
-#### Error: "Embedding dimension mismatch"
+### Testing Individual Components
 
-**Symptom**: `EmbeddingError: Embedding dimension mismatch! Query: 1536, Collection: 1024`
-
-**Cause**: Trying to query a collection with a different embedding model than it was created with
-
-**Example**: Collection created with Ollama `mxbai-embed-large` (1024 dim), but MCP server trying to use OpenAI `text-embedding-3-small` (1536 dim)
-
-**Solution**:
 ```bash
-# Option 1: Use the same provider that created the collection
-# Check collection metadata to see which provider was used:
+# Test schema validation
 python -c "
-import chromadb
-client = chromadb.PersistentClient(path='chromadb_data')
-collection = client.get_collection('your_collection_name')
-print(collection.metadata)
+from minervium.common.schemas import validate_notes_file
+import json
+
+with open('test-data/sample.json') as f:
+    data = json.load(f)
+
+validate_notes_file(data, 'test-data/sample.json')
 "
 
-# The metadata will show:
-# - embedding_provider: "ollama" / "openai" / "gemini"
-# - embedding_model: the specific model used
-# - embedding_dimension: expected dimension
-
-# Option 2: Recreate the collection with the new provider
-# Edit your config file to set forceRecreate: true
-python full_pipeline.py --config ../configs/example-openai.json
-```
-
-**Prevention**: The MCP server automatically uses the correct provider for each collection by reading metadata. This error should only occur if metadata is corrupted or missing.
-
-#### Error: "Ollama service unavailable"
-
-**Symptom**: `ProviderUnavailableError: Failed to connect to Ollama service`
-
-**Cause**: Ollama service is not running
-
-**Solution**:
-```bash
-# Start Ollama service in a separate terminal
-ollama serve
-
-# Verify it's running
-curl http://localhost:11434/api/tags
-
-# Pull required models if not present
-ollama pull mxbai-embed-large:latest
-ollama pull llama3.1:8b
-```
-
-#### Error: "Model not available"
-
-**Symptom**: Provider initialization fails with "model not found"
-
-**Solution for Ollama**:
-```bash
-# List available models
-ollama list
-
-# Pull the required model
-ollama pull mxbai-embed-large:latest
-ollama pull llama3.1:8b
-```
-
-**Solution for Cloud Providers**:
-- Verify model name is correct in config file
-- Check provider documentation for available models
-- Ensure you have access to the requested model tier
-
-#### Error: "Collection already exists"
-
-**Symptom**: `StorageError: Collection 'bear_notes' already exists`
-
-**Cause**: Trying to create a collection that already exists without `forceRecreate` flag
-
-**Solution**:
-```bash
-# Option 1: Use force recreate flag in config
-# Edit config file: "forceRecreate": true
-
-# Option 2: Use different collection name
-# Edit config file: "collection_name": "bear_notes_v2"
-
-# Option 3: Delete existing collection manually
+# Test chunking
 python -c "
-import chromadb
-client = chromadb.PersistentClient(path='chromadb_data')
-client.delete_collection('bear_notes')
+from minervium.indexing.chunking import create_chunks_for_notes
+
+notes = [{'title': 'Test', 'markdown': 'Content...', 'size': 100, 'modificationDate': '2025-01-01T00:00:00Z'}]
+chunked = create_chunks_for_notes(notes, target_chars=500)
+print(f'Created {sum(len(n[\"chunks\"]) for n in chunked)} chunks')
+"
+
+# Test ChromaDB connection
+python -c "
+from minervium.indexing.storage import initialize_chromadb_client
+client = initialize_chromadb_client('./chromadb_data')
+print(f'Collections: {[c.name for c in client.list_collections()]}')
 "
 ```
 
-#### Error: "Collection not found" (MCP Server)
+## Key Implementation Details
 
-**Symptom**: MCP search fails with "Collection 'xyz' does not exist"
+### Note Schema
 
-**Cause**: Collection was deleted or ChromaDB path is incorrect
+All extractors must output JSON conforming to this schema:
 
-**Solution**:
-```bash
-# Check what collections exist
-python -c "
-import chromadb
-client = chromadb.PersistentClient(path='chromadb_data')
-collections = client.list_collections()
-print([c.name for c in collections])
-"
-
-# Verify ChromaDB path in MCP server config
-cat markdown-notes-mcp-server/config.json
-
-# Recreate missing collections by running pipeline
-cd markdown-notes-cag-data-creator
-python full_pipeline.py --config ../configs/example-ollama.json
+```python
+{
+    "title": str,              # Required, non-empty
+    "markdown": str,           # Required, can be empty
+    "size": int,               # Required, >= 0, UTF-8 byte length
+    "modificationDate": str,   # Required, ISO 8601 format
+    "creationDate": str,       # Optional, ISO 8601 format
+    # ... custom fields allowed
+}
 ```
 
-#### Warning: "Description validation score < 7"
+See `docs/NOTE_SCHEMA.md` for complete specification.
 
-**Symptom**: Pipeline shows warning about low description quality score
+### Chunking Strategy
 
-**Cause**: Collection description is too generic or unclear
+- **Character-based**: Default 1200 characters per chunk
+- **LangChain-powered**: Uses `MarkdownHeaderTextSplitter` + `RecursiveCharacterTextSplitter`
+- **Structure-preserving**: Respects code blocks, tables, headings
+- **Smart overlap**: Auto-calculated (typically ~200 chars) for context continuity
+- **Stable IDs**: SHA256-based chunk identifiers
 
-**Impact**: Non-blocking warning - pipeline continues normally
+Configuration:
+```python
+from minervium.indexing.chunking import create_chunks_for_notes
 
-**Solution**:
-```bash
-# Option 1: Improve description in config file
-# Make it more specific and detailed about collection contents
-
-# Option 2: Skip validation entirely
-# Edit config file: "skipAiValidation": true
-
-# Example of good vs bad descriptions:
-# Bad:  "Personal notes"
-# Good: "Personal notes exported from Bear app covering software development,
-#        project management, meeting notes, research findings, and technical documentation"
+chunked_notes = create_chunks_for_notes(
+    notes,
+    target_chars=1200,  # Configurable chunk size
+    overlap_chars=None  # Auto-calculated if None
+)
 ```
 
-### Performance Issues
+### AI Provider Abstraction
 
-#### Slow embedding generation
+Minervium supports multiple AI providers through `ai_provider.py`:
 
-**Symptom**: Pipeline takes a long time to generate embeddings
+```python
+from minervium.common.ai_provider import AIProvider, AIProviderConfig
 
-**Causes and Solutions**:
-
-1. **Using cloud API with rate limits**:
-   ```bash
-   # Cloud providers have rate limits
-   # Consider using Ollama for local processing (faster, no rate limits)
-   python full_pipeline.py --config ../configs/example-ollama.json
-   ```
-
-2. **Large batch of notes**:
-   ```bash
-   # Process incrementally or use smaller test set first
-   # Test with small sample:
-   python full_pipeline.py --config ../configs/test-small.json --verbose
-   ```
-
-3. **Ollama on slow hardware**:
-   ```bash
-   # Check Ollama resource usage
-   # Consider using smaller/faster model or cloud provider
-   ```
-
-#### ChromaDB database corruption
-
-**Symptom**: Errors when accessing ChromaDB, inconsistent results
-
-**Solution**:
-```bash
-# Backup current database
-cp -r chromadb_data chromadb_data_backup_$(date +%Y%m%d)
-
-# Delete corrupted database
-rm -rf chromadb_data
-
-# Recreate collections from source JSON
-cd markdown-notes-cag-data-creator
-python full_pipeline.py --config ../configs/example-ollama.json
-```
-
-### Debugging Tips
-
-#### Enable verbose mode
-
-```bash
-# Get detailed logging
-python full_pipeline.py --config ../configs/example-ollama.json --verbose
-```
-
-#### Test provider connection
-
-```bash
-# Test Ollama
-curl http://localhost:11434/api/tags
-
-# Test OpenAI (requires API key)
-curl https://api.openai.com/v1/models \
-  -H "Authorization: Bearer $OPENAI_API_KEY"
-
-# Test programmatically
-python -c "
-from ai_provider import AIProvider, AIProviderConfig
-
+# Local Ollama
 config = AIProviderConfig(
     provider_type='ollama',
     embedding_model='mxbai-embed-large:latest',
@@ -671,27 +269,428 @@ config = AIProviderConfig(
     base_url='http://localhost:11434'
 )
 
+# OpenAI
+config = AIProviderConfig(
+    provider_type='openai',
+    embedding_model='text-embedding-3-small',
+    llm_model='gpt-4o-mini',
+    api_key='${OPENAI_API_KEY}'  # Resolved from env
+)
+
 provider = AIProvider(config)
-result = provider.check_availability()
-print(f'Available: {result[\"available\"]}')
-if not result['available']:
-    print(f'Error: {result[\"error\"]}')
-"
+embeddings = provider.generate_embeddings(['text1', 'text2'])
 ```
 
-#### Inspect collection metadata
+### Logging System
+
+Context-aware logging routes output appropriately:
+
+```python
+from minervium.common.logger import get_logger
+
+# CLI mode: stdout for user messages, stderr for errors
+logger = get_logger(__name__, mode="cli", simple=True)
+
+# MCP server mode: stderr for all logs
+logger = get_logger(__name__, mode="mcp", simple=False)
+
+logger.info("Processing...")
+logger.success("✓ Complete")
+logger.warning("Warning message")
+logger.error("Error occurred")
+```
+
+## Running Ollama (Local AI)
+
+Required for local embeddings and queries:
 
 ```bash
-# View all collection metadata
+# Start Ollama service
+ollama serve
+
+# Pull required models (in separate terminal)
+ollama pull mxbai-embed-large:latest
+ollama pull llama3.1:8b
+
+# Verify models are available
+ollama list
+```
+
+## Configuration Files
+
+### Index Configuration
+
+```json
+{
+  "collection_name": "my_notes",
+  "description": "Descriptive text about this collection",
+  "chromadb_path": "./chromadb_data",
+  "json_file": "./notes.json",
+  "forceRecreate": false,
+  "skipAiValidation": false
+}
+```
+
+### Server Configuration
+
+```json
+{
+  "chromadb_path": "./chromadb_data",
+  "log_level": "INFO"
+}
+```
+
+## Writing Extractors
+
+Extractors are independent programs that output standard JSON. They can be written in any language.
+
+### Python Example
+
+```python
+#!/usr/bin/env python3
+import json
+from datetime import datetime, timezone
+
+def extract_my_source(input_path):
+    notes = []
+
+    # Your extraction logic
+    for item in source_data:
+        note = {
+            "title": item.title,
+            "markdown": item.content,
+            "size": len(item.content.encode('utf-8')),
+            "modificationDate": datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        }
+        notes.append(note)
+
+    return notes
+
+if __name__ == "__main__":
+    import sys
+    notes = extract_my_source(sys.argv[1])
+    print(json.dumps(notes, indent=2))
+```
+
+Test with:
+```bash
+python my_extractor.py input.source > notes.json
+minervium validate notes.json
+```
+
+See `docs/EXTRACTOR_GUIDE.md` for complete tutorial.
+
+## Testing
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=minervium --cov-report=html
+
+# Run specific test file
+pytest tests/test_schemas.py
+
+# Verbose mode
+pytest -v
+```
+
+### Manual Testing
+
+```bash
+# Test complete workflow with sample data
+bear-extractor test-data/sample.bear2bk -o /tmp/test.json
+minervium validate /tmp/test.json
+minervium index --config test-configs/sample-config.json --dry-run
+```
+
+## Common Tasks
+
+### Adding a New Command
+
+1. Create `minervium/commands/newcmd.py`:
+```python
+def run_newcmd(args):
+    # Implementation
+    pass
+```
+
+2. Update `minervium/cli.py`:
+```python
+from minervium.commands.newcmd import run_newcmd
+
+# Add subparser
+newcmd_parser = subparsers.add_parser('newcmd', help='...')
+# Add arguments
+```
+
+3. Test:
+```bash
+minervium newcmd --help
+```
+
+### Modifying the Schema
+
+1. Edit `minervium/common/schemas.py`
+2. Update `NOTE_SCHEMA` dictionary
+3. Update validation functions if needed
+4. Update `docs/NOTE_SCHEMA.md` documentation
+5. Run tests: `pytest tests/test_schemas.py`
+
+### Adding a New Extractor
+
+1. Create directory: `extractors/my-extractor/`
+2. Create package structure:
+```
+extractors/my-extractor/
+├── my_extractor/
+│   ├── __init__.py
+│   ├── cli.py
+│   └── parser.py
+├── setup.py
+└── README.md
+```
+
+3. Implement extraction logic in `parser.py`
+4. Create CLI in `cli.py`
+5. Add console_scripts entry point in `setup.py`
+6. Test: `pip install -e . && my-extractor input -o output.json`
+7. Validate: `minervium validate output.json`
+
+See `docs/EXTRACTOR_GUIDE.md` for detailed guide.
+
+## Troubleshooting
+
+### Import Errors
+
+```bash
+# Ensure Minervium is installed
+pip install -e .
+
+# Check installation
+pip list | grep minervium
+
+# Verify imports work
+python -c "from minervium.cli import main; print('OK')"
+```
+
+### ChromaDB Issues
+
+```bash
+# Check ChromaDB directory exists
+ls -la chromadb_data/
+
+# List collections
 python -c "
 import chromadb
-import json
+client = chromadb.PersistentClient(path='./chromadb_data')
+print([c.name for c in client.list_collections()])
+"
 
-client = chromadb.PersistentClient(path='chromadb_data')
-collections = client.list_collections()
-
-for coll in collections:
-    print(f'\nCollection: {coll.name}')
-    print(json.dumps(coll.metadata, indent=2))
+# Delete corrupted collection
+python -c "
+import chromadb
+client = chromadb.PersistentClient(path='./chromadb_data')
+client.delete_collection('collection_name')
 "
 ```
+
+### Ollama Connection Errors
+
+```bash
+# Check Ollama is running
+curl http://localhost:11434/api/tags
+
+# Start Ollama if not running
+ollama serve
+
+# Check models are available
+ollama list
+```
+
+### Validation Failures
+
+```bash
+# Run with verbose mode to see all errors
+minervium validate notes.json --verbose
+
+# Check first note manually
+jq '.[0]' notes.json
+
+# Common issues:
+# - Missing required fields (title, markdown, size, modificationDate)
+# - Invalid date format (must be ISO 8601)
+# - Wrong root type (must be array [...], not object {...})
+# - Empty title
+# - Negative size
+```
+
+### MCP Server Not Starting
+
+```bash
+# Check ChromaDB path exists
+ls -la ./chromadb_data
+
+# Check collections exist
+python -c "
+import chromadb
+client = chromadb.PersistentClient(path='./chromadb_data')
+print(f'Collections: {len(client.list_collections())}')
+"
+
+# Check server config
+cat server-config.json
+
+# Run with verbose logging
+# (MCP servers log to stderr)
+minervium serve --config server-config.json 2>&1 | tee server.log
+```
+
+### Performance Issues
+
+**Slow indexing:**
+- Check Ollama is running locally (not cloud API with rate limits)
+- Verify chunk size isn't too small (default 1200 is good)
+- Monitor system resources (CPU, RAM)
+
+**Slow extraction:**
+- For ZIM files: use `--limit` to test with smaller sample first
+- For Bear: ensure backup file isn't corrupted
+- Check disk I/O (SSD vs HDD makes big difference)
+
+## Environment Variables
+
+```bash
+# For cloud AI providers
+export OPENAI_API_KEY="sk-your-key"
+export GEMINI_API_KEY="your-key"
+
+# For custom Ollama endpoint
+export OLLAMA_HOST="http://custom-host:11434"
+
+# For debugging
+export MINERVIUM_DEBUG=1  # Enable debug logging
+```
+
+## Code Style and Conventions
+
+### Python Version
+
+- Target: Python 3.10+
+- Developed with: Python 3.13
+- Use modern type hints: `list[dict]` instead of `List[Dict]`
+
+### Import Organization
+
+```python
+# Standard library
+import json
+import sys
+from datetime import datetime
+from pathlib import Path
+
+# Third-party
+import chromadb
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+# Local
+from minervium.common.logger import get_logger
+from minervium.common.schemas import validate_notes_file
+```
+
+### Naming Conventions
+
+- **Functions**: `snake_case`
+- **Classes**: `PascalCase`
+- **Constants**: `UPPER_SNAKE_CASE`
+- **Modules**: `snake_case.py`
+- **Packages**: `snake_case/`
+
+### Error Handling
+
+```python
+# Specific exceptions
+try:
+    result = risky_operation()
+except FileNotFoundError:
+    logger.error(f"File not found: {path}")
+    return 1
+except ValueError as e:
+    logger.error(f"Invalid value: {e}")
+    return 1
+
+# Log and re-raise for unexpected errors
+except Exception as e:
+    logger.error(f"Unexpected error: {e}")
+    raise
+```
+
+## Resources
+
+### Documentation
+
+- **README.md**: Project overview and quick start
+- **docs/NOTE_SCHEMA.md**: Complete schema specification
+- **docs/EXTRACTOR_GUIDE.md**: How to write extractors
+- **extractors/README.md**: Overview of official extractors
+- **CONFIGURATION_GUIDE.md**: Configuration options
+
+### External Links
+
+- **ChromaDB**: https://docs.trychroma.com/
+- **LangChain**: https://python.langchain.com/docs/
+- **Ollama**: https://ollama.ai/
+- **FastMCP**: https://github.com/jlowin/fastmcp
+- **Kiwix/ZIM**: https://www.kiwix.org/
+
+## Development Setup
+
+```bash
+# Clone repository
+git clone <repo-url>
+cd search-markdown-notes
+
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install in development mode
+pip install -e .
+
+# Install development dependencies
+pip install pytest pytest-cov black flake8 mypy
+
+# Install extractors (optional)
+cd extractors/bear-notes-extractor && pip install -e . && cd ../..
+cd extractors/zim-extractor && pip install -e . && cd ../..
+cd extractors/markdown-books-extractor && pip install -e . && cd ../..
+
+# Run tests
+pytest
+
+# Check code style
+black --check minervium/
+flake8 minervium/
+```
+
+## Git Workflow
+
+```bash
+# Make changes
+git add .
+git commit -m "feat: add new feature"
+
+# Push changes
+git push origin main
+```
+
+Use conventional commits:
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `docs:` - Documentation changes
+- `refactor:` - Code refactoring
+- `test:` - Test updates
+- `chore:` - Maintenance tasks
