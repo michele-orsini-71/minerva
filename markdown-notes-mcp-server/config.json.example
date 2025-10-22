@@ -1,4 +1,0 @@
-{
-  "chromadb_path": "/absolute/path/to/your/chromadb_data",
-  "default_max_results": 3
-}

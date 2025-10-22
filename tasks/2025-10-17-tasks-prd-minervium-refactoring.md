@@ -165,7 +165,7 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
   - [x] 6.7 Test error handling scenarios in `tests/test_error_handling.py` (✅ 30 tests: missing files, invalid config, provider unavailable, schema violations, keyboard interrupts, cascading errors)
 
 - [ ] 7.0 Deployment Preparation - Finalize repository structure and verify installation methods
-  - [ ] 7.1 Clean up old directories (archive or remove `markdown-notes-cag-data-creator/`, `markdown-notes-mcp-server/`, original extractor directories)
+  - [x] 7.1 Clean up old directories (archive or remove `markdown-notes-cag-data-creator/`, `markdown-notes-mcp-server/`, original extractor directories)
   - [ ] 7.2 Remove all docstring comments and review code comments in order to implement Clean Code comments policy (if a function is difficult to understand, rewrite it, use a better name, but do not add a commen)
   - [ ] 7.3 Update `.gitignore` for new structure (ignore `minervium.egg-info/`, `dist/`, `build/`, `*.pyc`, `__pycache__/`)
   - [ ] 7.4 Create installation testing script that verifies both pipx and pip+alias methods
