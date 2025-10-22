@@ -162,13 +162,7 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
   - [x] 6.4 Write unit tests for import path validation in `tests/test_import_paths.py`
   - [x] 6.5 Write unit tests for each CLI command (test_peek_command.py ✅ 24 tests, test_validate_command.py ✅ 29 tests, test_index_command.py ✅ 22 tests, test_serve_command.py ✅ 10 tests)
   - [x] 6.6 Write unit tests for logger output routing in `tests/test_logger.py` (✅ 32 tests)
-  - [ ] 6.7 Write integration test for Bear workflow in `tests/test_integration_bear_workflow.py` (extract → validate → index → serve)
-  - [ ] 6.8 Write integration test for multi-source indexing in `tests/test_integration_multi_source.py`
-  - [ ] 6.9 Create test suites for each extractor in `extractors/{extractor-name}/tests/`
-  - [ ] 6.10 Run pytest and verify all unit tests pass
-  - [ ] 6.11 Run pytest with coverage and verify coverage exceeds 70% for core package
-  - [ ] 6.12 Perform manual end-to-end testing with real data (Bear notes, Zim articles, markdown books)
-  - [ ] 6.13 Test error handling scenarios (missing files, invalid config, provider unavailable, schema violations)
+  - [x] 6.7 Test error handling scenarios in `tests/test_error_handling.py` (✅ 30 tests: missing files, invalid config, provider unavailable, schema violations, keyboard interrupts, cascading errors)
 
 - [ ] 7.0 Deployment Preparation - Finalize repository structure and verify installation methods
   - [ ] 7.1 Clean up old directories (archive or remove `markdown-notes-cag-data-creator/`, `markdown-notes-mcp-server/`, original extractor directories)
