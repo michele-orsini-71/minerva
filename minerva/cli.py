@@ -4,12 +4,12 @@ import argparse
 import sys
 from pathlib import Path
 
-from minervium.common.logger import get_logger
+from minerva.common.logger import get_logger
 
-from minervium.commands.index import run_index
-from minervium.commands.serve import run_serve
-from minervium.commands.peek import run_peek
-from minervium.commands.validate import run_validate
+from minerva.commands.index import run_index
+from minerva.commands.serve import run_serve
+from minerva.commands.peek import run_peek
+from minerva.commands.validate import run_validate
 
 logger = get_logger(__name__, simple=True, mode="cli")
 
@@ -17,24 +17,24 @@ logger = get_logger(__name__, simple=True, mode="cli")
 def create_parser():
 
     parser = argparse.ArgumentParser(
-        prog='minervium',
-        description='Minervium - A unified RAG system for personal knowledge management',
+        prog='minerva',
+        description='minerva - A unified RAG system for personal knowledge management',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   # Index markdown notes into ChromaDB
-  minervium index --config configs/index-ollama.json
+  minerva index --config configs/index-ollama.json
 
   # Validate JSON notes without indexing
-  minervium validate notes.json
+  minerva validate notes.json
 
   # Start the MCP server
-  minervium serve --config configs/server-config.json
+  minerva serve --config configs/server-config.json
 
   # Peek into a ChromaDB collection
-  minervium peek bear_notes --chromadb ./chromadb_data
+  minerva peek bear_notes --chromadb ./chromadb_data
 
-For more information, visit: https://github.com/yourusername/minervium
+For more information, visit: https://github.com/yourusername/minerva
         """
     )
 
@@ -47,7 +47,7 @@ For more information, visit: https://github.com/yourusername/minervium
     # Create subparsers for commands
     subparsers = parser.add_subparsers(
         title='commands',
-        description='Available Minervium commands',
+        description='Available minerva commands',
         dest='command',
         required=True,
         help='Command to execute'
@@ -64,13 +64,13 @@ For more information, visit: https://github.com/yourusername/minervium
         epilog="""
 Examples:
   # Index with Ollama provider
-  minervium index --config configs/index-ollama.json
+  minerva index --config configs/index-ollama.json
 
   # Index with verbose output
-  minervium index --config configs/index-ollama.json --verbose
+  minerva index --config configs/index-ollama.json --verbose
 
   # Dry run to validate configuration
-  minervium index --config configs/index-ollama.json --dry-run
+  minerva index --config configs/index-ollama.json --dry-run
         """
     )
 
@@ -105,10 +105,10 @@ Examples:
         epilog="""
 Examples:
   # Start MCP server with default config
-  minervium serve
+  minerva serve
 
   # Start with custom config
-  minervium serve --config configs/server-config.json
+  minerva serve --config configs/server-config.json
         """
     )
 
@@ -131,13 +131,13 @@ Examples:
         epilog="""
 Examples:
   # Peek at a collection
-  minervium peek bear_notes
+  minerva peek bear_notes
 
   # Peek with custom ChromaDB path
-  minervium peek bear_notes --chromadb ./chromadb_data
+  minerva peek bear_notes --chromadb ./chromadb_data
 
   # Output as JSON
-  minervium peek bear_notes --format json
+  minerva peek bear_notes --format json
         """
     )
 
@@ -169,15 +169,15 @@ Examples:
     validate_parser = subparsers.add_parser(
         'validate',
         help='Validate JSON notes against schema',
-        description='Validate JSON notes file against Minervium schema without indexing.',
+        description='Validate JSON notes file against minerva schema without indexing.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   # Validate a JSON notes file
-  minervium validate notes.json
+  minerva validate notes.json
 
   # Validate with verbose output
-  minervium validate notes.json --verbose
+  minerva validate notes.json --verbose
         """
     )
 
