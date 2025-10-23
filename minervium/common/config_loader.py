@@ -249,7 +249,6 @@ def validate_config_schema(data: Dict[str, Any], config_path: str) -> None:
 
 
 def validate_config_file_exists(config_path: str) -> Path:
-    """Validate that configuration file exists and return Path object."""
     config_file = Path(config_path)
 
     if not config_file.exists():
@@ -274,7 +273,6 @@ def validate_config_file_exists(config_path: str) -> Path:
 
 
 def read_json_config_file(config_file: Path, config_path: str) -> Dict[str, Any]:
-    """Read and parse JSON configuration file."""
     try:
         with open(config_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -291,7 +289,6 @@ def read_json_config_file(config_file: Path, config_path: str) -> Dict[str, Any]
             f"  Suggestion: Check file permissions and encoding"
         )
 
-    # Validate data is a dictionary
     if not isinstance(data, dict):
         raise ConfigError(
             f"Configuration file must contain a JSON object, got {type(data).__name__}\n"
@@ -303,7 +300,6 @@ def read_json_config_file(config_file: Path, config_path: str) -> Dict[str, Any]
 
 
 def extract_config_fields(data: Dict[str, Any]) -> CollectionConfig:
-    """Extract and build CollectionConfig from validated data."""
     collection_name = data['collection_name'].strip()
     description = data['description'].strip()
     force_recreate = data.get('forceRecreate', False)
@@ -326,18 +322,13 @@ def extract_config_fields(data: Dict[str, Any]) -> CollectionConfig:
 
 
 def load_collection_config(config_path: str) -> CollectionConfig:
-    """Load and validate collection configuration from JSON file."""
     try:
-        # Step 1: Validate file exists
         config_file = validate_config_file_exists(config_path)
 
-        # Step 2: Read and parse JSON
         data = read_json_config_file(config_file, config_path)
 
-        # Step 3: Validate against JSON schema
         validate_config_schema(data, config_path)
 
-        # Step 4: Extract fields and create config object
         return extract_config_fields(data)
 
     except ConfigError:

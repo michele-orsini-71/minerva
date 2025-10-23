@@ -9,17 +9,14 @@ from minervium.common.ai_provider import AIProvider, AIProviderError, ProviderUn
 from minervium.server.context_retrieval import apply_context_mode
 from minervium.common.logger import get_logger
 
-# Initialize console logger for performance tracking
 console_logger = get_logger(__name__)
 
 
 class SearchError(Exception):
-    """Base exception for search-related errors."""
     pass
 
 
 class CollectionNotFoundError(Exception):
-    """Raised when the specified collection doesn't exist."""
     pass
 
 
@@ -66,13 +63,10 @@ def search_knowledge_base(
         )
 
     try:
-        # Step 1: Initialize ChromaDB client
         client = initialize_chromadb_client(chromadb_path)
 
-        # Step 2: Validate collection exists
         collection = validate_collection_exists(client, collection_name)
 
-        # Step 3: Retrieve expected embedding dimension from collection metadata
         collection_metadata = collection.metadata
         if not collection_metadata:
             raise SearchError(
@@ -83,7 +77,6 @@ def search_knowledge_base(
 
         expected_dimension = collection_metadata.get('embedding_dimension')
 
-        # Step 4: Generate query embedding using provider
         console_logger.info("  → Generating query embedding...")
         try:
             query_embedding = provider.generate_embedding(query)
@@ -96,7 +89,6 @@ def search_knowledge_base(
         except AIProviderError as error:
             raise SearchError(f"Failed to generate query embedding: {error}")
 
-        # Step 5: Validate embedding dimension matches collection's expected dimension
         actual_dimension = len(query_embedding)
         if expected_dimension is not None and actual_dimension != expected_dimension:
             raise SearchError(
@@ -106,7 +98,6 @@ def search_knowledge_base(
                 f"Collection model: {collection_metadata.get('embedding_model')}"
             )
 
-        # Step 6: Perform semantic search
         console_logger.info(f"  → Querying ChromaDB (max_results: {max_results})...")
         results = collection.query(
             query_embeddings=[query_embedding],
@@ -118,7 +109,6 @@ def search_knowledge_base(
         num_results = len(results['ids'][0]) if results and results['ids'] else 0
         console_logger.info(f"  ✓ ChromaDB query completed ({num_results} results found)")
 
-        # Step 7: Format results
         formatted_results = []
 
         if results and results['ids'] and len(results['ids']) > 0:
@@ -136,7 +126,6 @@ def search_knowledge_base(
                 }
                 formatted_results.append(result)
 
-        # Step 8: Apply context retrieval based on context_mode
         console_logger.info(f"  → Applying context mode: {context_mode}...")
         enhanced_results = apply_context_mode(collection, formatted_results, context_mode)
         console_logger.info(f"  ✓ Context retrieval completed")

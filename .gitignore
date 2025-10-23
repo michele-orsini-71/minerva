@@ -49,6 +49,9 @@ venv.bak/
 *.swp
 *.swo
 
+# Claude Code local settings
+.claude/settings.local.json
+
 # OS files
 .DS_Store
 Thumbs.db
@@ -68,9 +71,18 @@ coverage.xml
 
 chromadb_data/
 
-# MCP Server configuration (contains local paths)
-markdown-notes-mcp-server/config.json
+# Configuration files (may contain local paths and API keys)
+config.json
+configs/*.json
+server-config.json
+*.config.json
 
-# Generated Bear notes JSON backup files (large files)
+# Generated extractor output files (can be large)
 test-data/*.json
 Bear*.json
+notes.json
+output.json
+
+# Tools directory scripts (development only)
+tools/remove_docstrings.py
+tools/*.pyc

@@ -1,12 +1,4 @@
-"""
-JSON schema definitions and validation functions for Minervium.
-
-This module defines the standard note format that all extractors must produce
-and provides validation utilities to ensure data integrity.
-"""
-
 from typing import List, Dict, Any, Tuple
-import sys
 
 from minervium.common.logger import get_logger
 
@@ -58,30 +50,17 @@ NOTES_ARRAY_SCHEMA = {
 
 
 def validate_note(note: Dict[str, Any], note_index: int = 0) -> Tuple[bool, List[str]]:
-    """
-    Validate a single note against the NOTE_SCHEMA.
-
-    Args:
-        note: Dictionary representing a note
-        note_index: Index of the note in the array (for error reporting)
-
-    Returns:
-        Tuple of (is_valid, list_of_errors)
-    """
     errors = []
 
-    # Check if note is a dictionary
     if not isinstance(note, dict):
         errors.append(f"Note at index {note_index}: Expected object, got {type(note).__name__}")
         return False, errors
 
-    # Check required fields
     required_fields = {"title", "markdown", "size", "modificationDate"}
     missing_fields = required_fields - set(note.keys())
     if missing_fields:
         errors.append(f"Note at index {note_index}: Missing required fields: {', '.join(sorted(missing_fields))}")
 
-    # Validate field types and constraints
     if "title" in note:
         if not isinstance(note["title"], str):
             errors.append(f"Note at index {note_index}: 'title' must be a string, got {type(note['title']).__name__}")
@@ -114,24 +93,12 @@ def validate_note(note: Dict[str, Any], note_index: int = 0) -> Tuple[bool, List
 
 
 def validate_notes_array(data: Any, strict: bool = True) -> Tuple[bool, List[str]]:
-    """
-    Validate an array of notes against the NOTES_ARRAY_SCHEMA.
-
-    Args:
-        data: Data to validate (should be a list of note dictionaries)
-        strict: If True, fail on first error. If False, collect all errors.
-
-    Returns:
-        Tuple of (is_valid, list_of_errors)
-    """
     errors = []
 
-    # Check if data is a list
     if not isinstance(data, list):
         errors.append(f"Expected an array of notes, got {type(data).__name__}")
         return False, errors
 
-    # Validate each note
     for index, note in enumerate(data):
         is_valid, note_errors = validate_note(note, index)
         if not is_valid:
@@ -143,16 +110,6 @@ def validate_notes_array(data: Any, strict: bool = True) -> Tuple[bool, List[str
 
 
 def validate_notes_file(data: Any, filepath: str = "input") -> bool:
-    """
-    Validate notes data and print user-friendly error messages.
-
-    Args:
-        data: Data to validate
-        filepath: Path to the file being validated (for error messages)
-
-    Returns:
-        True if valid, False otherwise (with errors printed to stderr)
-    """
     is_valid, errors = validate_notes_array(data, strict=False)
 
     if not is_valid:
@@ -171,28 +128,12 @@ def validate_notes_file(data: Any, filepath: str = "input") -> bool:
 
 
 def _is_valid_iso_date(date_string: str) -> bool:
-    """
-    Check if a string matches ISO 8601 date format (basic validation).
-
-    Args:
-        date_string: String to validate
-
-    Returns:
-        True if format looks like ISO 8601, False otherwise
-    """
-    # Basic pattern check: YYYY-MM-DDTHH:MM:SS (with optional timezone)
     import re
     pattern = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}'
     return bool(re.match(pattern, date_string))
 
 
 def get_schema_summary() -> str:
-    """
-    Get a human-readable summary of the note schema.
-
-    Returns:
-        Multi-line string describing the schema requirements
-    """
     return """
 Minervium Note Schema
 =====================
@@ -222,5 +163,4 @@ Recommended timezone: UTC (suffix with 'Z')
 
 
 if __name__ == "__main__":
-    # Print schema information when run directly
     logger.info(get_schema_summary())

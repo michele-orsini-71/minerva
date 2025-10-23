@@ -1,7 +1,3 @@
-"""
-Index command - Index markdown notes into ChromaDB with embeddings.
-"""
-
 import sys
 import time
 from argparse import Namespace
@@ -25,7 +21,6 @@ logger = get_logger(__name__, simple=True, mode="cli")
 
 
 def print_banner(is_dry_run: bool) -> None:
-    """Print command banner."""
     logger.info("")
     logger.info("Minervium Index Command")
     if is_dry_run:
@@ -34,7 +29,6 @@ def print_banner(is_dry_run: bool) -> None:
 
 
 def load_and_print_config(config_path: str, verbose: bool) -> CollectionConfig:
-    """Load configuration and optionally print details."""
     logger.info("")
     logger.info(f"Loading configuration from: {config_path}")
 
@@ -68,7 +62,6 @@ def load_and_print_config(config_path: str, verbose: bool) -> CollectionConfig:
 
 
 def load_and_print_notes(config: CollectionConfig, verbose: bool) -> List[Dict[str, Any]]:
-    """Load notes from JSON file and optionally print statistics."""
     logger.info("Loading notes from JSON file...")
 
     try:
@@ -92,7 +85,6 @@ def load_and_print_notes(config: CollectionConfig, verbose: bool) -> List[Dict[s
 
 
 def initialize_and_validate_provider(config: CollectionConfig, verbose: bool) -> AIProvider:
-    """Initialize AI provider and check availability."""
     logger.info("Initializing AI provider...")
 
     try:
@@ -125,7 +117,6 @@ def initialize_and_validate_provider(config: CollectionConfig, verbose: bool) ->
         logger.info(f"   Embedding dimension: {dimension}")
         logger.success("   Status: ✓ Available")
 
-        # Validate description if not skipped
         if not config.skip_ai_validation:
             if verbose:
                 logger.info("")
@@ -150,14 +141,11 @@ def initialize_and_validate_provider(config: CollectionConfig, verbose: bool) ->
 
 
 def run_dry_run(config: CollectionConfig, notes: List[Dict[str, Any]], verbose: bool) -> None:
-    """Run dry-run validation mode."""
     logger.info("Running dry-run validation...")
     logger.info("")
 
-    # Validate provider (but don't generate embeddings)
     _ = initialize_and_validate_provider(config, verbose)
 
-    # Create chunks to validate the chunking process
     logger.info("Creating semantic chunks (validation only)...")
     chunks = create_chunks_from_notes(notes, target_chars=config.chunk_size)
     logger.success(f"   ✓ Would create {len(chunks)} chunks from {len(notes)} notes")
@@ -182,19 +170,15 @@ def run_full_indexing(
     verbose: bool,
     start_time: float
 ) -> None:
-    """Run the full indexing pipeline."""
 
-    # Initialize provider
     provider = initialize_and_validate_provider(config, verbose)
     embedding_metadata = provider.get_embedding_metadata()
 
-    # Create chunks
     logger.info("Creating semantic chunks...")
     chunks = create_chunks_from_notes(notes, target_chars=config.chunk_size)
     logger.success(f"   ✓ Created {len(chunks)} chunks from {len(notes)} notes")
     logger.info("")
 
-    # Generate embeddings
     logger.info("Generating embeddings...")
     try:
         chunks_with_embeddings = generate_embeddings(provider, chunks)
@@ -204,7 +188,6 @@ def run_full_indexing(
         logger.error(f"Embedding generation error: {e}")
         sys.exit(1)
 
-    # Initialize ChromaDB
     logger.info(f"Initializing ChromaDB at: {config.chromadb_path}")
     try:
         client = initialize_chromadb_client(config.chromadb_path)
@@ -214,7 +197,6 @@ def run_full_indexing(
         logger.error(f"ChromaDB initialization error: {e}")
         sys.exit(1)
 
-    # Create or recreate collection
     logger.info(f"Preparing collection '{config.collection_name}'...")
     try:
         if config.force_recreate:
@@ -269,7 +251,6 @@ def print_final_summary(
     stats: Dict[str, int],
     processing_time: float
 ) -> None:
-    """Print final indexing summary."""
     logger.info("=" * 60)
     logger.success("✓ Indexing completed successfully!")
     logger.info("=" * 60)
@@ -291,28 +272,14 @@ def print_final_summary(
 
 
 def run_index(args: Namespace) -> int:
-    """
-    Main entry point for the index command.
-
-    Args:
-        args: Parsed command-line arguments containing:
-            - config: Path to configuration file
-            - verbose: Enable verbose output
-            - dry_run: Run validation only
-
-    Returns:
-        Exit code (0 for success, 1 for error)
-    """
     start_time = time.time()
 
     try:
         # Print banner
         print_banner(args.dry_run)
 
-        # Load configuration
         config = load_and_print_config(args.config, args.verbose)
 
-        # Load notes
         notes = load_and_print_notes(config, args.verbose)
 
         # Run appropriate mode

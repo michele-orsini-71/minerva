@@ -1,7 +1,3 @@
-"""
-Bear Notes Parser - Core parsing logic module for extracting notes from Bear backup files.
-"""
-
 import zipfile
 import json
 import tempfile
@@ -12,26 +8,10 @@ from typing import List, Dict
 
 
 def parse_bear_backup(backup_path: str, progress_callback=None) -> List[Dict]:
-    """
-    Parse a Bear backup file (.bear2bk) and extract all note data.
-
-    Args:
-        backup_path: Path to the .bear2bk file
-        progress_callback: Optional callback function to report progress (current, total)
-
-    Returns:
-        List of dictionaries containing note data with fields:
-        - title: Note title
-        - markdown: Note content in markdown format
-        - size: UTF-8 byte size of markdown content
-        - modificationDate: Last modification date in UTC ISO format
-        - creationDate: Creation date in UTC ISO format
-    """
     notes = []
 
     with tempfile.TemporaryDirectory() as temp_dir:
         try:
-            # Extract zip archive to temporary directory
             with zipfile.ZipFile(backup_path, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
         except (zipfile.BadZipFile, zipfile.LargeZipFile, FileNotFoundError, PermissionError) as e:
@@ -68,34 +48,16 @@ def parse_bear_backup(backup_path: str, progress_callback=None) -> List[Dict]:
 
 
 def extract_note_data(textbundle_path: str) -> Dict:
-    """
-    Extract note data from a single TextBundle folder.
-
-    Args:
-        textbundle_path: Path to the .textbundle folder
-
-    Returns:
-        Dictionary containing note data with fields:
-        - title: Note title
-        - markdown: Note content in markdown format
-        - size: UTF-8 byte size of markdown content
-        - modificationDate: Last modification date in UTC ISO format
-        - creationDate: Creation date in UTC ISO format
-        Returns None if note should be skipped (e.g., trashed notes)
-    """
     info_json_path = os.path.join(textbundle_path, 'info.json')
     text_markdown_path = os.path.join(textbundle_path, 'text.markdown')
 
-    # Check if required files exist
     if not os.path.exists(info_json_path) or not os.path.exists(text_markdown_path):
         return None
 
     try:
-        # Parse info.json to extract Bear metadata
         with open(info_json_path, 'r', encoding='utf-8') as f:
             info_data = json.load(f)
 
-        # Extract Bear-specific metadata (may be nested under 'net.shinyfrog.bear')
         bear_data = info_data.get('net.shinyfrog.bear', info_data)
 
         # Filter out trashed notes
@@ -110,10 +72,8 @@ def extract_note_data(textbundle_path: str) -> Dict:
         # U+2028 (Line Separator) and U+2029 (Paragraph Separator)
         markdown_content = markdown_content.replace('\u2028', '\n').replace('\u2029', '\n')
 
-        # Calculate UTF-8 byte size
         content_size = len(markdown_content.encode('utf-8'))
 
-        # Extract and normalize modification date to UTC ISO format
         modification_date = bear_data.get('modificationDate')
         if modification_date:
             # Handle both timestamp formats (numeric and ISO string)
@@ -127,7 +87,6 @@ def extract_note_data(textbundle_path: str) -> Dict:
         else:
             iso_date = None
 
-        # Extract and normalize creation date to UTC ISO format
         creation_date = bear_data.get('creationDate')
         if creation_date:
             # Handle both timestamp formats (numeric and ISO string)
@@ -144,7 +103,6 @@ def extract_note_data(textbundle_path: str) -> Dict:
         # Get title from Bear metadata, fallback to textbundle directory name
         title = bear_data.get('title', '')
         if not title:
-            # Extract title from textbundle directory name
             title = os.path.basename(textbundle_path).replace('.textbundle', '')
 
         return {

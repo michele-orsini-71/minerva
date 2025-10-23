@@ -18,7 +18,7 @@ from minervium.common.ai_provider import AIProvider, AIProviderError, ProviderUn
 
 
 class CollectionDiscoveryError(Exception):
-    """Raised when collection discovery operations fail."""
+    pass
 
 
 def reconstruct_provider_from_metadata(metadata: Dict[str, Any]) -> Tuple[Optional[AIProvider], Optional[str]]:

@@ -12,7 +12,6 @@ from minervium.common.logger import get_logger
 logger = get_logger(__name__, simple=True, mode="cli")
 
 def load_and_validate_config(config_path: str, verbose: bool = False):
-    # Step 1: Load configuration
     logger.info("Loading collection configuration...")
     try:
         config = load_collection_config(config_path)
@@ -42,14 +41,11 @@ def load_and_validate_config(config_path: str, verbose: bool = False):
         logger.error("     - collection_name, description, chromadb_path, json_file", print_to_stderr=False)
         sys.exit(1)
 
-    # Step 2: Validate collection metadata
     logger.info("Validating collection metadata...")
     try:
-        # Validate collection name
         validate_collection_name(config.collection_name)
         logger.info(f"   Collection name validated: {config.collection_name}")
 
-        # Validate description using explicit function based on skip_ai_validation flag
         if config.skip_ai_validation:
             validate_description_regex_only(config.description, config.collection_name)
             validation_result = None

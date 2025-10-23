@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""
-Throwaway script to find potentially dead code in markdown-notes-cag-data-creator.
-Searches for function definitions that have no references outside their own definition.
-"""
-
 import ast
 import os
 from pathlib import Path
@@ -12,17 +7,11 @@ from typing import List, Dict, Set
 
 
 def find_python_files(directory: str) -> List[Path]:
-    """Find all Python files in the directory."""
     path = Path(directory)
     return list(path.glob("*.py"))
 
 
 def extract_functions(file_path: Path) -> List[tuple[str, int]]:
-    """Extract all function definitions from a Python file using AST.
-
-    Returns:
-        List of tuples (function_name, line_number)
-    """
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -41,11 +30,6 @@ def extract_functions(file_path: Path) -> List[tuple[str, int]]:
 
 
 def search_references(function_name: str, directory: str) -> int:
-    """Search for references to a function name across all Python files.
-
-    Returns:
-        Number of references found (excluding the definition line)
-    """
     try:
         # Use grep to search for the function name in all .py files
         result = subprocess.run(
@@ -68,12 +52,6 @@ def search_references(function_name: str, directory: str) -> int:
 
 
 def is_dead_code(function_name: str, file_path: Path, line_number: int, directory: str) -> bool:
-    """Check if a function appears to be dead code.
-
-    A function is considered dead if:
-    - It only appears in its own definition
-    - No other references exist in the codebase
-    """
     try:
         # Search for all occurrences of the function name
         result = subprocess.run(
@@ -109,7 +87,6 @@ def is_dead_code(function_name: str, file_path: Path, line_number: int, director
 
 
 def analyze_dead_code(directory: str):
-    """Main analysis function."""
     print(f"Analyzing Python files in: {directory}\n")
 
     python_files = find_python_files(directory)

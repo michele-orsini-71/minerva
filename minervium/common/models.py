@@ -18,7 +18,6 @@ class Chunk:
     chunkIndex: int
 
     def __post_init__(self):
-        """Validate chunk data on creation."""
         if not self.id:
             raise ValueError("Chunk ID cannot be empty")
         if not self.content.strip():
@@ -36,7 +35,6 @@ class ChunkWithEmbedding:
     embedding: List[float]
 
     def __post_init__(self):
-        """Validate embedding data on creation."""
         if not self.embedding:
             raise ValueError("Embedding vector cannot be empty")
         if not all(isinstance(x, (int, float)) for x in self.embedding):
@@ -45,42 +43,34 @@ class ChunkWithEmbedding:
     # Convenience properties to access chunk fields directly
     @property
     def id(self) -> str:
-        """Access chunk ID directly."""
         return self.chunk.id
 
     @property
     def content(self) -> str:
-        """Access chunk content directly."""
         return self.chunk.content
 
     @property
     def noteId(self) -> str:
-        """Access note ID directly."""
         return self.chunk.noteId
 
     @property
     def title(self) -> str:
-        """Access note title directly."""
         return self.chunk.title
 
     @property
     def modificationDate(self) -> str:
-        """Access modification date directly."""
         return self.chunk.modificationDate
 
     @property
     def creationDate(self) -> str:
-        """Access creation date directly."""
         return self.chunk.creationDate
 
     @property
     def size(self) -> int:
-        """Access note size directly."""
         return self.chunk.size
 
     @property
     def chunkIndex(self) -> int:
-        """Access chunk index directly."""
         return self.chunk.chunkIndex
 
 

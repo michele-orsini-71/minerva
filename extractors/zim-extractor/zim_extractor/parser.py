@@ -1,4 +1,3 @@
-"""Utilities for extracting structured notes from ZIM archives."""
 
 from __future__ import annotations
 

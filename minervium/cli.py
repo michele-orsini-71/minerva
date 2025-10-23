@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""
-Minervium CLI - Main command-line interface
-Provides index, serve, peek, and validate commands for managing markdown notes.
-"""
 
 import argparse
 import sys
@@ -201,8 +197,6 @@ Examples:
 
 
 def main():
-    """Main entry point for the Minervium CLI."""
-
     parser = create_parser()
     args = parser.parse_args()
 

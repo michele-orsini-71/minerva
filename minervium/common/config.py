@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from minervium.common.logger import get_logger
 
-# Initialize console logger (simple mode for CLI usage)
 console_logger = get_logger(__name__, simple=True)
 
 
@@ -83,7 +82,6 @@ def validate_chromadb_path(config: Dict[str, Any]) -> None:
             f"  \"chromadb_path\": \"/absolute/path/to/chromadb_data\""
         )
 
-    # Check if path is absolute (starts with /)
     if not os.path.isabs(path):
         raise ConfigValidationError(
             f"Invalid 'chromadb_path': must be an absolute path\n"
@@ -160,16 +158,13 @@ def validate_config(config: Dict[str, Any]) -> None:
             f"  which was set when the collection was created by the pipeline."
         )
 
-    # Validate each field
     validate_chromadb_path(config)
     validate_default_max_results(config)
 
 
 def load_config(config_path: str = "config.json") -> Dict[str, Any]:
-    # Load JSON file
     config = load_json_file(config_path)
 
-    # Validate all fields
     validate_config(config)
 
     return config

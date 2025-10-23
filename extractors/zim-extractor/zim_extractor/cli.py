@@ -1,4 +1,3 @@
-"""Command-line interface for the Zim archive extractor."""
 
 from __future__ import annotations
 

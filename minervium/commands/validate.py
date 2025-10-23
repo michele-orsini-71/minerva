@@ -1,7 +1,3 @@
-"""
-Validate command - Validate JSON notes against Minervium schema without indexing.
-"""
-
 import json
 import sys
 from argparse import Namespace
@@ -15,14 +11,12 @@ logger = get_logger(__name__, simple=True, mode="cli")
 
 
 def print_banner() -> None:
-    """Print command banner."""
     logger.info("")
     logger.info("Minervium Validate Command")
     logger.info("=" * 60)
 
 
 def load_json_file(json_path: Path) -> Any:
-    """Load and parse JSON file."""
     try:
         with open(json_path, 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -45,7 +39,6 @@ def load_json_file(json_path: Path) -> Any:
 
 
 def print_validation_statistics(data: list, verbose: bool) -> None:
-    """Print statistics about the notes."""
     if not isinstance(data, list):
         return
 
@@ -54,7 +47,6 @@ def print_validation_statistics(data: list, verbose: bool) -> None:
     logger.info(f"  Total notes: {len(data)}")
 
     if verbose and len(data) > 0:
-        # Calculate content statistics
         total_size = sum(note.get('size', 0) for note in data if isinstance(note, dict))
         total_chars = sum(len(note.get('markdown', '')) for note in data if isinstance(note, dict))
         avg_size = total_size / len(data) if len(data) > 0 else 0
@@ -81,7 +73,6 @@ def print_validation_statistics(data: list, verbose: bool) -> None:
 
 
 def print_validation_errors(errors: list, json_path: Path, verbose: bool) -> None:
-    """Print validation errors in a user-friendly format."""
     logger.error(f"Validation failed for: {json_path}")
     logger.error("=" * 60, print_to_stderr=False)
 
@@ -115,18 +106,6 @@ def print_validation_errors(errors: list, json_path: Path, verbose: bool) -> Non
 
 
 def run_validate(args: Namespace) -> int:
-    """
-    Main entry point for the validate command.
-
-    Args:
-        args: Parsed command-line arguments containing:
-            - json_file: Path to JSON notes file to validate
-            - verbose: Enable verbose output
-
-    Returns:
-        Exit code (0 for success, 1 for validation failure)
-    """
-
     try:
         # Print banner
         print_banner()
@@ -145,13 +124,11 @@ def run_validate(args: Namespace) -> int:
             logger.info(get_schema_summary())
             logger.info("-" * 60)
 
-        # Load JSON file
         logger.info("")
         logger.info("Loading JSON file...")
         data = load_json_file(json_path)
         logger.success("   ✓ File loaded successfully")
 
-        # Validate structure
         logger.info("")
         logger.info("Validating note structure...")
         is_valid, errors = validate_notes_array(data, strict=False)

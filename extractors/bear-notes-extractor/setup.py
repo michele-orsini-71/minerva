@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Setup script for the standalone Bear extractor package."""
 
 from pathlib import Path
 from setuptools import find_packages, setup

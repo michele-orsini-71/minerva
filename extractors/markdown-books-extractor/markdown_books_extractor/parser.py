@@ -1,4 +1,3 @@
-"""Parsing helpers for markdown book source files."""
 
 from __future__ import annotations
 
@@ -11,7 +10,7 @@ HEADER_DELIMITER = "-------"
 
 
 class BookParseError(ValueError):
-    """Raised when the markdown book file cannot be parsed."""
+    pass
 
 
 def parse_book_file(file_path: str) -> List[Dict[str, object]]:

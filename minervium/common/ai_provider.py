@@ -86,7 +86,6 @@ class AIProvider:
                 input=[text]
             )
 
-            # Extract embedding from response
             if not response:
                 raise AIProviderError("Invalid response from provider: empty response")
 
@@ -104,7 +103,6 @@ class AIProvider:
 
             embedding_data = data[0]
 
-            # Extract embedding vector safely
             try:
                 embedding = embedding_data.embedding
             except (AttributeError, TypeError):
@@ -144,7 +142,6 @@ class AIProvider:
         if not texts:
             return []
 
-        # Validate all texts are non-empty
         for i, text in enumerate(texts):
             if not text or not text.strip():
                 raise ValueError(
@@ -163,7 +160,6 @@ class AIProvider:
                 input=texts
             )
 
-            # Extract embeddings from response
             if not response:
                 raise AIProviderError("Invalid response from provider: empty response")
 
@@ -184,10 +180,8 @@ class AIProvider:
                     f"Embedding count mismatch: expected {len(texts)}, got {len(data)}"
                 )
 
-            # Extract and normalize all embeddings
             embeddings = []
             for embedding_data in data:
-                # Extract embedding vector safely
                 try:
                     embedding = embedding_data.embedding
                 except (AttributeError, TypeError):
@@ -316,7 +310,6 @@ Be concise and direct."""
                 max_tokens=150
             )
 
-            # Extract response text
             if not response:
                 raise AIProviderError("Invalid response from LLM: empty response")
 
@@ -334,7 +327,6 @@ Be concise and direct."""
 
             first_choice = choices[0]
 
-            # Extract message and content safely
             try:
                 message = first_choice.message
             except (AttributeError, TypeError):
@@ -356,7 +348,6 @@ Be concise and direct."""
 
             response_text = content.strip()
 
-            # Parse score and feedback
             score_match = re.search(r'SCORE:\s*(\d+)', response_text, re.IGNORECASE)
             feedback_match = re.search(r'FEEDBACK:\s*(.+)', response_text, re.IGNORECASE | re.DOTALL)
 

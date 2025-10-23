@@ -7,17 +7,14 @@ from typing import Tuple, Optional, Dict, Any
 from minervium.indexing.storage import initialize_chromadb_client
 from minervium.common.logger import get_logger
 
-# Initialize console logger (simple mode for CLI usage)
 console_logger = get_logger(__name__, simple=True)
 
 
 class ValidationError(Exception):
-    """Base exception for validation errors."""
     pass
 
 
 def validate_chromadb_path(chromadb_path: str) -> Tuple[bool, Optional[str]]:
-    # Check if path is provided
     if not chromadb_path or not chromadb_path.strip():
         return (False,
             "ChromaDB path is empty or not configured\n"
@@ -34,7 +31,6 @@ def validate_chromadb_path(chromadb_path: str) -> Tuple[bool, Optional[str]]:
             "  3. Verify the path points to your ChromaDB storage directory"
         )
 
-    # Check if path exists
     path = Path(chromadb_path)
     if not path.exists():
         return (False,
@@ -56,7 +52,6 @@ def validate_chromadb_path(chromadb_path: str) -> Tuple[bool, Optional[str]]:
             "     created the database (default: ../chromadb_data)"
         )
 
-    # Check if path is a directory
     if not path.is_dir():
         return (False,
             f"ChromaDB path is not a directory: {chromadb_path}\n"
@@ -69,7 +64,6 @@ def validate_chromadb_path(chromadb_path: str) -> Tuple[bool, Optional[str]]:
             "  3. Update config.json with the correct directory path"
         )
 
-    # Check if directory is readable
     if not os.access(chromadb_path, os.R_OK):
         return (False,
             f"ChromaDB path is not readable: {chromadb_path}\n"
@@ -91,7 +85,6 @@ def validate_chromadb_path(chromadb_path: str) -> Tuple[bool, Optional[str]]:
 
 def validate_collection_availability(chromadb_path: str) -> Tuple[bool, Optional[str]]:
     try:
-        # Initialize ChromaDB client
         client = initialize_chromadb_client(chromadb_path)
 
         # List all collections
@@ -161,7 +154,6 @@ if __name__ == "__main__":
     from config import load_config, get_config_file_path
 
     try:
-        # Load configuration
         config_path = sys.argv[1] if len(sys.argv) > 1 else get_config_file_path()
         config = load_config(config_path)
 

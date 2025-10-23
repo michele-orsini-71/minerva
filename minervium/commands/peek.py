@@ -1,7 +1,3 @@
-"""
-Peek command - Inspect ChromaDB collections and view their contents.
-"""
-
 import json
 import sys
 from argparse import Namespace
@@ -14,7 +10,6 @@ logger = get_logger(__name__, simple=True, mode="cli")
 
 
 def get_collection_info(collection) -> Dict[str, Any]:
-    """Extract collection information including metadata and sample data."""
 
     # Get basic collection info
     info = {
@@ -45,7 +40,6 @@ def get_collection_info(collection) -> Dict[str, Any]:
 
 
 def format_collection_info_text(info: Dict[str, Any]) -> str:
-    """Format collection info as human-readable text."""
 
     lines = []
     lines.append("=" * 70)
@@ -133,24 +127,10 @@ def format_collection_info_text(info: Dict[str, Any]) -> str:
 
 
 def format_collection_info_json(info: Dict[str, Any]) -> str:
-    """Format collection info as JSON."""
     return json.dumps(info, indent=2)
 
 
 def run_peek(args: Namespace) -> int:
-    """
-    Main entry point for the peek command.
-
-    Args:
-        args: Parsed command-line arguments containing:
-            - collection_name: Name of collection to inspect
-            - chromadb: Path to ChromaDB directory
-            - format: Output format (text or json)
-
-    Returns:
-        Exit code (0 for success, 1 for error)
-    """
-
     try:
         chromadb_path = str(args.chromadb)
         output_format = args.format
@@ -160,7 +140,6 @@ def run_peek(args: Namespace) -> int:
         logger.info("")
         client = initialize_chromadb_client(chromadb_path)
 
-        # Check if collection exists
         existing_collections = [c.name for c in client.list_collections()]
         if collection_name not in existing_collections:
             logger.error(f"Collection '{collection_name}' not found")

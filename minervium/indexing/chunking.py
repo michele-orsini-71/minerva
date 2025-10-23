@@ -30,7 +30,6 @@ def generate_chunk_id(note_id: str, modification_date: str, chunk_index: int) ->
 
 
 def build_text_splitters(target_chars: int = 1200, overlap_chars: int = 200):
-    # Configure header-based splitter
     headers_to_split_on = [
         ("#", "Header 1"),
         ("##", "Header 2"),
@@ -45,7 +44,6 @@ def build_text_splitters(target_chars: int = 1200, overlap_chars: int = 200):
         strip_headers=False  # Keep headers in content for context
     )
 
-    # Configure recursive character splitter with overlap
     recursive_splitter = RecursiveCharacterTextSplitter(
         chunk_size=target_chars,
         chunk_overlap=overlap_chars,
@@ -63,7 +61,6 @@ def build_text_splitters(target_chars: int = 1200, overlap_chars: int = 200):
 
 
 class FallbackDocument:
-    """Simple document wrapper for fallback when header splitting fails."""
     def __init__(self, page_content: str):
         self.page_content = page_content
         self.metadata = {}
@@ -72,7 +69,6 @@ class FallbackDocument:
 def chunk_markdown_content(markdown: str, target_chars: int = 1200, overlap_chars: int = 200) -> List[Dict[str, Any]]:
     header_splitter, recursive_splitter = build_text_splitters(target_chars, overlap_chars)
 
-    # Step 1: Split by headers to preserve structure
     try:
         header_splits = header_splitter.split_text(markdown)
     except Exception as error:
@@ -80,13 +76,11 @@ def chunk_markdown_content(markdown: str, target_chars: int = 1200, overlap_char
         logger.warning(f"Header splitting failed, using recursive only: {error}")
         header_splits = [FallbackDocument(markdown)]
 
-    # Step 2: Further split large sections with recursive splitter
     all_chunks = []
     for split in header_splits:
         content = split.page_content
         metadata = split.metadata if hasattr(split, 'metadata') else {}
 
-        # If the header split is large, further split it with overlap
         if len(content) > target_chars:
             sub_chunks = recursive_splitter.split_text(content)
             for chunk_content in sub_chunks:
@@ -96,7 +90,6 @@ def chunk_markdown_content(markdown: str, target_chars: int = 1200, overlap_char
                     'size': len(chunk_content)
                 })
         else:
-            # Small enough to keep as-is
             all_chunks.append({
                 'content': content,
                 'metadata': metadata,
@@ -107,7 +100,6 @@ def chunk_markdown_content(markdown: str, target_chars: int = 1200, overlap_char
 
 
 def calculate_chunk_statistics(chunks: List[Chunk]) -> Dict[str, Any]:
-    """Calculate comprehensive statistics about created chunks."""
     if not chunks:
         return {
             'avg_chunk_size': 0,
@@ -130,13 +122,11 @@ def calculate_chunk_statistics(chunks: List[Chunk]) -> Dict[str, Any]:
 
 
 def log_chunking_progress(current: int, total: int, chunks_created: int) -> None:
-    """Log progress during chunking operation."""
     percentage = (current / total * 100) if total > 0 else 0
     logger.info(f"  Progress: {current}/{total} notes ({percentage:.1f}%) - {chunks_created} chunks created")
 
 
 def print_chunking_summary(stats: Dict[str, Any], failed_notes: List[Dict[str, str]], total_chunks: int) -> None:
-    """Print comprehensive summary of chunking operation."""
     logger.info(f"   Chunking complete:")
     logger.info(f"  Successfully processed: {stats['unique_note_ids']} notes")
     logger.info(f"  Failed: {len(failed_notes)} notes")
@@ -152,7 +142,6 @@ def print_chunking_summary(stats: Dict[str, Any], failed_notes: List[Dict[str, s
 
 
 def build_chunks_from_note(note: Dict[str, Any], target_chars: int, overlap_chars: int) -> List[Chunk]:
-    """Build immutable Chunk objects from a single note."""
     note_id = generate_note_id(note['title'], note.get('creationDate'))
 
     markdown_chunks = chunk_markdown_content(
@@ -181,7 +170,6 @@ def build_chunks_from_note(note: Dict[str, Any], target_chars: int, overlap_char
 
 
 def should_report_progress(current_index: int, total_count: int) -> bool:
-    """Determine if progress should be reported at this iteration."""
     return (current_index + 1) % 50 == 0 or current_index == total_count - 1
 
 
@@ -206,7 +194,6 @@ def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 12
             })
             logger.error(f"   Failed to process note '{note.get('title', 'Unknown')}': {error}")
 
-    # Calculate statistics and print summary
     stats = calculate_chunk_statistics(chunks)
     print_chunking_summary(stats, failed_notes, len(chunks))
 

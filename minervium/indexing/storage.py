@@ -35,7 +35,6 @@ def initialize_chromadb_client(db_path: str) -> chromadb.PersistentClient:
         db_path = os.path.abspath(os.path.expanduser(db_path))
         Path(db_path).mkdir(parents=True, exist_ok=True)
 
-        # Initialize persistent client
         client = chromadb.PersistentClient(
             path=db_path,
             settings=Settings(
@@ -61,7 +60,6 @@ def collection_exists(client: chromadb.PersistentClient, collection_name: str) -
         raise StorageError(f"Failed to check if collection '{collection_name}' exists: {error}")
 
 def delete_existing_collection(client: chromadb.PersistentClient, collection_name: str) -> None:
-    """Delete an existing collection if it exists."""
     exists = collection_exists(client, collection_name)
 
     if exists:
@@ -152,7 +150,6 @@ def build_collection_metadata(description: str, embedding_metadata: Dict[str, An
 
 
 def create_new_collection(client: chromadb.PersistentClient, collection_name: str, metadata: Dict[str, Any]) -> chromadb.Collection:
-    """Create a new ChromaDB collection with provided metadata."""
     try:
         collection = client.create_collection(
             name=collection_name,
@@ -164,7 +161,6 @@ def create_new_collection(client: chromadb.PersistentClient, collection_name: st
 
 
 def print_collection_creation_summary(collection_name: str, description: str, created_at: str) -> None:
-    """Print summary of collection creation."""
     logger.success(f"   Created new collection '{collection_name}'")
     if description:
         logger.info(f"   Description: {description[:80]}...")
@@ -177,14 +173,7 @@ def create_collection(
     description: str,
     embedding_metadata: Dict[str, Any],
 ) -> chromadb.Collection:
-    """
-    Create a new ChromaDB collection.
-
-    Raises StorageError if collection already exists.
-    Use recreate_collection() if you want to delete and recreate.
-    """
     try:
-        # Check if collection already exists
         if collection_exists(client, collection_name):
             raise StorageError(
                 f"Collection '{collection_name}' already exists\n"
@@ -194,13 +183,10 @@ def create_collection(
                 f"       (WARNING: This will permanently delete all existing data!)\n"
             )
 
-        # Step 1: Build metadata
         metadata = build_collection_metadata(description, embedding_metadata)
 
-        # Step 2: Create new collection
         collection = create_new_collection(client, collection_name, metadata)
 
-        # Step 3: Print summary
         print_collection_creation_summary(collection_name, description, metadata['created_at'])
 
         return collection
@@ -218,22 +204,13 @@ def recreate_collection(
     description: str,
     embedding_metadata: Dict[str, Any],
 ) -> chromadb.Collection:
-    """
-    Delete existing collection (if it exists) and create a new one.
-
-    WARNING: This is a destructive operation that permanently deletes all data.
-    """
     try:
-        # Step 1: Delete existing collection if it exists
         delete_existing_collection(client, collection_name)
 
-        # Step 2: Build metadata
         metadata = build_collection_metadata(description, embedding_metadata)
 
-        # Step 3: Create new collection
         collection = create_new_collection(client, collection_name, metadata)
 
-        # Step 4: Print summary
         print_collection_creation_summary(collection_name, description, metadata['created_at'])
 
         return collection
@@ -253,13 +230,6 @@ def get_or_create_collection(
     force_recreate: bool = False,
     embedding_metadata: Optional[Dict[str, Any]] = None,
 ) -> chromadb.Collection:
-    """
-    DEPRECATED: Use create_collection() or recreate_collection() instead.
-
-    This function is kept for backward compatibility but will be removed in future versions.
-    Note: embedding_metadata is still optional here for compatibility, but will fail
-    in create_collection/recreate_collection if not provided.
-    """
     if not embedding_metadata:
         raise StorageError(
             "Embedding metadata is required when creating collections\n"
@@ -358,7 +328,6 @@ def insert_batch_to_collection(collection, batch, batch_num, stats, adjacent_ids
 
 
 def print_storage_summary(stats):
-    """Print comprehensive summary of storage operation."""
     logger.info(f"   Storage complete:")
     logger.info(f"  Successfully stored: {stats['successful']} chunks")
     logger.info(f"  Failed: {stats['failed']} chunks")
@@ -395,7 +364,6 @@ def insert_chunks(
     }
 
     try:
-        # Process chunks in batches
         for i in range(0, len(chunks_with_embeddings), batch_size):
             batch = chunks_with_embeddings[i:i + batch_size]
             batch_num = stats["batches"] + 1

@@ -166,14 +166,14 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
 
 - [ ] 7.0 Deployment Preparation - Finalize repository structure and verify installation methods
   - [x] 7.1 Clean up old directories (archive or remove `markdown-notes-cag-data-creator/`, `markdown-notes-mcp-server/`, original extractor directories)
-  - [ ] 7.2 Remove all docstring comments and review code comments in order to implement Clean Code comments policy (if a function is difficult to understand, rewrite it, use a better name, but do not add a commen)
-  - [ ] 7.3 Update `.gitignore` for new structure (ignore `minervium.egg-info/`, `dist/`, `build/`, `*.pyc`, `__pycache__/`)
-  - [ ] 7.4 Create installation testing script that verifies both pipx and pip+alias methods
-  - [ ] 7.5 Test pipx installation method on fresh system (or fresh virtual environment)
-  - [ ] 7.6 Verify `minervium --help` works without venv activation after pipx install
-  - [ ] 7.7 Test pip+alias installation method on fresh system (or fresh virtual environment)
-  - [ ] 7.8 Verify `minervium --help` works without venv activation after pip+alias setup
-  - [ ] 7.9 Test all four commands (index, serve, peek, validate) work with both installation methods
+  - [x] 7.2 Remove all docstring comments and review code comments in order to implement Clean Code comments policy (if a function is difficult to understand, rewrite it, use a better name, but do not add a commen)
+  - [x] 7.3 Update `.gitignore` for new structure (ignore `minervium.egg-info/`, `dist/`, `build/`, `*.pyc`, `__pycache__/`)
+  - [x] 7.4 Create installation testing script that verifies both pipx and pip+alias methods
+  - [x] 7.5 Test pipx installation method on fresh system (or fresh virtual environment)
+  - [x] 7.6 Verify `minervium --help` works without venv activation after pipx install
+  - [x] 7.7 Test pip+alias installation method on fresh system (or fresh virtual environment)
+  - [x] 7.8 Verify `minervium --help` works without venv activation after pip+alias setup
+  - [x] 7.9 Test all four commands (index, serve, peek, validate) work with both installation methods
   - [ ] 7.10 Verify MCP server integration with Claude Desktop using `minervium serve`
   - [ ] 7.11 Verify installation documentation matches actual installation process
   - [ ] 7.12 Run final end-to-end workflow test: extract → validate → index → peek → serve

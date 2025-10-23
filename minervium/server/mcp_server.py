@@ -1,27 +1,9 @@
 #!/usr/bin/env python3
-"""
-Multi-Collection MCP Server for Markdown Notes Search
-
-This MCP server enables AI agents like Claude Desktop to perform semantic search
-across multiple ChromaDB knowledge bases (Bear notes, Zim wikis, documentation, etc.).
-
-The server exposes two main tools:
-1. list_knowledge_bases - Discover all available collections
-2. search_knowledge_base - Perform semantic search with configurable context modes
-
-Architecture:
-- FastMCP framework for declarative tool registration
-- ChromaDB for vector storage and semantic search
-- Ollama for local embedding generation
-- Configuration-driven with comprehensive validation
-"""
-
 import sys
 from typing import List, Dict, Any, Optional
 
 from minervium.common.logger import get_logger
 
-# Initialize console logger before optional dependencies are imported
 console_logger = get_logger(__name__)
 
 # Import FastMCP framework
@@ -42,7 +24,6 @@ from minervium.server.search_tools import (
 )
 from minervium.common.ai_provider import AIProvider
 
-# Initialize FastMCP server
 mcp = FastMCP("markdown-notes-mcp-server")
 
 # Global configuration (loaded at startup)
@@ -219,7 +200,6 @@ def main(config_path: str):
     console_logger.info("Multi-Collection MCP Server for Markdown Notes")
     console_logger.info("=" * 60)
 
-    # Initialize server (load config and validate prerequisites)
     initialize_server(config_path)
 
     # Run FastMCP server in stdio mode

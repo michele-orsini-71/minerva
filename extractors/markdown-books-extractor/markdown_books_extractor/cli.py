@@ -1,4 +1,3 @@
-"""Command-line interface for the markdown books extractor."""
 
 from __future__ import annotations
 

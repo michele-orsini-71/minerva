@@ -1,7 +1,3 @@
-"""
-Serve command - Start the MCP server for AI integration.
-"""
-
 import sys
 from argparse import Namespace
 
@@ -12,16 +8,6 @@ logger = get_logger(__name__, simple=True, mode="cli")
 
 
 def run_serve(args: Namespace) -> int:
-    """
-    Main entry point for the serve command.
-
-    Args:
-        args: Parsed command-line arguments containing:
-            - config: Path to server configuration file (required)
-
-    Returns:
-        Exit code (0 for success, 1 for error)
-    """
     try:
         # Convert Path to string and start the MCP server
         config_path = str(args.config)

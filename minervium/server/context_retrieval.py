@@ -3,12 +3,10 @@ import chromadb
 import time
 from minervium.common.logger import get_logger
 
-# Initialize console logger
 console_logger = get_logger(__name__)
 
 
 class ContextRetrievalError(Exception):
-    """Base exception for context retrieval errors."""
     pass
 
 
@@ -26,16 +24,9 @@ def get_enhanced_content(
     collection: chromadb.Collection,
     result: Dict[str, Any]
 ) -> Dict[str, Any]:
-    """
-    Get enhanced content for a single result.
-
-    NOTE: This function is kept for backward compatibility but is less efficient
-    than batch_get_enhanced_content() when processing multiple results.
-    """
     note_id = result['noteId']
     matched_chunk_index = result['chunkIndex']
 
-    # Calculate range of chunks to retrieve (±2 from matched chunk)
     start_index = max(0, matched_chunk_index - 2)
     end_index = matched_chunk_index + 2  # Will adjust based on actual chunks available
 
@@ -68,7 +59,6 @@ def get_enhanced_content(
 
         chunks.sort(key=lambda x: x['index'])
 
-        # Build content with markers
         content_parts = []
         for chunk in chunks:
             if chunk['index'] == matched_chunk_index:
@@ -99,7 +89,6 @@ def batch_get_enhanced_content_with_ids(
     try:
         start_time = time.time()
 
-        # Step 1: Collect all chunk IDs we need to fetch (matched + adjacent)
         ids_to_fetch = set()
         result_map = {}  # Map matched chunk ID to result
 
@@ -113,7 +102,6 @@ def batch_get_enhanced_content_with_ids(
             ids_to_fetch.add(matched_chunk_id)
             result_map[matched_chunk_id] = result
 
-        # Step 2: Fetch matched chunks to get their adjacentChunkIds metadata
         console_logger.info(f"  → Fetching {len(ids_to_fetch)} matched chunks...")
         matched_chunks = collection.get(
             ids=list(ids_to_fetch),
@@ -124,7 +112,6 @@ def batch_get_enhanced_content_with_ids(
             console_logger.warning("No matched chunks found. Falling back to chunk_only mode.")
             return [get_chunk_only_content(collection, r) for r in results]
 
-        # Step 3: Extract adjacent chunk IDs from metadata
         all_ids_to_fetch = set(ids_to_fetch)  # Start with matched IDs
         chunk_metadata_map = {}  # Map chunk_id -> metadata
 
@@ -136,7 +123,6 @@ def batch_get_enhanced_content_with_ids(
                 # Add adjacent IDs if available (parse from delimited string)
                 adjacent_ids_str = metadata.get('adjacent_chunk_ids') if isinstance(metadata, dict) else None
                 if adjacent_ids_str and isinstance(adjacent_ids_str, str):
-                    # Parse format: "prev2:prev1:next1:next2" where empty string means None
                     parts = adjacent_ids_str.split(':')
                     if len(parts) == 4:
                         for adj_id in parts:
@@ -148,7 +134,6 @@ def batch_get_enhanced_content_with_ids(
             console_logger.info("  → No adjacent_chunk_ids found in metadata. Falling back to metadata query.")
             return batch_get_enhanced_content(collection, results)
 
-        # Step 4: Fetch all chunks (matched + adjacent) in one query
         console_logger.info(f"  → Fetching {len(all_ids_to_fetch)} chunks (matched + adjacent)...")
         all_chunks = collection.get(
             ids=list(all_ids_to_fetch),
@@ -162,7 +147,6 @@ def batch_get_enhanced_content_with_ids(
             console_logger.warning("Failed to fetch chunks by ID. Falling back to chunk_only mode.")
             return [get_chunk_only_content(collection, r) for r in results]
 
-        # Step 5: Build lookup map for all chunks
         chunks_by_id = {}
         for i, chunk_id in enumerate(all_chunks['ids']):
             if all_chunks['documents'] and all_chunks['metadatas']:
@@ -172,7 +156,6 @@ def batch_get_enhanced_content_with_ids(
                     'chunkIndex': metadata.get('chunkIndex', 0) if metadata else 0
                 }
 
-        # Step 6: Build enhanced content for each result
         enhanced_results = []
 
         for result in results:
@@ -184,7 +167,6 @@ def batch_get_enhanced_content_with_ids(
                 enhanced_results.append(get_chunk_only_content(collection, result))
                 continue
 
-            # Parse adjacent IDs from delimited string: "prev2:prev1:next1:next2"
             adjacent_ids_str = matched_metadata['adjacent_chunk_ids']
             parts = adjacent_ids_str.split(':')
 
@@ -217,7 +199,6 @@ def batch_get_enhanced_content_with_ids(
                 enhanced_results.append(get_chunk_only_content(collection, result))
                 continue
 
-            # Build content with markers
             content_parts = []
 
             for chunk in chunks_in_order:
@@ -254,7 +235,6 @@ def batch_get_enhanced_content(
         return results
 
     try:
-        # Step 1: Collect all (noteId, chunkIndex range) requirements
         start_time = time.time()
         query_conditions = []
         result_requirements = []  # Track what each result needs
@@ -273,7 +253,6 @@ def batch_get_enhanced_content(
                 'endIndex': end_index
             })
 
-            # Build query condition for this result
             query_conditions.append({
                 "$and": [
                     {"noteId": {"$eq": note_id}},
@@ -282,7 +261,6 @@ def batch_get_enhanced_content(
                 ]
             })
 
-        # Step 2: Execute single batched query with $or
         batch_query = {"$or": query_conditions} if len(query_conditions) > 1 else query_conditions[0]
 
         all_chunks_results = collection.get(
@@ -298,7 +276,6 @@ def batch_get_enhanced_content(
             console_logger.warning("Batch query returned no results. Falling back to chunk_only mode.")
             return [get_chunk_only_content(collection, r) for r in results]
 
-        # Step 3: Group chunks by (noteId, chunkIndex) for fast lookup
         group_start = time.time()
         chunks_map = {}  # {(noteId, chunkIndex): {'index': ..., 'content': ...}}
 
@@ -318,7 +295,6 @@ def batch_get_enhanced_content(
         group_time = time.time() - group_start
         console_logger.info(f"  → Grouped {len(chunks_map)} chunks in {group_time*1000:.1f}ms")
 
-        # Step 4: Distribute chunks back to their respective results
         distribute_start = time.time()
         enhanced_results = []
 
@@ -344,7 +320,6 @@ def batch_get_enhanced_content(
             # Sort chunks by index
             relevant_chunks.sort(key=lambda x: x['index'])
 
-            # Build content with markers
             content_parts = []
             for chunk in relevant_chunks:
                 if chunk['index'] == matched_chunk_index:
@@ -405,7 +380,6 @@ def get_full_note_content(
 
         chunks.sort(key=lambda x: x['index'])
 
-        # Build content with match marker
         content_parts = []
         for chunk in chunks:
             if chunk['index'] == matched_chunk_index:

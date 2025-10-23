@@ -15,7 +15,6 @@ except ImportError as error:
 
 
 class ValidationError(Exception):
-    """Exception raised when validation fails."""
     pass
 
 
@@ -168,7 +167,6 @@ def validate_description_regex(description: str, collection_name: str) -> None:
 
 
 def extract_models_list(models_response):
-    """Extract models list from Ollama response (handles both dict and object formats)."""
     if hasattr(models_response, 'models'):
         return models_response.models
 
@@ -179,7 +177,6 @@ def extract_models_list(models_response):
 
 
 def extract_model_name(model_entry):
-    """Extract model name from a model entry (handles both dict and object formats)."""
     if hasattr(model_entry, 'model'):
         return model_entry.model
 
@@ -190,7 +187,6 @@ def extract_model_name(model_entry):
 
 
 def is_model_match(model_name: str, available_model: str) -> bool:
-    """Check if model name matches available model (handles :latest suffix variations)."""
     return model_name in available_model or available_model in model_name
 
 
@@ -211,7 +207,6 @@ def check_model_availability(model_name: str = AI_MODEL) -> bool:
 
 
 def extract_json_from_response(response_text: str) -> str:
-    """Extract JSON object from response text that may contain extra text."""
     json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
     if json_match:
         return json_match.group(0)
@@ -219,7 +214,6 @@ def extract_json_from_response(response_text: str) -> str:
 
 
 def parse_ai_validation_response(response_text: str) -> Tuple[int, str, str]:
-    """Parse and validate AI response JSON for validation results."""
     import json
 
     try:
@@ -240,7 +234,6 @@ def parse_ai_validation_response(response_text: str) -> Tuple[int, str, str]:
 
 
 def validate_ai_score(score: Any) -> int:
-    """Validate that AI score is a valid number in the expected range."""
     if not isinstance(score, (int, float)) or score < 0 or score > 10:
         raise ValidationError(
             f"AI model returned invalid score: {score}\n"
@@ -251,7 +244,6 @@ def validate_ai_score(score: Any) -> int:
 
 
 def call_ollama_ai(description: str, collection_name: str, model: str) -> str:
-    """Call Ollama AI model with validation prompt."""
     prompt = AI_VALIDATION_PROMPT.format(
         collection_name=collection_name,
         description=description
@@ -273,7 +265,6 @@ def call_ollama_ai(description: str, collection_name: str, model: str) -> str:
 
 
 def check_model_availability_or_raise(model: str) -> None:
-    """Check if AI model is available, raise ValidationError if not."""
     if not check_model_availability(model):
         raise ValidationError(
             f"AI model '{model}' not available for validation\n"
@@ -286,7 +277,6 @@ def check_model_availability_or_raise(model: str) -> None:
 
 
 def wrap_generic_ai_error(error: Exception) -> ValidationError:
-    """Wrap generic exceptions in ValidationError with helpful message."""
     if isinstance(error, ValidationError):
         return error
 
@@ -297,7 +287,6 @@ def wrap_generic_ai_error(error: Exception) -> ValidationError:
 
 
 def validate_with_ai(description: str, collection_name: str, model: str = AI_MODEL) -> Tuple[int, str, str]:
-    """Validate collection description using AI model."""
     check_model_availability_or_raise(model)
 
     try:
@@ -329,10 +318,8 @@ def validate_description_with_ai(
     collection_name: str,
     model: str = AI_MODEL
 ) -> Dict[str, Any]:
-    # Step 1: Mandatory regex validation
     validate_description_regex(description, collection_name)
 
-    # Step 2: AI validation
     logger.info(f"Running AI validation for collection '{collection_name}'...")
     score, reasoning, suggestions = validate_with_ai(description, collection_name, model)
 
@@ -374,11 +361,6 @@ def validate_description_hybrid(
     skip_ai_validation: bool = False,
     model: str = AI_MODEL
 ) -> Optional[Dict[str, Any]]:
-    """
-    DEPRECATED: Use validate_description_regex_only() or validate_description_with_ai() instead.
-
-    This function is kept for backward compatibility but will be removed in future versions.
-    """
     if skip_ai_validation:
         validate_description_regex_only(description, collection_name)
         return None

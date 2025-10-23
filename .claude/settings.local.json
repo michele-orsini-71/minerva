@@ -30,7 +30,12 @@
       "Bash(git log:*)",
       "Bash(tree:*)",
       "Bash(timeout 3 python:*)",
-      "Bash(for f in minervium/common/*.py minervium/commands/*.py)"
+      "Bash(for f in minervium/common/*.py minervium/commands/*.py)",
+      "Bash(pip install -e .)",
+      "Bash(git check-ignore -v .claude/settings.local.json)",
+      "Bash(bash tools/test_installation.sh)",
+      "Bash(pip install pipx)",
+      "Bash(pipx --version)"
     ],
     "deny": [],
     "ask": []

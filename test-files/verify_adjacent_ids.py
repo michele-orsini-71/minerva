@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Verify that adjacent_chunk_ids are stored correctly in ChromaDB."""
 
 import sys
 from pathlib import Path

@@ -12,26 +12,21 @@ def load_json_notes(json_path: str) -> List[Dict[str, Any]]:
         # Convert to Path object for better path handling
         file_path = Path(json_path)
 
-        # Check if file exists
         if not file_path.exists():
             logger.error(f"JSON file not found: {json_path}")
             sys.exit(1)
 
-        # Check if it's a file (not a directory)
         if not file_path.is_file():
             logger.error(f"Path is not a file: {json_path}")
             sys.exit(1)
 
-        # Load and parse JSON
         with open(file_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
-        # Validate that we got a list
         if not isinstance(data, list):
             logger.error(f"JSON file must contain an array of notes, got {type(data).__name__}")
             sys.exit(1)
 
-        # Validate note structure
         if data:  # Only validate if not empty
             required_fields = {'title', 'markdown', 'size', 'modificationDate'}
             first_note = data[0]
