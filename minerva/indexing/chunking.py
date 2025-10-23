@@ -1,12 +1,12 @@
 import sys
 import hashlib
 from typing import List, Dict, Any
-from minervium.common.logger import get_logger
+from minerva.common.logger import get_logger
 
 logger = get_logger(__name__, mode="cli")
 
 # Import our immutable models
-from minervium.common.models import Chunk, ChunkList
+from minerva.common.models import Chunk, ChunkList
 
 try:
     from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter

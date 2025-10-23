@@ -2,7 +2,7 @@ import pytest
 from pathlib import Path
 from argparse import ArgumentParser, Namespace
 
-from minervium.cli import create_parser
+from minerva.cli import create_parser
 
 
 class TestParserCreation:

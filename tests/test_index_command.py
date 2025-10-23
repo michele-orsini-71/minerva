@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 from typing import Any
 
-from minervium.commands.index import (
+from minerva.commands.index import (
     run_index,
     print_banner,
     load_and_print_config,
@@ -67,7 +67,7 @@ class TestLoadAndPrintConfig:
 
     @patch('minervium.commands.index.load_collection_config')
     def test_load_config_error_exits(self, mock_load, temp_dir: Path):
-        from minervium.common.config_loader import ConfigError
+        from minerva.common.config_loader import ConfigError
         mock_load.side_effect = ConfigError("Invalid configuration")
 
         config_path = str(temp_dir / "config.json")
@@ -213,7 +213,7 @@ class TestRunDryRun:
     @patch('minervium.commands.index.create_chunks_from_notes')
     @patch('minervium.commands.index.initialize_and_validate_provider')
     def test_dry_run_successful(self, mock_init_provider, mock_create_chunks, valid_notes_list):
-        from minervium.commands.index import run_dry_run
+        from minerva.commands.index import run_dry_run
 
         mock_provider = Mock()
         mock_init_provider.return_value = mock_provider
@@ -235,7 +235,7 @@ class TestRunDryRun:
     @patch('minervium.commands.index.create_chunks_from_notes')
     @patch('minervium.commands.index.initialize_and_validate_provider')
     def test_dry_run_verbose(self, mock_init_provider, mock_create_chunks, valid_notes_list):
-        from minervium.commands.index import run_dry_run
+        from minerva.commands.index import run_dry_run
 
         mock_provider = Mock()
         mock_init_provider.return_value = mock_provider
@@ -271,7 +271,7 @@ class TestRunFullIndexing:
         mock_insert_chunks,
         valid_notes_list
     ):
-        from minervium.commands.index import run_full_indexing
+        from minerva.commands.index import run_full_indexing
 
         # Mock provider
         mock_provider = Mock()
@@ -333,7 +333,7 @@ class TestRunFullIndexing:
         mock_recreate_collection,
         valid_notes_list
     ):
-        from minervium.commands.index import run_full_indexing
+        from minerva.commands.index import run_full_indexing
 
         # Setup mocks
         mock_provider = Mock()
@@ -370,7 +370,7 @@ class TestRunFullIndexing:
 class TestInitializeAndValidateProvider:
     @patch('minervium.commands.index.initialize_provider')
     def test_provider_available(self, mock_init):
-        from minervium.commands.index import initialize_and_validate_provider
+        from minerva.commands.index import initialize_and_validate_provider
 
         mock_provider = Mock()
         mock_provider.provider_type = "ollama"
@@ -396,7 +396,7 @@ class TestInitializeAndValidateProvider:
 
     @patch('minervium.commands.index.initialize_provider')
     def test_provider_unavailable_exits(self, mock_init):
-        from minervium.commands.index import initialize_and_validate_provider
+        from minerva.commands.index import initialize_and_validate_provider
 
         mock_provider = Mock()
         mock_provider.provider_type = "ollama"
@@ -415,7 +415,7 @@ class TestInitializeAndValidateProvider:
 
     @patch('minervium.commands.index.initialize_provider')
     def test_provider_skip_validation(self, mock_init):
-        from minervium.commands.index import initialize_and_validate_provider
+        from minerva.commands.index import initialize_and_validate_provider
 
         mock_provider = Mock()
         mock_provider.provider_type = "ollama"

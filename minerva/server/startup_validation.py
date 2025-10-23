@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import Tuple, Optional, Dict, Any
 
 # Import ChromaDB client initialization from existing pipeline
-from minervium.indexing.storage import initialize_chromadb_client
-from minervium.common.logger import get_logger
+from minerva.indexing.storage import initialize_chromadb_client
+from minerva.common.logger import get_logger
 
 console_logger = get_logger(__name__, simple=True)
 

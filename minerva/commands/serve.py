@@ -1,8 +1,8 @@
 import sys
 from argparse import Namespace
 
-from minervium.common.logger import get_logger
-from minervium.server.mcp_server import main as mcp_main
+from minerva.common.logger import get_logger
+from minerva.server.mcp_server import main as mcp_main
 
 logger = get_logger(__name__, simple=True, mode="cli")
 

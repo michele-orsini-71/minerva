@@ -3,7 +3,7 @@ from argparse import Namespace
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from minervium.commands.serve import run_serve
+from minerva.commands.serve import run_serve
 
 
 class TestRunServe:

@@ -2,7 +2,7 @@ import json
 import sys
 from pathlib import Path
 from typing import List, Dict, Any
-from minervium.common.logger import get_logger
+from minerva.common.logger import get_logger
 
 logger = get_logger(__name__, mode="cli")
 

@@ -1,13 +1,13 @@
 import sys
 
-from minervium.common.config_loader import load_collection_config, ConfigError
-from minervium.common.validation import (
+from minerva.common.config_loader import load_collection_config, ConfigError
+from minerva.common.validation import (
     validate_collection_name,
     validate_description_regex_only,
     validate_description_with_ai,
     ValidationError
 )
-from minervium.common.logger import get_logger
+from minerva.common.logger import get_logger
 
 logger = get_logger(__name__, simple=True, mode="cli")
 

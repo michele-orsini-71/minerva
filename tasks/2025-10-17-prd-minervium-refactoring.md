@@ -5,6 +5,7 @@
 This PRD outlines the refactoring of the "search-markdown-notes" project into **Minervium**, a unified personal knowledge management RAG (Retrieval-Augmented Generation) system. The project currently suffers from inconsistent naming conventions, scattered entry points, and unclear architectural boundaries between core functionality and data extraction tools.
 
 The refactoring will transform the codebase into a well-organized, developer-friendly tool with:
+
 - A unified CLI interface under the `minervium` command
 - Clear separation between core RAG functionality and independent extractor tools
 - Standardized JSON schema for note ingestion
@@ -31,6 +32,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 ### Core User - Personal Knowledge Manager
 
 **As a personal knowledge management user**, I want to:
+
 - Install Minervium with a single pip command
 - Index my notes using `minervium index --config index-config.json` (where config specifies the JSON file path and AI provider)
 - Start the MCP server with `minervium serve --config server-config.json` (where config specifies ChromaDB path and settings)
@@ -40,6 +42,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 ### Extractor User - Bear Notes User
 
 **As a Bear notes user**, I want to:
+
 - Install Bear extractor separately: `pip install -e extractors/bear-notes-extractor`
 - Extract notes with `bear-extractor backup.bear2bk -o notes.json`
 - Validate the complete pipeline setup with `minervium validate --config config.json` before indexing
@@ -48,6 +51,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 ### Extractor Developer - Custom Integration Builder
 
 **As a developer building a custom extractor**, I want to:
+
 - Understand the JSON schema specification from clear documentation
 - Build extractors in any language (Python, Go, Rust, JavaScript)
 - Test my complete pipeline setup with `minervium validate --config config.json`
@@ -57,6 +61,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 ### Multi-Source User - Knowledge Aggregator
 
 **As a user with multiple knowledge sources**, I want to:
+
 - Extract from different sources: Bear notes, Zim articles, markdown books
 - Index each source into separate collections with different AI providers
 - Query all collections through a single MCP server
@@ -69,6 +74,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 **FR1.1** The system MUST create a single `minervium` Python package containing all core functionality
 
 **FR1.2** The package MUST organize code into logical subpackages:
+
 - `minervium/commands/` - CLI command implementations
 - `minervium/indexing/` - RAG pipeline (chunking, embeddings, storage)
 - `minervium/server/` - MCP server functionality
@@ -81,6 +87,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 ### FR2: CLI Command Interface
 
 **FR2.1** The system MUST implement `minervium index` command that:
+
 - Requires `--config` flag with configuration file path (config contains JSON file path, chunk size, provider settings, etc.)
 - Supports `--verbose` flag for detailed progress output
 - Supports `--dry-run` flag for configuration validation without processing
@@ -88,6 +95,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - Shows provider initialization, chunking, embedding, and storage progress
 
 **FR2.2** The system MUST implement `minervium serve` command that:
+
 - Requires `--config` flag with server configuration file path (config contains chromadb_path, default_max_results, etc.)
 - Starts the MCP server in stdio mode
 - Auto-discovers collections from ChromaDB path specified in config
@@ -96,6 +104,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - Config file format: JSON with required fields `chromadb_path` (absolute path) and `default_max_results` (integer)
 
 **FR2.3** The system MUST implement `minervium peek` command that:
+
 - Accepts collection name as positional argument
 - Accepts optional `--chromadb` flag for database path
 - Accepts optional `--format` flag (table or json output, default: table)
@@ -103,6 +112,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - Uses formatted table output for readability
 
 **FR2.4** The system MUST implement `minervium validate` command that:
+
 - Requires `--config` flag with configuration file path
 - Accepts optional `--verbose` flag for detailed validation output
 - Internally calls the same logic as `minervium index --config --dry-run` (comprehensive validation)
@@ -121,12 +131,14 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 ### FR3: File Reorganization
 
 **FR3.1** The system MUST migrate RAG pipeline files:
+
 - `chunk_creator.py` → `minervium/indexing/chunking.py`
 - `embedding.py` → `minervium/indexing/embeddings.py`
 - `storage.py` → `minervium/indexing/storage.py`
 - `json_loader.py` → `minervium/indexing/json_loader.py`
 
 **FR3.2** The system MUST migrate MCP server files:
+
 - `server.py` → `minervium/server/mcp_server.py`
 - `search_tools.py` → `minervium/server/search_tools.py`
 - `collection_discovery.py` → `minervium/server/collection_discovery.py`
@@ -134,11 +146,13 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - `startup_validation.py` → `minervium/server/startup_validation.py`
 
 **FR3.3** The system MUST migrate shared components:
+
 - `ai_provider.py` → `minervium/common/ai_provider.py`
 - `config.py` → `minervium/common/config.py`
 - `console_logger.py` → `minervium/common/logger.py`
 
 **FR3.4** The system MUST create new files:
+
 - `minervium/common/schemas.py` - JSON schema definition
 - `minervium/cli.py` - Main CLI entry point with argparse
 - `minervium/__init__.py` - Package initialization
@@ -151,22 +165,26 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 ### FR4: Extractor Independence
 
 **FR4.1** Extractors MUST be reorganized into `extractors/` directory as independent packages:
+
 - `extractors/bear-notes-extractor/`
 - `extractors/zim-extractor/`
 - `extractors/markdown-books-extractor/`
 
 **FR4.2** Each extractor package MUST include:
+
 - Standalone CLI entry point (no Minervium imports)
 - Independent setup.py with console_scripts entry point
 - README.md with usage instructions
 - tests/ directory
 
 **FR4.3** Extractor CLI commands MUST follow naming pattern: `{source}-extractor`
+
 - Bear extractor: `bear-extractor`
 - Zim extractor: `zim-extractor`
 - Books extractor: `markdown-books-extractor`
 
 **FR4.4** Extractors MUST output JSON conforming to the Minervium schema:
+
 ```json
 [
   {
@@ -187,6 +205,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 ### FR5: JSON Schema Contract
 
 **FR5.1** The system MUST define a strict JSON schema for note ingestion with required fields:
+
 - `title` (string): Note title
 - `markdown` (string): Full markdown content
 - `size` (integer): Content size in bytes
@@ -203,6 +222,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 ### FR6: Documentation
 
 **FR6.1** The system MUST provide a comprehensive main README.md covering:
+
 - Minervium overview and architecture
 - Quick start guide
 - Installation instructions with both pipx (recommended) and pip+alias methods
@@ -214,12 +234,14 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - Link to extractor development guide
 
 **FR6.2** The system MUST provide `docs/NOTE_SCHEMA.md` documenting:
+
 - Complete JSON schema specification
 - Field requirements and constraints
 - Validation rules
 - Example valid/invalid JSON
 
 **FR6.3** The system MUST provide `docs/EXTRACTOR_GUIDE.md` covering:
+
 - Step-by-step extractor creation tutorial
 - JSON schema specification reference
 - Example extractors walkthrough
@@ -227,12 +249,14 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - Testing guidelines using `minervium validate --config` to verify complete pipeline setup
 
 **FR6.4** The system MUST provide `extractors/README.md` covering:
+
 - Overview of all official extractors
 - How to build custom extractors
 - Link to extractor development guide
 - Emphasis on language-agnostic approach
 
 **FR6.5** Each extractor package MUST include its own README.md with:
+
 - Usage instructions
 - Supported file formats
 - Installation steps
@@ -240,6 +264,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - Output format reference (link to schema docs)
 
 **FR6.6** The system MUST update CLAUDE.md with:
+
 - New directory structure
 - Updated command examples using `minervium` CLI
 - Extractor development section
@@ -247,6 +272,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - Removal of old component references
 
 **FR6.7** The system MUST update CONFIGURATION_GUIDE.md with:
+
 - Updated config file paths
 - Updated command examples
 - Multi-collection setup guide
@@ -254,12 +280,14 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 ### FR7: Testing
 
 **FR7.1** The system MUST implement unit tests using pytest for:
+
 - JSON schema validation logic
 - CLI command parsing
 - Import path validation
 - Schema enforcement
 
 **FR7.2** Integration tests are NOT required for initial release:
+
 - The system components are simple enough that unit tests provide sufficient coverage
 - Mocking AI providers and ChromaDB for integration tests adds complexity without significant value
 - Manual end-to-end testing will verify workflows work correctly
@@ -275,6 +303,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 **FR8.1** The system MUST support two installation methods to avoid virtual environment activation issues:
 
 **Primary Method: pipx (Recommended)**
+
 - Users install pipx once: `pip install --user pipx && pipx ensurepath`
 - Install Minervium: `pipx install -e /path/to/minervium`
 - Commands work globally without venv activation: `minervium index --config config.json`
@@ -282,6 +311,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - Clean, modern approach used by popular CLI tools (black, pytest, poetry)
 
 **Alternative Method: pip + alias**
+
 - Users activate venv once: `source .venv/bin/activate`
 - Install with pip: `pip install -e .`
 - Add alias to shell profile (~/.bashrc or ~/.zshrc): `alias minervium='/absolute/path/to/minervium/.venv/bin/minervium'`
@@ -289,12 +319,14 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - Classic approach, works everywhere
 
 **FR8.2** Documentation MUST include:
+
 - Step-by-step installation instructions for both methods
 - Explanation of why venv activation is not required after initial setup
 - Troubleshooting section for PATH and alias issues
 - Verification steps: `minervium --help` should work after installation
 
 **FR8.3** The core package setup.py MUST:
+
 - Define package name as "minervium"
 - Set initial version to "1.0.0"
 - List all dependencies (chromadb, litellm, numpy, langchain, tiktoken, nltk)
@@ -303,6 +335,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - Include package metadata (author, description, classifiers)
 
 **FR8.4** Each extractor setup.py MUST:
+
 - Define unique package name (e.g., "bear-notes-extractor")
 - Set initial version to "1.0.0"
 - NOT include Minervium as a dependency
@@ -310,6 +343,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - Include extractor-specific dependencies only
 
 **FR8.5** The repository MUST use a monorepo structure with:
+
 - `minervium/` - Core package
 - `extractors/` - Independent extractor packages
 - `configs/` - Example configurations
@@ -376,6 +410,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 ### UI/UX Considerations
 
 **CLI Design Principles:**
+
 - Single unified command: `minervium`
 - Intuitive subcommands named as verbs (index, serve, peek, validate)
 - Consistent flag naming across commands (--config, --verbose, --chromadb)
@@ -384,6 +419,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - Clear error messages with actionable suggestions
 
 **Example User Workflow:**
+
 ```bash
 # 1. Extract notes from source
 bear-extractor backup.bear2bk -o notes.json
@@ -404,6 +440,7 @@ minervium serve --config server-config.json
 **Output Format Examples:**
 
 Validation success:
+
 ```
 Minervium Configuration Validation (DRY-RUN MODE)
 ═══════════════════════════════════════════════════════════
@@ -435,6 +472,7 @@ Configuration is ready for indexing.
 ```
 
 Peek command output:
+
 ```
 Collection: bear_notes
 ─────────────────────────────────────
@@ -449,6 +487,7 @@ Last Modified:   2025-10-17 08:15:23 UTC
 ### Component Interaction
 
 **Indexing Flow:**
+
 1. User runs `minervium index --config ollama.json` (config file contains JSON file path and all settings)
 2. CLI parses arguments with argparse
 3. `commands/index.py` loads configuration file
@@ -460,6 +499,7 @@ Last Modified:   2025-10-17 08:15:23 UTC
 9. CLI reports success with statistics
 
 **Server Flow:**
+
 1. User runs `minervium serve --config server-config.json`
 2. CLI loads server configuration (chromadb_path, default_max_results)
 3. CLI starts MCP server in stdio mode
@@ -473,11 +513,13 @@ Last Modified:   2025-10-17 08:15:23 UTC
 ## Technical Considerations
 
 ### Minimum Python Version
+
 - **Requirement:** Python 3.8+ (ChromaDB dependency)
 - **Recommendation:** Python 3.10+ for better type hints and performance
 - **Testing:** Verify compatibility with Python 3.8, 3.9, 3.10, 3.11, 3.12, 3.13
 
 ### Core Dependencies
+
 ```
 chromadb>=0.4.0        # Vector database
 litellm>=1.0.0         # Multi-provider AI abstraction
@@ -489,7 +531,9 @@ nltk>=3.8              # NLP utilities
 ```
 
 ### Argparse CLI Structure
+
 The CLI will use argparse with subparsers for commands:
+
 ```python
 # minervium/cli.py pseudo-code
 parser = argparse.ArgumentParser(prog='minervium')
@@ -518,7 +562,9 @@ validate_parser.add_argument('-v', '--verbose', action='store_true')
 ```
 
 ### Import Path Migration
+
 All imports must change from current scattered structure to unified package:
+
 ```python
 # Old imports (before refactoring)
 from chunk_creator import create_chunks_for_notes
@@ -526,12 +572,13 @@ from embedding import generate_embeddings_batch
 from storage import initialize_chromadb_client
 
 # New imports (after refactoring)
-from minervium.indexing.chunking import create_chunks_for_notes
-from minervium.indexing.embeddings import generate_embeddings_batch
-from minervium.indexing.storage import initialize_chromadb_client
+from minerva.indexing.chunking import create_chunks_for_notes
+from minerva.indexing.embeddings import generate_embeddings_batch
+from minerva.indexing.storage import initialize_chromadb_client
 ```
 
 ### Error Handling Strategy
+
 - **Validation errors:** Clear messages with field/note location, exit code 1
 - **Provider unavailable:** Log warning, mark collection unavailable, continue (don't crash server)
 - **File not found:** Friendly error with path check suggestion
@@ -543,6 +590,7 @@ from minervium.indexing.storage import initialize_chromadb_client
 The system MUST adopt the existing MCP server logging pattern with context-aware output routing.
 
 **Logger Implementation (`minervium/common/logger.py`):**
+
 - Migrate `markdown-notes-mcp-server/console_logger.py` to `minervium/common/logger.py`
 - Maintain the facade pattern over Python's logging module
 - Support two formatting modes:
@@ -553,24 +601,27 @@ The system MUST adopt the existing MCP server logging pattern with context-aware
 - Set `propagate = False` to prevent root logger interference
 
 **Context-Aware Output Routing:**
+
 - **MCP server (`serve` command):** All output to stderr (prevents stdio JSON-RPC contamination)
 - **CLI commands (`index`, `validate`, `peek`):** Normal output to stdout, errors to stderr
 - Implement via configurable StreamHandler based on execution context
 
 **Usage Pattern:**
+
 ```python
 # In library modules (detailed logging)
-from minervium.common.logger import get_logger
+from minerva.common.logger import get_logger
 logger = get_logger(__name__)
 logger.info("Processing started...")
 
 # In CLI commands (simple user-facing output)
-from minervium.common.logger import get_logger
+from minerva.common.logger import get_logger
 logger = get_logger(__name__, simple=True)
 logger.success("✓ Pipeline completed!")
 ```
 
 **Migration Requirements:**
+
 - Replace all `print()` statements with appropriate logger calls
 - Use `logger.success()` for positive outcomes (✓ checkmarks)
 - Use `logger.error()` for failures with optional stderr fallback
@@ -580,6 +631,7 @@ logger.success("✓ Pipeline completed!")
 ### Configuration File Formats
 
 **Index Configuration (for `minervium index` and `minervium validate`):**
+
 ```json
 {
   "collection_name": "bear_notes",
@@ -606,6 +658,7 @@ logger.success("✓ Pipeline completed!")
 ```
 
 **Server Configuration (for `minervium serve`):**
+
 ```json
 {
   "chromadb_path": "/absolute/path/to/chromadb_data",
@@ -615,6 +668,7 @@ logger.success("✓ Pipeline completed!")
 
 **Configuration Validation:**
 The system should validate configuration files before processing:
+
 - Check required fields exist (for index: collection_name, json_file, ai_provider; for serve: chromadb_path, default_max_results)
 - Validate provider type is supported (ollama/openai/gemini)
 - Validate chromadb_path is absolute path for server config
@@ -625,6 +679,7 @@ The system should validate configuration files before processing:
 ## Success Metrics
 
 ### Developer Experience Metrics
+
 - Installation completes with either pipx or pip+alias method in <5 minutes
 - Commands work immediately without venv activation after setup
 - `minervium --help` shows all capabilities with clear descriptions
@@ -633,12 +688,14 @@ The system should validate configuration files before processing:
 - New extractor can be created by copying example and modifying in <2 hours
 
 ### User Workflow Metrics
+
 - Complete workflow (extract → validate → index → serve) requires <5 commands
 - Multi-source indexing is straightforward with clear collection separation
 - Custom extractor development possible with <100 lines of code
 - Migration from old structure to new structure completes without data loss
 
 ### Technical Quality Metrics
+
 - All commands have --help documentation
 - Test coverage exceeds 70% for core package
 - No circular import dependencies
@@ -647,6 +704,7 @@ The system should validate configuration files before processing:
 - All integration tests pass
 
 ### Documentation Metrics
+
 - Main README covers 80% of common use cases
 - Extractor development guide includes working example
 - Migration guide exists for users with existing installations
@@ -656,9 +714,11 @@ The system should validate configuration files before processing:
 ## Open Questions
 
 ### 1. Logging Format Standardization ✓ RESOLVED
+
 **Decision:** Adopt existing MCP server logging pattern (ConsoleLogger facade)
 
 **Implementation:**
+
 - Migrate `console_logger.py` to `minervium/common/logger.py`
 - Use facade pattern with semantic methods (info, success, warning, error)
 - Support two modes: detailed (with timestamps) and simple (message only)
@@ -666,18 +726,22 @@ The system should validate configuration files before processing:
 - Human-readable by default (structured JSON logging deferred to future version)
 
 ### 2. Configuration File Validation Strictness ✓ RESOLVED
+
 **Decision:** Strict validation - fail on unknown fields to catch typos
 
 **Rationale:**
+
 - Catches configuration errors early (typos, outdated fields)
 - Makes config files self-documenting (only valid fields accepted)
 - Prevents silent failures from misconfigured options
 - Future compatibility: new fields added with schema version bumps
 
 ### 3. Extractor Output Validation ✓ RESOLVED
+
 **Decision:** Extractors do NOT validate against Minervium schema
 
 **Rationale:**
+
 - **Separation of concerns:** Extractors extract, Minervium validates
 - **No coupling:** Extractors remain independent, don't import Minervium code
 - **Schema evolution:** Schema changes don't require extractor updates
@@ -685,6 +749,7 @@ The system should validate configuration files before processing:
 - **Standard pattern:** Programs typically don't validate against external schemas
 
 **User Workflow:**
+
 ```bash
 # 1. Extract data (no validation)
 bear-extractor backup.bear2bk -o notes.json
@@ -699,32 +764,39 @@ minervium index --config config.json
 **Note:** Extractors MAY include basic sanity checks (e.g., "did we extract any notes?") but should NOT validate against the full Minervium schema.
 
 ### 4. Test Organization ✓ RESOLVED
+
 **Decision:** Top-level `tests/` directory
 
 **Rationale:**
+
 - Standard Python convention (pytest, setuptools default)
 - Cleaner package structure (tests not bundled in distribution)
 - Easier to exclude from package installation
 - Follows pattern used by most Python projects
 
 ### 5. Entry Point for Commands ✓ RESOLVED
+
 **Decision:** Support both console scripts and module execution
 
 **Implementation:**
+
 - Console scripts via setup.py: `minervium = minervium.cli:main`
 - Module execution via `__main__.py`: `python -m minervium`
 - Both call the same `cli:main()` function
 
 **Rationale:**
+
 - Maximum flexibility for users
 - Module execution useful for development and testing
 - Console scripts provide clean user experience
 - Minimal implementation overhead (just add `__main__.py`)
 
 ### 6. Installation Method Documentation Priority
+
 **Question:** Should we emphasize pipx or pip+alias in the main README quick start?
 
 **Options:**
+
 - Emphasize pipx (modern, cleaner, but requires pipx pre-install)
 - Emphasize pip+alias (works everywhere, more familiar)
 - Show both equally
@@ -734,6 +806,7 @@ minervium index --config config.json
 ## Implementation Phases
 
 ### Phase 1: Core Reorganization (2-3 days)
+
 - Create unified directory structure
 - Migrate all core files to new locations
 - Migrate `markdown-notes-mcp-server/console_logger.py` to `minervium/common/logger.py`
@@ -746,6 +819,7 @@ minervium index --config config.json
 - Test that all core functionality works
 
 **Acceptance Criteria:**
+
 - `minervium index` command works end-to-end
 - `minervium serve` starts MCP server successfully
 - `minervium peek` displays collection information
@@ -755,6 +829,7 @@ minervium index --config config.json
 - No import errors or circular dependencies
 
 ### Phase 2: Extractor Reorganization (1-2 days)
+
 - Create `extractors/` directory structure
 - Migrate Bear extractor to standalone package
 - Migrate Zim extractor to standalone package
@@ -764,12 +839,14 @@ minervium index --config config.json
 - Test extractors independently
 
 **Acceptance Criteria:**
+
 - Each extractor installs independently with `pip install -e`
 - Each extractor CLI works without Minervium installed
 - Extractor output validates successfully with `minervium validate`
 - No dependencies between extractors
 
 ### Phase 3: Documentation (1-2 days)
+
 - Write comprehensive main README.md with installation instructions
 - Document both pipx (recommended) and pip+alias installation methods
 - Include clear explanation that venv activation is not needed after setup
@@ -783,6 +860,7 @@ minervium index --config config.json
 - Add code examples to all documentation
 
 **Acceptance Criteria:**
+
 - All documentation files exist and are complete
 - Installation instructions for both methods are clear and tested
 - README examples work when copy-pasted
@@ -792,6 +870,7 @@ minervium index --config config.json
 - Installation verification steps work correctly
 
 ### Phase 4: Testing & Validation (1-2 days)
+
 - Write unit tests for JSON schema validation
 - Write unit tests for CLI argument parsing
 - Write integration test: bear-extractor → validate → index → serve
@@ -802,6 +881,7 @@ minervium index --config config.json
 - Verify test coverage meets 70% threshold
 
 **Acceptance Criteria:**
+
 - All unit tests pass
 - All integration tests pass
 - Test coverage ≥70% for core package
@@ -809,6 +889,7 @@ minervium index --config config.json
 - Error handling tested for common failures
 
 ### Phase 5: Deployment Preparation (1 day)
+
 - Finalize repository structure
 - Clean up old directories and files
 - Update .gitignore for new structure
@@ -821,6 +902,7 @@ minervium index --config config.json
 - Tag version 1.0.0
 
 **Acceptance Criteria:**
+
 - Repository structure matches specification
 - Old files removed or archived
 - Both installation methods work on fresh system

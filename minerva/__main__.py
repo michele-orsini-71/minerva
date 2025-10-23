@@ -1,5 +1,5 @@
 import sys
-from minervium.cli import main
+from minerva.cli import main
 
 if __name__ == '__main__':
     sys.exit(main())

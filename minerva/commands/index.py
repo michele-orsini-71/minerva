@@ -3,19 +3,19 @@ import time
 from argparse import Namespace
 from typing import Dict, Any, List
 
-from minervium.common.config_loader import load_collection_config, ConfigError, CollectionConfig
-from minervium.common.ai_provider import AIProvider, AIProviderError
-from minervium.indexing.json_loader import load_json_notes
-from minervium.indexing.chunking import create_chunks_from_notes
-from minervium.indexing.embeddings import initialize_provider, generate_embeddings, EmbeddingError
-from minervium.indexing.storage import (
+from minerva.common.config_loader import load_collection_config, ConfigError, CollectionConfig
+from minerva.common.ai_provider import AIProvider, AIProviderError
+from minerva.indexing.json_loader import load_json_notes
+from minerva.indexing.chunking import create_chunks_from_notes
+from minerva.indexing.embeddings import initialize_provider, generate_embeddings, EmbeddingError
+from minerva.indexing.storage import (
     initialize_chromadb_client,
     create_collection,
     recreate_collection,
     insert_chunks,
     StorageError
 )
-from minervium.common.logger import get_logger
+from minerva.common.logger import get_logger
 
 logger = get_logger(__name__, simple=True, mode="cli")
 

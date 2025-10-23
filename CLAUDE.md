@@ -190,7 +190,7 @@ minervium serve --config server-config.json
 ```bash
 # Test schema validation
 python -c "
-from minervium.common.schemas import validate_notes_file
+from minerva.common.schemas import validate_notes_file
 import json
 
 with open('test-data/sample.json') as f:
@@ -201,7 +201,7 @@ validate_notes_file(data, 'test-data/sample.json')
 
 # Test chunking
 python -c "
-from minervium.indexing.chunking import create_chunks_for_notes
+from minerva.indexing.chunking import create_chunks_for_notes
 
 notes = [{'title': 'Test', 'markdown': 'Content...', 'size': 100, 'modificationDate': '2025-01-01T00:00:00Z'}]
 chunked = create_chunks_for_notes(notes, target_chars=500)
@@ -210,7 +210,7 @@ print(f'Created {sum(len(n[\"chunks\"]) for n in chunked)} chunks')
 
 # Test ChromaDB connection
 python -c "
-from minervium.indexing.storage import initialize_chromadb_client
+from minerva.indexing.storage import initialize_chromadb_client
 client = initialize_chromadb_client('./chromadb_data')
 print(f'Collections: {[c.name for c in client.list_collections()]}')
 "
@@ -244,8 +244,9 @@ See `docs/NOTE_SCHEMA.md` for complete specification.
 - **Stable IDs**: SHA256-based chunk identifiers
 
 Configuration:
+
 ```python
-from minervium.indexing.chunking import create_chunks_for_notes
+from minerva.indexing.chunking import create_chunks_for_notes
 
 chunked_notes = create_chunks_for_notes(
     notes,
@@ -259,7 +260,7 @@ chunked_notes = create_chunks_for_notes(
 Minervium supports multiple AI providers through `ai_provider.py`:
 
 ```python
-from minervium.common.ai_provider import AIProvider, AIProviderConfig
+from minerva.common.ai_provider import AIProvider, AIProviderConfig
 
 # Local Ollama
 config = AIProviderConfig(
@@ -286,7 +287,7 @@ embeddings = provider.generate_embeddings(['text1', 'text2'])
 Context-aware logging routes output appropriately:
 
 ```python
-from minervium.common.logger import get_logger
+from minerva.common.logger import get_logger
 
 # CLI mode: stdout for user messages, stderr for errors
 logger = get_logger(__name__, mode="cli", simple=True)
@@ -373,6 +374,7 @@ if __name__ == "__main__":
 ```
 
 Test with:
+
 ```bash
 python my_extractor.py input.source > notes.json
 minervium validate notes.json
@@ -412,6 +414,7 @@ minervium index --config test-configs/sample-config.json --dry-run
 ### Adding a New Command
 
 1. Create `minervium/commands/newcmd.py`:
+
 ```python
 def run_newcmd(args):
     # Implementation
@@ -419,8 +422,9 @@ def run_newcmd(args):
 ```
 
 2. Update `minervium/cli.py`:
+
 ```python
-from minervium.commands.newcmd import run_newcmd
+from minerva.commands.newcmd import run_newcmd
 
 # Add subparser
 newcmd_parser = subparsers.add_parser('newcmd', help='...')
@@ -428,6 +432,7 @@ newcmd_parser = subparsers.add_parser('newcmd', help='...')
 ```
 
 3. Test:
+
 ```bash
 minervium newcmd --help
 ```
@@ -444,6 +449,7 @@ minervium newcmd --help
 
 1. Create directory: `extractors/my-extractor/`
 2. Create package structure:
+
 ```
 extractors/my-extractor/
 ├── my_extractor/
@@ -474,7 +480,7 @@ pip install -e .
 pip list | grep minervium
 
 # Verify imports work
-python -c "from minervium.cli import main; print('OK')"
+python -c "from minerva.cli import main; print('OK')"
 ```
 
 ### ChromaDB Issues
@@ -552,11 +558,13 @@ minervium serve --config server-config.json 2>&1 | tee server.log
 ### Performance Issues
 
 **Slow indexing:**
+
 - Check Ollama is running locally (not cloud API with rate limits)
 - Verify chunk size isn't too small (default 1200 is good)
 - Monitor system resources (CPU, RAM)
 
 **Slow extraction:**
+
 - For ZIM files: use `--limit` to test with smaller sample first
 - For Bear: ensure backup file isn't corrupted
 - Check disk I/O (SSD vs HDD makes big difference)
@@ -597,8 +605,8 @@ import chromadb
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 # Local
-from minervium.common.logger import get_logger
-from minervium.common.schemas import validate_notes_file
+from minerva.common.logger import get_logger
+from minerva.common.schemas import validate_notes_file
 ```
 
 ### Naming Conventions
@@ -688,6 +696,7 @@ git push origin main
 ```
 
 Use conventional commits:
+
 - `feat:` - New feature
 - `fix:` - Bug fix
 - `docs:` - Documentation changes

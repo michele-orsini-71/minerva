@@ -1,7 +1,7 @@
 import pytest
 from typing import Any
 
-from minervium.common.schemas import (
+from minerva.common.schemas import (
     validate_note,
     validate_notes_array,
     validate_notes_file,

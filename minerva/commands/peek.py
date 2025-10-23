@@ -3,8 +3,8 @@ import sys
 from argparse import Namespace
 from typing import Dict, Any, List
 
-from minervium.common.logger import get_logger
-from minervium.indexing.storage import initialize_chromadb_client, ChromaDBConnectionError
+from minerva.common.logger import get_logger
+from minerva.indexing.storage import initialize_chromadb_client, ChromaDBConnectionError
 
 logger = get_logger(__name__, simple=True, mode="cli")
 

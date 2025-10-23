@@ -4,7 +4,7 @@ from argparse import Namespace
 from pathlib import Path
 from typing import Any
 
-from minervium.commands.validate import (
+from minerva.commands.validate import (
     run_validate,
     load_json_file,
     print_validation_statistics,

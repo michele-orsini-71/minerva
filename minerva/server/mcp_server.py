@@ -2,7 +2,7 @@
 import sys
 from typing import List, Dict, Any, Optional
 
-from minervium.common.logger import get_logger
+from minerva.common.logger import get_logger
 
 console_logger = get_logger(__name__)
 
@@ -14,15 +14,15 @@ except ImportError as error:
     raise SystemExit(1) from error
 
 # Import configuration and validation modules
-from minervium.common.config import load_config, ConfigError, ConfigValidationError
-from minervium.server.startup_validation import validate_server_prerequisites
-from minervium.server.collection_discovery import discover_collections_with_providers, CollectionDiscoveryError
-from minervium.server.search_tools import (
+from minerva.common.config import load_config, ConfigError, ConfigValidationError
+from minerva.server.startup_validation import validate_server_prerequisites
+from minerva.server.collection_discovery import discover_collections_with_providers, CollectionDiscoveryError
+from minerva.server.search_tools import (
     search_knowledge_base as search_kb,
     SearchError,
     CollectionNotFoundError
 )
-from minervium.common.ai_provider import AIProvider
+from minerva.common.ai_provider import AIProvider
 
 mcp = FastMCP("markdown-notes-mcp-server")
 

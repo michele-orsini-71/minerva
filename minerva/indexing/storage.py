@@ -3,7 +3,7 @@ import re
 import sys
 from typing import List, Dict, Any, Optional, Callable
 from pathlib import Path
-from minervium.common.logger import get_logger
+from minerva.common.logger import get_logger
 
 logger = get_logger(__name__, mode="cli")
 
@@ -15,7 +15,7 @@ except ImportError:
     sys.exit(1)
 
 # Import our immutable models
-from minervium.common.models import ChunkWithEmbedding, ChunkWithEmbeddingList
+from minerva.common.models import ChunkWithEmbedding, ChunkWithEmbeddingList
 
 # Configuration constants
 DEFAULT_BATCH_SIZE = 64

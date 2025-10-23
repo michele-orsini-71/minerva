@@ -4,8 +4,8 @@ from argparse import Namespace
 from pathlib import Path
 from typing import Any
 
-from minervium.common.logger import get_logger
-from minervium.common.schemas import validate_notes_array, get_schema_summary
+from minerva.common.logger import get_logger
+from minerva.common.schemas import validate_notes_array, get_schema_summary
 
 logger = get_logger(__name__, simple=True, mode="cli")
 

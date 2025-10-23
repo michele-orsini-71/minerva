@@ -3,7 +3,7 @@ import re
 from typing import List, Dict, Any, Optional
 import numpy as np
 
-from minervium.common.ai_config import AIProviderConfig, APIKeyMissingError
+from minerva.common.ai_config import AIProviderConfig, APIKeyMissingError
 
 
 class AIProviderError(Exception):

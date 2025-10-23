@@ -4,11 +4,11 @@ from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 from argparse import Namespace
 
-from minervium.commands.validate import run_validate
-from minervium.commands.index import run_index, initialize_and_validate_provider
-from minervium.commands.peek import run_peek
-from minervium.common.config_loader import load_collection_config, ConfigError
-from minervium.common.schemas import validate_notes_file
+from minerva.commands.validate import run_validate
+from minerva.commands.index import run_index, initialize_and_validate_provider
+from minerva.commands.peek import run_peek
+from minerva.common.config_loader import load_collection_config, ConfigError
+from minerva.common.schemas import validate_notes_file
 
 
 class TestMissingFileErrors:

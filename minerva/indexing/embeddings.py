@@ -4,11 +4,11 @@ import sys
 
 import numpy as np
 
-from minervium.common.logger import get_logger
-from minervium.common.models import Chunk, ChunkWithEmbedding, ChunkList, ChunkWithEmbeddingList
-from minervium.common.ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
-from minervium.common.ai_config import AIProviderConfig
-from minervium.common.config_loader import CollectionConfig
+from minerva.common.logger import get_logger
+from minerva.common.models import Chunk, ChunkWithEmbedding, ChunkList, ChunkWithEmbeddingList
+from minerva.common.ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
+from minerva.common.ai_config import AIProviderConfig
+from minerva.common.config_loader import CollectionConfig
 
 logger = get_logger(__name__, mode="cli")
 

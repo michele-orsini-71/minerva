@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import Mock, MagicMock, patch
 from typing import Any
 
-from minervium.commands.peek import (
+from minerva.commands.peek import (
     run_peek,
     get_collection_info,
     format_collection_info_text,
@@ -332,7 +332,7 @@ class TestRunPeek:
 
     @patch('minervium.commands.peek.initialize_chromadb_client')
     def test_peek_chromadb_connection_error(self, mock_init_client, temp_chromadb_dir: Path):
-        from minervium.indexing.storage import ChromaDBConnectionError
+        from minerva.indexing.storage import ChromaDBConnectionError
         mock_init_client.side_effect = ChromaDBConnectionError("Connection failed")
 
         args = Namespace(

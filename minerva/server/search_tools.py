@@ -3,11 +3,11 @@ from typing import List, Dict, Any
 from pathlib import Path
 
 import chromadb
-from minervium.indexing.storage import initialize_chromadb_client, ChromaDBConnectionError
-from minervium.common.ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
+from minerva.indexing.storage import initialize_chromadb_client, ChromaDBConnectionError
+from minerva.common.ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
 
-from minervium.server.context_retrieval import apply_context_mode
-from minervium.common.logger import get_logger
+from minerva.server.context_retrieval import apply_context_mode
+from minerva.common.logger import get_logger
 
 console_logger = get_logger(__name__)
 

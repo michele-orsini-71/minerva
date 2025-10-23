@@ -4,7 +4,7 @@ import sys
 from io import StringIO
 from unittest.mock import patch
 
-from minervium.common.logger import ConsoleLogger, get_logger
+from minerva.common.logger import ConsoleLogger, get_logger
 
 
 class TestConsoleLoggerMethods:
