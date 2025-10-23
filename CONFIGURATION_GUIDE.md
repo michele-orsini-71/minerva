@@ -18,19 +18,22 @@ This guide explains how to configure Minervium for indexing notes and serving th
 
 Minervium uses JSON configuration files for two main operations:
 
-### 1. Indexing (`minervium index`)
+### 1. Indexing (`minerva index`)
+
 **Purpose**: Create ChromaDB collections with AI embeddings
-**Command**: `minervium index --config index-config.json`
+**Command**: `minerva index --config index-config.json`
 **Config specifies**: Source data, AI provider, collection settings
 
-### 2. Serving (`minervium serve`)
+### 2. Serving (`minerva serve`)
+
 **Purpose**: Expose collections via MCP server for Claude Desktop
-**Command**: `minervium serve --config server-config.json`
+**Command**: `minerva serve --config server-config.json`
 **Config specifies**: ChromaDB location, logging settings
 
 ### Key Design Principle
 
 **AI provider metadata is stored IN each collection** during indexing. The MCP server reads this metadata and uses the correct provider automatically. This allows:
+
 - Multiple collections with different AI providers
 - No provider configuration needed for the server
 - Consistent embeddings for queries and indexed content
@@ -55,34 +58,37 @@ Create a JSON configuration file (e.g., `my-config.json`):
 ```
 
 Then index:
+
 ```bash
-minervium index --config my-config.json --verbose
+minerva index --config my-config.json --verbose
 ```
 
 ### Required Fields
 
-| Field | Type | Description | Example |
-|-------|------|-------------|---------|
-| `collection_name` | string | Unique collection identifier (alphanumeric, `-`, `_`) | `"bear_notes"` |
-| `description` | string | When to use this collection (guides AI on content) | `"Personal notes from Bear app"` |
-| `chromadb_path` | string | Path to ChromaDB storage directory | `"./chromadb_data"` |
-| `json_file` | string | Path to notes JSON file | `"./bear-notes.json"` |
+| Field             | Type   | Description                                           | Example                          |
+| ----------------- | ------ | ----------------------------------------------------- | -------------------------------- |
+| `collection_name` | string | Unique collection identifier (alphanumeric, `-`, `_`) | `"bear_notes"`                   |
+| `description`     | string | When to use this collection (guides AI on content)    | `"Personal notes from Bear app"` |
+| `chromadb_path`   | string | Path to ChromaDB storage directory                    | `"./chromadb_data"`              |
+| `json_file`       | string | Path to notes JSON file                               | `"./bear-notes.json"`            |
 
 ### Optional Fields
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `forceRecreate` | boolean | `false` | Delete and recreate collection if it exists |
-| `skipAiValidation` | boolean | `false` | Skip description quality validation |
+| Field              | Type    | Default | Description                                 |
+| ------------------ | ------- | ------- | ------------------------------------------- |
+| `forceRecreate`    | boolean | `false` | Delete and recreate collection if it exists |
+| `skipAiValidation` | boolean | `false` | Skip description quality validation         |
 
 ### Collection Naming
 
 **Valid names**:
+
 - `bear_notes` ✅
 - `wikipedia-history` ✅
 - `my_collection_v2` ✅
 
 **Invalid names**:
+
 - `bear notes` ❌ (spaces)
 - `my/collection` ❌ (slashes)
 - `col.2025` ❌ (periods)
@@ -92,6 +98,7 @@ minervium index --config my-config.json --verbose
 The description guides the AI on when to search this collection. Be specific:
 
 **Good descriptions**:
+
 ```json
 "Personal notes from Bear app covering software development, project management, meeting notes, and technical documentation from 2020-2025"
 ```
@@ -101,12 +108,13 @@ The description guides the AI on when to search this collection. Be specific:
 ```
 
 **Poor descriptions**:
+
 ```json
-"My notes"  // Too vague
+"My notes" // Too vague
 ```
 
 ```json
-"Notes"  // Doesn't indicate content
+"Notes" // Doesn't indicate content
 ```
 
 ---
@@ -125,20 +133,22 @@ Create server configuration (e.g., `server-config.json`):
 ```
 
 Then start server:
+
 ```bash
-minervium serve --config server-config.json
+minerva serve --config server-config.json
 ```
 
 ### Fields
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `chromadb_path` | string | ✅ | - | Path to ChromaDB storage |
-| `log_level` | string | ❌ | `"INFO"` | Logging level: `DEBUG`, `INFO`, `WARNING`, `ERROR` |
+| Field           | Type   | Required | Default  | Description                                        |
+| --------------- | ------ | -------- | -------- | -------------------------------------------------- |
+| `chromadb_path` | string | ✅       | -        | Path to ChromaDB storage                           |
+| `log_level`     | string | ❌       | `"INFO"` | Logging level: `DEBUG`, `INFO`, `WARNING`, `ERROR` |
 
 ### What the Server Does
 
 When started, the server:
+
 1. Scans `chromadb_path` for collections
 2. Reads AI provider metadata from each collection
 3. Checks provider availability (API keys, Ollama running, etc.)
@@ -175,6 +185,7 @@ Minervium supports multiple AI providers through environment variables. Collecti
 **Configuration**: Not needed in config file (default provider)
 
 **Setup**:
+
 ```bash
 # Start Ollama service
 ollama serve
@@ -188,6 +199,7 @@ ollama list
 ```
 
 **Index with Ollama**:
+
 ```bash
 # Create config (no AI provider specified = uses Ollama)
 cat > ollama-config.json << 'EOF'
@@ -200,10 +212,11 @@ cat > ollama-config.json << 'EOF'
 EOF
 
 # Index
-minervium index --config ollama-config.json --verbose
+minerva index --config ollama-config.json --verbose
 ```
 
 **Models used** (default):
+
 - Embeddings: `mxbai-embed-large:latest` (1024 dimensions)
 - LLM: `llama3.1:8b`
 
@@ -212,6 +225,7 @@ minervium index --config ollama-config.json --verbose
 **Configuration**: Set environment variable
 
 **Setup**:
+
 ```bash
 # Set API key
 export OPENAI_API_KEY="sk-your-openai-api-key-here"
@@ -221,6 +235,7 @@ echo $OPENAI_API_KEY
 ```
 
 **Index with OpenAI**:
+
 ```bash
 # Create config - provider auto-detected from env
 cat > openai-config.json << 'EOF'
@@ -233,10 +248,11 @@ cat > openai-config.json << 'EOF'
 EOF
 
 # Index (OpenAI used if API key is set)
-minervium index --config openai-config.json --verbose
+minerva index --config openai-config.json --verbose
 ```
 
 **Models used** (when `OPENAI_API_KEY` is set):
+
 - Embeddings: `text-embedding-3-small` (1536 dimensions)
 - LLM: `gpt-4o-mini`
 
@@ -245,6 +261,7 @@ minervium index --config openai-config.json --verbose
 **Configuration**: Set environment variable
 
 **Setup**:
+
 ```bash
 # Set API key
 export GEMINI_API_KEY="your-gemini-api-key-here"
@@ -254,6 +271,7 @@ echo $GEMINI_API_KEY
 ```
 
 **Index with Gemini**:
+
 ```bash
 # Create config
 cat > gemini-config.json << 'EOF'
@@ -266,10 +284,11 @@ cat > gemini-config.json << 'EOF'
 EOF
 
 # Index (Gemini used if API key is set)
-minervium index --config gemini-config.json --verbose
+minerva index --config gemini-config.json --verbose
 ```
 
 **Models used** (when `GEMINI_API_KEY` is set):
+
 - Embeddings: `text-embedding-004` (768 dimensions)
 - LLM: `gemini-1.5-flash`
 
@@ -284,16 +303,17 @@ Minervium selects the AI provider based on environment variables:
 **Priority**: OpenAI > Gemini > Ollama
 
 To force a specific provider, unset other API keys:
+
 ```bash
 # Force Ollama
 unset OPENAI_API_KEY
 unset GEMINI_API_KEY
-minervium index --config config.json
+minerva index --config config.json
 
 # Force Gemini (even if OpenAI key is set)
 unset OPENAI_API_KEY
 export GEMINI_API_KEY="your-key"
-minervium index --config config.json
+minerva index --config config.json
 ```
 
 ---
@@ -303,6 +323,7 @@ minervium index --config config.json
 ### Why Multiple Collections?
 
 Use separate collections for:
+
 - **Different sources**: Bear notes, Wikipedia, books
 - **Different topics**: Work notes, personal notes, research
 - **Different languages**: English Wikipedia, Spanish Wikipedia
@@ -345,12 +366,12 @@ cat > alice-config.json << 'EOF'
 EOF
 
 # Index all collections
-minervium index --config bear-config.json --verbose
-minervium index --config wiki-config.json --verbose
-minervium index --config alice-config.json --verbose
+minerva index --config bear-config.json --verbose
+minerva index --config wiki-config.json --verbose
+minerva index --config alice-config.json --verbose
 
 # Single server serves all
-minervium serve --config server-config.json
+minerva serve --config server-config.json
 ```
 
 ### Using Different Providers per Collection
@@ -361,17 +382,17 @@ minervium serve --config server-config.json
 unset OPENAI_API_KEY
 unset GEMINI_API_KEY
 
-minervium index --config bear-config.json --verbose
+minerva index --config bear-config.json --verbose
 # → Uses Ollama
 
 # Collection 2: OpenAI (cloud, better quality)
 export OPENAI_API_KEY="sk-your-key"
 
-minervium index --config wiki-config.json --verbose
+minerva index --config wiki-config.json --verbose
 # → Uses OpenAI
 
 # Both collections work together
-minervium serve --config server-config.json
+minerva serve --config server-config.json
 # → Server auto-detects provider for each collection
 ```
 
@@ -379,10 +400,10 @@ minervium serve --config server-config.json
 
 ```bash
 # List all collections
-minervium peek --chromadb ./chromadb_data
+minerva peek --chromadb ./chromadb_data
 
 # Peek at specific collection
-minervium peek bear_notes --chromadb ./chromadb_data --format table
+minerva peek bear_notes --chromadb ./chromadb_data --format table
 
 # Compare collection metadata
 python -c "
@@ -412,6 +433,7 @@ chromadb_data/
 ```
 
 Benefits:
+
 - One server serves all collections
 - Simpler backup (backup one directory)
 - Collections don't interfere with each other
@@ -430,7 +452,7 @@ ollama serve &
 bear-extractor "Bear Notes.bear2bk" -o notes.json -v
 
 # 3. Validate
-minervium validate notes.json
+minerva validate notes.json
 
 # 4. Create config
 cat > config.json << 'EOF'
@@ -443,10 +465,10 @@ cat > config.json << 'EOF'
 EOF
 
 # 5. Index
-minervium index --config config.json --verbose
+minerva index --config config.json --verbose
 
 # 6. Peek
-minervium peek my_notes --chromadb ./chromadb_data --format table
+minerva peek my_notes --chromadb ./chromadb_data --format table
 
 # 7. Create server config
 cat > server-config.json << 'EOF'
@@ -457,7 +479,7 @@ cat > server-config.json << 'EOF'
 EOF
 
 # 8. Start server
-minervium serve --config server-config.json
+minerva serve --config server-config.json
 ```
 
 ### Example 2: Multiple Collections, Mixed Providers
@@ -481,7 +503,7 @@ cat > bear-config.json << 'EOF'
   "json_file": "bear.json"
 }
 EOF
-minervium index --config bear-config.json --verbose
+minerva index --config bear-config.json --verbose
 
 # Config 2: Wikipedia with OpenAI (better quality)
 export OPENAI_API_KEY="sk-your-key"  # Use OpenAI
@@ -493,7 +515,7 @@ cat > wiki-config.json << 'EOF'
   "json_file": "wiki.json"
 }
 EOF
-minervium index --config wiki-config.json --verbose
+minerva index --config wiki-config.json --verbose
 
 # Server auto-detects providers
 cat > server-config.json << 'EOF'
@@ -502,7 +524,7 @@ cat > server-config.json << 'EOF'
   "log_level": "INFO"
 }
 EOF
-minervium serve --config server-config.json
+minerva serve --config server-config.json
 # Output:
 # Collection: bear_notes (ollama) ✓ Available
 # Collection: wikipedia (openai) ✓ Available
@@ -523,11 +545,11 @@ cat > test-config.json << 'EOF'
 }
 EOF
 
-minervium index --config test-config.json --dry-run  # Validate only
-minervium index --config test-config.json --verbose  # Actually index
+minerva index --config test-config.json --dry-run  # Validate only
+minerva index --config test-config.json --verbose  # Actually index
 
 # 2. Verify quality
-minervium peek test_sample --chromadb ./test_chromadb --format table
+minerva peek test_sample --chromadb ./test_chromadb --format table
 
 # 3. If good, index full dataset
 zim-extractor "large-archive.zim" -o full.json
@@ -541,7 +563,7 @@ cat > prod-config.json << 'EOF'
 }
 EOF
 
-minervium index --config prod-config.json --verbose
+minerva index --config prod-config.json --verbose
 ```
 
 ### Example 4: Recreating a Collection
@@ -560,7 +582,7 @@ cat > config.json << 'EOF'
 }
 EOF
 
-minervium index --config config.json --verbose
+minerva index --config config.json --verbose
 
 # Option 2: Delete manually
 python -c "
@@ -571,7 +593,7 @@ print('Deleted')
 "
 
 # Then index normally
-minervium index --config config.json --verbose
+minerva index --config config.json --verbose
 ```
 
 ---
@@ -585,6 +607,7 @@ minervium index --config config.json --verbose
 **Cause**: Collection name is already in use.
 
 **Solutions**:
+
 ```bash
 # Option 1: Use different name
 # Edit config.json: "collection_name": "my_notes_v2"
@@ -607,13 +630,14 @@ client.delete_collection('my_notes')
 **Cause**: Config expects OpenAI but API key not set.
 
 **Solution**:
+
 ```bash
 # Option 1: Set API key
 export OPENAI_API_KEY="sk-your-key"
 
 # Option 2: Use Ollama instead
 unset OPENAI_API_KEY
-minervium index --config config.json
+minerva index --config config.json
 ```
 
 ### Issue: Server shows "Collection unavailable"
@@ -623,18 +647,21 @@ minervium index --config config.json
 **Possible causes**:
 
 1. **Ollama not running** (collection uses Ollama):
+
 ```bash
 ollama serve
 ```
 
 2. **Missing API key** (collection uses OpenAI/Gemini):
+
 ```bash
 export OPENAI_API_KEY="sk-your-key"
 # Restart server
-minervium serve --config server-config.json
+minerva serve --config server-config.json
 ```
 
 3. **Wrong ChromaDB path**:
+
 ```bash
 # Check config
 cat server-config.json
@@ -649,10 +676,12 @@ ls -la ./chromadb_data
 **Cause**: Trying to query collection with different provider than used during indexing.
 
 **Explanation**:
+
 - Collection created with Ollama (1024 dims)
 - Server trying to use OpenAI (1536 dims)
 
 **Solution**: This shouldn't happen - server reads provider from collection metadata. If it does:
+
 ```bash
 # Check collection metadata
 python -c "
@@ -672,6 +701,7 @@ print(coll.metadata)
 **Solutions**:
 
 1. **Check AI provider**:
+
 ```bash
 # Ollama (fast, local):
 ps aux | grep ollama  # Should be running
@@ -683,14 +713,16 @@ unset GEMINI_API_KEY
 ```
 
 2. **Test with sample first**:
+
 ```bash
 # Extract small sample
 zim-extractor archive.zim -l 100 -o sample.json
-minervium index --config sample-config.json
+minerva index --config sample-config.json
 # If fast, proceed with full dataset
 ```
 
 3. **Check system resources**:
+
 ```bash
 # Monitor CPU/RAM
 top
@@ -706,6 +738,7 @@ iostat -x 1
 **Cause**: Description too generic or unclear.
 
 **Solutions**:
+
 ```bash
 # Option 1: Improve description
 # Bad:  "My notes"
@@ -719,18 +752,19 @@ iostat -x 1
 
 ## Environment Variables Reference
 
-| Variable | Purpose | Example |
-|----------|---------|---------|
-| `OPENAI_API_KEY` | OpenAI API access | `sk-proj-abc123...` |
-| `GEMINI_API_KEY` | Google Gemini API access | `AIza...` |
-| `OLLAMA_HOST` | Custom Ollama endpoint | `http://192.168.1.100:11434` |
-| `MINERVIUM_DEBUG` | Enable debug logging | `1` |
+| Variable          | Purpose                  | Example                      |
+| ----------------- | ------------------------ | ---------------------------- |
+| `OPENAI_API_KEY`  | OpenAI API access        | `sk-proj-abc123...`          |
+| `GEMINI_API_KEY`  | Google Gemini API access | `AIza...`                    |
+| `OLLAMA_HOST`     | Custom Ollama endpoint   | `http://192.168.1.100:11434` |
+| `MINERVIUM_DEBUG` | Enable debug logging     | `1`                          |
 
 ---
 
 ## Configuration File Locations
 
 **Recommended structure**:
+
 ```
 project/
 ├── configs/                # All config files
@@ -746,12 +780,13 @@ project/
 ```
 
 **Usage**:
+
 ```bash
 # Index from configs directory
-minervium index --config configs/bear-config.json
+minerva index --config configs/bear-config.json
 
 # Or use absolute paths
-minervium index --config /path/to/config.json
+minerva index --config /path/to/config.json
 ```
 
 ---
@@ -761,6 +796,7 @@ minervium index --config /path/to/config.json
 ### 1. Descriptive Collection Names
 
 Use meaningful names that indicate content:
+
 - ✅ `bear_notes_work_2025`
 - ✅ `wikipedia_history_en`
 - ✅ `classic_literature`
@@ -771,6 +807,7 @@ Use meaningful names that indicate content:
 ### 2. Clear Descriptions
 
 Help the AI understand when to use each collection:
+
 ```json
 {
   "description": "Personal notes from Bear app covering software development (Python, JavaScript, Rust), system design patterns, database architecture, and API development. Includes meeting notes, project planning documents, and technical research from 2020-2025."
@@ -780,9 +817,10 @@ Help the AI understand when to use each collection:
 ### 3. Consistent ChromaDB Path
 
 Use the same `chromadb_path` for all collections:
+
 ```json
 {
-  "chromadb_path": "./chromadb_data"  // Same for all configs
+  "chromadb_path": "./chromadb_data" // Same for all configs
 }
 ```
 
@@ -821,5 +859,5 @@ git commit -m "feat: add collection configs"
 
 ## Support
 
-- Report issues: [GitHub Issues](https://github.com/yourusername/minervium/issues)
-- Ask questions: [GitHub Discussions](https://github.com/yourusername/minervium/discussions)
+- Report issues: [GitHub Issues](https://github.com/yourusername/minerva/issues)
+- Ask questions: [GitHub Discussions](https://github.com/yourusername/minerva/discussions)

@@ -53,11 +53,13 @@ zim-extractor --help
 #### Installing libzim
 
 **macOS (Homebrew)**:
+
 ```bash
 brew install libzim
 ```
 
 **Ubuntu/Debian**:
+
 ```bash
 sudo apt-get install libzim-dev
 ```
@@ -71,10 +73,10 @@ sudo apt-get install libzim-dev
 zim-extractor wikipedia_en_history.zim -o articles.json -l 100 -v
 
 # Validate the output
-minervium validate articles.json
+minerva validate articles.json
 
 # Index into Minervium
-minervium index --config config.json --verbose
+minerva index --config config.json --verbose
 ```
 
 ## Usage
@@ -139,6 +141,7 @@ zim-extractor archive.zim | jq '.[] | select(.size > 50000) | .title'
 ZIM (Zeno IMproved) is an open file format for storing web content offline.
 
 **Common ZIM sources**:
+
 - Wikipedia dumps (language-specific or topics)
 - WikiHow, Wiktionary, Wikivoyage
 - Stack Exchange sites
@@ -147,11 +150,13 @@ ZIM (Zeno IMproved) is an open file format for storing web content offline.
 - Medical encyclopedias
 
 **Where to get ZIM files**:
+
 - [Kiwix Library](https://library.kiwix.org/) - Huge collection of ZIM files
 - [download.kiwix.org](https://download.kiwix.org/zim/) - Direct downloads
 - [Wikipedia ZIM dumps](https://dumps.wikimedia.org/other/kiwix/zim/wikipedia/)
 
 **File naming convention**:
+
 ```
 wikipedia_en_history_2025-10.zim
 │         │  │       └─ Date
@@ -178,13 +183,13 @@ Standard JSON array conforming to the [Minervium Note Schema](../../docs/NOTE_SC
 
 #### Field Mapping
 
-| ZIM Source | Minervium Field | Notes |
-|------------|-----------------|-------|
-| Entry title | `title` | Article title from ZIM |
-| HTML content → markdown | `markdown` | Converted with markdownify |
-| Markdown byte size | `size` | Calculated as UTF-8 length |
-| Extracted from HTML | `modificationDate` | Heuristic extraction, fallback to current time |
-| Extracted from HTML | `creationDate` | Heuristic extraction, fallback to current time |
+| ZIM Source              | Minervium Field    | Notes                                          |
+| ----------------------- | ------------------ | ---------------------------------------------- |
+| Entry title             | `title`            | Article title from ZIM                         |
+| HTML content → markdown | `markdown`         | Converted with markdownify                     |
+| Markdown byte size      | `size`             | Calculated as UTF-8 length                     |
+| Extracted from HTML     | `modificationDate` | Heuristic extraction, fallback to current time |
+| Extracted from HTML     | `creationDate`     | Heuristic extraction, fallback to current time |
 
 ## How It Works
 
@@ -231,6 +236,7 @@ This is heuristic and may not be accurate for all ZIM archives.
 ### Redirect Handling
 
 Some ZIM entries are redirects (aliases):
+
 - Extractor detects redirects
 - Follows redirect to actual content
 - Extracts from final destination
@@ -238,6 +244,7 @@ Some ZIM entries are redirects (aliases):
 ### Content Filtering
 
 Only `text/html` content is extracted:
+
 - ✅ HTML articles
 - ❌ Images, CSS, JavaScript, fonts
 - ❌ Binary files
@@ -262,7 +269,7 @@ zim-extractor wikipedia_en_history_2025-10.zim -o history.json -v
 # Done. Generated 95432 records
 
 # Validate
-minervium validate history.json
+minerva validate history.json
 ```
 
 ### Example 2: Sample for Testing
@@ -272,7 +279,7 @@ minervium validate history.json
 zim-extractor large-archive.zim -o sample.json -l 500 -v
 
 # Validate sample
-minervium validate sample.json
+minerva validate sample.json
 
 # Index sample
 cat > test-config.json << 'EOF'
@@ -284,7 +291,7 @@ cat > test-config.json << 'EOF'
 }
 EOF
 
-minervium index --config test-config.json --verbose
+minerva index --config test-config.json --verbose
 ```
 
 ### Example 3: Extract JSON + Markdown Files
@@ -326,7 +333,7 @@ zim-extractor wikipedia_en_top_2025-10.zim -v -o wiki.json
 # Done. Generated 180234 records
 
 # Step 3: Validate
-minervium validate wiki.json
+minerva validate wiki.json
 # ✓ Validation successful: wiki.json contains 180,234 valid note(s)
 
 # Step 4: Create config
@@ -340,14 +347,14 @@ cat > wiki-config.json << 'EOF'
 EOF
 
 # Step 5: Index (this may take a while for large collections)
-minervium index --config wiki-config.json --verbose
+minerva index --config wiki-config.json --verbose
 # Processing 180,234 notes...
 # Created 987,654 chunks...
 # Generating embeddings...
 # ✓ Indexing complete!
 
 # Step 6: Search
-minervium serve --config server-config.json
+minerva serve --config server-config.json
 # Now searchable via Claude Desktop
 ```
 
@@ -356,12 +363,14 @@ minervium serve --config server-config.json
 ### Official Sources
 
 **Kiwix Library** (recommended):
+
 - URL: https://library.kiwix.org/
 - Browse by category, language, size
 - Includes Wikipedia, WikiHow, Stack Exchange, and more
 - Direct download links
 
 **Download Server**:
+
 - URL: https://download.kiwix.org/zim/
 - All available ZIM files
 - Organized by project and date
@@ -369,12 +378,14 @@ minervium serve --config server-config.json
 ### Popular ZIM Files
 
 **Wikipedia - Full**:
+
 ```bash
 # English Wikipedia (all articles, ~100GB compressed)
 wget https://download.kiwix.org/zim/wikipedia/wikipedia_en_all_2025-10.zim
 ```
 
 **Wikipedia - Topics** (smaller, focused):
+
 ```bash
 # History (~5GB)
 wget https://download.kiwix.org/zim/wikipedia/wikipedia_en_history_2025-10.zim
@@ -387,6 +398,7 @@ wget https://download.kiwix.org/zim/wikipedia/wikipedia_en_top_2025-10.zim
 ```
 
 **Other Languages**:
+
 ```bash
 # Spanish Wikipedia
 wget https://download.kiwix.org/zim/wikipedia/wikipedia_es_all_2025-10.zim
@@ -396,6 +408,7 @@ wget https://download.kiwix.org/zim/wikipedia/wikipedia_fr_all_2025-10.zim
 ```
 
 **Other Projects**:
+
 ```bash
 # WikiHow
 wget https://download.kiwix.org/zim/wikihow/wikihow_en_2025-10.zim
@@ -414,6 +427,7 @@ wget https://download.kiwix.org/zim/gutenberg/gutenberg_en_2025-10.zim
 **Cause**: File path is incorrect or file doesn't exist.
 
 **Solution**:
+
 ```bash
 # Check file exists
 ls -lh wikipedia_en_history.zim
@@ -431,6 +445,7 @@ file wikipedia_en_history.zim
 **Cause**: ZIM archive doesn't have indexes for enumeration.
 
 **Solution**: This is rare with modern ZIM files. If it occurs:
+
 ```bash
 # Try with a different ZIM file
 # Or report issue with ZIM file details
@@ -444,6 +459,7 @@ python -c "from libzim.reader import Archive; z=Archive('file.zim'); print(f'Tit
 **Cause**: libzim Python bindings not installed.
 
 **Solution**:
+
 ```bash
 # Install libzim system library first
 # macOS:
@@ -461,6 +477,7 @@ pip install libzim
 **Cause**: Large ZIM files take time to process.
 
 **Solution**:
+
 ```bash
 # 1. Use limit flag for testing
 zim-extractor large.zim -o sample.json -l 1000 -v
@@ -473,6 +490,7 @@ zim-extractor large.zim -o output.json -v
 ```
 
 **Expected performance**:
+
 - Small archives (1K articles): ~10 seconds
 - Medium archives (10K articles): ~2 minutes
 - Large archives (100K articles): ~20 minutes
@@ -497,6 +515,7 @@ jq '.[0] | {title, modificationDate, creationDate}' output.json
 **Cause**: Processing very large archives or extracting too many articles at once.
 
 **Solution**:
+
 ```bash
 # 1. Use limit to process in batches
 zim-extractor large.zim -o batch1.json -l 50000 -v
@@ -510,20 +529,22 @@ zim-extractor large.zim -o batch1.json -l 50000 -v
 
 **Typical performance** on modern hardware:
 
-| Articles | Time | Rate | RAM Usage |
-|----------|------|------|-----------|
-| 1,000 | ~10s | 100/sec | ~200MB |
-| 10,000 | ~2min | 80/sec | ~500MB |
-| 100,000 | ~25min | 65/sec | ~2GB |
-| 1,000,000 | ~6hr | 45/sec | ~8GB |
+| Articles  | Time   | Rate    | RAM Usage |
+| --------- | ------ | ------- | --------- |
+| 1,000     | ~10s   | 100/sec | ~200MB    |
+| 10,000    | ~2min  | 80/sec  | ~500MB    |
+| 100,000   | ~25min | 65/sec  | ~2GB      |
+| 1,000,000 | ~6hr   | 45/sec  | ~8GB      |
 
 **Factors affecting speed**:
+
 - Article size (longer articles take more time to convert)
 - HTML complexity (tables, nested elements slow down conversion)
 - Disk I/O (SSD vs HDD)
 - Whether markdown files are being written (`-m` flag)
 
 **Bottlenecks**:
+
 - HTML to Markdown conversion (markdownify is CPU-intensive)
 - ZIM archive reading (I/O bound)
 
@@ -589,7 +610,7 @@ for zim in *.zim; do
     name=$(basename "$zim" .zim)
     echo "Processing $name..."
     zim-extractor "$zim" -o "${name}.json" -v
-    minervium validate "${name}.json"
+    minerva validate "${name}.json"
 done
 
 # Combine into single collection or index separately
@@ -604,7 +625,7 @@ cd extractors/zim-extractor
 
 # Manual test with sample ZIM
 zim-extractor test-data/sample.zim -v -o /tmp/test.json
-minervium validate /tmp/test.json
+minerva validate /tmp/test.json
 ```
 
 ### Code Structure
@@ -629,7 +650,7 @@ zim-extractor/
 
 ## Support
 
-- **Issues**: Report bugs on [GitHub Issues](https://github.com/yourusername/minervium/issues)
+- **Issues**: Report bugs on [GitHub Issues](https://github.com/yourusername/minerva/issues)
 - **ZIM Format**: [OpenZIM Project](https://wiki.openzim.org/)
 - **Get Help**: Questions about ZIM files → [Kiwix Forum](https://forum.kiwix.org/)
 

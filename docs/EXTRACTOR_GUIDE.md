@@ -26,7 +26,7 @@ Extractors are independent programs that convert data from specific sources (app
 2. **Single Responsibility**: Each extractor handles one source type
 3. **Standard Output**: All extractors output JSON conforming to the note schema
 4. **Independent**: Extractors have no dependencies on Minervium core
-5. **Testable**: Use `minervium validate` to verify output
+5. **Testable**: Use `minerva validate` to verify output
 
 ### The Extractor Pipeline
 
@@ -51,7 +51,7 @@ Extractors are independent programs that convert data from specific sources (app
          │
          ▼
 ┌─────────────────┐
-│  minervium      │  ← Validation & Indexing
+│  minerva      │  ← Validation & Indexing
 │   validate      │
 │   & index       │
 └─────────────────┘
@@ -106,13 +106,13 @@ Each file contains plain text that should become a note.
 
 Decide how source data maps to the note schema:
 
-| Source | Note Schema Field |
-|--------|-------------------|
-| Filename (without .txt) | `title` |
-| File contents | `markdown` |
-| File size in bytes | `size` |
-| File modification time | `modificationDate` |
-| File creation time | `creationDate` |
+| Source                  | Note Schema Field  |
+| ----------------------- | ------------------ |
+| Filename (without .txt) | `title`            |
+| File contents           | `markdown`         |
+| File size in bytes      | `size`             |
+| File modification time  | `modificationDate` |
+| File creation time      | `creationDate`     |
 
 ### Step 3: Write the Extractor
 
@@ -185,7 +185,7 @@ chmod +x text-extractor
 ./text-extractor ~/my-notes -o notes.json
 
 # Validate the output
-minervium validate notes.json
+minerva validate notes.json
 # ✓ Validation successful: notes.json contains 3 valid note(s)
 ```
 
@@ -203,7 +203,7 @@ cat > config.json << 'EOF'
 EOF
 
 # Index
-minervium index --config config.json --verbose
+minerva index --config config.json --verbose
 ```
 
 That's it! You've built your first extractor. 🎉
@@ -285,28 +285,28 @@ if __name__ == "__main__":
  * Usage: markdown-extractor <directory> [-o output.json]
  */
 
-const fs = require('fs').promises;
-const path = require('path');
+const fs = require("fs").promises;
+const path = require("path");
 
 async function extractMarkdownFiles(directory) {
   const notes = [];
   const files = await fs.readdir(directory);
 
   for (const filename of files) {
-    if (!filename.endsWith('.md')) continue;
+    if (!filename.endsWith(".md")) continue;
 
     const filepath = path.join(directory, filename);
-    const content = await fs.readFile(filepath, 'utf-8');
+    const content = await fs.readFile(filepath, "utf-8");
     const stats = await fs.stat(filepath);
 
     // Extract title from first heading or use filename
     const titleMatch = content.match(/^#\s+(.+)$/m);
-    const title = titleMatch ? titleMatch[1] : path.basename(filename, '.md');
+    const title = titleMatch ? titleMatch[1] : path.basename(filename, ".md");
 
     const note = {
       title: title,
       markdown: content,
-      size: Buffer.byteLength(content, 'utf-8'),
+      size: Buffer.byteLength(content, "utf-8"),
       modificationDate: stats.mtime.toISOString(),
       creationDate: stats.birthtime.toISOString(),
     };
@@ -321,7 +321,7 @@ async function main() {
   const args = process.argv.slice(2);
 
   if (args.length < 1) {
-    console.error('Usage: markdown-extractor <directory> [-o output.json]');
+    console.error("Usage: markdown-extractor <directory> [-o output.json]");
     process.exit(1);
   }
 
@@ -330,18 +330,18 @@ async function main() {
   const jsonOutput = JSON.stringify(notes, null, 2);
 
   // Check for output file
-  const outputIndex = args.indexOf('-o');
+  const outputIndex = args.indexOf("-o");
   if (outputIndex !== -1 && args[outputIndex + 1]) {
     const outputFile = args[outputIndex + 1];
-    await fs.writeFile(outputFile, jsonOutput, 'utf-8');
+    await fs.writeFile(outputFile, jsonOutput, "utf-8");
     console.error(`✓ Extracted ${notes.length} notes to ${outputFile}`);
   } else {
     console.log(jsonOutput);
   }
 }
 
-main().catch(err => {
-  console.error('Error:', err.message);
+main().catch((err) => {
+  console.error("Error:", err.message);
   process.exit(1);
 });
 ```
@@ -541,7 +541,7 @@ Use Minervium's validator:
 ./your-extractor test-data/sample.source -o /tmp/test-output.json
 
 # Validate with Minervium
-minervium validate /tmp/test-output.json --verbose
+minerva validate /tmp/test-output.json --verbose
 
 # Check exit code
 if [ $? -eq 0 ]; then
@@ -570,7 +570,7 @@ echo "1. Extracting notes..."
 
 # 2. Validate
 echo "2. Validating schema..."
-minervium validate /tmp/e2e-test.json
+minerva validate /tmp/e2e-test.json
 
 # 3. Test indexing (dry run)
 echo "3. Testing indexing (dry run)..."
@@ -583,7 +583,7 @@ cat > /tmp/e2e-config.json << 'EOF'
 }
 EOF
 
-minervium index --config /tmp/e2e-config.json --dry-run
+minerva index --config /tmp/e2e-config.json --dry-run
 
 # 4. Cleanup
 rm -rf /tmp/e2e-test.json /tmp/e2e-config.json /tmp/e2e-chromadb
@@ -611,7 +611,7 @@ Test all cases:
 for test_file in test-data/*.source; do
     echo "Testing: $test_file"
     ./your-extractor "$test_file" -o /tmp/test.json
-    minervium validate /tmp/test.json || echo "Failed: $test_file"
+    minerva validate /tmp/test.json || echo "Failed: $test_file"
 done
 ```
 
@@ -634,10 +634,10 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
       - name: Install Minervium
-        run: pip install minervium
+        run: pip install minerva
 
       - name: Run extractor tests
         run: |
@@ -977,6 +977,7 @@ my-extractor/
 ```
 
 **setup.py**:
+
 ```python
 from setuptools import setup, find_packages
 
@@ -1018,6 +1019,7 @@ pipx install my-extractor
 **Cause**: Outputting single object instead of array.
 
 **Fix**:
+
 ```python
 # Wrong
 print(json.dumps(note))
@@ -1031,6 +1033,7 @@ print(json.dumps([note]))  # Wrap in array
 **Cause**: Date format doesn't match ISO 8601.
 
 **Fix**:
+
 ```python
 # Use strftime with correct format
 date_str = dt.strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -1044,6 +1047,7 @@ date_str = dt.isoformat()
 **Cause**: Non-UTF-8 encoding.
 
 **Fix**:
+
 ```python
 # Specify encoding when reading
 content = open(file, encoding='utf-8').read()
@@ -1079,6 +1083,6 @@ def extract_parallel(items):
 - Join the community to share your extractors
 - Submit your extractor to the official registry
 
-**Questions?** Open an issue on [GitHub](https://github.com/yourusername/minervium/issues)
+**Questions?** Open an issue on [GitHub](https://github.com/yourusername/minerva/issues)
 
 Happy extracting! 🚀

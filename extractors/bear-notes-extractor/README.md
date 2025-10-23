@@ -54,10 +54,10 @@ bear-extractor --help
 bear-extractor "Bear Notes 2025-10-20.bear2bk" -o my-notes.json
 
 # Validate the output
-minervium validate my-notes.json
+minerva validate my-notes.json
 
 # Index into Minervium
-minervium index --config config.json --verbose
+minerva index --config config.json --verbose
 ```
 
 ## Usage
@@ -106,7 +106,7 @@ bear-extractor backup.bear2bk -v -o notes.json
 bear-extractor backup.bear2bk -o notes.json
 
 # Validate
-minervium validate notes.json --verbose
+minerva validate notes.json --verbose
 # ✓ Validation successful: notes.json contains 1,234 valid note(s)
 ```
 
@@ -149,14 +149,14 @@ The extractor outputs a JSON array conforming to the [Minervium Note Schema](../
 
 #### Field Mapping
 
-| Bear Metadata | Minervium Field | Notes |
-|---------------|-----------------|-------|
-| `title` | `title` | From info.json, fallback to filename |
-| `text.markdown` content | `markdown` | Preserves all markdown formatting |
-| Content byte size | `size` | Calculated as UTF-8 byte length |
-| `modificationDate` | `modificationDate` | Normalized to UTC ISO 8601 |
-| `creationDate` | `creationDate` | Normalized to UTC ISO 8601 |
-| `trashed = 1` | (filtered out) | Trashed notes are excluded |
+| Bear Metadata           | Minervium Field    | Notes                                |
+| ----------------------- | ------------------ | ------------------------------------ |
+| `title`                 | `title`            | From info.json, fallback to filename |
+| `text.markdown` content | `markdown`         | Preserves all markdown formatting    |
+| Content byte size       | `size`             | Calculated as UTF-8 byte length      |
+| `modificationDate`      | `modificationDate` | Normalized to UTC ISO 8601           |
+| `creationDate`          | `creationDate`     | Normalized to UTC ISO 8601           |
+| `trashed = 1`           | (filtered out)     | Trashed notes are excluded           |
 
 ## How It Works
 
@@ -178,6 +178,7 @@ The extractor outputs a JSON array conforming to the [Minervium Note Schema](../
 #### Unicode Line Separator Normalization
 
 Bear sometimes uses Unicode line separators:
+
 - `U+2028` (Line Separator) → `\n`
 - `U+2029` (Paragraph Separator) → `\n`
 
@@ -186,10 +187,12 @@ This ensures compatibility with standard markdown processors.
 #### Date Normalization
 
 Bear stores dates as either:
+
 - Unix timestamps (numeric)
 - ISO strings (with or without timezone)
 
 The extractor normalizes all dates to UTC ISO 8601 with 'Z' suffix:
+
 ```
 1697812800 → "2025-10-20T14:30:00Z"
 "2025-10-20T14:30:00" → "2025-10-20T14:30:00Z"
@@ -217,7 +220,7 @@ bear-extractor "Bear Notes.bear2bk" -o notes.json
 bear-extractor backup.bear2bk -v -o notes.json
 
 # Validate schema
-minervium validate notes.json --verbose
+minerva validate notes.json --verbose
 
 # Check output
 jq 'length' notes.json
@@ -259,7 +262,7 @@ bear-extractor "Bear Notes.bear2bk" -v -o bear-notes.json
 # Exported 1234 notes
 
 # Step 3: Validate
-minervium validate bear-notes.json
+minerva validate bear-notes.json
 # ✓ Validation successful: bear-notes.json contains 1,234 valid note(s)
 
 # Step 4: Create index config
@@ -273,16 +276,16 @@ cat > bear-config.json << 'EOF'
 EOF
 
 # Step 5: Index
-minervium index --config bear-config.json --verbose
+minerva index --config bear-config.json --verbose
 # Processing 1,234 notes...
 # Created 5,678 chunks...
 # ✓ Indexing complete!
 
 # Step 6: Peek at the collection
-minervium peek bear_notes --chromadb ./chromadb_data --format table
+minerva peek bear_notes --chromadb ./chromadb_data --format table
 
 # Step 7: Serve via MCP
-minervium serve --config server-config.json
+minerva serve --config server-config.json
 ```
 
 ## How to Create a Bear Backup
@@ -308,6 +311,7 @@ To extract notes, you first need a Bear backup file:
 **Cause**: File path is incorrect or file doesn't exist.
 
 **Solution**:
+
 ```bash
 # Check file exists
 ls -lh "Bear Notes.bear2bk"
@@ -324,6 +328,7 @@ bear-extractor "Bear Notes 2025-10-20.bear2bk" -o notes.json
 **Cause**: Corrupted or incomplete backup file.
 
 **Solution**:
+
 ```bash
 # Verify it's a valid ZIP file
 unzip -t "Bear Notes.bear2bk"
@@ -335,11 +340,13 @@ unzip -t "Bear Notes.bear2bk"
 ### Issue: "Exported 0 notes"
 
 **Possible causes**:
+
 1. All notes are in trash
 2. Backup file is empty
 3. Wrong Bear version (extractor supports Bear 2.x)
 
 **Solution**:
+
 ```bash
 # Check backup contents
 unzip -l "Bear Notes.bear2bk" | head -20
@@ -356,9 +363,10 @@ unzip -l "Bear Notes.bear2bk" | grep textbundle
 **Cause**: This shouldn't happen with the Bear extractor, but if it does:
 
 **Solution**:
+
 ```bash
 # Run validation with verbose mode to see errors
-minervium validate notes.json --verbose
+minerva validate notes.json --verbose
 
 # Check the first note manually
 jq '.[0]' notes.json
@@ -391,14 +399,15 @@ jq -r '.[] | .markdown' notes.json | grep -n '[^\x00-\x7F]'
 
 **Typical performance** on modern hardware:
 
-| Notes | Time | Rate |
-|-------|------|------|
-| 100 | ~1s | 100 notes/sec |
-| 1,000 | ~5s | 200 notes/sec |
-| 10,000 | ~45s | 220 notes/sec |
+| Notes   | Time  | Rate          |
+| ------- | ----- | ------------- |
+| 100     | ~1s   | 100 notes/sec |
+| 1,000   | ~5s   | 200 notes/sec |
+| 10,000  | ~45s  | 220 notes/sec |
 | 100,000 | ~7min | 240 notes/sec |
 
 **Factors affecting speed**:
+
 - Note size (larger notes take longer)
 - Disk I/O speed (SSD vs HDD)
 - Number of attachments (ignored by extractor, but affect ZIP extraction)
@@ -455,7 +464,7 @@ for backup in ~/Bear-Backups/*.bear2bk; do
     name=$(basename "$backup" .bear2bk)
     echo "Processing $name..."
     bear-extractor "$backup" -v -o "${name}.json"
-    minervium validate "${name}.json"
+    minerva validate "${name}.json"
 done
 ```
 
@@ -484,7 +493,7 @@ pytest tests/
 
 # Manual test with sample data
 bear-extractor test-data/sample.bear2bk -v -o /tmp/test.json
-minervium validate /tmp/test.json
+minerva validate /tmp/test.json
 ```
 
 ### Code Structure
@@ -507,9 +516,9 @@ bear-notes-extractor/
 
 ## Support
 
-- **Issues**: Report bugs on [GitHub Issues](https://github.com/yourusername/minervium/issues)
+- **Issues**: Report bugs on [GitHub Issues](https://github.com/yourusername/minerva/issues)
 - **Bear Format**: This extractor is based on the Bear 2.x TextBundle backup format
-- **Validation**: Use `minervium validate` to check output
+- **Validation**: Use `minerva validate` to check output
 
 ## License
 

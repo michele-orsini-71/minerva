@@ -6,7 +6,7 @@ Minervium is a powerful tool that transforms your markdown notes, articles, and 
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/status-beta-yellow.svg)](https://github.com/yourusername/minervium)
+[![Status](https://img.shields.io/badge/status-beta-yellow.svg)](https://github.com/yourusername/minerva)
 
 ---
 
@@ -107,7 +107,7 @@ Minervium follows a three-stage pipeline architecture:
 
 ### Installation
 
-Minervium can be installed in two ways. Both methods make the `minervium` command globally available in your terminal without needing to activate any virtual environment.
+Minervium can be installed in two ways. Both methods make the `minerva` command globally available in your terminal without needing to activate any virtual environment.
 
 #### Method 1: pipx (Recommended)
 
@@ -121,12 +121,13 @@ python -m pipx ensurepath
 # Install Minervium
 pipx install .
 
-# That's it! The minervium command is now globally available
-minervium --version
-minervium --help
+# That's it! The minerva command is now globally available
+minerva --version
+minerva --help
 ```
 
 **Why pipx?**
+
 - ✅ Clean: Each tool gets its own isolated environment
 - ✅ Simple: One command to install, one command to uninstall
 - ✅ Automatic: No PATH configuration needed
@@ -145,10 +146,10 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -e .
 
 # Test that it works (while venv is active)
-minervium --version
+minerva --version
 
 # Add alias to your shell profile (~/.bashrc, ~/.zshrc, or ~/.bash_profile)
-echo 'alias minervium="/path/to/your/project/.venv/bin/minervium"' >> ~/.zshrc
+echo 'alias minerva="/path/to/your/project/.venv/bin/minerva"' >> ~/.zshrc
 
 # Reload your shell configuration
 source ~/.zshrc
@@ -156,25 +157,27 @@ source ~/.zshrc
 # Now you can deactivate the venv
 deactivate
 
-# The minervium command still works!
-minervium --help
+# The minerva command still works!
+minerva --help
 ```
 
 **Important:** Replace `/path/to/your/project` with the actual absolute path to this project directory.
 
 **For macOS/Linux users**, get the full path with:
+
 ```bash
-echo "alias minervium=\"$(pwd)/.venv/bin/minervium\"" >> ~/.zshrc
+echo "alias minerva=\"$(pwd)/.venv/bin/minerva\"" >> ~/.zshrc
 ```
 
 **For Windows users**, add to your PowerShell profile:
+
 ```powershell
-function minervium { & "C:\path\to\project\.venv\Scripts\minervium.exe" $args }
+function minerva { & "C:\path\to\project\.venv\Scripts\minerva.exe" $args }
 ```
 
 #### ⚠️ You Don't Need to Activate the Virtual Environment!
 
-**Important concept:** Once Minervium is installed using either method above, you do **NOT** need to activate any virtual environment to use it. The `minervium` command will be available in any terminal session.
+**Important concept:** Once Minervium is installed using either method above, you do **NOT** need to activate any virtual environment to use it. The `minerva` command will be available in any terminal session.
 
 - **With pipx**: The command is automatically on your PATH
 - **With pip + alias**: The alias points directly to the executable in the venv
@@ -187,15 +190,15 @@ After installation, verify everything works:
 
 ```bash
 # Check version
-minervium --version
-# Expected output: minervium 1.0.0
+minerva --version
+# Expected output: minerva 1.0.0
 
 # Check help
-minervium --help
+minerva --help
 # Expected output: Full help text with all commands
 
 # Test a simple command
-minervium validate --help
+minerva validate --help
 # Expected output: Help text for the validate command
 ```
 
@@ -210,7 +213,7 @@ pip install -e .
 bear-extractor "Bear Notes 2025-10-20.bear2bk" -o bear-notes.json
 
 # 2. Validate the extracted JSON
-minervium validate bear-notes.json
+minerva validate bear-notes.json
 
 # 3. Create an index configuration file
 cat > config.json << 'EOF'
@@ -223,13 +226,13 @@ cat > config.json << 'EOF'
 EOF
 
 # 4. Index the notes into ChromaDB
-minervium index --config config.json --verbose
+minerva index --config config.json --verbose
 
 # 5. Peek at the indexed data
-minervium peek my_notes --chromadb ./chromadb_data
+minerva peek my_notes --chromadb ./chromadb_data
 
 # 6. Start the MCP server (for Claude Desktop integration)
-minervium serve --config server-config.json
+minerva serve --config server-config.json
 ```
 
 ---
@@ -283,20 +286,22 @@ ChromaDB organizes data into **collections**. Each collection:
 
 ## 🛠️ Commands
 
-### `minervium index`
+### `minerva index`
 
 Index markdown notes into ChromaDB with AI embeddings.
 
 ```bash
-minervium index --config index-config.json [--verbose] [--dry-run]
+minerva index --config index-config.json [--verbose] [--dry-run]
 ```
 
 **Options:**
+
 - `--config FILE`: Configuration JSON file (required)
 - `--verbose`: Show detailed progress information
 - `--dry-run`: Validate without actually indexing
 
 **Example config:**
+
 ```json
 {
   "collection_name": "my_notes",
@@ -307,38 +312,40 @@ minervium index --config index-config.json [--verbose] [--dry-run]
 }
 ```
 
-### `minervium validate`
+### `minerva validate`
 
 Validate notes JSON against the schema without indexing.
 
 ```bash
-minervium validate notes.json [--verbose]
+minerva validate notes.json [--verbose]
 ```
 
 Use this before indexing to catch schema errors early.
 
-### `minervium peek`
+### `minerva peek`
 
 Inspect ChromaDB collections to see what's indexed.
 
 ```bash
-minervium peek COLLECTION_NAME --chromadb PATH [--format table|json]
+minerva peek COLLECTION_NAME --chromadb PATH [--format table|json]
 ```
 
 **Example:**
+
 ```bash
-minervium peek bear_notes --chromadb ./chromadb_data --format table
+minerva peek bear_notes --chromadb ./chromadb_data --format table
 ```
 
-### `minervium serve`
+### `minerva serve`
 
 Start the MCP server to expose collections to AI assistants.
 
 ```bash
-minervium serve --config server-config.json
+minerva serve --config server-config.json
 ```
 
 **Example config:**
+
 ```json
 {
   "chromadb_path": "./chromadb_data",
@@ -367,7 +374,7 @@ cat > bear-ollama.json << 'EOF'
 EOF
 
 # Index with verbose output
-minervium index --config bear-ollama.json --verbose
+minerva index --config bear-ollama.json --verbose
 ```
 
 ### Example 2: Index Multiple Sources
@@ -379,25 +386,25 @@ zim-extractor "wikipedia.zim" -o wiki.json
 markdown-books-extractor books/ -o books.json
 
 # Create separate collections for each
-minervium index --config bear-config.json
-minervium index --config wiki-config.json
-minervium index --config books-config.json
+minerva index --config bear-config.json
+minerva index --config wiki-config.json
+minerva index --config books-config.json
 
 # All collections available through single MCP server
-minervium serve --config server-config.json
+minerva serve --config server-config.json
 ```
 
 ### Example 3: Test Before Indexing
 
 ```bash
 # First, validate the extracted data
-minervium validate notes.json --verbose
+minerva validate notes.json --verbose
 
 # Then do a dry run to check configuration
-minervium index --config config.json --dry-run
+minerva index --config config.json --dry-run
 
 # Finally, index for real
-minervium index --config config.json --verbose
+minerva index --config config.json --verbose
 ```
 
 ### Example 4: Complete Workflow with All Commands
@@ -409,7 +416,7 @@ This example shows all four Minervium commands in a realistic workflow:
 bear-extractor "Bear Notes 2025-10-20.bear2bk" -o my-notes.json -v
 
 # Step 2: Validate the extracted JSON before indexing
-minervium validate my-notes.json --verbose
+minerva validate my-notes.json --verbose
 # Output: ✓ JSON is valid
 # Output: Found 1,234 notes
 
@@ -425,18 +432,18 @@ cat > index-config.json << 'EOF'
 EOF
 
 # Step 4: Index the notes (this may take a few minutes)
-minervium index --config index-config.json --verbose
+minerva index --config index-config.json --verbose
 # Output: Processing 1,234 notes...
 # Output: Created 5,678 chunks...
 # Output: Generating embeddings...
 # Output: ✓ Indexing complete!
 
 # Step 5: Peek at the collection to verify what was indexed
-minervium peek personal_knowledge --chromadb ./chromadb_data --format table
+minerva peek personal_knowledge --chromadb ./chromadb_data --format table
 # Output shows: collection name, document count, sample entries, metadata
 
 # Step 6: Peek with JSON format for detailed inspection
-minervium peek personal_knowledge --chromadb ./chromadb_data --format json > collection-info.json
+minerva peek personal_knowledge --chromadb ./chromadb_data --format json > collection-info.json
 
 # Step 7: Create MCP server configuration
 cat > server-config.json << 'EOF'
@@ -447,12 +454,13 @@ cat > server-config.json << 'EOF'
 EOF
 
 # Step 8: Start the MCP server (makes your notes available to Claude Desktop)
-minervium serve --config server-config.json
+minerva serve --config server-config.json
 # Output: MCP server listening...
 # Output: Collection 'personal_knowledge' available (5,678 chunks)
 ```
 
 **What each command does:**
+
 - **`validate`**: Checks JSON structure before spending time on indexing
 - **`index`**: Processes notes, creates embeddings, stores in vector database
 - **`peek`**: Lets you inspect what's in the database (metadata, counts, samples)
@@ -462,22 +470,22 @@ minervium serve --config server-config.json
 
 ```bash
 # List all collections (peek will show available collections if you don't specify one)
-minervium peek --chromadb ./chromadb_data
+minerva peek --chromadb ./chromadb_data
 
 # Inspect your Bear notes collection
-minervium peek bear_notes --chromadb ./chromadb_data --format table
+minerva peek bear_notes --chromadb ./chromadb_data --format table
 
 # Inspect Wikipedia articles collection
-minervium peek wikipedia_history --chromadb ./chromadb_data --format table
+minerva peek wikipedia_history --chromadb ./chromadb_data --format table
 
 # Get detailed JSON output for programmatic analysis
-minervium peek bear_notes --chromadb ./chromadb_data --format json | jq '.metadata'
+minerva peek bear_notes --chromadb ./chromadb_data --format json | jq '.metadata'
 
 # Compare collection sizes
 echo "Bear notes:"
-minervium peek bear_notes --chromadb ./chromadb_data --format json | jq '.count'
+minerva peek bear_notes --chromadb ./chromadb_data --format json | jq '.count'
 echo "Wikipedia:"
-minervium peek wikipedia_history --chromadb ./chromadb_data --format json | jq '.count'
+minerva peek wikipedia_history --chromadb ./chromadb_data --format json | jq '.count'
 ```
 
 ---
@@ -517,8 +525,8 @@ Then validate and index:
 
 ```bash
 python my_extractor.py input.txt > notes.json
-minervium validate notes.json
-minervium index --config config.json
+minerva validate notes.json
+minerva index --config config.json
 ```
 
 See the [Extractor Guide](docs/EXTRACTOR_GUIDE.md) for detailed tutorials.
@@ -538,7 +546,7 @@ See the [Extractor Guide](docs/EXTRACTOR_GUIDE.md) for detailed tutorials.
 
 Contributions are welcome! Here are some ways you can help:
 
-- 🐛 Report bugs and request features via [GitHub Issues](https://github.com/yourusername/minervium/issues)
+- 🐛 Report bugs and request features via [GitHub Issues](https://github.com/yourusername/minerva/issues)
 - 📝 Write extractors for new data sources
 - 📚 Improve documentation
 - 🧪 Add tests and improve code coverage
@@ -566,8 +574,8 @@ Minervium builds upon these excellent open-source projects:
 ## 📮 Support
 
 - 📖 Check the [documentation](docs/)
-- 🐛 Report issues on [GitHub](https://github.com/yourusername/minervium/issues)
-- 💬 Join discussions in [GitHub Discussions](https://github.com/yourusername/minervium/discussions)
+- 🐛 Report issues on [GitHub](https://github.com/yourusername/minerva/issues)
+- 💬 Join discussions in [GitHub Discussions](https://github.com/yourusername/minerva/discussions)
 
 ---
 

@@ -11,7 +11,7 @@ Extractors are independent tools that transform data from specific sources (apps
 - **Independence**: No dependency on Minervium core - just output JSON
 - **Language Freedom**: Write extractors in any language (all official extractors happen to be Python)
 - **Focused Scope**: Each extractor handles one source type very well
-- **Easy Testing**: Validate output with `minervium validate` before indexing
+- **Easy Testing**: Validate output with `minerva validate` before indexing
 - **Distribution**: Install only the extractors you need
 
 ---
@@ -27,6 +27,7 @@ Extractors are independent tools that transform data from specific sources (apps
 Extract notes from Bear app backups into Minervium-compatible JSON.
 
 **Features**:
+
 - Extracts notes from Bear 2.x backup archives
 - Preserves markdown formatting
 - Filters out trashed notes automatically
@@ -34,15 +35,17 @@ Extract notes from Bear app backups into Minervium-compatible JSON.
 - Zero dependencies (uses only Python stdlib)
 
 **Installation**:
+
 ```bash
 cd extractors/bear-notes-extractor
 pip install -e .
 ```
 
 **Quick Start**:
+
 ```bash
 bear-extractor "Bear Notes 2025-10-20.bear2bk" -o notes.json
-minervium validate notes.json
+minerva validate notes.json
 ```
 
 [📖 Full Documentation](bear-notes-extractor/README.md)
@@ -58,6 +61,7 @@ minervium validate notes.json
 Extract articles from ZIM archives (offline Wikipedia, educational content, etc.) into searchable notes.
 
 **Features**:
+
 - Reads ZIM archives using libzim
 - Converts HTML articles to clean markdown
 - Extracts article metadata (title, last modified)
@@ -65,19 +69,22 @@ Extract articles from ZIM archives (offline Wikipedia, educational content, etc.
 - Preserves article structure
 
 **Dependencies**:
+
 - `libzim>=3.0.0` (ZIM archive reader)
 - `markdownify>=0.11.0` (HTML to Markdown conversion)
 
 **Installation**:
+
 ```bash
 cd extractors/zim-extractor
 pip install -e .
 ```
 
 **Quick Start**:
+
 ```bash
 zim-extractor "wikipedia_en_history.zim" -o wiki.json
-minervium validate wiki.json
+minerva validate wiki.json
 ```
 
 [📖 Full Documentation](zim-extractor/README.md)
@@ -93,6 +100,7 @@ minervium validate wiki.json
 Extract structured markdown books (like Project Gutenberg exports) into individual note entries.
 
 **Features**:
+
 - Processes directories of markdown files
 - Extracts book metadata from frontmatter
 - Generates titles from headings or filenames
@@ -100,15 +108,17 @@ Extract structured markdown books (like Project Gutenberg exports) into individu
 - Zero dependencies (uses only Python stdlib)
 
 **Installation**:
+
 ```bash
 cd extractors/markdown-books-extractor
 pip install -e .
 ```
 
 **Quick Start**:
+
 ```bash
 markdown-books-extractor ~/books/alice-in-wonderland.md -o book.json
-minervium validate book.json
+minerva validate book.json
 ```
 
 [📖 Full Documentation](markdown-books-extractor/README.md)
@@ -117,11 +127,11 @@ minervium validate book.json
 
 ## Quick Comparison
 
-| Extractor | Source Type | Dependencies | Output Size | Use Case |
-|-----------|-------------|--------------|-------------|----------|
-| **bear-extractor** | Bear backups (.bear2bk) | None | 100-10K notes | Personal note-taking |
-| **zim-extractor** | ZIM archives | libzim, markdownify | 1K-1M articles | Wikipedia, offline content |
-| **markdown-books-extractor** | Markdown files | None | 1-100 books | Literature, documentation |
+| Extractor                    | Source Type             | Dependencies        | Output Size    | Use Case                   |
+| ---------------------------- | ----------------------- | ------------------- | -------------- | -------------------------- |
+| **bear-extractor**           | Bear backups (.bear2bk) | None                | 100-10K notes  | Personal note-taking       |
+| **zim-extractor**            | ZIM archives            | libzim, markdownify | 1K-1M articles | Wikipedia, offline content |
+| **markdown-books-extractor** | Markdown files          | None                | 1-100 books    | Literature, documentation  |
 
 ---
 
@@ -183,7 +193,7 @@ bear-extractor "backup.bear2bk" -o notes.json
 Verify the output conforms to the Minervium schema:
 
 ```bash
-minervium validate notes.json --verbose
+minerva validate notes.json --verbose
 # ✓ Validation successful: notes.json contains 1,234 valid note(s)
 ```
 
@@ -203,7 +213,7 @@ cat > config.json << 'EOF'
 EOF
 
 # Index into Minervium
-minervium index --config config.json --verbose
+minerva index --config config.json --verbose
 ```
 
 ### 4. Search
@@ -211,7 +221,7 @@ minervium index --config config.json --verbose
 Start the MCP server and search through Claude Desktop:
 
 ```bash
-minervium serve --config server-config.json
+minerva serve --config server-config.json
 ```
 
 ---
@@ -250,17 +260,17 @@ zim-extractor "wikipedia_history.zim" -o wiki.json
 markdown-books-extractor ~/books/ -o books.json
 
 # Validate all outputs
-minervium validate bear.json
-minervium validate wiki.json
-minervium validate books.json
+minerva validate bear.json
+minerva validate wiki.json
+minerva validate books.json
 
 # Index each as separate collection
-minervium index --config bear-config.json
-minervium index --config wiki-config.json
-minervium index --config books-config.json
+minerva index --config bear-config.json
+minerva index --config wiki-config.json
+minerva index --config books-config.json
 
 # All collections available through one MCP server
-minervium serve --config server-config.json
+minerva serve --config server-config.json
 ```
 
 Now you can search across your personal notes, Wikipedia articles, and book content from Claude Desktop!
@@ -308,9 +318,10 @@ if __name__ == "__main__":
 ```
 
 Test it:
+
 ```bash
 python my_extractor.py input.source > notes.json
-minervium validate notes.json
+minerva validate notes.json
 ```
 
 ### Resources
@@ -348,22 +359,22 @@ pytest tests/
 
 # Integration test: extract and validate
 ./your-extractor test-data/sample.source -o /tmp/test.json
-minervium validate /tmp/test.json
+minerva validate /tmp/test.json
 
 # End-to-end test: extract, validate, index (dry run)
 ./your-extractor test-data/sample.source -o /tmp/test.json
-minervium validate /tmp/test.json
-minervium index --config test-config.json --dry-run
+minerva validate /tmp/test.json
+minerva index --config test-config.json --dry-run
 ```
 
 ### Best Practices
 
-1. ✅ **Zero Minervium dependencies**: Extractors should not import from `minervium.*`
+1. ✅ **Zero Minervium dependencies**: Extractors should not import from `minerva.*`
 2. ✅ **Standard I/O**: Accept input as arguments, output JSON to stdout or file
 3. ✅ **UTF-8 encoding**: Always use UTF-8 for reading and writing
 4. ✅ **Error handling**: Handle missing files, corrupt data gracefully
 5. ✅ **Progress reporting**: Print progress to stderr (not stdout)
-6. ✅ **Validation**: Test output with `minervium validate` during development
+6. ✅ **Validation**: Test output with `minerva validate` during development
 
 ---
 
@@ -387,7 +398,7 @@ which bear-extractor
 
 ```bash
 # Check what the error is
-minervium validate notes.json --verbose
+minerva validate notes.json --verbose
 
 # Common issues:
 # - Missing required fields (title, markdown, size, modificationDate)
@@ -416,7 +427,7 @@ file backup.bear2bk
 2. Follow the structure: `setup.py`, `your_package/`, `README.md`
 3. Ensure zero Minervium dependencies
 4. Add comprehensive README with examples
-5. Test thoroughly with `minervium validate`
+5. Test thoroughly with `minerva validate`
 6. Submit pull request
 
 ### Guidelines
@@ -432,7 +443,7 @@ file backup.bear2bk
 ## Support
 
 - **Documentation**: [Extractor Guide](../docs/EXTRACTOR_GUIDE.md), [Note Schema](../docs/NOTE_SCHEMA.md)
-- **Issues**: Report problems on [GitHub Issues](https://github.com/yourusername/minervium/issues)
+- **Issues**: Report problems on [GitHub Issues](https://github.com/yourusername/minerva/issues)
 - **Examples**: Study the official extractors in this directory
 
 ---

@@ -102,6 +102,7 @@ The human-readable title or name of the note.
   - `"Introduction to Quantum Computing"`
 
 **Recommendations**:
+
 - Use descriptive, unique titles when possible
 - For untitled notes, generate a title from the first heading or content
 - Avoid overly long titles (> 200 characters)
@@ -116,16 +117,18 @@ The full content of the note in markdown format.
 - **Format**: Standard markdown with CommonMark compatibility
 
 **Supported Markdown Features**:
+
 - Headings (`#`, `##`, etc.)
 - Lists (ordered and unordered)
 - Code blocks (fenced with triple backticks)
 - Links and images
 - Tables
 - Blockquotes
-- Emphasis (*italic*, **bold**)
+- Emphasis (_italic_, **bold**)
 
 **Example**:
-```markdown
+
+````markdown
 # Introduction
 
 This is a note about **important concepts**.
@@ -139,7 +142,9 @@ This is a note about **important concepts**.
 def hello():
     print("Hello, world!")
 ```
-```
+````
+
+````
 
 #### `size` (integer, ≥ 0)
 
@@ -187,7 +192,7 @@ utc_now = datetime.now(timezone.utc).isoformat()
 # With 'Z' suffix (recommended)
 utc_now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 # Result: '2025-10-20T14:30:00Z'
-```
+````
 
 ### Optional Fields
 
@@ -207,6 +212,7 @@ If the source system provides creation dates, include them. Otherwise, this fiel
 Extractors may include **any additional fields** to preserve source-specific metadata.
 
 **Allowed Custom Fields Examples**:
+
 - `"tags": ["project", "important"]` - Note tags or categories
 - `"author": "John Doe"` - Note author
 - `"sourceId": "bear-uuid-12345"` - Original ID in source system
@@ -243,17 +249,19 @@ For each note in the array:
 ### Validation Modes
 
 #### Strict Mode (default)
+
 Stops at first error, reports one issue at a time.
 
 ```bash
-minervium validate notes.json
+minerva validate notes.json
 ```
 
 #### Non-Strict Mode
+
 Collects all errors and reports them together.
 
 ```bash
-minervium validate notes.json --verbose
+minerva validate notes.json --verbose
 ```
 
 ---
@@ -339,6 +347,7 @@ The absolute minimum required to pass validation:
 ### Edge Cases
 
 #### Empty markdown (valid)
+
 ```json
 [
   {
@@ -351,6 +360,7 @@ The absolute minimum required to pass validation:
 ```
 
 #### Very long title (valid but not recommended)
+
 ```json
 [
   {
@@ -375,6 +385,7 @@ The absolute minimum required to pass validation:
 **Cause**: Note is missing one or more required fields.
 
 **Fix**: Ensure all four required fields are present:
+
 ```json
 {
   "title": "My Note",
@@ -393,9 +404,10 @@ The absolute minimum required to pass validation:
 **Cause**: Title field exists but is an empty string.
 
 **Fix**: Provide a non-empty title:
+
 ```json
 {
-  "title": "Untitled Note"  // Not ""
+  "title": "Untitled Note" // Not ""
 }
 ```
 
@@ -408,9 +420,10 @@ The absolute minimum required to pass validation:
 **Cause**: Date doesn't match ISO 8601 pattern.
 
 **Fix**: Use correct format:
+
 ```json
 {
-  "modificationDate": "2025-10-20T14:30:00Z"  // Not "10/20/2025"
+  "modificationDate": "2025-10-20T14:30:00Z" // Not "10/20/2025"
 }
 ```
 
@@ -423,6 +436,7 @@ The absolute minimum required to pass validation:
 **Cause**: Size field is negative.
 
 **Fix**: Calculate size correctly:
+
 ```python
 size = len(markdown.encode('utf-8'))  # Always >= 0
 ```
@@ -436,13 +450,16 @@ size = len(markdown.encode('utf-8'))  # Always >= 0
 **Cause**: Root JSON is an object `{...}` instead of array `[...]`.
 
 **Fix**: Wrap notes in an array:
+
 ```json
 [
   { note 1 },
   { note 2 }
 ]
 ```
+
 Not:
+
 ```json
 { note 1 }
 ```
@@ -458,13 +475,13 @@ Not:
 3. **Prefer UTC timestamps**: Add 'Z' suffix for clarity
 4. **Generate titles**: If source has no title, generate from first heading or content
 5. **Preserve rich metadata**: Use custom fields for source-specific data
-6. **Test with validation**: Run `minervium validate` during development
+6. **Test with validation**: Run `minerva validate` during development
 7. **Handle encoding properly**: Ensure markdown is valid UTF-8
 8. **Normalize timestamps**: Convert all dates to UTC for consistency
 
 ### For Users
 
-1. **Validate before indexing**: Always run `minervium validate notes.json` first
+1. **Validate before indexing**: Always run `minerva validate notes.json` first
 2. **Check error messages**: Validation errors point to specific issues
 3. **Use verbose mode**: `--verbose` shows all errors at once
 4. **Keep backups**: Keep original source files before extraction
@@ -557,7 +574,7 @@ your-extractor input.source -o sample.json
 ### 2. Validate the output
 
 ```bash
-minervium validate sample.json --verbose
+minerva validate sample.json --verbose
 ```
 
 ### 3. Inspect manually
@@ -588,7 +605,7 @@ cat > test-config.json << 'EOF'
 EOF
 
 # Dry run (validates without indexing)
-minervium index --config test-config.json --dry-run
+minerva index --config test-config.json --dry-run
 ```
 
 ---
@@ -598,6 +615,7 @@ minervium index --config test-config.json --dry-run
 **Current Version**: 1.0.0
 
 The schema follows semantic versioning:
+
 - **Major version**: Breaking changes (new required fields)
 - **Minor version**: Backward-compatible additions (new optional fields)
 - **Patch version**: Documentation updates, clarifications
@@ -608,8 +626,8 @@ Future versions will maintain backward compatibility whenever possible. Extracto
 
 ## Resources
 
-- **Validation Tool**: `minervium validate notes.json`
-- **Schema Implementation**: [`minervium/common/schemas.py`](../minervium/common/schemas.py)
+- **Validation Tool**: `minerva validate notes.json`
+- **Schema Implementation**: [`minerva/common/schemas.py`](../minerva/common/schemas.py)
 - **Extractor Guide**: [EXTRACTOR_GUIDE.md](EXTRACTOR_GUIDE.md)
 - **Example Extractors**: [`extractors/`](../extractors/)
 
@@ -620,6 +638,6 @@ Future versions will maintain backward compatibility whenever possible. Extracto
 If you encounter schema-related issues:
 
 1. Check this documentation
-2. Run `minervium validate` with `--verbose` for detailed errors
+2. Run `minerva validate` with `--verbose` for detailed errors
 3. Review example extractors in `extractors/` directory
-4. Open an issue on [GitHub](https://github.com/yourusername/minervium/issues)
+4. Open an issue on [GitHub](https://github.com/yourusername/minerva/issues)

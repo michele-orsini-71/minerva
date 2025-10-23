@@ -15,8 +15,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 pip install -e .
 
 # Verify installation
-minervium --version
-minervium --help
+minerva --version
+minerva --help
 
 # Install extractors (optional, as needed)
 cd extractors/bear-notes-extractor && pip install -e .
@@ -28,16 +28,16 @@ cd extractors/markdown-books-extractor && pip install -e .
 
 ```bash
 # Validate extracted notes
-minervium validate notes.json [--verbose]
+minerva validate notes.json [--verbose]
 
 # Index notes into ChromaDB
-minervium index --config config.json [--verbose] [--dry-run]
+minerva index --config config.json [--verbose] [--dry-run]
 
 # Peek at indexed collection
-minervium peek COLLECTION_NAME --chromadb PATH [--format table|json]
+minerva peek COLLECTION_NAME --chromadb PATH [--format table|json]
 
 # Start MCP server
-minervium serve --config server-config.json
+minerva serve --config server-config.json
 ```
 
 ### Extractor Commands
@@ -75,7 +75,7 @@ Minervium follows a three-stage pipeline architecture:
 ### Directory Structure
 
 ```
-minervium/                     # Core package
+minerva/                     # Core package
 ├── __init__.py
 ├── __main__.py
 ├── cli.py                     # Main CLI entry point
@@ -134,7 +134,7 @@ test-data/                     # Test files and sample data
 bear-extractor "Bear Notes 2025-10-20.bear2bk" -v -o bear-notes.json
 
 # 2. Validate
-minervium validate bear-notes.json --verbose
+minerva validate bear-notes.json --verbose
 
 # 3. Create index configuration
 cat > bear-config.json << 'EOF'
@@ -147,10 +147,10 @@ cat > bear-config.json << 'EOF'
 EOF
 
 # 4. Index
-minervium index --config bear-config.json --verbose
+minerva index --config bear-config.json --verbose
 
 # 5. Peek at results
-minervium peek bear_notes --chromadb ./chromadb_data --format table
+minerva peek bear_notes --chromadb ./chromadb_data --format table
 
 # 6. Start MCP server
 cat > server-config.json << 'EOF'
@@ -160,7 +160,7 @@ cat > server-config.json << 'EOF'
 }
 EOF
 
-minervium serve --config server-config.json
+minerva serve --config server-config.json
 ```
 
 ### Working with Multiple Sources
@@ -172,17 +172,17 @@ zim-extractor "wikipedia_history.zim" -l 1000 -o wiki.json
 markdown-books-extractor "alice.md" -o alice.json
 
 # Validate all
-minervium validate bear.json
-minervium validate wiki.json
-minervium validate alice.json
+minerva validate bear.json
+minerva validate wiki.json
+minerva validate alice.json
 
 # Index as separate collections
-minervium index --config bear-config.json
-minervium index --config wiki-config.json
-minervium index --config alice-config.json
+minerva index --config bear-config.json
+minerva index --config wiki-config.json
+minerva index --config alice-config.json
 
 # All available through single MCP server
-minervium serve --config server-config.json
+minerva serve --config server-config.json
 ```
 
 ### Testing Individual Components
@@ -377,7 +377,7 @@ Test with:
 
 ```bash
 python my_extractor.py input.source > notes.json
-minervium validate notes.json
+minerva validate notes.json
 ```
 
 See `docs/EXTRACTOR_GUIDE.md` for complete tutorial.
@@ -391,7 +391,7 @@ See `docs/EXTRACTOR_GUIDE.md` for complete tutorial.
 pytest
 
 # Run with coverage
-pytest --cov=minervium --cov-report=html
+pytest --cov=minerva --cov-report=html
 
 # Run specific test file
 pytest tests/test_schemas.py
@@ -405,15 +405,15 @@ pytest -v
 ```bash
 # Test complete workflow with sample data
 bear-extractor test-data/sample.bear2bk -o /tmp/test.json
-minervium validate /tmp/test.json
-minervium index --config test-configs/sample-config.json --dry-run
+minerva validate /tmp/test.json
+minerva index --config test-configs/sample-config.json --dry-run
 ```
 
 ## Common Tasks
 
 ### Adding a New Command
 
-1. Create `minervium/commands/newcmd.py`:
+1. Create `minerva/commands/newcmd.py`:
 
 ```python
 def run_newcmd(args):
@@ -421,7 +421,7 @@ def run_newcmd(args):
     pass
 ```
 
-2. Update `minervium/cli.py`:
+2. Update `minerva/cli.py`:
 
 ```python
 from minerva.commands.newcmd import run_newcmd
@@ -434,12 +434,12 @@ newcmd_parser = subparsers.add_parser('newcmd', help='...')
 3. Test:
 
 ```bash
-minervium newcmd --help
+minerva newcmd --help
 ```
 
 ### Modifying the Schema
 
-1. Edit `minervium/common/schemas.py`
+1. Edit `minerva/common/schemas.py`
 2. Update `NOTE_SCHEMA` dictionary
 3. Update validation functions if needed
 4. Update `docs/NOTE_SCHEMA.md` documentation
@@ -464,7 +464,7 @@ extractors/my-extractor/
 4. Create CLI in `cli.py`
 5. Add console_scripts entry point in `setup.py`
 6. Test: `pip install -e . && my-extractor input -o output.json`
-7. Validate: `minervium validate output.json`
+7. Validate: `minerva validate output.json`
 
 See `docs/EXTRACTOR_GUIDE.md` for detailed guide.
 
@@ -477,7 +477,7 @@ See `docs/EXTRACTOR_GUIDE.md` for detailed guide.
 pip install -e .
 
 # Check installation
-pip list | grep minervium
+pip list | grep minerva
 
 # Verify imports work
 python -c "from minerva.cli import main; print('OK')"
@@ -521,7 +521,7 @@ ollama list
 
 ```bash
 # Run with verbose mode to see all errors
-minervium validate notes.json --verbose
+minerva validate notes.json --verbose
 
 # Check first note manually
 jq '.[0]' notes.json
@@ -552,7 +552,7 @@ cat server-config.json
 
 # Run with verbose logging
 # (MCP servers log to stderr)
-minervium serve --config server-config.json 2>&1 | tee server.log
+minerva serve --config server-config.json 2>&1 | tee server.log
 ```
 
 ### Performance Issues
@@ -680,8 +680,8 @@ cd extractors/markdown-books-extractor && pip install -e . && cd ../..
 pytest
 
 # Check code style
-black --check minervium/
-flake8 minervium/
+black --check minerva/
+flake8 minerva/
 ```
 
 ## Git Workflow

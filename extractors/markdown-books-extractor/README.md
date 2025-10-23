@@ -53,10 +53,10 @@ markdown-books-extractor --help
 markdown-books-extractor alice-in-wonderland.md -o alice.json
 
 # Validate the output
-minervium validate alice.json
+minerva validate alice.json
 
 # Index into Minervium
-minervium index --config config.json --verbose
+minerva index --config config.json --verbose
 ```
 
 ## Usage
@@ -105,9 +105,12 @@ Book files must follow this format:
 
 ```markdown
 # Title: Alice's Adventures in Wonderland
+
 ## Author: Lewis Carroll
+
 ## Year: 1865
--------
+
+---
 
 # Chapter I: Down the Rabbit Hole
 
@@ -119,6 +122,7 @@ Alice was beginning to get very tired of sitting by her sister...
 ```
 
 **Required elements**:
+
 1. **Title line**: `# Title: [Book Title]`
 2. **Author line**: `## Author: [Author Name]`
 3. **Year line**: `## Year: [YYYY]`
@@ -129,9 +133,12 @@ Alice was beginning to get very tired of sitting by her sister...
 
 ```markdown
 # Title: The Great Gatsby
+
 ## Author: F. Scott Fitzgerald
+
 ## Year: 1925
--------
+
+---
 ```
 
 - Title must start with `# Title:`
@@ -160,15 +167,15 @@ Outputs a JSON array with one note per book:
 
 #### Field Mapping
 
-| Source | Minervium Field | Notes |
-|--------|-----------------|-------|
-| `# Title:` value | `title` | Book title from header |
-| Header + body | `markdown` | Formatted with title, author, year, and content |
-| Markdown byte size | `size` | Calculated as UTF-8 length |
-| Year-01-01 | `modificationDate` | January 1st of publication year |
-| Year-01-01 | `creationDate` | January 1st of publication year |
-| `## Author:` value | `author` | Custom field |
-| `## Year:` value | `year` | Custom field (integer) |
+| Source             | Minervium Field    | Notes                                           |
+| ------------------ | ------------------ | ----------------------------------------------- |
+| `# Title:` value   | `title`            | Book title from header                          |
+| Header + body      | `markdown`         | Formatted with title, author, year, and content |
+| Markdown byte size | `size`             | Calculated as UTF-8 length                      |
+| Year-01-01         | `modificationDate` | January 1st of publication year                 |
+| Year-01-01         | `creationDate`     | January 1st of publication year                 |
+| `## Author:` value | `author`           | Custom field                                    |
+| `## Year:` value   | `year`             | Custom field (integer)                          |
 
 ### Markdown Output Format
 
@@ -201,6 +208,7 @@ This provides context when viewing extracted notes.
 ### Date Handling
 
 Since books don't have modification dates, the extractor uses the publication year:
+
 - `modificationDate`: `{year}-01-01T00:00:00Z`
 - `creationDate`: `{year}-01-01T00:00:00Z`
 
@@ -213,11 +221,15 @@ This allows sorting books chronologically by publication year.
 ### Example 1: Extract Alice in Wonderland
 
 **Input file** (`alice.md`):
+
 ```markdown
 # Title: Alice's Adventures in Wonderland
+
 ## Author: Lewis Carroll
+
 ## Year: 1865
--------
+
+---
 
 # Chapter I: Down the Rabbit Hole
 
@@ -229,6 +241,7 @@ conversations?"
 ```
 
 **Extract**:
+
 ```bash
 markdown-books-extractor alice.md -v -o alice.json
 # Parsing markdown book from alice.md
@@ -236,6 +249,7 @@ markdown-books-extractor alice.md -v -o alice.json
 ```
 
 **Output** (`alice.json`):
+
 ```json
 [
   {
@@ -264,7 +278,7 @@ done
 jq -s 'add' json/*.json > all-books.json
 
 # Validate
-minervium validate all-books.json
+minerva validate all-books.json
 # ✓ Validation successful: all-books.json contains 25 valid note(s)
 ```
 
@@ -292,7 +306,7 @@ markdown-books-extractor moby-dick.md -v -o moby-dick.json
 # Exported 1 record(s)
 
 # Step 3: Validate
-minervium validate moby-dick.json
+minerva validate moby-dick.json
 # ✓ Validation successful: moby-dick.json contains 1 valid note(s)
 
 # Step 4: Check output
@@ -314,7 +328,7 @@ cat > books-config.json << 'EOF'
 }
 EOF
 
-minervium index --config books-config.json --verbose
+minerva index --config books-config.json --verbose
 ```
 
 ### Example 4: Batch Processing Project Gutenberg
@@ -342,7 +356,7 @@ cat > gutenberg-config.json << 'EOF'
 }
 EOF
 
-minervium index --config gutenberg-config.json --verbose
+minerva index --config gutenberg-config.json --verbose
 ```
 
 ## Creating Markdown Book Files
@@ -384,9 +398,12 @@ Project Gutenberg books need formatting:
 
 ```markdown
 # Title: [Your Book Title]
+
 ## Author: [Author Name]
+
 ## Year: [Publication Year]
--------
+
+---
 
 # Chapter 1
 
@@ -404,15 +421,18 @@ Project Gutenberg books need formatting:
 **Cause**: Header doesn't have proper title line.
 
 **Solution**: Ensure format is exactly:
+
 ```markdown
 # Title: Your Book Title
 ```
 
 Not:
+
 ```markdown
-Title: Your Book Title  (missing #)
-#Title: Your Book Title  (missing space)
-# Title:  (missing actual title)
+Title: Your Book Title (missing #)
+#Title: Your Book Title (missing space)
+
+# Title: (missing actual title)
 ```
 
 ### Issue: "File must contain '-------' delimiter"
@@ -420,19 +440,26 @@ Title: Your Book Title  (missing #)
 **Cause**: Missing or incorrect delimiter.
 
 **Solution**: Add exactly 7 dashes on a line by itself:
+
 ```markdown
 # Title: Book
+
 ## Author: Author
+
 ## Year: 2025
--------
+
+---
+
 Content starts here...
 ```
 
 Not:
+
 ```markdown
-------  (6 dashes)
---------  (8 dashes)
-- - - - - - -  (spaces between)
+------ (6 dashes)
+-------- (8 dashes)
+
+- - - - - - - (spaces between)
 ```
 
 ### Issue: "Invalid year format"
@@ -440,12 +467,15 @@ Not:
 **Cause**: Year is not a 4-digit number.
 
 **Solution**:
-```markdown
-## Year: 1925  ✅ Correct
 
-## Year: 25   ✗ Wrong (2 digits)
-## Year: 1925 CE  ✗ Wrong (extra text)
-## Year: nineteen twenty-five  ✗ Wrong (words)
+```markdown
+## Year: 1925 ✅ Correct
+
+## Year: 25 ✗ Wrong (2 digits)
+
+## Year: 1925 CE ✗ Wrong (extra text)
+
+## Year: nineteen twenty-five ✗ Wrong (words)
 ```
 
 ### Issue: "File encoding error"
@@ -453,6 +483,7 @@ Not:
 **Cause**: File is not UTF-8 encoded.
 
 **Solution**:
+
 ```bash
 # Check file encoding
 file book.md
@@ -468,22 +499,23 @@ iconv -f ISO-8859-1 -t UTF-8 book.md > book-utf8.md
 **Cause**: Title line exists but has no value.
 
 **Solution**:
-```markdown
-# Title: Alice in Wonderland  ✅ Has value
 
-# Title:   ✗ Empty after colon
+```markdown
+# Title: Alice in Wonderland ✅ Has value
+
+# Title: ✗ Empty after colon
 ```
 
 ## Performance
 
 **Extraction time**: Nearly instantaneous (< 1 second per book)
 
-| Books | Time | Rate |
-|-------|------|------|
-| 1 | < 1s | instant |
-| 10 | < 1s | instant |
-| 100 | ~2s | 50/sec |
-| 1,000 | ~20s | 50/sec |
+| Books | Time | Rate    |
+| ----- | ---- | ------- |
+| 1     | < 1s | instant |
+| 10    | < 1s | instant |
+| 100   | ~2s  | 50/sec  |
+| 1,000 | ~20s | 50/sec  |
 
 Books are extracted individually, so performance is linear with file count.
 
@@ -520,9 +552,11 @@ csplit -f chapter- book.md '/^# Chapter /' '{*}'
 
 **For books without year**:
 Use approximate or unknown year:
+
 ```markdown
-## Year: 1900  # Approximate for older works
-## Year: 2000  # For modern works
+## Year: 1900 # Approximate for older works
+
+## Year: 2000 # For modern works
 ```
 
 ## Advanced Usage
@@ -562,7 +596,7 @@ markdown-books-extractor book.md | \
 
 for json in books/*.json; do
     echo "Validating $json..."
-    minervium validate "$json" || echo "FAILED: $json"
+    minerva validate "$json" || echo "FAILED: $json"
 done
 ```
 
@@ -595,7 +629,7 @@ This is test content.
 EOF
 
 markdown-books-extractor test-book.md -v -o test.json
-minervium validate test.json
+minerva validate test.json
 ```
 
 ### Code Structure
@@ -624,8 +658,8 @@ markdown-books-extractor/
 
 ## Support
 
-- **Issues**: Report bugs on [GitHub Issues](https://github.com/yourusername/minervium/issues)
-- **Questions**: Ask in [GitHub Discussions](https://github.com/yourusername/minervium/discussions)
+- **Issues**: Report bugs on [GitHub Issues](https://github.com/yourusername/minerva/issues)
+- **Questions**: Ask in [GitHub Discussions](https://github.com/yourusername/minerva/discussions)
 
 ## License
 

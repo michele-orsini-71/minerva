@@ -16,8 +16,10 @@ This report documents the results of verifying all documentation links and examp
 ### 1. Missing Referenced Files
 
 #### LICENSE File
+
 **Status**: ❌ Not Found
 **Referenced in**:
+
 - `README.md:552` - `[LICENSE](LICENSE)`
 - `extractors/bear-notes-extractor/README.md:516` - `[LICENSE](../../LICENSE)`
 - `extractors/markdown-books-extractor/README.md:632` - `[LICENSE](../../LICENSE)`
@@ -26,8 +28,10 @@ This report documents the results of verifying all documentation links and examp
 **Recommendation**: Create a LICENSE file (MIT license is mentioned throughout documentation)
 
 #### docs/INSTALLATION.md
+
 **Status**: ❌ Not Found
 **Referenced in**:
+
 - `README.md:530` - `[Installation Guide](docs/INSTALLATION.md)`
 
 **Recommendation**: Remove this link - installation instructions are already comprehensive in README.md (lines 108-202)
@@ -36,19 +40,19 @@ This report documents the results of verifying all documentation links and examp
 
 All files contain placeholder URLs with `yourusername` that need to be updated when repository is published:
 
-| File | Line(s) | Placeholder URL |
-|------|---------|-----------------|
-| `README.md` | 9 | `https://github.com/yourusername/minervium` (badge) |
-| `README.md` | 542 | `https://github.com/yourusername/minervium/issues` |
-| `README.md` | 570 | `https://github.com/yourusername/minervium/issues` |
-| `README.md` | 571 | `https://github.com/yourusername/minervium/discussions` |
-| `docs/EXTRACTOR_GUIDE.md` | 1082 | `https://github.com/yourusername/minervium/issues` |
-| `docs/NOTE_SCHEMA.md` | 625 | `https://github.com/yourusername/minervium/issues` |
-| `extractors/README.md` | 435 | `https://github.com/yourusername/minervium/issues` |
-| `extractors/bear-notes-extractor/README.md` | 510 | `https://github.com/yourusername/minervium/issues` |
-| `extractors/markdown-books-extractor/README.md` | 627 | `https://github.com/yourusername/minervium/issues` |
-| `extractors/markdown-books-extractor/README.md` | 628 | `https://github.com/yourusername/minervium/discussions` |
-| `extractors/zim-extractor/README.md` | 632 | `https://github.com/yourusername/minervium/issues` |
+| File                                            | Line(s) | Placeholder URL                                       |
+| ----------------------------------------------- | ------- | ----------------------------------------------------- |
+| `README.md`                                     | 9       | `https://github.com/yourusername/minerva` (badge)     |
+| `README.md`                                     | 542     | `https://github.com/yourusername/minerva/issues`      |
+| `README.md`                                     | 570     | `https://github.com/yourusername/minerva/issues`      |
+| `README.md`                                     | 571     | `https://github.com/yourusername/minerva/discussions` |
+| `docs/EXTRACTOR_GUIDE.md`                       | 1082    | `https://github.com/yourusername/minerva/issues`      |
+| `docs/NOTE_SCHEMA.md`                           | 625     | `https://github.com/yourusername/minerva/issues`      |
+| `extractors/README.md`                          | 435     | `https://github.com/yourusername/minerva/issues`      |
+| `extractors/bear-notes-extractor/README.md`     | 510     | `https://github.com/yourusername/minerva/issues`      |
+| `extractors/markdown-books-extractor/README.md` | 627     | `https://github.com/yourusername/minerva/issues`      |
+| `extractors/markdown-books-extractor/README.md` | 628     | `https://github.com/yourusername/minerva/discussions` |
+| `extractors/zim-extractor/README.md`            | 632     | `https://github.com/yourusername/minerva/issues`      |
 
 **Recommendation**: Replace `yourusername` with actual GitHub username before publishing
 
@@ -61,7 +65,7 @@ All files contain placeholder URLs with `yourusername` that need to be updated w
 - `README.md` → `CONFIGURATION_GUIDE.md` ✓
 - `README.md` → `CLAUDE.md` ✓
 - `docs/NOTE_SCHEMA.md` → `docs/EXTRACTOR_GUIDE.md` ✓
-- `docs/NOTE_SCHEMA.md` → `../minervium/common/schemas.py` ✓
+- `docs/NOTE_SCHEMA.md` → `../minerva/common/schemas.py` ✓
 - `docs/NOTE_SCHEMA.md` → `../extractors/` ✓
 - `docs/EXTRACTOR_GUIDE.md` → `docs/NOTE_SCHEMA.md` ✓
 - `extractors/README.md` → `bear-notes-extractor/README.md` ✓
@@ -77,6 +81,7 @@ All files contain placeholder URLs with `yourusername` that need to be updated w
 Tested sample commands from documentation (syntax check only):
 
 ✅ **Installation commands** (README.md):
+
 ```bash
 # pipx installation
 python -m pip install --user pipx  # ✓ Valid
@@ -90,15 +95,17 @@ pip install -e .                   # ✓ Valid
 ```
 
 ✅ **Minervium commands** (README.md, all files):
+
 ```bash
-minervium --version                          # ✓ Valid command
-minervium validate notes.json                # ✓ Valid command
-minervium index --config config.json         # ✓ Valid command
-minervium peek collection --chromadb path    # ✓ Valid command
-minervium serve --config config.json         # ✓ Valid command
+minerva --version                          # ✓ Valid command
+minerva validate notes.json                # ✓ Valid command
+minerva index --config config.json         # ✓ Valid command
+minerva peek collection --chromadb path    # ✓ Valid command
+minerva serve --config config.json         # ✓ Valid command
 ```
 
 ✅ **Extractor commands** (extractor READMEs):
+
 ```bash
 bear-extractor "backup.bear2bk" -o notes.json              # ✓ Valid syntax
 zim-extractor "wikipedia.zim" -o wiki.json                 # ✓ Valid syntax
@@ -108,6 +115,7 @@ markdown-books-extractor "book.md" -o book.json            # ✓ Valid syntax
 #### JSON Configuration Examples
 
 ✅ **All JSON configuration examples are syntactically valid**:
+
 - Index configuration examples (README.md, CONFIGURATION_GUIDE.md)
 - Server configuration examples (README.md, CONFIGURATION_GUIDE.md)
 - Note schema examples (NOTE_SCHEMA.md)
@@ -115,6 +123,7 @@ markdown-books-extractor "book.md" -o book.json            # ✓ Valid syntax
 #### Python Code Examples
 
 ✅ **All Python code examples are syntactically valid**:
+
 - Extractor templates (EXTRACTOR_GUIDE.md)
 - Note schema examples (NOTE_SCHEMA.md)
 - Custom extractor examples (README.md)
@@ -124,6 +133,7 @@ markdown-books-extractor "book.md" -o book.json            # ✓ Valid syntax
 ### 5. External Link Status
 
 External links reference:
+
 - **Ollama**: https://ollama.ai - ⚠️ Not verified (requires internet)
 - **Project Gutenberg**: https://www.gutenberg.org/ - ⚠️ Not verified
 - **Kiwix Library**: https://library.kiwix.org/ - ⚠️ Not verified
@@ -138,10 +148,12 @@ External links reference:
 ### High Priority (Before Publishing)
 
 1. **Create LICENSE file**
+
    - Add MIT license file to project root
    - Ensures all LICENSE links work correctly
 
 2. **Remove broken installation guide link**
+
    - Edit `README.md` line 530
    - Remove reference to `docs/INSTALLATION.md` (content already in README)
 
@@ -152,6 +164,7 @@ External links reference:
 ### Medium Priority (Nice to Have)
 
 4. **Verify external links**
+
    - Check that external URLs are still valid
    - Update any broken or redirected links
 
@@ -169,6 +182,7 @@ External links reference:
 ## File Completeness Check
 
 ✅ **All major documentation files exist**:
+
 - ✅ `README.md` - Main project documentation
 - ✅ `CLAUDE.md` - Developer guide
 - ✅ `CONFIGURATION_GUIDE.md` - Configuration reference
@@ -180,6 +194,7 @@ External links reference:
 - ✅ `extractors/markdown-books-extractor/README.md` - Books extractor docs
 
 ❌ **Missing files**:
+
 - ❌ `LICENSE` - Referenced but not present
 - ❌ `docs/INSTALLATION.md` - Referenced but redundant
 
