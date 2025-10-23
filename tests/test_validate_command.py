@@ -116,7 +116,7 @@ class TestRunValidate:
         def mock_validate(*args, **kwargs):
             raise KeyboardInterrupt()
 
-        monkeypatch.setattr("minervium.commands.validate.validate_notes_array", mock_validate)
+        monkeypatch.setattr("minerva.commands.validate.validate_notes_array", mock_validate)
 
         args = Namespace(json_file=temp_json_file, verbose=False)
         exit_code = run_validate(args)

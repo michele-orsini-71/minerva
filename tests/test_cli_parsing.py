@@ -12,7 +12,7 @@ class TestParserCreation:
 
     def test_parser_has_correct_prog_name(self):
         parser = create_parser()
-        assert parser.prog == 'minervium'
+        assert parser.prog == 'minerva'
 
     def test_parser_has_version_argument(self):
         parser = create_parser()
@@ -88,8 +88,8 @@ class TestServeCommand:
 
     def test_serve_command_config_as_path(self):
         parser = create_parser()
-        args = parser.parse_args(['serve', '--config', '/etc/minervium/server.json'])
-        assert args.config == Path('/etc/minervium/server.json')
+        args = parser.parse_args(['serve', '--config', '/etc/minerva/server.json'])
+        assert args.config == Path('/etc/minerva/server.json')
 
 
 class TestPeekCommand:

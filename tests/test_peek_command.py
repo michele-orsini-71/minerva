@@ -241,7 +241,7 @@ class TestFormatCollectionInfoJson:
 
 
 class TestRunPeek:
-    @patch('minervium.commands.peek.initialize_chromadb_client')
+    @patch('minerva.commands.peek.initialize_chromadb_client')
     def test_peek_successful_text_format(self, mock_init_client, temp_chromadb_dir: Path):
         # Mock ChromaDB client and collection
         mock_client = Mock()
@@ -271,7 +271,7 @@ class TestRunPeek:
         mock_init_client.assert_called_once_with(str(temp_chromadb_dir))
         mock_client.get_collection.assert_called_once_with("test_collection")
 
-    @patch('minervium.commands.peek.initialize_chromadb_client')
+    @patch('minerva.commands.peek.initialize_chromadb_client')
     def test_peek_successful_json_format(self, mock_init_client, temp_chromadb_dir: Path):
         mock_client = Mock()
         mock_collection = Mock()
@@ -294,7 +294,7 @@ class TestRunPeek:
 
         assert exit_code == 0
 
-    @patch('minervium.commands.peek.initialize_chromadb_client')
+    @patch('minerva.commands.peek.initialize_chromadb_client')
     def test_peek_collection_not_found(self, mock_init_client, temp_chromadb_dir: Path):
         mock_client = Mock()
         mock_other_collection = Mock()
@@ -314,7 +314,7 @@ class TestRunPeek:
         assert exit_code == 1
         mock_client.get_collection.assert_not_called()
 
-    @patch('minervium.commands.peek.initialize_chromadb_client')
+    @patch('minerva.commands.peek.initialize_chromadb_client')
     def test_peek_no_collections_exist(self, mock_init_client, temp_chromadb_dir: Path):
         mock_client = Mock()
         mock_client.list_collections.return_value = []
@@ -330,7 +330,7 @@ class TestRunPeek:
 
         assert exit_code == 1
 
-    @patch('minervium.commands.peek.initialize_chromadb_client')
+    @patch('minerva.commands.peek.initialize_chromadb_client')
     def test_peek_chromadb_connection_error(self, mock_init_client, temp_chromadb_dir: Path):
         from minerva.indexing.storage import ChromaDBConnectionError
         mock_init_client.side_effect = ChromaDBConnectionError("Connection failed")
@@ -345,7 +345,7 @@ class TestRunPeek:
 
         assert exit_code == 1
 
-    @patch('minervium.commands.peek.initialize_chromadb_client')
+    @patch('minerva.commands.peek.initialize_chromadb_client')
     def test_peek_keyboard_interrupt(self, mock_init_client, temp_chromadb_dir: Path):
         mock_init_client.side_effect = KeyboardInterrupt()
 
@@ -359,7 +359,7 @@ class TestRunPeek:
 
         assert exit_code == 130
 
-    @patch('minervium.commands.peek.initialize_chromadb_client')
+    @patch('minerva.commands.peek.initialize_chromadb_client')
     def test_peek_unexpected_error(self, mock_init_client, temp_chromadb_dir: Path):
         mock_init_client.side_effect = Exception("Unexpected error")
 
@@ -373,7 +373,7 @@ class TestRunPeek:
 
         assert exit_code == 1
 
-    @patch('minervium.commands.peek.initialize_chromadb_client')
+    @patch('minerva.commands.peek.initialize_chromadb_client')
     def test_peek_shows_available_collections_on_not_found(self, mock_init_client, temp_chromadb_dir: Path):
         mock_client = Mock()
         mock_col1 = Mock()
@@ -396,7 +396,7 @@ class TestRunPeek:
 
 
 class TestIntegrationScenarios:
-    @patch('minervium.commands.peek.initialize_chromadb_client')
+    @patch('minerva.commands.peek.initialize_chromadb_client')
     def test_peek_large_collection(self, mock_init_client, temp_chromadb_dir: Path):
         mock_client = Mock()
         mock_collection = Mock()
@@ -430,7 +430,7 @@ class TestIntegrationScenarios:
         # Should limit samples to 5
         mock_collection.get.assert_called_once_with(limit=5, include=["documents", "metadatas"])
 
-    @patch('minervium.commands.peek.initialize_chromadb_client')
+    @patch('minerva.commands.peek.initialize_chromadb_client')
     def test_peek_collection_with_unicode(self, mock_init_client, temp_chromadb_dir: Path):
         mock_client = Mock()
         mock_collection = Mock()

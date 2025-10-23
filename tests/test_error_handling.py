@@ -34,8 +34,8 @@ class TestMissingFileErrors:
 
         assert exc_info.value.code == 1
 
-    @patch('minervium.commands.index.load_collection_config')
-    @patch('minervium.commands.index.load_json_notes')
+    @patch('minerva.commands.index.load_collection_config')
+    @patch('minerva.commands.index.load_json_notes')
     def test_index_nonexistent_notes_file(self, mock_load_notes, mock_load_config, temp_dir: Path):
         """Index command should exit cleanly when referenced JSON notes file doesn't exist"""
         mock_config = Mock()
@@ -50,7 +50,7 @@ class TestMissingFileErrors:
 
         assert exc_info.value.code == 1
 
-    @patch('minervium.commands.peek.initialize_chromadb_client')
+    @patch('minerva.commands.peek.initialize_chromadb_client')
     def test_peek_nonexistent_chromadb_directory(self, mock_init_client, temp_dir: Path):
         """Peek command should handle missing ChromaDB directory gracefully"""
         mock_init_client.side_effect = Exception("Directory does not exist")
@@ -155,7 +155,7 @@ class TestInvalidConfigErrors:
 class TestProviderUnavailableErrors:
     """Test handling of unavailable AI providers"""
 
-    @patch('minervium.commands.index.initialize_provider')
+    @patch('minerva.commands.index.initialize_provider')
     def test_ollama_server_not_running(self, mock_init_provider):
         """Index should handle Ollama server not running"""
         mock_provider = Mock()
@@ -175,7 +175,7 @@ class TestProviderUnavailableErrors:
 
         assert exc_info.value.code == 1
 
-    @patch('minervium.commands.index.initialize_provider')
+    @patch('minerva.commands.index.initialize_provider')
     def test_invalid_api_key_for_openai(self, mock_init_provider):
         """Index should handle invalid OpenAI API key"""
         mock_provider = Mock()
@@ -195,7 +195,7 @@ class TestProviderUnavailableErrors:
 
         assert exc_info.value.code == 1
 
-    @patch('minervium.commands.index.initialize_provider')
+    @patch('minerva.commands.index.initialize_provider')
     def test_network_timeout_during_provider_check(self, mock_init_provider):
         """Index should handle network timeouts gracefully"""
         mock_provider = Mock()
@@ -211,7 +211,7 @@ class TestProviderUnavailableErrors:
         with pytest.raises((SystemExit, TimeoutError)):
             initialize_and_validate_provider(mock_config, verbose=False)
 
-    @patch('minervium.commands.index.initialize_provider')
+    @patch('minerva.commands.index.initialize_provider')
     def test_invalid_model_name(self, mock_init_provider):
         """Index should handle invalid/non-existent model names"""
         mock_provider = Mock()
@@ -309,7 +309,7 @@ class TestSchemaViolationErrors:
 class TestChromaDBErrors:
     """Test handling of ChromaDB-related errors"""
 
-    @patch('minervium.commands.peek.initialize_chromadb_client')
+    @patch('minerva.commands.peek.initialize_chromadb_client')
     def test_peek_collection_not_found(self, mock_init_client):
         """Peek should handle non-existent collection gracefully"""
         mock_client = Mock()
@@ -327,7 +327,7 @@ class TestChromaDBErrors:
 
         assert exit_code == 1
 
-    @patch('minervium.commands.index.initialize_chromadb_client')
+    @patch('minerva.commands.index.initialize_chromadb_client')
     def test_chromadb_permission_denied(self, mock_init_client):
         """Index should handle ChromaDB permission errors"""
         mock_init_client.side_effect = PermissionError("Permission denied")
@@ -339,22 +339,22 @@ class TestChromaDBErrors:
         )
 
         # Mock the config loading to get past that step
-        with patch('minervium.commands.index.load_and_print_config') as mock_load_config:
+        with patch('minerva.commands.index.load_and_print_config') as mock_load_config:
             mock_config = Mock()
             mock_config.chromadb_path = "./chromadb_data"
             mock_load_config.return_value = mock_config
 
-            with patch('minervium.commands.index.load_and_print_notes') as mock_load_notes:
+            with patch('minerva.commands.index.load_and_print_notes') as mock_load_notes:
                 mock_load_notes.return_value = []
 
-                with patch('minervium.commands.index.run_full_indexing') as mock_full:
+                with patch('minerva.commands.index.run_full_indexing') as mock_full:
                     mock_full.side_effect = PermissionError("Permission denied")
 
                     exit_code = run_index(args)
 
                     assert exit_code == 1
 
-    @patch('minervium.commands.peek.initialize_chromadb_client')
+    @patch('minerva.commands.peek.initialize_chromadb_client')
     def test_chromadb_corrupted_database(self, mock_init_client):
         """Peek should handle corrupted ChromaDB database"""
         mock_init_client.side_effect = Exception("Database corrupted")
@@ -467,7 +467,7 @@ class TestEdgeCaseErrors:
 class TestKeyboardInterruptHandling:
     """Test graceful handling of keyboard interrupts (Ctrl+C)"""
 
-    @patch('minervium.commands.index.load_and_print_config')
+    @patch('minerva.commands.index.load_and_print_config')
     def test_index_handles_keyboard_interrupt(self, mock_load_config, temp_dir: Path):
         """Index command should exit cleanly on Ctrl+C"""
         mock_load_config.side_effect = KeyboardInterrupt()
@@ -483,7 +483,7 @@ class TestKeyboardInterruptHandling:
         # Should exit with 130 (standard for SIGINT)
         assert exit_code == 130
 
-    @patch('minervium.commands.validate.load_json_file')
+    @patch('minerva.commands.validate.load_json_file')
     def test_validate_handles_keyboard_interrupt(self, mock_load, temp_dir: Path):
         """Validate command should exit cleanly on Ctrl+C"""
         mock_load.side_effect = KeyboardInterrupt()
@@ -494,7 +494,7 @@ class TestKeyboardInterruptHandling:
 
         assert exit_code == 130
 
-    @patch('minervium.commands.peek.initialize_chromadb_client')
+    @patch('minerva.commands.peek.initialize_chromadb_client')
     def test_peek_handles_keyboard_interrupt(self, mock_init, temp_dir: Path):
         """Peek command should exit cleanly on Ctrl+C"""
         mock_init.side_effect = KeyboardInterrupt()
@@ -513,8 +513,8 @@ class TestKeyboardInterruptHandling:
 class TestCascadingErrors:
     """Test scenarios where one error leads to another"""
 
-    @patch('minervium.commands.index.load_and_print_config')
-    @patch('minervium.commands.index.load_and_print_notes')
+    @patch('minerva.commands.index.load_and_print_config')
+    @patch('minerva.commands.index.load_and_print_notes')
     def test_config_loads_but_notes_file_invalid(self, mock_load_notes, mock_load_config, temp_dir: Path):
         """Test when config is valid but referenced notes file is invalid"""
         # Config loads successfully
@@ -535,9 +535,9 @@ class TestCascadingErrors:
 
         assert exit_code == 1
 
-    @patch('minervium.commands.index.load_and_print_config')
-    @patch('minervium.commands.index.load_and_print_notes')
-    @patch('minervium.commands.index.run_full_indexing')
+    @patch('minerva.commands.index.load_and_print_config')
+    @patch('minerva.commands.index.load_and_print_notes')
+    @patch('minerva.commands.index.run_full_indexing')
     def test_notes_load_but_chromadb_fails(
         self,
         mock_full_indexing,

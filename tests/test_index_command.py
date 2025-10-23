@@ -24,7 +24,7 @@ class TestPrintBanner:
 
 
 class TestLoadAndPrintConfig:
-    @patch('minervium.commands.index.load_collection_config')
+    @patch('minerva.commands.index.load_collection_config')
     def test_load_config_successful(self, mock_load, temp_dir: Path):
         mock_config = Mock()
         mock_config.collection_name = "test_collection"
@@ -43,7 +43,7 @@ class TestLoadAndPrintConfig:
         assert result == mock_config
         mock_load.assert_called_once_with(config_path)
 
-    @patch('minervium.commands.index.load_collection_config')
+    @patch('minerva.commands.index.load_collection_config')
     def test_load_config_verbose(self, mock_load, temp_dir: Path):
         mock_config = Mock()
         mock_config.collection_name = "test_collection"
@@ -65,7 +65,7 @@ class TestLoadAndPrintConfig:
 
         assert result == mock_config
 
-    @patch('minervium.commands.index.load_collection_config')
+    @patch('minerva.commands.index.load_collection_config')
     def test_load_config_error_exits(self, mock_load, temp_dir: Path):
         from minerva.common.config_loader import ConfigError
         mock_load.side_effect = ConfigError("Invalid configuration")
@@ -78,7 +78,7 @@ class TestLoadAndPrintConfig:
 
 
 class TestLoadAndPrintNotes:
-    @patch('minervium.commands.index.load_json_notes')
+    @patch('minerva.commands.index.load_json_notes')
     def test_load_notes_successful(self, mock_load, valid_notes_list):
         mock_config = Mock()
         mock_config.json_file = "notes.json"
@@ -89,7 +89,7 @@ class TestLoadAndPrintNotes:
         assert result == valid_notes_list
         mock_load.assert_called_once_with("notes.json")
 
-    @patch('minervium.commands.index.load_json_notes')
+    @patch('minerva.commands.index.load_json_notes')
     def test_load_notes_verbose(self, mock_load, valid_notes_list):
         mock_config = Mock()
         mock_config.json_file = "notes.json"
@@ -99,7 +99,7 @@ class TestLoadAndPrintNotes:
 
         assert result == valid_notes_list
 
-    @patch('minervium.commands.index.load_json_notes')
+    @patch('minerva.commands.index.load_json_notes')
     def test_load_notes_error_exits(self, mock_load):
         mock_config = Mock()
         mock_config.json_file = "notes.json"
@@ -143,9 +143,9 @@ class TestPrintFinalSummary:
 
 
 class TestRunIndex:
-    @patch('minervium.commands.index.run_dry_run')
-    @patch('minervium.commands.index.load_and_print_notes')
-    @patch('minervium.commands.index.load_and_print_config')
+    @patch('minerva.commands.index.run_dry_run')
+    @patch('minerva.commands.index.load_and_print_notes')
+    @patch('minerva.commands.index.load_and_print_config')
     def test_index_dry_run_mode(self, mock_load_config, mock_load_notes, mock_dry_run, valid_notes_list, temp_dir: Path):
         mock_config = Mock()
         mock_load_config.return_value = mock_config
@@ -159,9 +159,9 @@ class TestRunIndex:
         assert exit_code == 0
         mock_dry_run.assert_called_once_with(mock_config, valid_notes_list, False)
 
-    @patch('minervium.commands.index.run_full_indexing')
-    @patch('minervium.commands.index.load_and_print_notes')
-    @patch('minervium.commands.index.load_and_print_config')
+    @patch('minerva.commands.index.run_full_indexing')
+    @patch('minerva.commands.index.load_and_print_notes')
+    @patch('minerva.commands.index.load_and_print_config')
     def test_index_full_mode(self, mock_load_config, mock_load_notes, mock_full_indexing, valid_notes_list, temp_dir: Path):
         mock_config = Mock()
         mock_load_config.return_value = mock_config
@@ -175,7 +175,7 @@ class TestRunIndex:
         assert exit_code == 0
         assert mock_full_indexing.called
 
-    @patch('minervium.commands.index.load_and_print_config')
+    @patch('minerva.commands.index.load_and_print_config')
     def test_index_keyboard_interrupt(self, mock_load_config, temp_dir: Path):
         mock_load_config.side_effect = KeyboardInterrupt()
 
@@ -186,7 +186,7 @@ class TestRunIndex:
 
         assert exit_code == 130
 
-    @patch('minervium.commands.index.load_and_print_config')
+    @patch('minerva.commands.index.load_and_print_config')
     def test_index_unexpected_error(self, mock_load_config, temp_dir: Path):
         mock_load_config.side_effect = Exception("Unexpected error")
 
@@ -197,7 +197,7 @@ class TestRunIndex:
 
         assert exit_code == 1
 
-    @patch('minervium.commands.index.load_and_print_config')
+    @patch('minerva.commands.index.load_and_print_config')
     def test_index_verbose_error_with_traceback(self, mock_load_config, temp_dir: Path):
         mock_load_config.side_effect = Exception("Unexpected error")
 
@@ -210,8 +210,8 @@ class TestRunIndex:
 
 
 class TestRunDryRun:
-    @patch('minervium.commands.index.create_chunks_from_notes')
-    @patch('minervium.commands.index.initialize_and_validate_provider')
+    @patch('minerva.commands.index.create_chunks_from_notes')
+    @patch('minerva.commands.index.initialize_and_validate_provider')
     def test_dry_run_successful(self, mock_init_provider, mock_create_chunks, valid_notes_list):
         from minerva.commands.index import run_dry_run
 
@@ -232,8 +232,8 @@ class TestRunDryRun:
         mock_init_provider.assert_called_once_with(mock_config, False)
         mock_create_chunks.assert_called_once_with(valid_notes_list, target_chars=1200)
 
-    @patch('minervium.commands.index.create_chunks_from_notes')
-    @patch('minervium.commands.index.initialize_and_validate_provider')
+    @patch('minerva.commands.index.create_chunks_from_notes')
+    @patch('minerva.commands.index.initialize_and_validate_provider')
     def test_dry_run_verbose(self, mock_init_provider, mock_create_chunks, valid_notes_list):
         from minerva.commands.index import run_dry_run
 
@@ -255,12 +255,12 @@ class TestRunDryRun:
 
 
 class TestRunFullIndexing:
-    @patch('minervium.commands.index.insert_chunks')
-    @patch('minervium.commands.index.create_collection')
-    @patch('minervium.commands.index.initialize_chromadb_client')
-    @patch('minervium.commands.index.generate_embeddings')
-    @patch('minervium.commands.index.create_chunks_from_notes')
-    @patch('minervium.commands.index.initialize_and_validate_provider')
+    @patch('minerva.commands.index.insert_chunks')
+    @patch('minerva.commands.index.create_collection')
+    @patch('minerva.commands.index.initialize_chromadb_client')
+    @patch('minerva.commands.index.generate_embeddings')
+    @patch('minerva.commands.index.create_chunks_from_notes')
+    @patch('minerva.commands.index.initialize_and_validate_provider')
     def test_full_indexing_successful(
         self,
         mock_init_provider,
@@ -319,11 +319,11 @@ class TestRunFullIndexing:
         mock_create_collection.assert_called_once()
         mock_insert_chunks.assert_called_once()
 
-    @patch('minervium.commands.index.recreate_collection')
-    @patch('minervium.commands.index.initialize_chromadb_client')
-    @patch('minervium.commands.index.generate_embeddings')
-    @patch('minervium.commands.index.create_chunks_from_notes')
-    @patch('minervium.commands.index.initialize_and_validate_provider')
+    @patch('minerva.commands.index.recreate_collection')
+    @patch('minerva.commands.index.initialize_chromadb_client')
+    @patch('minerva.commands.index.generate_embeddings')
+    @patch('minerva.commands.index.create_chunks_from_notes')
+    @patch('minerva.commands.index.initialize_and_validate_provider')
     def test_full_indexing_with_force_recreate(
         self,
         mock_init_provider,
@@ -359,7 +359,7 @@ class TestRunFullIndexing:
         mock_config.chunk_size = 1200
         mock_config.force_recreate = True
 
-        with patch('minervium.commands.index.insert_chunks') as mock_insert:
+        with patch('minerva.commands.index.insert_chunks') as mock_insert:
             mock_insert.return_value = {"successful": 1, "failed": 0}
             run_full_indexing(mock_config, valid_notes_list, verbose=False, start_time=0.0)
 
@@ -368,7 +368,7 @@ class TestRunFullIndexing:
 
 
 class TestInitializeAndValidateProvider:
-    @patch('minervium.commands.index.initialize_provider')
+    @patch('minerva.commands.index.initialize_provider')
     def test_provider_available(self, mock_init):
         from minerva.commands.index import initialize_and_validate_provider
 
@@ -394,7 +394,7 @@ class TestInitializeAndValidateProvider:
         assert result == mock_provider
         mock_provider.check_availability.assert_called_once()
 
-    @patch('minervium.commands.index.initialize_provider')
+    @patch('minerva.commands.index.initialize_provider')
     def test_provider_unavailable_exits(self, mock_init):
         from minerva.commands.index import initialize_and_validate_provider
 
@@ -413,7 +413,7 @@ class TestInitializeAndValidateProvider:
             initialize_and_validate_provider(mock_config, verbose=False)
         assert exc_info.value.code == 1
 
-    @patch('minervium.commands.index.initialize_provider')
+    @patch('minerva.commands.index.initialize_provider')
     def test_provider_skip_validation(self, mock_init):
         from minerva.commands.index import initialize_and_validate_provider
 

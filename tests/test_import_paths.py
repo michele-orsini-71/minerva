@@ -6,16 +6,16 @@ import importlib
 class TestCoreModuleImports:
     def test_import_cli_module(self):
         import minerva.cli
-        assert hasattr(minervium.cli, 'main')
-        assert hasattr(minervium.cli, 'create_parser')
+        assert hasattr(minerva.cli, 'main')
+        assert hasattr(minerva.cli, 'create_parser')
 
     def test_import_main_module(self):
         import minerva.__main__
-        assert minervium.__main__ is not None
+        assert minerva.__main__ is not None
 
     def test_import_minervium_package(self):
         import minerva
-        assert minervium.__name__ == 'minervium'
+        assert minerva.__name__ == 'minerva'
 
 
 class TestCommandModuleImports:
@@ -37,7 +37,7 @@ class TestCommandModuleImports:
 
     def test_import_commands_package(self):
         import minerva.commands
-        assert minervium.commands.__name__ == 'minervium.commands'
+        assert minerva.commands.__name__ == 'minerva.commands'
 
 
 class TestCommonModuleImports:
@@ -71,7 +71,7 @@ class TestCommonModuleImports:
 
     def test_import_common_package(self):
         import minerva.common
-        assert minervium.common.__name__ == 'minervium.common'
+        assert minerva.common.__name__ == 'minerva.common'
 
 
 class TestIndexingModuleImports:
@@ -97,7 +97,7 @@ class TestIndexingModuleImports:
 
     def test_import_indexing_package(self):
         import minerva.indexing
-        assert minervium.indexing.__name__ == 'minervium.indexing'
+        assert minerva.indexing.__name__ == 'minerva.indexing'
 
 
 class TestServerModuleImports:
@@ -124,7 +124,7 @@ class TestServerModuleImports:
 
     def test_import_server_package(self):
         import minerva.server
-        assert minervium.server.__name__ == 'minervium.server'
+        assert minerva.server.__name__ == 'minerva.server'
 
 
 class TestNoCircularImports:
@@ -225,7 +225,7 @@ class TestReimports:
 
     def test_reimport_after_deletion(self):
         import minerva.common.logger
-        module_id = id(minervium.common.logger)
+        module_id = id(minerva.common.logger)
         # Reimport should work
         import minerva.common.logger as logger2
         assert logger2 is not None
@@ -234,23 +234,23 @@ class TestReimports:
 class TestPackageStructure:
     def test_minervium_is_package(self):
         import minerva
-        assert hasattr(minervium, '__path__')
+        assert hasattr(minerva, '__path__')
 
     def test_commands_is_subpackage(self):
         import minerva.commands
-        assert hasattr(minervium.commands, '__path__')
+        assert hasattr(minerva.commands, '__path__')
 
     def test_common_is_subpackage(self):
         import minerva.common
-        assert hasattr(minervium.common, '__path__')
+        assert hasattr(minerva.common, '__path__')
 
     def test_indexing_is_subpackage(self):
         import minerva.indexing
-        assert hasattr(minervium.indexing, '__path__')
+        assert hasattr(minerva.indexing, '__path__')
 
     def test_server_is_subpackage(self):
         import minerva.server
-        assert hasattr(minervium.server, '__path__')
+        assert hasattr(minerva.server, '__path__')
 
 
 class TestImportErrors:
@@ -270,25 +270,25 @@ class TestImportErrors:
 
 class TestDynamicImports:
     def test_dynamic_import_with_importlib(self):
-        module = importlib.import_module('minervium.cli')
+        module = importlib.import_module('minerva.cli')
         assert hasattr(module, 'main')
 
     def test_dynamic_import_commands(self):
         commands = ['index', 'serve', 'peek', 'validate']
         for cmd in commands:
-            module = importlib.import_module(f'minervium.commands.{cmd}')
+            module = importlib.import_module(f'minerva.commands.{cmd}')
             assert module is not None
 
     def test_dynamic_import_common_modules(self):
         common_modules = ['schemas', 'logger', 'config', 'ai_provider']
         for mod in common_modules:
-            module = importlib.import_module(f'minervium.common.{mod}')
+            module = importlib.import_module(f'minerva.common.{mod}')
             assert module is not None
 
     def test_dynamic_import_indexing_modules(self):
         indexing_modules = ['chunking', 'embeddings', 'storage', 'json_loader']
         for mod in indexing_modules:
-            module = importlib.import_module(f'minervium.indexing.{mod}')
+            module = importlib.import_module(f'minerva.indexing.{mod}')
             assert module is not None
 
     def test_dynamic_import_server_modules(self):
@@ -300,7 +300,7 @@ class TestDynamicImports:
             'startup_validation'
         ]
         for mod in server_modules:
-            module = importlib.import_module(f'minervium.server.{mod}')
+            module = importlib.import_module(f'minerva.server.{mod}')
             assert module is not None
 
 
