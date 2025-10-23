@@ -1,12 +1,12 @@
 """
-Setup configuration for Minervium package.
+Setup configuration for minerva package.
 """
 
 from setuptools import setup, find_packages
 from pathlib import Path
 
 # Read version from package __init__.py
-init_file = Path(__file__).parent / "minervium" / "__init__.py"
+init_file = Path(__file__).parent / "minerva" / "__init__.py"
 version = "1.0.0"
 author = "Michele Orsini"
 
@@ -23,14 +23,14 @@ if readme_file.exists():
     long_description = readme_file.read_text(encoding="utf-8")
 
 setup(
-    name="minervium",
+    name="minerva",
     version=version,
     author=author,
     description="A unified RAG system for personal knowledge management",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/minervium",
-    packages=find_packages(include=["minervium", "minervium.*"]),
+    url="https://github.com/yourusername/minerva",
+    packages=find_packages(include=["minerva", "minerva.*"]),
     python_requires=">=3.10",
     install_requires=[
         # Vector database and AI providers
@@ -64,7 +64,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "minervium=minervium.cli:main",
+            "minerva=minerva.cli:main",
         ],
     },
     classifiers=[
@@ -82,8 +82,8 @@ setup(
     ],
     keywords="rag, vector-database, embeddings, markdown, knowledge-management, mcp, ai",
     project_urls={
-        "Documentation": "https://github.com/yourusername/minervium/blob/main/README.md",
-        "Source": "https://github.com/yourusername/minervium",
-        "Tracker": "https://github.com/yourusername/minervium/issues",
+        "Documentation": "https://github.com/yourusername/minerva/blob/main/README.md",
+        "Source": "https://github.com/yourusername/minerva",
+        "Tracker": "https://github.com/yourusername/minerva/issues",
     },
 )
