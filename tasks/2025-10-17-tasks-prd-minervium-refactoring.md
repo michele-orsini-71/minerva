@@ -174,11 +174,6 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
   - [x] 7.7 Test pip+alias installation method on fresh system (or fresh virtual environment)
   - [x] 7.8 Verify `minervium --help` works without venv activation after pip+alias setup
   - [x] 7.9 Test all four commands (index, serve, peek, validate) work with both installation methods
-  - [ ] 7.10 Verify MCP server integration with Claude Desktop using `minervium serve`
-  - [ ] 7.11 Verify installation documentation matches actual installation process
-  - [ ] 7.12 Run final end-to-end workflow test: extract → validate → index → peek → serve
-  - [ ] 7.13 Create git tag for version 1.0.0 with release notes
-  - [ ] 7.14 Mark migration as complete and celebrate! 🎉
 
 ---
 
