@@ -17,13 +17,8 @@ class ConsoleLogger:
     def warning(self, message: str) -> None:
         self._logger.warning(message)
 
-    def error(self, message: str, print_to_stderr: bool = True) -> None:
+    def error(self, message: str) -> None:
         self._logger.error(message)
-
-        # For fatal errors (e.g., before sys.exit), also print to stderr
-        # to ensure visibility even if logging is misconfigured
-        if print_to_stderr:
-            print(f"\n✗ {message}\n", file=sys.stderr)
 
     @staticmethod
     def get_logger(

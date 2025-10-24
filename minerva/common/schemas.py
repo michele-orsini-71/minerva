@@ -115,12 +115,9 @@ def validate_notes_file(data: Any, filepath: str = "input") -> bool:
     if not is_valid:
         logger.error(f"Validation failed for {filepath}")
         for error in errors:
-            logger.error(f"   • {error}", print_to_stderr=False)
-        logger.error("", print_to_stderr=False)
-        logger.error(
-            f"Found {len(errors)} error(s). Please fix them and try again.",
-            print_to_stderr=False
-        )
+            logger.error(f"   • {error}")
+        logger.error("")
+        logger.error(f"Found {len(errors)} error(s). Please fix them and try again.")
         return False
 
     logger.success(f"✅ Validation successful: {filepath} contains {len(data)} valid note(s)")

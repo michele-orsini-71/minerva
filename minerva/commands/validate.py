@@ -22,19 +22,19 @@ def load_json_file(json_path: Path) -> Any:
             return json.load(f)
     except FileNotFoundError:
         logger.error(f"Error: File not found: {json_path}")
-        logger.error("   Please check the file path and try again.", print_to_stderr=False)
+        logger.error("   Please check the file path and try again.")
         sys.exit(1)
     except json.JSONDecodeError as e:
         logger.error(f"Error: Invalid JSON in file: {json_path}")
-        logger.error(f"   {e}", print_to_stderr=False)
-        logger.error("   Suggestion: Validate your JSON using a JSON linter", print_to_stderr=False)
+        logger.error(f"   {e}")
+        logger.error("   Suggestion: Validate your JSON using a JSON linter")
         sys.exit(1)
     except PermissionError:
         logger.error(f"Error: Permission denied reading file: {json_path}")
         sys.exit(1)
     except Exception as e:
         logger.error(f"Error: Failed to read file: {json_path}")
-        logger.error(f"   {e}", print_to_stderr=False)
+        logger.error(f"   {e}")
         sys.exit(1)
 
 
@@ -74,35 +74,35 @@ def print_validation_statistics(data: list, verbose: bool) -> None:
 
 def print_validation_errors(errors: list, json_path: Path, verbose: bool) -> None:
     logger.error(f"Validation failed for: {json_path}")
-    logger.error("=" * 60, print_to_stderr=False)
+    logger.error("=" * 60)
 
     if verbose:
         # Show all errors in verbose mode
-        logger.error("", print_to_stderr=False)
-        logger.error(f"Found {len(errors)} error(s):", print_to_stderr=False)
+        logger.error("")
+        logger.error(f"Found {len(errors)} error(s):")
         for i, error in enumerate(errors, 1):
-            logger.error(f"  {i}. {error}", print_to_stderr=False)
+            logger.error(f"  {i}. {error}")
     else:
         # Show first 5 errors in normal mode
         max_errors = min(5, len(errors))
-        logger.error("", print_to_stderr=False)
-        logger.error(f"Showing first {max_errors} of {len(errors)} error(s):", print_to_stderr=False)
+        logger.error("")
+        logger.error(f"Showing first {max_errors} of {len(errors)} error(s):")
         for i, error in enumerate(errors[:max_errors], 1):
-            logger.error(f"  {i}. {error}", print_to_stderr=False)
+            logger.error(f"  {i}. {error}")
 
         if len(errors) > 5:
-            logger.error("", print_to_stderr=False)
-            logger.error(f"  ... and {len(errors) - 5} more error(s)", print_to_stderr=False)
-            logger.error("  (Use --verbose to see all errors)", print_to_stderr=False)
+            logger.error("")
+            logger.error(f"  ... and {len(errors) - 5} more error(s)")
+            logger.error("  (Use --verbose to see all errors)")
 
-    logger.error("", print_to_stderr=False)
-    logger.error("=" * 60, print_to_stderr=False)
-    logger.error("", print_to_stderr=False)
-    logger.error("Suggestions:", print_to_stderr=False)
-    logger.error("  • Check that all required fields are present: title, markdown, size, modificationDate", print_to_stderr=False)
-    logger.error("  • Verify date fields are in ISO 8601 format (YYYY-MM-DDTHH:MM:SS)", print_to_stderr=False)
-    logger.error("  • Ensure size field is a non-negative integer", print_to_stderr=False)
-    logger.error("  • Run 'minerva validate --help' for schema information", print_to_stderr=False)
+    logger.error("")
+    logger.error("=" * 60)
+    logger.error("")
+    logger.error("Suggestions:")
+    logger.error("  • Check that all required fields are present: title, markdown, size, modificationDate")
+    logger.error("  • Verify date fields are in ISO 8601 format (YYYY-MM-DDTHH:MM:SS)")
+    logger.error("  • Ensure size field is a non-negative integer")
+    logger.error("  • Run 'minerva validate --help' for schema information")
 
 
 def run_validate(args: Namespace) -> int:

@@ -383,7 +383,7 @@ if __name__ == "__main__":
         validate_collection_name("research_papers_2024")
         logger.success("   All valid names passed")
     except ValidationError as error:
-        logger.error(f"   Valid names failed: {error}", print_to_stderr=False)
+        logger.error(f"   Valid names failed: {error}")
         sys.exit(1)
 
     # Test 2: Invalid collection names
@@ -393,7 +393,7 @@ if __name__ == "__main__":
     for name in invalid_names:
         try:
             validate_collection_name(name)
-            logger.error(f"   Should have rejected: {name}", print_to_stderr=False)
+            logger.error(f"   Should have rejected: {name}")
             sys.exit(1)
         except ValidationError:
             logger.success(f"   Correctly rejected: {name}")
@@ -403,7 +403,7 @@ if __name__ == "__main__":
     logger.info("📋 Test 3: Description length validation")
     try:
         validate_description_regex("short", "test")
-        logger.error("   Should have rejected short description", print_to_stderr=False)
+        logger.error("   Should have rejected short description")
         sys.exit(1)
     except ValidationError:
         logger.success("   Correctly rejected short description")
@@ -413,7 +413,7 @@ if __name__ == "__main__":
     logger.info("📋 Test 4: Required phrase validation")
     try:
         validate_description_regex("A" * 100, "test")  # Long but no required phrase
-        logger.error("   Should have rejected description without required phrase", print_to_stderr=False)
+        logger.error("   Should have rejected description without required phrase")
         sys.exit(1)
     except ValidationError:
         logger.success("   Correctly rejected description without required phrase")
@@ -429,7 +429,7 @@ if __name__ == "__main__":
         )
         logger.success("   Valid description passed")
     except ValidationError as error:
-        logger.error(f"   Valid description failed: {error}", print_to_stderr=False)
+        logger.error(f"   Valid description failed: {error}")
         sys.exit(1)
 
     # Test 6: Check model availability
@@ -456,7 +456,7 @@ if __name__ == "__main__":
             logger.info(f"   Score: {score}/10")
             logger.info(f"   Reasoning: {reasoning[:80]}...")
         except ValidationError as error:
-            logger.error(f"   AI validation error: {error}", print_to_stderr=False)
+            logger.error(f"   AI validation error: {error}")
     else:
         logger.info("")
         logger.info("📋 Test 7: Skipping AI validation (model not available)")

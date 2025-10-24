@@ -130,7 +130,7 @@ def list_knowledge_bases() -> List[Dict[str, Any]]:
         return AVAILABLE_COLLECTIONS
 
     except Exception as e:
-        console_logger.error(f"Unexpected error in list_knowledge_bases: {e}", print_to_stderr=False)
+        console_logger.error(f"Unexpected error in list_knowledge_bases: {e}")
         raise CollectionDiscoveryError(f"Failed to list knowledge bases: {e}")
 
 
@@ -185,13 +185,13 @@ def search_knowledge_base(
         return results
 
     except CollectionNotFoundError as e:
-        console_logger.error(f"Collection not found: {e}", print_to_stderr=False)
+        console_logger.error(f"Collection not found: {e}")
         raise
     except SearchError as e:
-        console_logger.error(f"Search error: {e}", print_to_stderr=False)
+        console_logger.error(f"Search error: {e}")
         raise
     except Exception as e:
-        console_logger.error(f"Unexpected error in search_knowledge_base: {e}", print_to_stderr=False)
+        console_logger.error(f"Unexpected error in search_knowledge_base: {e}")
         raise SearchError(f"Search failed: {e}")
 
 

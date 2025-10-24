@@ -197,6 +197,23 @@ def run_peek(args: Namespace) -> int:
         output_format = args.format
         collection_name = args.collection_name
 
+        # Validate that ChromaDB path exists
+        from pathlib import Path
+        db_path = Path(chromadb_path)
+
+        if not db_path.exists():
+            logger.error(f"ChromaDB path does not exist: {chromadb_path}")
+            logger.error(f"   Absolute path: {db_path.absolute()}")
+            logger.error("")
+            logger.error("Suggestion: Check the path and try again")
+            logger.error("   Example: minerva peek ./chromadb_data")
+            return 1
+
+        if not db_path.is_dir():
+            logger.error(f"ChromaDB path is not a directory: {chromadb_path}")
+            logger.error(f"   Found: {db_path.absolute()}")
+            return 1
+
         logger.info(f"Connecting to ChromaDB at: {chromadb_path}")
         logger.info("")
         client = initialize_chromadb_client(chromadb_path)
@@ -232,12 +249,12 @@ def run_peek(args: Namespace) -> int:
         if collection_name not in existing_collections:
             logger.error(f"Collection '{collection_name}' not found")
             if existing_collections:
-                logger.error("Available collections:", print_to_stderr=False)
+                logger.error("Available collections:")
                 for name in existing_collections:
-                    logger.error(f"  • {name}", print_to_stderr=False)
+                    logger.error(f"  • {name}")
             else:
-                logger.error("No collections found in ChromaDB", print_to_stderr=False)
-                logger.error("   Suggestion: Use 'minerva index' to create collections", print_to_stderr=False)
+                logger.error("No collections found in ChromaDB")
+                logger.error("   Suggestion: Use 'minerva index' to create collections")
             return 1
 
         # Get the collection
