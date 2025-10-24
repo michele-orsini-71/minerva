@@ -9,13 +9,33 @@ from minerva.indexing.storage import initialize_chromadb_client, ChromaDBConnect
 logger = get_logger(__name__, simple=True, mode="cli")
 
 
+def is_collection_usable(metadata: Dict[str, Any]) -> tuple[bool, str | None]:
+    """
+    Check if a collection has required metadata to be usable.
+    Returns (is_usable, reason_if_not_usable)
+    """
+    provider_type = metadata.get('embedding_provider')
+    embedding_model = metadata.get('embedding_model')
+    llm_model = metadata.get('llm_model')
+
+    if not provider_type or not embedding_model or not llm_model:
+        return False, "Missing AI provider metadata (created with old pipeline)"
+
+    return True, None
+
+
 def get_collection_info(collection) -> Dict[str, Any]:
 
     # Get basic collection info
+    metadata = collection.metadata or {}
+    is_usable, unavailable_reason = is_collection_usable(metadata)
+
     info = {
         "name": collection.name,
         "count": collection.count(),
-        "metadata": collection.metadata or {}
+        "metadata": metadata,
+        "is_usable": is_usable,
+        "unavailable_reason": unavailable_reason
     }
 
     # Get a few sample chunks (limit to 5 for inspection)
@@ -46,6 +66,19 @@ def format_collection_info_text(info: Dict[str, Any]) -> str:
     lines.append(f"Collection: {info['name']}")
     lines.append("=" * 70)
     lines.append("")
+
+    # Legacy/unusable warning (prominent)
+    if not info.get("is_usable", True):
+        lines.append("⚠️  WARNING: LEGACY COLLECTION - CANNOT BE USED")
+        lines.append("━" * 70)
+        lines.append(f"   Reason: {info.get('unavailable_reason', 'Unknown')}")
+        lines.append("")
+        lines.append("   This collection was created with an older version of Minervium")
+        lines.append("   and is missing required AI provider metadata.")
+        lines.append("")
+        lines.append("   To fix: Re-index this collection using 'minerva index'")
+        lines.append("━" * 70)
+        lines.append("")
 
     # Basic stats
     lines.append(f"Total chunks: {info['count']}")
@@ -145,9 +178,18 @@ def format_all_collections_text(collections_data: List[Dict[str, Any]]) -> str:
         lines.append("=" * 70)
         return "\n".join(lines)
 
+    # Count legacy collections for summary
+    legacy_count = sum(1 for info in collections_data if not info.get("is_usable", True))
+
     for i, info in enumerate(collections_data, 1):
-        lines.append(f"[{i}] {info['name']}")
+        # Add warning indicator for legacy collections
+        status_indicator = " ⚠️ LEGACY" if not info.get("is_usable", True) else ""
+        lines.append(f"[{i}] {info['name']}{status_indicator}")
         lines.append(f"    Total chunks: {info['count']}")
+
+        # Show unavailable reason for legacy collections
+        if not info.get("is_usable", True):
+            lines.append(f"    ⚠️  Status: CANNOT BE USED - {info.get('unavailable_reason', 'Unknown reason')}")
 
         if info.get("metadata"):
             meta = info["metadata"]
@@ -164,6 +206,14 @@ def format_all_collections_text(collections_data: List[Dict[str, Any]]) -> str:
         lines.append("")
 
     lines.append("=" * 70)
+
+    # Add summary warning if there are legacy collections
+    if legacy_count > 0:
+        lines.append("")
+        lines.append(f"⚠️  WARNING: {legacy_count} legacy collection(s) found")
+        lines.append("   These collections cannot be used and must be re-indexed.")
+        lines.append("   Use 'minerva peek <chromadb_path> <collection_name>' for details.")
+        lines.append("")
     lines.append("")
     lines.append("Tip: To inspect a specific collection, use:")
     lines.append("     minerva peek <chromadb_path> <collection_name>")
@@ -175,8 +225,11 @@ def format_all_collections_text(collections_data: List[Dict[str, Any]]) -> str:
 def format_all_collections_json(collections_data: List[Dict[str, Any]]) -> str:
     """Format summary of all collections in JSON format"""
     # For JSON output, we'll create a simpler structure without sample chunks
+    legacy_count = sum(1 for info in collections_data if not info.get("is_usable", True))
+
     summary = {
         "total_collections": len(collections_data),
+        "legacy_collections": legacy_count,
         "collections": []
     }
 
@@ -184,6 +237,8 @@ def format_all_collections_json(collections_data: List[Dict[str, Any]]) -> str:
         collection_summary = {
             "name": info["name"],
             "count": info["count"],
+            "is_usable": info.get("is_usable", True),
+            "unavailable_reason": info.get("unavailable_reason"),
             "metadata": info.get("metadata", {})
         }
         summary["collections"].append(collection_summary)
@@ -230,10 +285,15 @@ def run_peek(args: Namespace) -> int:
             # Get basic info for all collections
             collections_data = []
             for coll in client.list_collections():
+                metadata = coll.metadata or {}
+                is_usable, unavailable_reason = is_collection_usable(metadata)
+
                 info = {
                     "name": coll.name,
                     "count": coll.count(),
-                    "metadata": coll.metadata or {}
+                    "metadata": metadata,
+                    "is_usable": is_usable,
+                    "unavailable_reason": unavailable_reason
                 }
                 collections_data.append(info)
 
