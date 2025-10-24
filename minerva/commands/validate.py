@@ -102,7 +102,7 @@ def print_validation_errors(errors: list, json_path: Path, verbose: bool) -> Non
     logger.error("  • Check that all required fields are present: title, markdown, size, modificationDate", print_to_stderr=False)
     logger.error("  • Verify date fields are in ISO 8601 format (YYYY-MM-DDTHH:MM:SS)", print_to_stderr=False)
     logger.error("  • Ensure size field is a non-negative integer", print_to_stderr=False)
-    logger.error("  • Run 'minervium validate --help' for schema information", print_to_stderr=False)
+    logger.error("  • Run 'minerva validate --help' for schema information", print_to_stderr=False)
 
 
 def run_validate(args: Namespace) -> int:
@@ -153,7 +153,7 @@ def run_validate(args: Namespace) -> int:
         logger.info(f"The file '{json_path.name}' contains valid notes and is ready for indexing.")
         logger.info("")
         logger.info("Next step:")
-        logger.info("  minervium index --config <config-file>")
+        logger.info("  minerva index --config <config-file>")
         logger.info("")
 
         return 0

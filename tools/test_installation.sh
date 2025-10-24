@@ -4,7 +4,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-TEST_DIR="/tmp/minervium-install-test-$$"
+TEST_DIR="/tmp/minerva-install-test-$$"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -44,35 +44,35 @@ test_pipx_installation() {
     mkdir -p "$TEST_DIR/pipx-test"
     cd "$TEST_DIR/pipx-test"
 
-    log_info "Installing minervium with pipx..."
+    log_info "Installing minerva with pipx..."
     PIPX_HOME="$TEST_DIR/pipx-test/.pipx" PIPX_BIN_DIR="$TEST_DIR/pipx-test/bin" \
         pipx install "$PROJECT_ROOT"
 
     export PATH="$TEST_DIR/pipx-test/bin:$PATH"
 
-    log_info "Verifying minervium command is available..."
-    if ! command -v minervium &> /dev/null; then
-        log_error "minervium command not found after pipx install"
+    log_info "Verifying minerva command is available..."
+    if ! command -v minerva &> /dev/null; then
+        log_error "minerva command not found after pipx install"
         return 1
     fi
 
-    log_info "Testing minervium --version..."
-    minervium --version
+    log_info "Testing minerva --version..."
+    minerva --version
 
-    log_info "Testing minervium --help..."
-    minervium --help > /dev/null
+    log_info "Testing minerva --help..."
+    minerva --help > /dev/null
 
     log_info "Testing all four commands help text..."
-    minervium index --help > /dev/null
-    minervium serve --help > /dev/null
-    minervium peek --help > /dev/null
-    minervium validate --help > /dev/null
+    minerva index --help > /dev/null
+    minerva serve --help > /dev/null
+    minerva peek --help > /dev/null
+    minerva validate --help > /dev/null
 
     log_info "✅ pipx installation test PASSED"
 
-    log_info "Uninstalling minervium..."
+    log_info "Uninstalling minerva..."
     PIPX_HOME="$TEST_DIR/pipx-test/.pipx" PIPX_BIN_DIR="$TEST_DIR/pipx-test/bin" \
-        pipx uninstall minervium
+        pipx uninstall minerva
 
     return 0
 }
@@ -92,22 +92,22 @@ test_pip_alias_installation() {
     log_info "Activating virtual environment..."
     source .venv/bin/activate
 
-    log_info "Installing minervium with pip..."
+    log_info "Installing minerva with pip..."
     pip install -e "$PROJECT_ROOT" > /dev/null 2>&1
 
     log_info "Creating shell alias..."
-    MINERVIUM_BIN="$(pwd)/.venv/bin/minervium"
+    MINERVIUM_BIN="$(pwd)/.venv/bin/minerva"
 
     if [ ! -f "$MINERVIUM_BIN" ]; then
-        log_error "minervium binary not found at $MINERVIUM_BIN"
+        log_error "minerva binary not found at $MINERVIUM_BIN"
         deactivate
         return 1
     fi
 
-    log_info "Testing minervium command (via direct path)..."
+    log_info "Testing minerva command (via direct path)..."
     "$MINERVIUM_BIN" --version
 
-    log_info "Testing minervium --help..."
+    log_info "Testing minerva --help..."
     "$MINERVIUM_BIN" --help > /dev/null
 
     log_info "Testing all four commands help text..."

@@ -580,7 +580,7 @@ export GEMINI_API_KEY="your-key"
 export OLLAMA_HOST="http://custom-host:11434"
 
 # For debugging
-export MINERVIUM_DEBUG=1  # Enable debug logging
+export MINERVA_DEBUG=1  # Enable debug logging
 ```
 
 ## Code Style and Conventions

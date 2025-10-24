@@ -149,7 +149,7 @@ def run_peek(args: Namespace) -> int:
                     logger.error(f"  • {name}", print_to_stderr=False)
             else:
                 logger.error("No collections found in ChromaDB", print_to_stderr=False)
-                logger.error("   Suggestion: Use 'minervium index' to create collections", print_to_stderr=False)
+                logger.error("   Suggestion: Use 'minerva index' to create collections", print_to_stderr=False)
             return 1
 
         # Get the collection

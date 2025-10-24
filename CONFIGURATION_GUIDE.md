@@ -752,12 +752,12 @@ iostat -x 1
 
 ## Environment Variables Reference
 
-| Variable          | Purpose                  | Example                      |
-| ----------------- | ------------------------ | ---------------------------- |
-| `OPENAI_API_KEY`  | OpenAI API access        | `sk-proj-abc123...`          |
-| `GEMINI_API_KEY`  | Google Gemini API access | `AIza...`                    |
-| `OLLAMA_HOST`     | Custom Ollama endpoint   | `http://192.168.1.100:11434` |
-| `MINERVIUM_DEBUG` | Enable debug logging     | `1`                          |
+| Variable         | Purpose                  | Example                      |
+| ---------------- | ------------------------ | ---------------------------- |
+| `OPENAI_API_KEY` | OpenAI API access        | `sk-proj-abc123...`          |
+| `GEMINI_API_KEY` | Google Gemini API access | `AIza...`                    |
+| `OLLAMA_HOST`    | Custom Ollama endpoint   | `http://192.168.1.100:11434` |
+| `MINERVA_DEBUG`  | Enable debug logging     | `1`                          |
 
 ---
 
