@@ -35,7 +35,8 @@
       "Bash(git check-ignore -v .claude/settings.local.json)",
       "Bash(bash tools/test_installation.sh)",
       "Bash(pip install pipx)",
-      "Bash(pipx --version)"
+      "Bash(pipx --version)",
+      "Bash(minerva peek:*)"
     ],
     "deny": [],
     "ask": []

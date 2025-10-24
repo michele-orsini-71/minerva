@@ -162,7 +162,18 @@ def validate_config(config: Dict[str, Any]) -> None:
     validate_default_max_results(config)
 
 
-def load_config(config_path: str = "config.json") -> Dict[str, Any]:
+def load_config(config_path: str) -> Dict[str, Any]:
+    """Load and validate server configuration from a JSON file.
+
+    Args:
+        config_path: Path to the configuration JSON file (required)
+
+    Returns:
+        Dict containing validated configuration
+
+    Raises:
+        ConfigError: If config file is invalid or missing required fields
+    """
     config = load_json_file(config_path)
 
     validate_config(config)

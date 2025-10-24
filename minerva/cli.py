@@ -130,29 +130,30 @@ Examples:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Peek at a collection
-  minerva peek bear_notes
+  # List all collections in a ChromaDB database
+  minerva peek ./chromadb_data
 
-  # Peek with custom ChromaDB path
-  minerva peek bear_notes --chromadb ./chromadb_data
+  # Peek at a specific collection
+  minerva peek ./chromadb_data bear_notes
 
   # Output as JSON
-  minerva peek bear_notes --format json
+  minerva peek ./chromadb_data bear_notes --format json
         """
+    )
+
+    peek_parser.add_argument(
+        'chromadb',
+        type=Path,
+        metavar='CHROMADB_PATH',
+        help='Path to ChromaDB data directory (required)'
     )
 
     peek_parser.add_argument(
         'collection_name',
         type=str,
-        help='Name of the ChromaDB collection to inspect'
-    )
-
-    peek_parser.add_argument(
-        '--chromadb',
-        type=Path,
-        default=Path('./chromadb_data'),
-        metavar='PATH',
-        help='Path to ChromaDB data directory (default: ./chromadb_data)'
+        nargs='?',
+        metavar='COLLECTION_NAME',
+        help='Name of the ChromaDB collection to inspect (optional, if omitted shows all collections)'
     )
 
     peek_parser.add_argument(

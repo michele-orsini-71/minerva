@@ -130,6 +130,67 @@ def format_collection_info_json(info: Dict[str, Any]) -> str:
     return json.dumps(info, indent=2)
 
 
+def format_all_collections_text(collections_data: List[Dict[str, Any]]) -> str:
+    """Format summary of all collections in text format"""
+    lines = []
+    lines.append("=" * 70)
+    lines.append(f"ChromaDB Collections Summary ({len(collections_data)} total)")
+    lines.append("=" * 70)
+    lines.append("")
+
+    if not collections_data:
+        lines.append("⚠ No collections found in ChromaDB")
+        lines.append("")
+        lines.append("Suggestion: Use 'minerva index' to create collections")
+        lines.append("=" * 70)
+        return "\n".join(lines)
+
+    for i, info in enumerate(collections_data, 1):
+        lines.append(f"[{i}] {info['name']}")
+        lines.append(f"    Total chunks: {info['count']}")
+
+        if info.get("metadata"):
+            meta = info["metadata"]
+            if "description" in meta:
+                desc = meta["description"]
+                # Truncate long descriptions
+                if len(desc) > 70:
+                    desc = desc[:67] + "..."
+                lines.append(f"    Description: {desc}")
+
+            if "embedding_model" in meta:
+                lines.append(f"    Model: {meta['embedding_model']}")
+
+        lines.append("")
+
+    lines.append("=" * 70)
+    lines.append("")
+    lines.append("Tip: To inspect a specific collection, use:")
+    lines.append("     minerva peek <chromadb_path> <collection_name>")
+    lines.append("")
+
+    return "\n".join(lines)
+
+
+def format_all_collections_json(collections_data: List[Dict[str, Any]]) -> str:
+    """Format summary of all collections in JSON format"""
+    # For JSON output, we'll create a simpler structure without sample chunks
+    summary = {
+        "total_collections": len(collections_data),
+        "collections": []
+    }
+
+    for info in collections_data:
+        collection_summary = {
+            "name": info["name"],
+            "count": info["count"],
+            "metadata": info.get("metadata", {})
+        }
+        summary["collections"].append(collection_summary)
+
+    return json.dumps(summary, indent=2)
+
+
 def run_peek(args: Namespace) -> int:
     try:
         chromadb_path = str(args.chromadb)
@@ -141,6 +202,33 @@ def run_peek(args: Namespace) -> int:
         client = initialize_chromadb_client(chromadb_path)
 
         existing_collections = [c.name for c in client.list_collections()]
+
+        # If no collection name provided, list all collections
+        if collection_name is None:
+            if not existing_collections:
+                logger.error("No collections found in ChromaDB")
+                logger.error("   Suggestion: Use 'minerva index' to create collections")
+                return 1
+
+            # Get basic info for all collections
+            collections_data = []
+            for coll in client.list_collections():
+                info = {
+                    "name": coll.name,
+                    "count": coll.count(),
+                    "metadata": coll.metadata or {}
+                }
+                collections_data.append(info)
+
+            # Format and print
+            if output_format == "json":
+                logger.info(format_all_collections_json(collections_data))
+            else:
+                logger.info(format_all_collections_text(collections_data))
+
+            return 0
+
+        # Collection name provided - show detailed info for specific collection
         if collection_name not in existing_collections:
             logger.error(f"Collection '{collection_name}' not found")
             if existing_collections:
