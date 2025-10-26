@@ -38,7 +38,10 @@
       "Bash(pipx --version)",
       "Bash(minerva peek:*)",
       "Bash(timeout 3 minerva serve:*)",
-      "Bash(minerva index:*)"
+      "Bash(minerva index:*)",
+      "Bash(repository-doc-extractor:*)",
+      "Read(//private/tmp/**)",
+      "Bash(minerva validate:*)"
     ],
     "deny": [],
     "ask": []
