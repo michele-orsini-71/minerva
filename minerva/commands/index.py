@@ -10,6 +10,7 @@ from minerva.indexing.chunking import create_chunks_from_notes
 from minerva.indexing.embeddings import initialize_provider, generate_embeddings, EmbeddingError
 from minerva.indexing.storage import (
     initialize_chromadb_client,
+    collection_exists,
     create_collection,
     recreate_collection,
     insert_chunks,
@@ -140,9 +141,45 @@ def initialize_and_validate_provider(config: CollectionConfig, verbose: bool) ->
         sys.exit(1)
 
 
+def check_collection_early(config: CollectionConfig) -> None:
+    """Check collection existence before expensive operations."""
+    logger.info("Checking ChromaDB collection status...")
+
+    try:
+        client = initialize_chromadb_client(config.chromadb_path)
+        exists = collection_exists(client, config.collection_name)
+
+        if exists:
+            if config.force_recreate:
+                logger.warning(f"   Collection '{config.collection_name}' exists and will be recreated")
+                logger.warning("   ⚠ WARNING: All existing data will be permanently deleted!")
+            else:
+                logger.error("")
+                logger.error("=" * 60)
+                logger.error(f"Collection '{config.collection_name}' already exists")
+                logger.error("=" * 60)
+                logger.error("")
+                logger.error("Options:")
+                logger.error("  1. Use a different collection name in your config")
+                logger.error("  2. Add 'forceRecreate': true to your config")
+                logger.error("     (WARNING: This will permanently delete all existing data!)")
+                logger.error("")
+                sys.exit(1)
+        else:
+            logger.success(f"   ✓ Collection '{config.collection_name}' does not exist (will be created)")
+
+        logger.info("")
+
+    except Exception as e:
+        logger.error(f"ChromaDB check error: {e}")
+        sys.exit(1)
+
+
 def run_dry_run(config: CollectionConfig, notes: List[Dict[str, Any]], verbose: bool) -> None:
     logger.info("Running dry-run validation...")
     logger.info("")
+
+    check_collection_early(config)
 
     _ = initialize_and_validate_provider(config, verbose)
 
@@ -170,6 +207,8 @@ def run_full_indexing(
     verbose: bool,
     start_time: float
 ) -> None:
+
+    check_collection_early(config)
 
     provider = initialize_and_validate_provider(config, verbose)
     embedding_metadata = provider.get_embedding_metadata()

@@ -36,7 +36,9 @@
       "Bash(bash tools/test_installation.sh)",
       "Bash(pip install pipx)",
       "Bash(pipx --version)",
-      "Bash(minerva peek:*)"
+      "Bash(minerva peek:*)",
+      "Bash(timeout 3 minerva serve:*)",
+      "Bash(minerva index:*)"
     ],
     "deny": [],
     "ask": []

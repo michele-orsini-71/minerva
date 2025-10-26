@@ -1,5 +1,6 @@
 import os
 import re
+import logging
 from typing import List, Dict, Any, Optional
 import numpy as np
 
@@ -53,6 +54,11 @@ class AIProvider:
 
         if self.base_url:
             os.environ['OLLAMA_API_BASE'] = self.base_url
+
+        # Suppress verbose LiteLLM logging
+        # LiteLLM logs every API call at INFO level, which clutters the console
+        logging.getLogger('LiteLLM').setLevel(logging.WARNING)
+        logging.getLogger('httpx').setLevel(logging.WARNING)
 
     def _get_model_name_for_litellm(self, model: str, for_embedding: bool = False) -> str:
         if self.provider_type == 'ollama':
