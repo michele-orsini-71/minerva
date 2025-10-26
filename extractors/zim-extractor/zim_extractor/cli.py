@@ -20,7 +20,7 @@ def _write_output(records: list[dict[str, object]], output: Path | None) -> None
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Extract markdown and JSON notes from a ZIM archive in Minervium format.",
+        description="Extract markdown and JSON notes from a ZIM archive in Minerva format.",
         epilog="Example: zim-extractor archive.zim -o notes.json --markdown-dir ./markdown --limit 1000",
     )
     parser.add_argument("zim_file", help="Path to the ZIM archive to extract")

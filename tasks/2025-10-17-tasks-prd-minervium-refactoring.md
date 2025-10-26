@@ -1,39 +1,42 @@
-# Task List: Minervium Refactoring
+# Task List: Minerva Refactoring
 
-Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
+Generated from: `tasks/2025-10-17-prd-minerva-refactoring.md`
 
 ## Relevant Files
 
 ### New Core Package Files (to be created)
-- `minervium/__init__.py` - Main package initialization
-- `minervium/__main__.py` - Enable `python -m minervium` execution
-- `minervium/cli.py` - Main CLI entry point with argparse
-- `minervium/commands/__init__.py` - Commands subpackage init
-- `minervium/commands/index.py` - Index command implementation
-- `minervium/commands/serve.py` - Serve command implementation
-- `minervium/commands/peek.py` - Peek command implementation
-- `minervium/commands/validate.py` - Validate command implementation
-- `minervium/common/__init__.py` - Common utilities subpackage init
-- `minervium/common/schemas.py` - JSON schema definition
-- `minervium/indexing/__init__.py` - Indexing subpackage init
-- `minervium/server/__init__.py` - Server subpackage init
-- `setup.py` - Root package configuration for Minervium
+
+- `minerva/__init__.py` - Main package initialization
+- `minerva/__main__.py` - Enable `python -m minerva` execution
+- `minerva/cli.py` - Main CLI entry point with argparse
+- `minerva/commands/__init__.py` - Commands subpackage init
+- `minerva/commands/index.py` - Index command implementation
+- `minerva/commands/serve.py` - Serve command implementation
+- `minerva/commands/peek.py` - Peek command implementation
+- `minerva/commands/validate.py` - Validate command implementation
+- `minerva/common/__init__.py` - Common utilities subpackage init
+- `minerva/common/schemas.py` - JSON schema definition
+- `minerva/indexing/__init__.py` - Indexing subpackage init
+- `minerva/server/__init__.py` - Server subpackage init
+- `setup.py` - Root package configuration for Minerva
 
 ### Migrated Core Files (moved from existing locations)
-- `minervium/indexing/chunking.py` - Migrated from `markdown-notes-cag-data-creator/chunk_creator.py`
-- `minervium/indexing/embeddings.py` - Migrated from `markdown-notes-cag-data-creator/embedding.py`
-- `minervium/indexing/storage.py` - Migrated from `markdown-notes-cag-data-creator/storage.py`
-- `minervium/indexing/json_loader.py` - Migrated from `markdown-notes-cag-data-creator/json_loader.py`
-- `minervium/server/mcp_server.py` - Migrated from `markdown-notes-mcp-server/server.py`
-- `minervium/server/search_tools.py` - Migrated from `markdown-notes-mcp-server/search_tools.py`
-- `minervium/server/collection_discovery.py` - Migrated from `markdown-notes-mcp-server/collection_discovery.py`
-- `minervium/server/context_retrieval.py` - Migrated from `markdown-notes-mcp-server/context_retrieval.py`
-- `minervium/server/startup_validation.py` - Migrated from `markdown-notes-mcp-server/startup_validation.py`
-- `minervium/common/ai_provider.py` - Migrated from `markdown-notes-cag-data-creator/ai_provider.py`
-- `minervium/common/config.py` - Migrated from `markdown-notes-mcp-server/config.py` (consolidate with config_loader.py)
-- `minervium/common/logger.py` - Migrated from `markdown-notes-mcp-server/console_logger.py`
+
+- `minerva/indexing/chunking.py` - Migrated from `markdown-notes-cag-data-creator/chunk_creator.py`
+- `minerva/indexing/embeddings.py` - Migrated from `markdown-notes-cag-data-creator/embedding.py`
+- `minerva/indexing/storage.py` - Migrated from `markdown-notes-cag-data-creator/storage.py`
+- `minerva/indexing/json_loader.py` - Migrated from `markdown-notes-cag-data-creator/json_loader.py`
+- `minerva/server/mcp_server.py` - Migrated from `markdown-notes-mcp-server/server.py`
+- `minerva/server/search_tools.py` - Migrated from `markdown-notes-mcp-server/search_tools.py`
+- `minerva/server/collection_discovery.py` - Migrated from `markdown-notes-mcp-server/collection_discovery.py`
+- `minerva/server/context_retrieval.py` - Migrated from `markdown-notes-mcp-server/context_retrieval.py`
+- `minerva/server/startup_validation.py` - Migrated from `markdown-notes-mcp-server/startup_validation.py`
+- `minerva/common/ai_provider.py` - Migrated from `markdown-notes-cag-data-creator/ai_provider.py`
+- `minerva/common/config.py` - Migrated from `markdown-notes-mcp-server/config.py` (consolidate with config_loader.py)
+- `minerva/common/logger.py` - Migrated from `markdown-notes-mcp-server/console_logger.py`
 
 ### Extractor Files (reorganized)
+
 - `extractors/bear-notes-extractor/bear_extractor/__init__.py` - Bear extractor package
 - `extractors/bear-notes-extractor/bear_extractor/parser.py` - Migrated from `bear-notes-extractor/bear_parser.py`
 - `extractors/bear-notes-extractor/bear_extractor/cli.py` - Migrated from `bear-notes-extractor/cli.py`
@@ -55,6 +58,7 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
 - `extractors/README.md` - Overview of all extractors
 
 ### Test Files
+
 - `tests/test_schema_validation.py` - Unit tests for JSON schema validation
 - `tests/test_cli_parsing.py` - Unit tests for CLI argument parsing
 - `tests/test_import_paths.py` - Unit tests to verify import paths work correctly
@@ -68,6 +72,7 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
 - `tests/conftest.py` - Pytest fixtures and configuration
 
 ### Documentation Files
+
 - `README.md` - Main comprehensive README with installation and usage
 - `docs/NOTE_SCHEMA.md` - JSON schema specification
 - `docs/EXTRACTOR_GUIDE.md` - Step-by-step extractor development guide
@@ -75,44 +80,49 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
 - `CONFIGURATION_GUIDE.md` - Updated with new config paths and examples
 
 ### Configuration Files
+
 - `configs/index-ollama.json` - Example index configuration for Ollama
 - `configs/index-openai.json` - Example index configuration for OpenAI
 - `configs/server-config.json` - Example server configuration
 - `.gitignore` - Updated for new structure
 
 ### Notes
+
 - Unit tests should be placed in top-level `tests/` directory following standard Python convention
 - Extractor tests should be placed in `extractors/{extractor-name}/tests/` within each extractor package
 - Use `pytest` to run tests: `pytest tests/` for core tests, `pytest extractors/*/tests/` for extractor tests
 - The migration involves ~20 core files being moved and ~10 new files being created
-- All import paths will need updating from flat structure to `minervium.*` namespaced structure
+- All import paths will need updating from flat structure to `minerva.*` namespaced structure
 
 ## Tasks
 
-- [x] 1.0 Core Package Reorganization - Create unified `minervium` package structure with all core RAG and MCP functionality
-  - [x] 1.1 Create unified directory structure (`minervium/`, `minervium/commands/`, `minervium/indexing/`, `minervium/server/`, `minervium/common/`)
+- [x] 1.0 Core Package Reorganization - Create unified `minerva` package structure with all core RAG and MCP functionality
+
+  - [x] 1.1 Create unified directory structure (`minerva/`, `minerva/commands/`, `minerva/indexing/`, `minerva/server/`, `minerva/common/`)
   - [x] 1.2 Create all `__init__.py` files for package initialization
-  - [x] 1.3 Migrate RAG pipeline files from `markdown-notes-cag-data-creator/` to `minervium/indexing/` (chunk_creator.py → chunking.py, embedding.py → embeddings.py, storage.py, json_loader.py)
-  - [x] 1.4 Migrate MCP server files from `markdown-notes-mcp-server/` to `minervium/server/` (server.py → mcp_server.py, search_tools.py, collection_discovery.py, context_retrieval.py, startup_validation.py)
-  - [x] 1.5 Migrate shared components to `minervium/common/` (ai_provider.py, config files → config.py, console_logger.py → logger.py)
-  - [x] 1.6 Create `minervium/common/schemas.py` with JSON schema definition and validation functions
-  - [x] 1.7 Update all import paths throughout migrated files to use `minervium.*` namespace
+  - [x] 1.3 Migrate RAG pipeline files from `markdown-notes-cag-data-creator/` to `minerva/indexing/` (chunk_creator.py → chunking.py, embedding.py → embeddings.py, storage.py, json_loader.py)
+  - [x] 1.4 Migrate MCP server files from `markdown-notes-mcp-server/` to `minerva/server/` (server.py → mcp_server.py, search_tools.py, collection_discovery.py, context_retrieval.py, startup_validation.py)
+  - [x] 1.5 Migrate shared components to `minerva/common/` (ai_provider.py, config files → config.py, console_logger.py → logger.py)
+  - [x] 1.6 Create `minerva/common/schemas.py` with JSON schema definition and validation functions
+  - [x] 1.7 Update all import paths throughout migrated files to use `minerva.*` namespace
   - [x] 1.8 Test for circular import dependencies by importing all modules
   - [x] 1.9 Verify all migrated modules can be imported without errors
 
 - [x] 2.0 CLI Implementation - Build argparse-based CLI with all four commands (index, serve, peek, validate)
-  - [x] 2.1 Create `minervium/cli.py` with argparse setup and subparser structure
-  - [x] 2.2 Implement `minervium/commands/index.py` with --config, --verbose, --dry-run flags
-  - [x] 2.3 Implement `minervium/commands/serve.py` with --config flag for MCP server startup
-  - [x] 2.4 Implement `minervium/commands/peek.py` with collection_name positional arg and --chromadb, --format flags
-  - [x] 2.5 Implement `minervium/commands/validate.py` as wrapper around index command with dry_run=True
-  - [x] 2.6 Create `minervium/__main__.py` to enable `python -m minervium` execution
-  - [x] 2.7 Create root `setup.py` with console_scripts entry point: `minervium = minervium.cli:main`
+
+  - [x] 2.1 Create `minerva/cli.py` with argparse setup and subparser structure
+  - [x] 2.2 Implement `minerva/commands/index.py` with --config, --verbose, --dry-run flags
+  - [x] 2.3 Implement `minerva/commands/serve.py` with --config flag for MCP server startup
+  - [x] 2.4 Implement `minerva/commands/peek.py` with collection_name positional arg and --chromadb, --format flags
+  - [x] 2.5 Implement `minerva/commands/validate.py` as wrapper around index command with dry_run=True
+  - [x] 2.6 Create `minerva/__main__.py` to enable `python -m minerva` execution
+  - [x] 2.7 Create root `setup.py` with console_scripts entry point: `minerva = minerva.cli:main`
   - [x] 2.8 Test all four CLI commands work end-to-end with sample data
   - [x] 2.9 Verify `--help` text is clear and accurate for all commands and flags
 
 - [ ] 3.0 Logging System Migration - Migrate and standardize logging across the entire codebase
-  - [x] 3.1 Migrate `markdown-notes-mcp-server/console_logger.py` to `minervium/common/logger.py`
+
+  - [x] 3.1 Migrate `markdown-notes-mcp-server/console_logger.py` to `minerva/common/logger.py`
   - [x] 3.2 Add context-aware output routing to logger (stdout for CLI commands, stderr for MCP server)
   - [x] 3.3 Implement both detailed mode (timestamp + module + level + message) and simple mode (message only)
   - [x] 3.4 Add semantic methods to logger: info(), success(), warning(), error()
@@ -123,30 +133,32 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
   - [x] 3.9 Verify no `print()` statements remain in codebase (grep search)
 
 - [x] 4.0 Extractor Independence - Reorganize extractors into standalone packages with independent CLIs
+
   - [x] 4.1 Create `extractors/` directory structure with subdirectories for each extractor
   - [x] 4.2 Reorganize Bear extractor: create `extractors/bear-notes-extractor/bear_extractor/` package structure
-  - [x] 4.3 Migrate Bear extractor files (bear_parser.py → parser.py, cli.py) and remove any Minervium imports
+  - [x] 4.3 Migrate Bear extractor files (bear_parser.py → parser.py, cli.py) and remove any Minerva imports
   - [x] 4.4 Create `extractors/bear-notes-extractor/setup.py` with console_scripts entry point: `bear-extractor`
   - [x] 4.5 Reorganize Zim extractor: create `extractors/zim-extractor/zim_extractor/` package structure
-  - [x] 4.6 Migrate Zim extractor files (zim_parser.py → parser.py, zim_cli.py → cli.py) and remove any Minervium imports
+  - [x] 4.6 Migrate Zim extractor files (zim_parser.py → parser.py, zim_cli.py → cli.py) and remove any Minerva imports
   - [x] 4.7 Create `extractors/zim-extractor/setup.py` with console_scripts entry point: `zim-extractor`
   - [x] 4.8 Reorganize Markdown Books extractor: create `extractors/markdown-books-extractor/markdown_books_extractor/` package structure
-  - [x] 4.9 Migrate Books extractor files (book_parser.py → parser.py, create cli.py) and remove any Minervium imports
+  - [x] 4.9 Migrate Books extractor files (book_parser.py → parser.py, create cli.py) and remove any Minerva imports
   - [x] 4.10 Create `extractors/markdown-books-extractor/setup.py` with console_scripts entry point: `markdown-books-extractor`
   - [x] 4.11 Verify all extractors support -o/--output flag for file output and stdout by default
   - [x] 4.12 Verify all extractors support -v/--verbose flag for progress output
   - [x] 4.13 Test each extractor CLI independently (install with `pip install -e` and run command)
-  - [x] 4.14 Verify extractors output valid JSON conforming to Minervium schema (test with sample data)
-  - [x] 4.15 Verify extractors have NO dependencies on Minervium core package (check imports)
+  - [x] 4.14 Verify extractors output valid JSON conforming to Minerva schema (test with sample data)
+  - [x] 4.15 Verify extractors have NO dependencies on Minerva core package (check imports)
 
 - [x] 5.0 Documentation - Create comprehensive documentation covering installation, usage, and extractor development
-  - [x] 5.1 Write comprehensive main `README.md` with Minervium overview, architecture diagram, and quick start
+
+  - [x] 5.1 Write comprehensive main `README.md` with Minerva overview, architecture diagram, and quick start
   - [x] 5.2 Add installation instructions to README for both pipx (recommended) and pip+alias methods
   - [x] 5.3 Add clear explanation to README that venv activation is not needed after initial setup
-  - [x] 5.4 Add installation verification steps to README (`minervium --help` should work)
+  - [x] 5.4 Add installation verification steps to README (`minerva --help` should work)
   - [x] 5.5 Add basic usage examples to README for all four commands with sample workflows
   - [x] 5.6 Create `docs/NOTE_SCHEMA.md` with complete JSON schema specification, field requirements, validation rules, and examples
-  - [x] 5.7 Create `docs/EXTRACTOR_GUIDE.md` with step-by-step tutorial, multi-language examples, and testing guidelines using `minervium validate`
+  - [x] 5.7 Create `docs/EXTRACTOR_GUIDE.md` with step-by-step tutorial, multi-language examples, and testing guidelines using `minerva validate`
   - [x] 5.8 Create `extractors/README.md` with overview of all official extractors and links to development guide
   - [x] 5.9 Write `extractors/bear-notes-extractor/README.md` with usage instructions, supported formats, and examples
   - [x] 5.10 Write `extractors/zim-extractor/README.md` with usage instructions, supported formats, and examples
@@ -156,6 +168,7 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
   - [x] 5.14 Verify all documentation links are valid and examples work when copy-pasted
 
 - [ ] 6.0 Testing & Validation - Implement unit tests and verify all workflows work end-to-end
+
   - [x] 6.1 Create top-level `tests/` directory and `tests/conftest.py` with pytest fixtures
   - [x] 6.2 Write unit tests for JSON schema validation logic in `tests/test_schema_validation.py`
   - [x] 6.3 Write unit tests for CLI argument parsing in `tests/test_cli_parsing.py`
@@ -167,12 +180,12 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
 - [ ] 7.0 Deployment Preparation - Finalize repository structure and verify installation methods
   - [x] 7.1 Clean up old directories (archive or remove `markdown-notes-cag-data-creator/`, `markdown-notes-mcp-server/`, original extractor directories)
   - [x] 7.2 Remove all docstring comments and review code comments in order to implement Clean Code comments policy (if a function is difficult to understand, rewrite it, use a better name, but do not add a commen)
-  - [x] 7.3 Update `.gitignore` for new structure (ignore `minervium.egg-info/`, `dist/`, `build/`, `*.pyc`, `__pycache__/`)
+  - [x] 7.3 Update `.gitignore` for new structure (ignore `minerva.egg-info/`, `dist/`, `build/`, `*.pyc`, `__pycache__/`)
   - [x] 7.4 Create installation testing script that verifies both pipx and pip+alias methods
   - [x] 7.5 Test pipx installation method on fresh system (or fresh virtual environment)
-  - [x] 7.6 Verify `minervium --help` works without venv activation after pipx install
+  - [x] 7.6 Verify `minerva --help` works without venv activation after pipx install
   - [x] 7.7 Test pip+alias installation method on fresh system (or fresh virtual environment)
-  - [x] 7.8 Verify `minervium --help` works without venv activation after pip+alias setup
+  - [x] 7.8 Verify `minerva --help` works without venv activation after pip+alias setup
   - [x] 7.9 Test all four commands (index, serve, peek, validate) work with both installation methods
 
 ---
@@ -180,8 +193,9 @@ Generated from: `tasks/2025-10-17-prd-minervium-refactoring.md`
 **Status: Phase 2 Complete - Detailed sub-tasks generated**
 
 The task list now contains 7 parent tasks broken down into 87 detailed sub-tasks, covering:
+
 - **File reorganization**: ~20 core files migrated + ~10 new files created
-- **Import path updates**: All imports changed to `minervium.*` namespace
+- **Import path updates**: All imports changed to `minerva.*` namespace
 - **CLI implementation**: 4 commands with argparse + 2 entry point mechanisms
 - **Logging standardization**: Context-aware output routing (stdout for CLI, stderr for MCP)
 - **Extractor independence**: 3 extractors as standalone packages with their own CLIs

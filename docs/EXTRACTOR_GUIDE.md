@@ -1,6 +1,6 @@
-# Minervium Extractor Development Guide
+# Minerva Extractor Development Guide
 
-Learn how to build custom extractors to bring any data source into Minervium.
+Learn how to build custom extractors to bring any data source into Minerva.
 
 ## Table of Contents
 
@@ -18,14 +18,14 @@ Learn how to build custom extractors to bring any data source into Minervium.
 
 ## Overview
 
-Extractors are independent programs that convert data from specific sources (apps, databases, APIs, files) into the [Minervium Note Schema](NOTE_SCHEMA.md). They act as adapters between the Minervium indexing system and your data.
+Extractors are independent programs that convert data from specific sources (apps, databases, APIs, files) into the [Minerva Note Schema](NOTE_SCHEMA.md). They act as adapters between the Minerva indexing system and your data.
 
 ### Key Principles
 
 1. **Language Agnostic**: Write extractors in any language (Python, JavaScript, Go, Rust, Bash, etc.)
 2. **Single Responsibility**: Each extractor handles one source type
 3. **Standard Output**: All extractors output JSON conforming to the note schema
-4. **Independent**: Extractors have no dependencies on Minervium core
+4. **Independent**: Extractors have no dependencies on Minerva core
 5. **Testable**: Use `minerva validate` to verify output
 
 ### The Extractor Pipeline
@@ -45,7 +45,7 @@ Extractors are independent programs that convert data from specific sources (app
          │
          ▼
 ┌─────────────────┐
-│ Standard JSON   │  ← Minervium Note Schema
+│ Standard JSON   │  ← Minerva Note Schema
 │   (stdout)      │
 └────────┬────────┘
          │
@@ -64,7 +64,7 @@ Extractors are independent programs that convert data from specific sources (app
 An extractor is any program that:
 
 1. **Reads** data from a specific source
-2. **Converts** that data to the Minervium Note Schema
+2. **Converts** that data to the Minerva Note Schema
 3. **Outputs** valid JSON (to stdout or file)
 
 ### Minimal Extractor Requirements
@@ -86,7 +86,7 @@ An extractor is any program that:
 
 ## Quick Start Tutorial
 
-Let's build a simple extractor that converts plain text files into Minervium notes.
+Let's build a simple extractor that converts plain text files into Minerva notes.
 
 ### Step 1: Understand Your Source Data
 
@@ -121,7 +121,7 @@ Here's a complete Python extractor:
 ```python
 #!/usr/bin/env python3
 """
-text-extractor: Convert text files to Minervium notes
+text-extractor: Convert text files to Minerva notes
 Usage: text-extractor <directory> [-o output.json]
 """
 
@@ -281,7 +281,7 @@ if __name__ == "__main__":
 ```javascript
 #!/usr/bin/env node
 /**
- * markdown-extractor: Convert markdown files to Minervium notes
+ * markdown-extractor: Convert markdown files to Minerva notes
  * Usage: markdown-extractor <directory> [-o output.json]
  */
 
@@ -354,7 +354,7 @@ main().catch((err) => {
 
 ```bash
 #!/bin/bash
-# json-extractor: Convert JSON entries to Minervium notes
+# json-extractor: Convert JSON entries to Minerva notes
 # Usage: json-extractor <input.json> [-o output.json]
 
 set -e
@@ -534,13 +534,13 @@ def test_json_output():
 
 ### 2. Schema Validation (Integration Test)
 
-Use Minervium's validator:
+Use Minerva's validator:
 
 ```bash
 # Extract to temp file
 ./your-extractor test-data/sample.source -o /tmp/test-output.json
 
-# Validate with Minervium
+# Validate with Minerva
 minerva validate /tmp/test-output.json --verbose
 
 # Check exit code
@@ -636,7 +636,7 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install Minervium
+      - name: Install Minerva
         run: pip install minerva
 
       - name: Run extractor tests
@@ -801,7 +801,7 @@ note = {
     # Optional standard field
     "creationDate": create_date,
 
-    # Custom metadata (preserved by Minervium)
+    # Custom metadata (preserved by Minerva)
     "source": "my-app",
     "sourceId": original_id,
     "tags": tags,

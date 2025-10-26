@@ -20,7 +20,7 @@ def _write_output(records: list[dict[str, object]], output: Path | None) -> None
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Convert a structured markdown book file into Minervium-compatible JSON.",
+        description="Convert a structured markdown book file into Minerva-compatible JSON.",
         epilog="Example: markdown-books-extractor book.md -o notes.json",
     )
     parser.add_argument("source", help="Path to the markdown book file to parse")

@@ -132,7 +132,7 @@ def _is_valid_iso_date(date_string: str) -> bool:
 
 def get_schema_summary() -> str:
     return """
-Minervium Note Schema
+Minerva Note Schema
 =====================
 
 Required fields:

@@ -96,25 +96,25 @@ test_pip_alias_installation() {
     pip install -e "$PROJECT_ROOT" > /dev/null 2>&1
 
     log_info "Creating shell alias..."
-    MINERVIUM_BIN="$(pwd)/.venv/bin/minerva"
+    MINERVA_BIN="$(pwd)/.venv/bin/minerva"
 
-    if [ ! -f "$MINERVIUM_BIN" ]; then
-        log_error "minerva binary not found at $MINERVIUM_BIN"
+    if [ ! -f "$MINERVA_BIN" ]; then
+        log_error "minerva binary not found at $MINERVA_BIN"
         deactivate
         return 1
     fi
 
     log_info "Testing minerva command (via direct path)..."
-    "$MINERVIUM_BIN" --version
+    "$MINERVA_BIN" --version
 
     log_info "Testing minerva --help..."
-    "$MINERVIUM_BIN" --help > /dev/null
+    "$MINERVA_BIN" --help > /dev/null
 
     log_info "Testing all four commands help text..."
-    "$MINERVIUM_BIN" index --help > /dev/null
-    "$MINERVIUM_BIN" serve --help > /dev/null
-    "$MINERVIUM_BIN" peek --help > /dev/null
-    "$MINERVIUM_BIN" validate --help > /dev/null
+    "$MINERVA_BIN" index --help > /dev/null
+    "$MINERVA_BIN" serve --help > /dev/null
+    "$MINERVA_BIN" peek --help > /dev/null
+    "$MINERVA_BIN" validate --help > /dev/null
 
     log_info "✅ pip+alias installation test PASSED"
 
@@ -162,7 +162,7 @@ test_extractors() {
 }
 
 main() {
-    log_info "Starting Minervium installation tests..."
+    log_info "Starting Minerva installation tests..."
     log_info "Project root: $PROJECT_ROOT"
     log_info "Test directory: $TEST_DIR"
     echo ""

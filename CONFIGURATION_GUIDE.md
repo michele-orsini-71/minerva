@@ -1,6 +1,6 @@
-# Minervium Configuration Guide
+# Minerva Configuration Guide
 
-This guide explains how to configure Minervium for indexing notes and serving them through the MCP server, with support for multiple AI providers (Ollama, OpenAI, Google Gemini, Azure OpenAI).
+This guide explains how to configure Minerva for indexing notes and serving them through the MCP server, with support for multiple AI providers (Ollama, OpenAI, Google Gemini, Azure OpenAI).
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@ This guide explains how to configure Minervium for indexing notes and serving th
 
 ## Overview
 
-Minervium uses JSON configuration files for two main operations:
+Minerva uses JSON configuration files for two main operations:
 
 ### 1. Indexing (`minerva index`)
 
@@ -178,7 +178,7 @@ When started, the server:
 
 ## AI Provider Setup
 
-Minervium supports multiple AI providers through environment variables. Collections remember which provider they used during indexing.
+Minerva supports multiple AI providers through environment variables. Collections remember which provider they used during indexing.
 
 ### Local: Ollama (No API Keys)
 
@@ -294,7 +294,7 @@ minerva index --config gemini-config.json --verbose
 
 ### Provider Selection Logic
 
-Minervium selects the AI provider based on environment variables:
+Minerva selects the AI provider based on environment variables:
 
 1. If `OPENAI_API_KEY` is set → Use OpenAI
 2. Else if `GEMINI_API_KEY` is set → Use Gemini

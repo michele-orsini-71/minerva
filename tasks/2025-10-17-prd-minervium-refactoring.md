@@ -1,12 +1,12 @@
-# Product Requirements Document: Minervium Refactoring
+# Product Requirements Document: Minerva Refactoring
 
 ## Introduction/Overview
 
-This PRD outlines the refactoring of the "search-markdown-notes" project into **Minervium**, a unified personal knowledge management RAG (Retrieval-Augmented Generation) system. The project currently suffers from inconsistent naming conventions, scattered entry points, and unclear architectural boundaries between core functionality and data extraction tools.
+This PRD outlines the refactoring of the "search-markdown-notes" project into **Minerva**, a unified personal knowledge management RAG (Retrieval-Augmented Generation) system. The project currently suffers from inconsistent naming conventions, scattered entry points, and unclear architectural boundaries between core functionality and data extraction tools.
 
 The refactoring will transform the codebase into a well-organized, developer-friendly tool with:
 
-- A unified CLI interface under the `minervium` command
+- A unified CLI interface under the `minerva` command
 - Clear separation between core RAG functionality and independent extractor tools
 - Standardized JSON schema for note ingestion
 - Professional package structure ready for future expansion
@@ -15,7 +15,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 
 ## Goals
 
-1. **Unify CLI Interface:** Consolidate all core functionality under a single `minervium` command with intuitive subcommands (`index`, `serve`, `peek`, `validate`)
+1. **Unify CLI Interface:** Consolidate all core functionality under a single `minerva` command with intuitive subcommands (`index`, `serve`, `peek`, `validate`)
 
 2. **Establish Clear Architecture:** Separate core RAG/MCP functionality from independent extractor tools through a standardized JSON contract
 
@@ -33,10 +33,10 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 
 **As a personal knowledge management user**, I want to:
 
-- Install Minervium with a single pip command
-- Index my notes using `minervium index --config index-config.json` (where config specifies the JSON file path and AI provider)
-- Start the MCP server with `minervium serve --config server-config.json` (where config specifies ChromaDB path and settings)
-- Inspect my collections with `minervium peek collection_name`
+- Install Minerva with a single pip command
+- Index my notes using `minerva index --config index-config.json` (where config specifies the JSON file path and AI provider)
+- Start the MCP server with `minerva serve --config server-config.json` (where config specifies ChromaDB path and settings)
+- Inspect my collections with `minerva peek collection_name`
 - **So that** I can efficiently manage and search my personal knowledge base without wrestling with complex CLI commands
 
 ### Extractor User - Bear Notes User
@@ -45,7 +45,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 
 - Install Bear extractor separately: `pip install -e extractors/bear-notes-extractor`
 - Extract notes with `bear-extractor backup.bear2bk -o notes.json`
-- Validate the complete pipeline setup with `minervium validate --config config.json` before indexing
+- Validate the complete pipeline setup with `minerva validate --config config.json` before indexing
 - **So that** I can convert my Bear notes into a searchable knowledge base using independent tools
 
 ### Extractor Developer - Custom Integration Builder
@@ -54,9 +54,9 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 
 - Understand the JSON schema specification from clear documentation
 - Build extractors in any language (Python, Go, Rust, JavaScript)
-- Test my complete pipeline setup with `minervium validate --config config.json`
+- Test my complete pipeline setup with `minerva validate --config config.json`
 - Use example extractors as reference implementations
-- **So that** I can integrate any data source with Minervium without modifying core code
+- **So that** I can integrate any data source with Minerva without modifying core code
 
 ### Multi-Source User - Knowledge Aggregator
 
@@ -71,22 +71,22 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 
 ### FR1: Unified Core Package Structure
 
-**FR1.1** The system MUST create a single `minervium` Python package containing all core functionality
+**FR1.1** The system MUST create a single `minerva` Python package containing all core functionality
 
 **FR1.2** The package MUST organize code into logical subpackages:
 
-- `minervium/commands/` - CLI command implementations
-- `minervium/indexing/` - RAG pipeline (chunking, embeddings, storage)
-- `minervium/server/` - MCP server functionality
-- `minervium/common/` - Shared utilities (AI provider, config, logging, schemas)
+- `minerva/commands/` - CLI command implementations
+- `minerva/indexing/` - RAG pipeline (chunking, embeddings, storage)
+- `minerva/server/` - MCP server functionality
+- `minerva/common/` - Shared utilities (AI provider, config, logging, schemas)
 
-**FR1.3** The package MUST expose a single entry point `minervium` via setup.py console_scripts
+**FR1.3** The package MUST expose a single entry point `minerva` via setup.py console_scripts
 
 **FR1.4** The package MUST use argparse for CLI framework (per user requirement)
 
 ### FR2: CLI Command Interface
 
-**FR2.1** The system MUST implement `minervium index` command that:
+**FR2.1** The system MUST implement `minerva index` command that:
 
 - Requires `--config` flag with configuration file path (config contains JSON file path, chunk size, provider settings, etc.)
 - Supports `--verbose` flag for detailed progress output
@@ -94,7 +94,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - Validates JSON schema before processing
 - Shows provider initialization, chunking, embedding, and storage progress
 
-**FR2.2** The system MUST implement `minervium serve` command that:
+**FR2.2** The system MUST implement `minerva serve` command that:
 
 - Requires `--config` flag with server configuration file path (config contains chromadb_path, default_max_results, etc.)
 - Starts the MCP server in stdio mode
@@ -103,7 +103,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - Logs collection availability status
 - Config file format: JSON with required fields `chromadb_path` (absolute path) and `default_max_results` (integer)
 
-**FR2.3** The system MUST implement `minervium peek` command that:
+**FR2.3** The system MUST implement `minerva peek` command that:
 
 - Accepts collection name as positional argument
 - Accepts optional `--chromadb` flag for database path
@@ -111,11 +111,11 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - Displays collection metadata, document count, provider info, and embedding dimensions
 - Uses formatted table output for readability
 
-**FR2.4** The system MUST implement `minervium validate` command that:
+**FR2.4** The system MUST implement `minerva validate` command that:
 
 - Requires `--config` flag with configuration file path
 - Accepts optional `--verbose` flag for detailed validation output
-- Internally calls the same logic as `minervium index --config --dry-run` (comprehensive validation)
+- Internally calls the same logic as `minerva index --config --dry-run` (comprehensive validation)
 - Implementation note: Can be implemented as a simple wrapper that sets dry_run=True and calls the index command
 - Validates the entire pipeline configuration:
   - Config file structure and required fields
@@ -132,33 +132,33 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 
 **FR3.1** The system MUST migrate RAG pipeline files:
 
-- `chunk_creator.py` → `minervium/indexing/chunking.py`
-- `embedding.py` → `minervium/indexing/embeddings.py`
-- `storage.py` → `minervium/indexing/storage.py`
-- `json_loader.py` → `minervium/indexing/json_loader.py`
+- `chunk_creator.py` → `minerva/indexing/chunking.py`
+- `embedding.py` → `minerva/indexing/embeddings.py`
+- `storage.py` → `minerva/indexing/storage.py`
+- `json_loader.py` → `minerva/indexing/json_loader.py`
 
 **FR3.2** The system MUST migrate MCP server files:
 
-- `server.py` → `minervium/server/mcp_server.py`
-- `search_tools.py` → `minervium/server/search_tools.py`
-- `collection_discovery.py` → `minervium/server/collection_discovery.py`
-- `context_retrieval.py` → `minervium/server/context_retrieval.py`
-- `startup_validation.py` → `minervium/server/startup_validation.py`
+- `server.py` → `minerva/server/mcp_server.py`
+- `search_tools.py` → `minerva/server/search_tools.py`
+- `collection_discovery.py` → `minerva/server/collection_discovery.py`
+- `context_retrieval.py` → `minerva/server/context_retrieval.py`
+- `startup_validation.py` → `minerva/server/startup_validation.py`
 
 **FR3.3** The system MUST migrate shared components:
 
-- `ai_provider.py` → `minervium/common/ai_provider.py`
-- `config.py` → `minervium/common/config.py`
-- `console_logger.py` → `minervium/common/logger.py`
+- `ai_provider.py` → `minerva/common/ai_provider.py`
+- `config.py` → `minerva/common/config.py`
+- `console_logger.py` → `minerva/common/logger.py`
 
 **FR3.4** The system MUST create new files:
 
-- `minervium/common/schemas.py` - JSON schema definition
-- `minervium/cli.py` - Main CLI entry point with argparse
-- `minervium/__init__.py` - Package initialization
-- `minervium/__main__.py` - Enable `python -m minervium` execution
+- `minerva/common/schemas.py` - JSON schema definition
+- `minerva/cli.py` - Main CLI entry point with argparse
+- `minerva/__init__.py` - Package initialization
+- `minerva/__main__.py` - Enable `python -m minerva` execution
 
-**FR3.5** All import paths MUST be updated to reflect the new `minervium.*` structure
+**FR3.5** All import paths MUST be updated to reflect the new `minerva.*` structure
 
 **FR3.6** The codebase MUST be tested for circular dependency issues
 
@@ -172,7 +172,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 
 **FR4.2** Each extractor package MUST include:
 
-- Standalone CLI entry point (no Minervium imports)
+- Standalone CLI entry point (no Minerva imports)
 - Independent setup.py with console_scripts entry point
 - README.md with usage instructions
 - tests/ directory
@@ -183,7 +183,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - Zim extractor: `zim-extractor`
 - Books extractor: `markdown-books-extractor`
 
-**FR4.4** Extractors MUST output JSON conforming to the Minervium schema:
+**FR4.4** Extractors MUST output JSON conforming to the Minerva schema:
 
 ```json
 [
@@ -196,7 +196,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 ]
 ```
 
-**FR4.5** Extractors MUST NOT depend on Minervium core package (no coupling)
+**FR4.5** Extractors MUST NOT depend on Minerva core package (no coupling)
 
 **FR4.6** Extractors MUST support output to file (`-o` flag) or stdout
 
@@ -211,11 +211,11 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - `size` (integer): Content size in bytes
 - `modificationDate` (string): ISO 8601 UTC timestamp
 
-**FR5.2** The schema definition MUST be centralized in `minervium/common/schemas.py`
+**FR5.2** The schema definition MUST be centralized in `minerva/common/schemas.py`
 
-**FR5.3** The schema MUST be validated by `minervium/indexing/json_loader.py` during indexing
+**FR5.3** The schema MUST be validated by `minerva/indexing/json_loader.py` during indexing
 
-**FR5.4** The schema MUST be validated by `minervium validate` command
+**FR5.4** The schema MUST be validated by `minerva validate` command
 
 **FR5.5** Schema validation errors MUST provide clear messages indicating which note and field failed validation
 
@@ -223,11 +223,11 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 
 **FR6.1** The system MUST provide a comprehensive main README.md covering:
 
-- Minervium overview and architecture
+- Minerva overview and architecture
 - Quick start guide
 - Installation instructions with both pipx (recommended) and pip+alias methods
 - Clear explanation that venv activation is not needed after initial setup
-- Installation verification steps (`minervium --help`)
+- Installation verification steps (`minerva --help`)
 - Extractor installation instructions
 - Basic usage examples
 - Architecture diagram showing separation of concerns
@@ -246,7 +246,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - JSON schema specification reference
 - Example extractors walkthrough
 - Multi-language examples (Python, Go, Rust, JavaScript)
-- Testing guidelines using `minervium validate --config` to verify complete pipeline setup
+- Testing guidelines using `minerva validate --config` to verify complete pipeline setup
 
 **FR6.4** The system MUST provide `extractors/README.md` covering:
 
@@ -266,7 +266,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 **FR6.6** The system MUST update CLAUDE.md with:
 
 - New directory structure
-- Updated command examples using `minervium` CLI
+- Updated command examples using `minerva` CLI
 - Extractor development section
 - Updated troubleshooting guide
 - Removal of old component references
@@ -305,8 +305,8 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 **Primary Method: pipx (Recommended)**
 
 - Users install pipx once: `pip install --user pipx && pipx ensurepath`
-- Install Minervium: `pipx install -e /path/to/minervium`
-- Commands work globally without venv activation: `minervium index --config config.json`
+- Install Minerva: `pipx install -e /path/to/minerva`
+- Commands work globally without venv activation: `minerva index --config config.json`
 - Pipx automatically manages isolated environment
 - Clean, modern approach used by popular CLI tools (black, pytest, poetry)
 
@@ -314,8 +314,8 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 
 - Users activate venv once: `source .venv/bin/activate`
 - Install with pip: `pip install -e .`
-- Add alias to shell profile (~/.bashrc or ~/.zshrc): `alias minervium='/absolute/path/to/minervium/.venv/bin/minervium'`
-- Commands work without venv activation: `minervium index --config config.json`
+- Add alias to shell profile (~/.bashrc or ~/.zshrc): `alias minerva='/absolute/path/to/minerva/.venv/bin/minerva'`
+- Commands work without venv activation: `minerva index --config config.json`
 - Classic approach, works everywhere
 
 **FR8.2** Documentation MUST include:
@@ -323,14 +323,14 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 - Step-by-step installation instructions for both methods
 - Explanation of why venv activation is not required after initial setup
 - Troubleshooting section for PATH and alias issues
-- Verification steps: `minervium --help` should work after installation
+- Verification steps: `minerva --help` should work after installation
 
 **FR8.3** The core package setup.py MUST:
 
-- Define package name as "minervium"
+- Define package name as "minerva"
 - Set initial version to "1.0.0"
 - List all dependencies (chromadb, litellm, numpy, langchain, tiktoken, nltk)
-- Define single console_scripts entry point: `minervium = minervium.cli:main`
+- Define single console_scripts entry point: `minerva = minerva.cli:main`
 - Specify Python version requirement (>=3.8 for ChromaDB compatibility)
 - Include package metadata (author, description, classifiers)
 
@@ -338,13 +338,13 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 
 - Define unique package name (e.g., "bear-notes-extractor")
 - Set initial version to "1.0.0"
-- NOT include Minervium as a dependency
+- NOT include Minerva as a dependency
 - Define extractor-specific console_scripts entry point
 - Include extractor-specific dependencies only
 
 **FR8.5** The repository MUST use a monorepo structure with:
 
-- `minervium/` - Core package
+- `minerva/` - Core package
 - `extractors/` - Independent extractor packages
 - `configs/` - Example configurations
 - `chromadb_data/` - Development database
@@ -386,14 +386,14 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 ┌─────────────────────────────────────────────────────────────┐
 │                    Extractor Layer                           │
 │  (Independent tools: bear-extractor, zim-extractor, etc.)    │
-│             Output: Minervium JSON Schema                    │
+│             Output: Minerva JSON Schema                    │
 └──────────────────────┬──────────────────────────────────────┘
                        │
-                       ▼ [JSON validation: minervium validate]
+                       ▼ [JSON validation: minerva validate]
                        │
 ┌─────────────────────────────────────────────────────────────┐
 │                      Core Layer                              │
-│                    minervium CLI                             │
+│                    minerva CLI                             │
 │  ┌────────────┬────────────┬──────────┬─────────────┐      │
 │  │   index    │   serve    │   peek   │  validate   │      │
 │  │  (RAG)     │   (MCP)    │  (Info)  │  (Schema)   │      │
@@ -411,7 +411,7 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 
 **CLI Design Principles:**
 
-- Single unified command: `minervium`
+- Single unified command: `minerva`
 - Intuitive subcommands named as verbs (index, serve, peek, validate)
 - Consistent flag naming across commands (--config, --verbose, --chromadb)
 - Help text accessible with --help at any level
@@ -425,16 +425,16 @@ The refactoring will transform the codebase into a well-organized, developer-fri
 bear-extractor backup.bear2bk -o notes.json
 
 # 2. Validate complete pipeline setup (optional but recommended)
-minervium validate --config configs/ollama.json --verbose
+minerva validate --config configs/ollama.json --verbose
 
 # 3. Index notes into collection (JSON path specified in config)
-minervium index --config configs/ollama.json --verbose
+minerva index --config configs/ollama.json --verbose
 
 # 4. Inspect collection
-minervium peek bear_notes
+minerva peek bear_notes
 
 # 5. Start MCP server (config specifies chromadb_path and settings)
-minervium serve --config server-config.json
+minerva serve --config server-config.json
 ```
 
 **Output Format Examples:**
@@ -442,7 +442,7 @@ minervium serve --config server-config.json
 Validation success:
 
 ```
-Minervium Configuration Validation (DRY-RUN MODE)
+Minerva Configuration Validation (DRY-RUN MODE)
 ═══════════════════════════════════════════════════════════
 
 Configuration File: configs/ollama.json
@@ -488,7 +488,7 @@ Last Modified:   2025-10-17 08:15:23 UTC
 
 **Indexing Flow:**
 
-1. User runs `minervium index --config ollama.json` (config file contains JSON file path and all settings)
+1. User runs `minerva index --config ollama.json` (config file contains JSON file path and all settings)
 2. CLI parses arguments with argparse
 3. `commands/index.py` loads configuration file
 4. `indexing/json_loader.py` loads and validates JSON schema from path specified in config
@@ -500,7 +500,7 @@ Last Modified:   2025-10-17 08:15:23 UTC
 
 **Server Flow:**
 
-1. User runs `minervium serve --config server-config.json`
+1. User runs `minerva serve --config server-config.json`
 2. CLI loads server configuration (chromadb_path, default_max_results)
 3. CLI starts MCP server in stdio mode
 4. `server/collection_discovery.py` finds all collections from configured ChromaDB path
@@ -535,8 +535,8 @@ nltk>=3.8              # NLP utilities
 The CLI will use argparse with subparsers for commands:
 
 ```python
-# minervium/cli.py pseudo-code
-parser = argparse.ArgumentParser(prog='minervium')
+# minerva/cli.py pseudo-code
+parser = argparse.ArgumentParser(prog='minerva')
 subparsers = parser.add_subparsers(dest='command')
 
 # Index command
@@ -589,9 +589,9 @@ from minerva.indexing.storage import initialize_chromadb_client
 
 The system MUST adopt the existing MCP server logging pattern with context-aware output routing.
 
-**Logger Implementation (`minervium/common/logger.py`):**
+**Logger Implementation (`minerva/common/logger.py`):**
 
-- Migrate `markdown-notes-mcp-server/console_logger.py` to `minervium/common/logger.py`
+- Migrate `markdown-notes-mcp-server/console_logger.py` to `minerva/common/logger.py`
 - Maintain the facade pattern over Python's logging module
 - Support two formatting modes:
   - **Detailed mode** (default): `timestamp - module - level - message`
@@ -630,7 +630,7 @@ logger.success("✓ Pipeline completed!")
 
 ### Configuration File Formats
 
-**Index Configuration (for `minervium index` and `minervium validate`):**
+**Index Configuration (for `minerva index` and `minerva validate`):**
 
 ```json
 {
@@ -657,7 +657,7 @@ logger.success("✓ Pipeline completed!")
 }
 ```
 
-**Server Configuration (for `minervium serve`):**
+**Server Configuration (for `minerva serve`):**
 
 ```json
 {
@@ -682,7 +682,7 @@ The system should validate configuration files before processing:
 
 - Installation completes with either pipx or pip+alias method in <5 minutes
 - Commands work immediately without venv activation after setup
-- `minervium --help` shows all capabilities with clear descriptions
+- `minerva --help` shows all capabilities with clear descriptions
 - All four core commands (index, serve, peek, validate) work end-to-end
 - Error messages suggest fixes in 90%+ of common failure scenarios
 - New extractor can be created by copying example and modifying in <2 hours
@@ -719,7 +719,7 @@ The system should validate configuration files before processing:
 
 **Implementation:**
 
-- Migrate `console_logger.py` to `minervium/common/logger.py`
+- Migrate `console_logger.py` to `minerva/common/logger.py`
 - Use facade pattern with semantic methods (info, success, warning, error)
 - Support two modes: detailed (with timestamps) and simple (message only)
 - Context-aware output routing: stderr for MCP server, stdout for CLI commands
@@ -738,12 +738,12 @@ The system should validate configuration files before processing:
 
 ### 3. Extractor Output Validation ✓ RESOLVED
 
-**Decision:** Extractors do NOT validate against Minervium schema
+**Decision:** Extractors do NOT validate against Minerva schema
 
 **Rationale:**
 
-- **Separation of concerns:** Extractors extract, Minervium validates
-- **No coupling:** Extractors remain independent, don't import Minervium code
+- **Separation of concerns:** Extractors extract, Minerva validates
+- **No coupling:** Extractors remain independent, don't import Minerva code
 - **Schema evolution:** Schema changes don't require extractor updates
 - **Clear workflow:** Extract → Validate → Index (explicit validation step)
 - **Standard pattern:** Programs typically don't validate against external schemas
@@ -755,13 +755,13 @@ The system should validate configuration files before processing:
 bear-extractor backup.bear2bk -o notes.json
 
 # 2. Explicitly validate (user chooses to run this)
-minervium validate --config config.json
+minerva validate --config config.json
 
 # 3. Index (validation happens automatically during indexing anyway)
-minervium index --config config.json
+minerva index --config config.json
 ```
 
-**Note:** Extractors MAY include basic sanity checks (e.g., "did we extract any notes?") but should NOT validate against the full Minervium schema.
+**Note:** Extractors MAY include basic sanity checks (e.g., "did we extract any notes?") but should NOT validate against the full Minerva schema.
 
 ### 4. Test Organization ✓ RESOLVED
 
@@ -780,8 +780,8 @@ minervium index --config config.json
 
 **Implementation:**
 
-- Console scripts via setup.py: `minervium = minervium.cli:main`
-- Module execution via `__main__.py`: `python -m minervium`
+- Console scripts via setup.py: `minerva = minerva.cli:main`
+- Module execution via `__main__.py`: `python -m minerva`
 - Both call the same `cli:main()` function
 
 **Rationale:**
@@ -809,7 +809,7 @@ minervium index --config config.json
 
 - Create unified directory structure
 - Migrate all core files to new locations
-- Migrate `markdown-notes-mcp-server/console_logger.py` to `minervium/common/logger.py`
+- Migrate `markdown-notes-mcp-server/console_logger.py` to `minerva/common/logger.py`
 - Update logger to support context-aware output routing (stdout for CLI, stderr for MCP)
 - Replace all `print()` statements with logger calls across codebase
 - Update all import paths
@@ -820,10 +820,10 @@ minervium index --config config.json
 
 **Acceptance Criteria:**
 
-- `minervium index` command works end-to-end
-- `minervium serve` starts MCP server successfully
-- `minervium peek` displays collection information
-- `minervium validate` checks JSON schema correctly
+- `minerva index` command works end-to-end
+- `minerva serve` starts MCP server successfully
+- `minerva peek` displays collection information
+- `minerva validate` checks JSON schema correctly
 - Logger outputs to correct streams (stdout for CLI, stderr for MCP server)
 - No `print()` statements remain in codebase (all use logger)
 - No import errors or circular dependencies
@@ -841,8 +841,8 @@ minervium index --config config.json
 **Acceptance Criteria:**
 
 - Each extractor installs independently with `pip install -e`
-- Each extractor CLI works without Minervium installed
-- Extractor output validates successfully with `minervium validate`
+- Each extractor CLI works without Minerva installed
+- Extractor output validates successfully with `minerva validate`
 - No dependencies between extractors
 
 ### Phase 3: Documentation (1-2 days)

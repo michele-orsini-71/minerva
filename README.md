@@ -1,8 +1,8 @@
-# Minervium
+# Minerva
 
 **A unified RAG system for personal knowledge management**
 
-Minervium is a powerful tool that transforms your markdown notes, articles, and documents into an intelligent, searchable knowledge base. It extracts content from various sources, indexes them with AI-powered embeddings, and makes them accessible through semantic search via the Model Context Protocol (MCP).
+Minerva is a powerful tool that transforms your markdown notes, articles, and documents into an intelligent, searchable knowledge base. It extracts content from various sources, indexes them with AI-powered embeddings, and makes them accessible through semantic search via the Model Context Protocol (MCP).
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -10,16 +10,16 @@ Minervium is a powerful tool that transforms your markdown notes, articles, and 
 
 ---
 
-## 🎯 What is Minervium?
+## 🎯 What is Minerva?
 
-Minervium solves the problem of **information overload** in personal knowledge management. If you have:
+Minerva solves the problem of **information overload** in personal knowledge management. If you have:
 
 - 📝 Hundreds of notes scattered across different apps (Bear, Notion, Obsidian)
 - 📚 Markdown books and documentation you want to reference
 - 🔬 Research articles and Wikipedia dumps you need to search
 - 🤖 A need to give AI assistants access to your personal knowledge
 
-...then Minervium is for you.
+...then Minerva is for you.
 
 ### Key Features
 
@@ -34,7 +34,7 @@ Minervium solves the problem of **information overload** in personal knowledge m
 
 ## 🏗️ Architecture
 
-Minervium follows a three-stage pipeline architecture:
+Minerva follows a three-stage pipeline architecture:
 
 ```
 ┌─────────────────┐
@@ -51,7 +51,7 @@ Minervium follows a three-stage pipeline architecture:
 └─────────────────┘                │
                                    ▼
                          ┌──────────────────┐
-                         │    MINERVIUM     │
+                         │    MINERVA     │
                          │   (Core System)  │
                          └─────────┬────────┘
                                    │
@@ -90,7 +90,7 @@ Minervium follows a three-stage pipeline architecture:
 ### How It Works
 
 1. **Extract** 📤: Extractors convert your notes into a standardized JSON format
-2. **Validate** ✅: Minervium validates the JSON against a strict schema
+2. **Validate** ✅: Minerva validates the JSON against a strict schema
 3. **Index** 🗂️: Notes are chunked, embedded, and stored in ChromaDB with metadata
 4. **Serve** 🚀: MCP server exposes semantic search to AI assistants
 5. **Search** 🔎: AI assistants query your knowledge base through natural language
@@ -107,7 +107,7 @@ Minervium follows a three-stage pipeline architecture:
 
 ### Installation
 
-Minervium can be installed in two ways. Both methods make the `minerva` command globally available in your terminal without needing to activate any virtual environment.
+Minerva can be installed in two ways. Both methods make the `minerva` command globally available in your terminal without needing to activate any virtual environment.
 
 #### Method 1: pipx (Recommended)
 
@@ -118,7 +118,7 @@ Minervium can be installed in two ways. Both methods make the `minerva` command 
 python -m pip install --user pipx
 python -m pipx ensurepath
 
-# Install Minervium
+# Install Minerva
 pipx install .
 
 # That's it! The minerva command is now globally available
@@ -142,7 +142,7 @@ If you prefer traditional pip installation, you can install in a virtual environ
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# Install Minervium
+# Install Minerva
 pip install -e .
 
 # Test that it works (while venv is active)
@@ -177,12 +177,12 @@ function minerva { & "C:\path\to\project\.venv\Scripts\minerva.exe" $args }
 
 #### ⚠️ You Don't Need to Activate the Virtual Environment!
 
-**Important concept:** Once Minervium is installed using either method above, you do **NOT** need to activate any virtual environment to use it. The `minerva` command will be available in any terminal session.
+**Important concept:** Once Minerva is installed using either method above, you do **NOT** need to activate any virtual environment to use it. The `minerva` command will be available in any terminal session.
 
 - **With pipx**: The command is automatically on your PATH
 - **With pip + alias**: The alias points directly to the executable in the venv
 
-You only need to activate the venv during development if you're modifying Minervium's code.
+You only need to activate the venv during development if you're modifying Minerva's code.
 
 #### Verify Installation
 
@@ -265,7 +265,7 @@ See [docs/NOTE_SCHEMA.md](docs/NOTE_SCHEMA.md) for complete specification.
 
 ### Extractors
 
-Extractors are independent packages that convert specific data sources into the standardized JSON schema. Minervium includes three official extractors:
+Extractors are independent packages that convert specific data sources into the standardized JSON schema. Minerva includes three official extractors:
 
 - **bear-notes-extractor**: Extracts notes from Bear app backups (.bear2bk files)
 - **zim-extractor**: Extracts articles from Zim Wikipedia dumps
@@ -409,7 +409,7 @@ minerva index --config config.json --verbose
 
 ### Example 4: Complete Workflow with All Commands
 
-This example shows all four Minervium commands in a realistic workflow:
+This example shows all four Minerva commands in a realistic workflow:
 
 ```bash
 # Step 1: Extract notes from Bear backup
@@ -490,7 +490,7 @@ minerva peek wikipedia_history --chromadb ./chromadb_data --format json | jq '.c
 
 ---
 
-## 🧩 Extending Minervium
+## 🧩 Extending Minerva
 
 ### Writing Custom Extractors
 
@@ -562,7 +562,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
-Minervium builds upon these excellent open-source projects:
+Minerva builds upon these excellent open-source projects:
 
 - [ChromaDB](https://www.trychroma.com/) - Vector database
 - [LangChain](https://www.langchain.com/) - Document chunking

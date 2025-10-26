@@ -12,7 +12,7 @@ logger = get_logger(__name__, simple=True, mode="cli")
 
 def print_banner() -> None:
     logger.info("")
-    logger.info("Minervium Validate Command")
+    logger.info("Minerva Validate Command")
     logger.info("=" * 60)
 
 

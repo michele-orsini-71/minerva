@@ -73,7 +73,7 @@ def format_collection_info_text(info: Dict[str, Any]) -> str:
         lines.append("━" * 70)
         lines.append(f"   Reason: {info.get('unavailable_reason', 'Unknown')}")
         lines.append("")
-        lines.append("   This collection was created with an older version of Minervium")
+        lines.append("   This collection was created with an older version of Minerva")
         lines.append("   and is missing required AI provider metadata.")
         lines.append("")
         lines.append("   To fix: Re-index this collection using 'minerva index'")

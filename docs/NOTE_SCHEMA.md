@@ -1,6 +1,6 @@
-# Minervium Note Schema
+# Minerva Note Schema
 
-This document defines the JSON schema that all extractors must produce for Minervium to process notes correctly.
+This document defines the JSON schema that all extractors must produce for Minerva to process notes correctly.
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@ This document defines the JSON schema that all extractors must produce for Miner
 
 ## Overview
 
-The Minervium Note Schema is a standardized JSON format that serves as the universal interface between extractors and the Minervium indexing system. All notes, regardless of their original source (Bear, Zim, books, custom sources), must be converted to this format.
+The Minerva Note Schema is a standardized JSON format that serves as the universal interface between extractors and the Minerva indexing system. All notes, regardless of their original source (Bear, Zim, books, custom sources), must be converted to this format.
 
 ### Why a Standard Schema?
 
@@ -227,7 +227,7 @@ Extractors may include **any additional fields** to preserve source-specific met
 
 ## Validation Rules
 
-Minervium validates notes using the following rules:
+Minerva validates notes using the following rules:
 
 ### Structural Validation
 
@@ -496,7 +496,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 def extract_notes(input_path):
-    """Extract notes from source and convert to Minervium schema."""
+    """Extract notes from source and convert to Minerva schema."""
     notes = []
 
     # Your extraction logic here...
@@ -531,7 +531,7 @@ if __name__ == "__main__":
 
 ```bash
 #!/bin/bash
-# Simple extractor that converts text files to Minervium format
+# Simple extractor that converts text files to Minerva format
 
 echo "["
 first=true
@@ -591,7 +591,7 @@ jq '.[].title' sample.json  # List all titles
 file sample.json  # Should show "UTF-8 Unicode text"
 ```
 
-### 5. Test with Minervium
+### 5. Test with Minerva
 
 ```bash
 # Create test config

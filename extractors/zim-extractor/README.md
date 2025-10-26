@@ -1,6 +1,6 @@
 # Zim Extractor
 
-Extract articles from ZIM archives (offline Wikipedia, educational content) into Minervium-compatible JSON format.
+Extract articles from ZIM archives (offline Wikipedia, educational content) into Minerva-compatible JSON format.
 
 ## Overview
 
@@ -75,7 +75,7 @@ zim-extractor wikipedia_en_history.zim -o articles.json -l 100 -v
 # Validate the output
 minerva validate articles.json
 
-# Index into Minervium
+# Index into Minerva
 minerva index --config config.json --verbose
 ```
 
@@ -165,9 +165,9 @@ wikipedia_en_history_2025-10.zim
 └─ Project name
 ```
 
-### Output Format: Minervium JSON
+### Output Format: Minerva JSON
 
-Standard JSON array conforming to the [Minervium Note Schema](../../docs/NOTE_SCHEMA.md):
+Standard JSON array conforming to the [Minerva Note Schema](../../docs/NOTE_SCHEMA.md):
 
 ```json
 [
@@ -183,7 +183,7 @@ Standard JSON array conforming to the [Minervium Note Schema](../../docs/NOTE_SC
 
 #### Field Mapping
 
-| ZIM Source              | Minervium Field    | Notes                                          |
+| ZIM Source              | Minerva Field      | Notes                                          |
 | ----------------------- | ------------------ | ---------------------------------------------- |
 | Entry title             | `title`            | Article title from ZIM                         |
 | HTML content → markdown | `markdown`         | Converted with markdownify                     |
@@ -507,7 +507,7 @@ zim-extractor large.zim -o output.json -v
 jq '.[0] | {title, modificationDate, creationDate}' output.json
 
 # Dates will be extraction time if not found in HTML
-# This is acceptable - Minervium requires dates but they don't have to be perfect
+# This is acceptable - Minerva requires dates but they don't have to be perfect
 ```
 
 ### Issue: "Out of memory"
@@ -642,7 +642,7 @@ zim-extractor/
 
 ## Related Documentation
 
-- **[Minervium Note Schema](../../docs/NOTE_SCHEMA.md)**: Complete JSON schema specification
+- **[Minerva Note Schema](../../docs/NOTE_SCHEMA.md)**: Complete JSON schema specification
 - **[Extractor Development Guide](../../docs/EXTRACTOR_GUIDE.md)**: How to write custom extractors
 - **[Extractors Overview](../README.md)**: All official extractors
 - **[libzim Documentation](https://github.com/openzim/libzim)**: ZIM format and library
@@ -660,4 +660,4 @@ MIT License - see [LICENSE](../../LICENSE) file for details.
 
 ---
 
-**Made for Minervium** - Index Wikipedia and offline content with AI-powered semantic search.
+**Made for Minerva** - Index Wikipedia and offline content with AI-powered semantic search.

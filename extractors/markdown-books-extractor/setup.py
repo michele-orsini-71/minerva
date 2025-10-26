@@ -16,7 +16,7 @@ def read_long_description() -> str:
 setup(
     name="markdown-books-extractor",
     version="1.0.0",
-    author="Minervium Contributors",
+    author="Minerva Contributors",
     description="Standalone CLI for extracting metadata from markdown book files",
     long_description=read_long_description(),
     long_description_content_type="text/markdown",

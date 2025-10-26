@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Minervium** is a unified RAG (Retrieval-Augmented Generation) system for personal knowledge management. It provides tools for extracting notes from various sources, indexing them with AI-powered embeddings, and serving them through an MCP server for semantic search via Claude Desktop.
+**Minerva** is a unified RAG (Retrieval-Augmented Generation) system for personal knowledge management. It provides tools for extracting notes from various sources, indexing them with AI-powered embeddings, and serving them through an MCP server for semantic search via Claude Desktop.
 
 ## Quick Reference
 
 ### Installation
 
 ```bash
-# Install Minervium from project root
+# Install Minerva from project root
 pip install -e .
 
 # Verify installation
@@ -57,11 +57,11 @@ markdown-books-extractor book.md -o book.json [-v]
 
 ### System Overview
 
-Minervium follows a three-stage pipeline architecture:
+Minerva follows a three-stage pipeline architecture:
 
 ```
 ┌─────────────┐     ┌────────────┐     ┌──────────────┐     ┌──────────┐
-│   Sources   │ ──▶ │ Extractors │ ──▶ │  Minervium   │ ──▶ │   MCP    │
+│   Sources   │ ──▶ │ Extractors │ ──▶ │  Minerva   │ ──▶ │   MCP    │
 │ (Bear, Zim, │     │  (JSON)    │     │   (Index)    │     │  Server  │
 │   Books)    │     └────────────┘     └──────────────┘     └──────────┘
 └─────────────┘                               │                    │
@@ -257,7 +257,7 @@ chunked_notes = create_chunks_for_notes(
 
 ### AI Provider Abstraction
 
-Minervium supports multiple AI providers through `ai_provider.py`:
+Minerva supports multiple AI providers through `ai_provider.py`:
 
 ```python
 from minerva.common.ai_provider import AIProvider, AIProviderConfig
@@ -473,7 +473,7 @@ See `docs/EXTRACTOR_GUIDE.md` for detailed guide.
 ### Import Errors
 
 ```bash
-# Ensure Minervium is installed
+# Ensure Minerva is installed
 pip install -e .
 
 # Check installation

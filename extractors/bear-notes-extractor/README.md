@@ -1,10 +1,10 @@
 # Bear Notes Extractor
 
-Extract notes from Bear app backups into Minervium-compatible JSON format.
+Extract notes from Bear app backups into Minerva-compatible JSON format.
 
 ## Overview
 
-The Bear Notes Extractor is a standalone CLI tool that converts Bear app backup files (`.bear2bk` format) into standardized JSON that can be indexed by Minervium. It's designed to preserve your notes' content, metadata, and structure while making them searchable through semantic search.
+The Bear Notes Extractor is a standalone CLI tool that converts Bear app backup files (`.bear2bk` format) into standardized JSON that can be indexed by Minerva. It's designed to preserve your notes' content, metadata, and structure while making them searchable through semantic search.
 
 ### Features
 
@@ -56,7 +56,7 @@ bear-extractor "Bear Notes 2025-10-20.bear2bk" -o my-notes.json
 # Validate the output
 minerva validate my-notes.json
 
-# Index into Minervium
+# Index into Minerva
 minerva index --config config.json --verbose
 ```
 
@@ -131,9 +131,9 @@ Bear Backup.bear2bk/
 **Format**: TextBundle-based ZIP archives
 **File extension**: `.bear2bk`
 
-### Output Format: Minervium JSON
+### Output Format: Minerva JSON
 
-The extractor outputs a JSON array conforming to the [Minervium Note Schema](../../docs/NOTE_SCHEMA.md):
+The extractor outputs a JSON array conforming to the [Minerva Note Schema](../../docs/NOTE_SCHEMA.md):
 
 ```json
 [
@@ -149,7 +149,7 @@ The extractor outputs a JSON array conforming to the [Minervium Note Schema](../
 
 #### Field Mapping
 
-| Bear Metadata           | Minervium Field    | Notes                                |
+| Bear Metadata           | Minerva Field      | Notes                                |
 | ----------------------- | ------------------ | ------------------------------------ |
 | `title`                 | `title`            | From info.json, fallback to filename |
 | `text.markdown` content | `markdown`         | Preserves all markdown formatting    |
@@ -510,7 +510,7 @@ bear-notes-extractor/
 
 ## Related Documentation
 
-- **[Minervium Note Schema](../../docs/NOTE_SCHEMA.md)**: Complete JSON schema specification
+- **[Minerva Note Schema](../../docs/NOTE_SCHEMA.md)**: Complete JSON schema specification
 - **[Extractor Development Guide](../../docs/EXTRACTOR_GUIDE.md)**: How to write custom extractors
 - **[Extractors Overview](../README.md)**: All official extractors
 
@@ -526,4 +526,4 @@ MIT License - see [LICENSE](../../LICENSE) file for details.
 
 ---
 
-**Made for Minervium** - Extract, index, and search your Bear notes with AI.
+**Made for Minerva** - Extract, index, and search your Bear notes with AI.

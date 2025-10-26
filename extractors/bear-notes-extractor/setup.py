@@ -16,7 +16,7 @@ def read_long_description() -> str:
 setup(
     name="bear-notes-extractor",
     version="1.0.0",
-    author="Minervium Contributors",
+    author="Minerva Contributors",
     description="Standalone CLI for extracting notes from Bear backup files",
     long_description=read_long_description(),
     long_description_content_type="text/markdown",

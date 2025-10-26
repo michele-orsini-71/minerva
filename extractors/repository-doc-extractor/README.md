@@ -1,6 +1,6 @@
 # Repository Documentation Extractor
 
-Extract markdown documentation from repository directory hierarchies into Minervium-compatible JSON format.
+Extract markdown documentation from repository directory hierarchies into Minerva-compatible JSON format.
 
 ## Overview
 
@@ -56,7 +56,7 @@ repository-doc-extractor /path/to/repo/docs -o docs.json
 # Validate the output
 minerva validate docs.json
 
-# Index into Minervium
+# Index into Minerva
 minerva index --config config.json --verbose
 ```
 
@@ -129,12 +129,12 @@ The extractor uses this priority:
 
 Examples:
 
-| Markdown Content | Filename | Extracted Title |
-| --- | --- | --- |
-| `# Getting Started` | `intro.md` | "Getting Started" |
-| `## Setup\nContent...` | `setup.md` | "setup" (no H1, uses filename) |
-| `# API Reference\n## Methods` | `api-docs.md` | "API Reference" |
-| Plain text, no headers | `README.md` | "README" |
+| Markdown Content              | Filename      | Extracted Title                |
+| ----------------------------- | ------------- | ------------------------------ |
+| `# Getting Started`           | `intro.md`    | "Getting Started"              |
+| `## Setup\nContent...`        | `setup.md`    | "setup" (no H1, uses filename) |
+| `# API Reference\n## Methods` | `api-docs.md` | "API Reference"                |
+| Plain text, no headers        | `README.md`   | "README"                       |
 
 ### Automatic Exclusions
 
@@ -151,7 +151,7 @@ Use `--exclude` to add more patterns.
 
 ## Output Format
 
-### Minervium JSON Schema
+### Minerva JSON Schema
 
 Outputs a JSON array with one note per markdown file:
 
@@ -178,14 +178,14 @@ Outputs a JSON array with one note per markdown file:
 
 ### Field Mapping
 
-| Source | Minervium Field | Notes |
-| --- | --- | --- |
-| First H1 or filename | `title` | Smart extraction with fallback |
-| File content | `markdown` | Full markdown content as-is |
-| File byte size | `size` | Calculated as UTF-8 length |
-| File mtime | `modificationDate` | ISO 8601 format with Z timezone |
-| File birthtime/ctime | `creationDate` | ISO 8601 format (or mtime if unavailable) |
-| Relative path | `sourcePath` | Path relative to root directory (custom field) |
+| Source               | Minerva Field      | Notes                                          |
+| -------------------- | ------------------ | ---------------------------------------------- |
+| First H1 or filename | `title`            | Smart extraction with fallback                 |
+| File content         | `markdown`         | Full markdown content as-is                    |
+| File byte size       | `size`             | Calculated as UTF-8 length                     |
+| File mtime           | `modificationDate` | ISO 8601 format with Z timezone                |
+| File birthtime/ctime | `creationDate`     | ISO 8601 format (or mtime if unavailable)      |
+| Relative path        | `sourcePath`       | Path relative to root directory (custom field) |
 
 ### Source Path Field
 
@@ -200,6 +200,7 @@ The `sourcePath` field helps you trace notes back to their original files:
 ```
 
 This is useful when:
+
 - You want to edit the original file after finding issues via search
 - You're debugging which files are being indexed
 - You want to understand the documentation structure
@@ -480,11 +481,11 @@ jq '.[0]' output.json
 
 **Extraction speed**: Depends on number of files and directory depth.
 
-| Files | Time | Rate |
-| --- | --- | --- |
-| 10 | < 1s | instant |
-| 100 | ~1s | 100/sec |
-| 1,000 | ~10s | 100/sec |
+| Files  | Time  | Rate    |
+| ------ | ----- | ------- |
+| 10     | < 1s  | instant |
+| 100    | ~1s   | 100/sec |
+| 1,000  | ~10s  | 100/sec |
 | 10,000 | ~100s | 100/sec |
 
 Performance is linear with file count. Most time is spent reading file contents and metadata.
@@ -636,10 +637,10 @@ jq '.' test.json
 
 ## Related Documentation
 
-- **[Minervium Note Schema](../../docs/NOTE_SCHEMA.md)**: Complete JSON schema specification
+- **[Minerva Note Schema](../../docs/NOTE_SCHEMA.md)**: Complete JSON schema specification
 - **[Extractor Development Guide](../../docs/EXTRACTOR_GUIDE.md)**: How to write custom extractors
 - **[Extractors Overview](../README.md)**: All official extractors
-- **[CLAUDE.md](../../CLAUDE.md)**: Complete Minervium development guide
+- **[CLAUDE.md](../../CLAUDE.md)**: Complete Minerva development guide
 
 ## Support
 
@@ -652,4 +653,4 @@ MIT License - see [LICENSE](../../LICENSE) file for details.
 
 ---
 
-**Made for Minervium** - Index your documentation repositories with AI-powered semantic search.
+**Made for Minerva** - Index your documentation repositories with AI-powered semantic search.

@@ -13,7 +13,7 @@ class TestCoreModuleImports:
         import minerva.__main__
         assert minerva.__main__ is not None
 
-    def test_import_minervium_package(self):
+    def test_import_minerva_package(self):
         import minerva
         assert minerva.__name__ == 'minerva'
 
@@ -232,7 +232,7 @@ class TestReimports:
 
 
 class TestPackageStructure:
-    def test_minervium_is_package(self):
+    def test_minerva_is_package(self):
         import minerva
         assert hasattr(minerva, '__path__')
 

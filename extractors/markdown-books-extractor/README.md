@@ -1,6 +1,6 @@
 # Markdown Books Extractor
 
-Extract structured markdown books into Minervium-compatible JSON format.
+Extract structured markdown books into Minerva-compatible JSON format.
 
 ## Overview
 
@@ -55,7 +55,7 @@ markdown-books-extractor alice-in-wonderland.md -o alice.json
 # Validate the output
 minerva validate alice.json
 
-# Index into Minervium
+# Index into Minerva
 minerva index --config config.json --verbose
 ```
 
@@ -147,7 +147,7 @@ Alice was beginning to get very tired of sitting by her sister...
 - Delimiter must be exactly `-------` on its own line
 - Everything after delimiter is treated as book content
 
-### Output Format: Minervium JSON
+### Output Format: Minerva JSON
 
 Outputs a JSON array with one note per book:
 
@@ -167,7 +167,7 @@ Outputs a JSON array with one note per book:
 
 #### Field Mapping
 
-| Source             | Minervium Field    | Notes                                           |
+| Source             | Minerva Field      | Notes                                           |
 | ------------------ | ------------------ | ----------------------------------------------- |
 | `# Title:` value   | `title`            | Book title from header                          |
 | Header + body      | `markdown`         | Formatted with title, author, year, and content |
@@ -646,7 +646,7 @@ markdown-books-extractor/
 
 ## Related Documentation
 
-- **[Minervium Note Schema](../../docs/NOTE_SCHEMA.md)**: Complete JSON schema specification
+- **[Minerva Note Schema](../../docs/NOTE_SCHEMA.md)**: Complete JSON schema specification
 - **[Extractor Development Guide](../../docs/EXTRACTOR_GUIDE.md)**: How to write custom extractors
 - **[Extractors Overview](../README.md)**: All official extractors
 
@@ -667,4 +667,4 @@ MIT License - see [LICENSE](../../LICENSE) file for details.
 
 ---
 
-**Made for Minervium** - Index classic literature and books with AI-powered semantic search.
+**Made for Minerva** - Index classic literature and books with AI-powered semantic search.

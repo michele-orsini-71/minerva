@@ -23,7 +23,7 @@ logger = get_logger(__name__, simple=True, mode="cli")
 
 def print_banner(is_dry_run: bool) -> None:
     logger.info("")
-    logger.info("Minervium Index Command")
+    logger.info("Minerva Index Command")
     if is_dry_run:
         logger.warning("DRY-RUN MODE: Validation only, no data will be modified")
     logger.info("=" * 60)

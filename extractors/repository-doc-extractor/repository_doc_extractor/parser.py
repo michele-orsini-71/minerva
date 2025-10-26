@@ -25,7 +25,7 @@ def extract_repository_docs(
         exclude_patterns: Optional list of patterns to exclude (e.g., ['node_modules', '.git'])
 
     Returns:
-        List of note dictionaries conforming to Minervium schema
+        List of note dictionaries conforming to Minerva schema
 
     Raises:
         FileNotFoundError: If root_path doesn't exist
@@ -99,7 +99,7 @@ def _parse_markdown_file(file_path: Path, root: Path) -> Dict[str, object]:
         root: Root directory (for calculating relative path)
 
     Returns:
-        Note dictionary conforming to Minervium schema
+        Note dictionary conforming to Minerva schema
     """
     try:
         content = file_path.read_text(encoding="utf-8")

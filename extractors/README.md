@@ -1,14 +1,14 @@
-# Minervium Official Extractors
+# Minerva Official Extractors
 
-This directory contains official extractors for converting various data sources into the Minervium Note Schema.
+This directory contains official extractors for converting various data sources into the Minerva Note Schema.
 
 ## Overview
 
-Extractors are independent tools that transform data from specific sources (apps, databases, file formats) into standardized JSON that Minervium can index. Each extractor is a standalone package that can be installed and used independently of Minervium core.
+Extractors are independent tools that transform data from specific sources (apps, databases, file formats) into standardized JSON that Minerva can index. Each extractor is a standalone package that can be installed and used independently of Minerva core.
 
 ### Why Separate Extractors?
 
-- **Independence**: No dependency on Minervium core - just output JSON
+- **Independence**: No dependency on Minerva core - just output JSON
 - **Language Freedom**: Write extractors in any language (all official extractors happen to be Python)
 - **Focused Scope**: Each extractor handles one source type very well
 - **Easy Testing**: Validate output with `minerva validate` before indexing
@@ -24,7 +24,7 @@ Extractors are independent tools that transform data from specific sources (apps
 **Command**: `bear-extractor`
 **Source**: Bear app backup files (.bear2bk format)
 
-Extract notes from Bear app backups into Minervium-compatible JSON.
+Extract notes from Bear app backups into Minerva-compatible JSON.
 
 **Features**:
 
@@ -190,7 +190,7 @@ bear-extractor "backup.bear2bk" -o notes.json
 
 ### 2. Validate
 
-Verify the output conforms to the Minervium schema:
+Verify the output conforms to the Minerva schema:
 
 ```bash
 minerva validate notes.json --verbose
@@ -212,7 +212,7 @@ cat > config.json << 'EOF'
 }
 EOF
 
-# Index into Minervium
+# Index into Minerva
 minerva index --config config.json --verbose
 ```
 
@@ -369,7 +369,7 @@ minerva index --config test-config.json --dry-run
 
 ### Best Practices
 
-1. ✅ **Zero Minervium dependencies**: Extractors should not import from `minerva.*`
+1. ✅ **Zero Minerva dependencies**: Extractors should not import from `minerva.*`
 2. ✅ **Standard I/O**: Accept input as arguments, output JSON to stdout or file
 3. ✅ **UTF-8 encoding**: Always use UTF-8 for reading and writing
 4. ✅ **Error handling**: Handle missing files, corrupt data gracefully
@@ -425,14 +425,14 @@ file backup.bear2bk
 
 1. Create directory: `extractors/your-extractor/`
 2. Follow the structure: `setup.py`, `your_package/`, `README.md`
-3. Ensure zero Minervium dependencies
+3. Ensure zero Minerva dependencies
 4. Add comprehensive README with examples
 5. Test thoroughly with `minerva validate`
 6. Submit pull request
 
 ### Guidelines
 
-- **No Minervium imports**: Extractors must be independent
+- **No Minerva imports**: Extractors must be independent
 - **Standard schema**: Output must conform to Note Schema
 - **Good documentation**: Users should understand what sources are supported
 - **Error handling**: Handle edge cases gracefully

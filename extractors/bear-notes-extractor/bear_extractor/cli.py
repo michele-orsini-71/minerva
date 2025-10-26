@@ -21,7 +21,7 @@ def _dump_notes(notes: List[Dict[str, object]], output_path: Path | None) -> Non
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Extract notes from a Bear .bear2bk backup into Minervium JSON format.",
+        description="Extract notes from a Bear .bear2bk backup into Minerva JSON format.",
         epilog="Example: bear-extractor backup.bear2bk -o notes.json",
     )
     parser.add_argument("backup", help="Path to the Bear backup (.bear2bk) file")

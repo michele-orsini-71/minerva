@@ -23,7 +23,7 @@ def _write_output(records: list[dict[str, object]], output: Path | None) -> None
 def main() -> int:
     """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
-        description="Extract markdown documentation from a repository into Minervium-compatible JSON.",
+        description="Extract markdown documentation from a repository into Minerva-compatible JSON.",
         epilog="Example: repository-doc-extractor /path/to/repo -o notes.json",
     )
     parser.add_argument(

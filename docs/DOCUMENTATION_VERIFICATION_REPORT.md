@@ -2,7 +2,7 @@
 
 Generated: 2025-10-21
 
-This report documents the results of verifying all documentation links and examples in the Minervium project.
+This report documents the results of verifying all documentation links and examples in the Minerva project.
 
 ## Summary
 
@@ -94,7 +94,7 @@ source .venv/bin/activate          # ✓ Valid (Unix)
 pip install -e .                   # ✓ Valid
 ```
 
-✅ **Minervium commands** (README.md, all files):
+✅ **Minerva commands** (README.md, all files):
 
 ```bash
 minerva --version                          # ✓ Valid command
