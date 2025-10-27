@@ -135,7 +135,10 @@ def list_knowledge_bases() -> List[Dict[str, Any]]:
 
 
 @mcp.tool(
-    description="Perform semantic search across a knowledge base. "
+    description="Perform semantic search across indexed knowledge bases (documentation, notes, standards). "
+                "Use this for conceptual queries like 'what does the documentation say about X?', 'how should I implement Y?', 'what are the standards for Z?'."
+                "This searches curated, indexed content and returns ranked results by relevance."
+                "More efficient than Grep/Glob for semantic/documentation searches. Not for searching raw source code - use Grep/Glob for exact string matching in source files."
                 "IMPORTANT: Always cite sources by including the noteTitle field in your response to users. "
                 "The noteTitle indicates where the information came from (e.g., note name, article title, or document reference). "
                 "Format citations naturally, such as: 'According to [Note Title]...' or 'From [Note Title]: ...' "
