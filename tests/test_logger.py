@@ -44,24 +44,22 @@ class TestConsoleLoggerMethods:
         test_logger.handlers.clear()
 
         logger = get_logger("test.error", simple=True, mode="cli")
-        logger.error("Test error message", print_to_stderr=True)
+        logger.error("Test error message")
 
         captured = capsys.readouterr()
-        # Should appear in both stdout (via logging) and stderr (via print)
+        # In CLI mode, errors go to stdout (via logging handler)
         assert "Test error message" in captured.out
-        assert "✗ Test error message" in captured.err
 
     def test_error_method_without_stderr_print(self, capsys):
         test_logger = logging.getLogger("test.error_no_stderr")
         test_logger.handlers.clear()
 
         logger = get_logger("test.error_no_stderr", simple=True, mode="cli")
-        logger.error("Test error message", print_to_stderr=False)
+        logger.error("Test error message")
 
         captured = capsys.readouterr()
-        # Should only appear in stdout (via logging), not in stderr
+        # In CLI mode, errors go to stdout (via logging handler)
         assert "Test error message" in captured.out
-        assert "✗" not in captured.err
 
 
 class TestOutputRouting:
@@ -260,7 +258,7 @@ class TestLogLevels:
         test_logger.handlers.clear()
 
         logger = get_logger("test.levels.error", simple=False, mode="cli")
-        logger.error("Error level", print_to_stderr=False)
+        logger.error("Error level")
 
         captured = capsys.readouterr()
         output = captured.out

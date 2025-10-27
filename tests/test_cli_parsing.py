@@ -100,7 +100,7 @@ class TestPeekCommand:
 
     def test_peek_command_with_collection_name_only(self):
         parser = create_parser()
-        args = parser.parse_args(['peek', 'bear_notes'])
+        args = parser.parse_args(['peek', './chromadb_data', 'bear_notes'])
         assert args.command == 'peek'
         assert args.collection_name == 'bear_notes'
         assert args.chromadb == Path('./chromadb_data')
@@ -108,13 +108,13 @@ class TestPeekCommand:
 
     def test_peek_command_with_custom_chromadb_path(self):
         parser = create_parser()
-        args = parser.parse_args(['peek', 'bear_notes', '--chromadb', '/custom/path'])
+        args = parser.parse_args(['peek', '/custom/path', 'bear_notes'])
         assert args.collection_name == 'bear_notes'
         assert args.chromadb == Path('/custom/path')
 
     def test_peek_command_with_json_format(self):
         parser = create_parser()
-        args = parser.parse_args(['peek', 'bear_notes', '--format', 'json'])
+        args = parser.parse_args(['peek', './chromadb_data', 'bear_notes', '--format', 'json'])
         assert args.collection_name == 'bear_notes'
         assert args.format == 'json'
 
@@ -126,8 +126,7 @@ class TestPeekCommand:
     def test_peek_command_with_all_options(self):
         parser = create_parser()
         args = parser.parse_args([
-            'peek', 'test_collection',
-            '--chromadb', '/data/chromadb',
+            'peek', '/data/chromadb', 'test_collection',
             '--format', 'json'
         ])
         assert args.command == 'peek'
@@ -142,10 +141,11 @@ class TestPeekCommand:
 
     def test_peek_command_options_order_independent(self):
         parser = create_parser()
-        args1 = parser.parse_args(['peek', 'test', '--chromadb', '/path', '--format', 'json'])
-        args2 = parser.parse_args(['peek', 'test', '--format', 'json', '--chromadb', '/path'])
+        args1 = parser.parse_args(['peek', '/path', 'test', '--format', 'json'])
+        args2 = parser.parse_args(['peek', '/path', 'test', '--format', 'json'])
         assert args1.chromadb == args2.chromadb
         assert args1.format == args2.format
+        assert args1.collection_name == args2.collection_name
 
 
 class TestValidateCommand:
@@ -211,7 +211,7 @@ class TestPathTypes:
 
     def test_chromadb_paths_converted_to_path_objects(self):
         parser = create_parser()
-        args = parser.parse_args(['peek', 'test', '--chromadb', '/data'])
+        args = parser.parse_args(['peek', '/data', 'test'])
         assert isinstance(args.chromadb, Path)
 
     def test_json_file_paths_converted_to_path_objects(self):
@@ -246,21 +246,22 @@ class TestDefaultValues:
         args = parser.parse_args(['validate', 'notes.json'])
         assert args.verbose is False
 
-    def test_peek_chromadb_defaults_to_chromadb_data(self):
+    def test_peek_chromadb_is_required(self):
         parser = create_parser()
-        args = parser.parse_args(['peek', 'collection'])
+        # chromadb path is now a required positional argument
+        args = parser.parse_args(['peek', './chromadb_data'])
         assert args.chromadb == Path('./chromadb_data')
 
     def test_peek_format_defaults_to_text(self):
         parser = create_parser()
-        args = parser.parse_args(['peek', 'collection'])
+        args = parser.parse_args(['peek', './chromadb_data', 'collection'])
         assert args.format == 'text'
 
 
 class TestEdgeCases:
     def test_collection_name_with_special_characters(self):
         parser = create_parser()
-        args = parser.parse_args(['peek', 'bear-notes_2025'])
+        args = parser.parse_args(['peek', './chromadb_data', 'bear-notes_2025'])
         assert args.collection_name == 'bear-notes_2025'
 
     def test_paths_with_spaces(self):
@@ -278,12 +279,12 @@ class TestEdgeCases:
     def test_empty_string_arguments_accepted(self):
         parser = create_parser()
         # Empty strings are technically valid, though not useful
-        args = parser.parse_args(['peek', ''])
+        args = parser.parse_args(['peek', './chromadb_data', ''])
         assert args.collection_name == ''
 
     def test_unicode_in_collection_name(self):
         parser = create_parser()
-        args = parser.parse_args(['peek', 'notes_日本語'])
+        args = parser.parse_args(['peek', './chromadb_data', 'notes_日本語'])
         assert args.collection_name == 'notes_日本語'
 
     def test_unicode_in_paths(self):

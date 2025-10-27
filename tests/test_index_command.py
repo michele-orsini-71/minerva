@@ -294,6 +294,7 @@ class TestRunFullIndexing:
 
         # Mock ChromaDB
         mock_client = Mock()
+        mock_client.list_collections.return_value = []  # Return empty list for collection_exists check
         mock_init_chromadb.return_value = mock_client
 
         mock_collection = Mock()
@@ -315,7 +316,8 @@ class TestRunFullIndexing:
         mock_init_provider.assert_called_once()
         mock_create_chunks.assert_called_once()
         mock_generate_embeddings.assert_called_once()
-        mock_init_chromadb.assert_called_once()
+        # initialize_chromadb_client is called twice: once for early collection check, once for actual indexing
+        assert mock_init_chromadb.call_count == 2
         mock_create_collection.assert_called_once()
         mock_insert_chunks.assert_called_once()
 
@@ -347,6 +349,7 @@ class TestRunFullIndexing:
         mock_generate_embeddings.return_value = mock_chunks_with_embeddings
 
         mock_client = Mock()
+        mock_client.list_collections.return_value = []  # Return empty list for collection_exists check
         mock_init_chromadb.return_value = mock_client
 
         mock_collection = Mock()
