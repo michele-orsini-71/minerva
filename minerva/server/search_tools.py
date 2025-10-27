@@ -1,8 +1,10 @@
 import sys
+import json
 from typing import List, Dict, Any
 from pathlib import Path
 
 import chromadb
+import tiktoken
 from minerva.indexing.storage import initialize_chromadb_client, ChromaDBConnectionError
 from minerva.common.ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
 
@@ -18,6 +20,24 @@ class SearchError(Exception):
 
 class CollectionNotFoundError(Exception):
     pass
+
+
+def estimate_token_count(results: List[Dict[str, Any]]) -> int:
+    try:
+        # Use cl100k_base (GPT-4/ChatGPT tokenizer) as standard reference
+        encoding = tiktoken.get_encoding("cl100k_base")
+
+        # Serialize results to JSON (similar to what MCP will send)
+        json_str = json.dumps(results)
+
+        # Count tokens
+        token_count = len(encoding.encode(json_str))
+
+        return token_count
+    except Exception as e:
+        # If token estimation fails, log but don't break the search
+        console_logger.warning(f"Token estimation failed: {e}")
+        return -1
 
 
 def validate_collection_exists(
@@ -53,8 +73,8 @@ def search_knowledge_base(
     if not query or not query.strip():
         raise SearchError("Query cannot be empty")
 
-    if max_results < 1 or max_results > 100:
-        raise SearchError("max_results must be between 1 and 100")
+    if max_results < 1 or max_results > 15:
+        raise SearchError("max_results must be between 1 and 15")
 
     if context_mode not in ["chunk_only", "enhanced", "full_note"]:
         raise SearchError(
@@ -129,6 +149,16 @@ def search_knowledge_base(
         console_logger.info(f"  → Applying context mode: {context_mode}...")
         enhanced_results = apply_context_mode(collection, formatted_results, context_mode)
         console_logger.info(f"  ✓ Context retrieval completed")
+
+        # Estimate token count for monitoring/debugging
+        estimated_tokens = estimate_token_count(enhanced_results)
+        if estimated_tokens > 0:
+            console_logger.info(f"  ℹ Estimated response size: ~{estimated_tokens:,} tokens")
+            if estimated_tokens > 25000:
+                console_logger.warning(
+                    f"  ⚠ Response may exceed common MCP token limit (25,000 tokens). "
+                    f"The MCP client may reject this response and the AI will likely retry with fewer results."
+                )
 
         return enhanced_results
 

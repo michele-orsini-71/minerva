@@ -156,7 +156,7 @@ minerva peek bear_notes --chromadb ./chromadb_data --format table
 cat > server-config.json << 'EOF'
 {
   "chromadb_path": "./chromadb_data",
-  "log_level": "INFO"
+  "default_max_results": 5
 }
 EOF
 
@@ -337,9 +337,13 @@ ollama list
 ```json
 {
   "chromadb_path": "./chromadb_data",
-  "log_level": "INFO"
+  "default_max_results": 5
 }
 ```
+
+**Configuration fields:**
+- `chromadb_path` (required): Absolute path to ChromaDB storage directory
+- `default_max_results` (required): Default number of search results (recommended: 3-5, max: 15)
 
 ## Writing Extractors
 
@@ -568,6 +572,51 @@ minerva serve --config server-config.json 2>&1 | tee server.log
 - For ZIM files: use `--limit` to test with smaller sample first
 - For Bear: ensure backup file isn't corrupted
 - Check disk I/O (SSD vs HDD makes big difference)
+
+### MCP Token Limit Errors
+
+**Error message:** `"MCP tool response exceeds maximum allowed tokens"`
+
+**What's happening:**
+- Each search result includes surrounding context (~1,500 tokens per result in enhanced mode)
+- Different MCP clients have different token limits (Claude Desktop: 25,000 tokens)
+- Requesting too many results exceeds the MCP client's response size limit
+
+**Expected behavior (AI self-regulation):**
+1. AI requests search with `max_results=10`
+2. Minerva returns results (~29,000 tokens)
+3. **MCP client rejects** the response with clear error message
+4. AI understands the error and **automatically retries** with `max_results=5`
+5. Second attempt succeeds
+
+This is the **designed behavior** - the AI learns the limit through experience rather than being artificially constrained.
+
+**Configuration:**
+```json
+{
+  "chromadb_path": "./chromadb_data",
+  "default_max_results": 5  // Recommended: 3-5 (max allowed: 15)
+}
+```
+
+**Best practices:**
+- Start with `max_results=3-5` (default: 5)
+- Maximum allowed: 15 results (prevents extreme values)
+- Use `context_mode="chunk_only"` if you need more results with less context
+- Monitor server logs to see estimated token counts
+
+**Debugging:**
+The server logs include token estimation:
+```
+ℹ Estimated response size: ~15,234 tokens
+⚠ Response may exceed common MCP token limit (25,000 tokens)
+```
+
+**Why not hard-code a token limit?**
+- Different MCP clients may have different limits
+- Different AI contexts may have different budgets
+- AI models can handle different token counts
+- The self-regulation pattern is more flexible and future-proof
 
 ## Environment Variables
 

@@ -113,7 +113,7 @@ def validate_default_max_results(config: Dict[str, Any]) -> None:
             f"    ...\n"
             f"  }}\n"
             f"\n"
-            f"  Recommended values: 3-10"
+            f"  Recommended values: 3-5"
         )
 
     max_results = config['default_max_results']
@@ -126,16 +126,16 @@ def validate_default_max_results(config: Dict[str, Any]) -> None:
             f"  Example: \"default_max_results\": 5"
         )
 
-    if max_results < 1 or max_results > 100:
+    if max_results < 1 or max_results > 15:
         raise ConfigValidationError(
-            f"Invalid 'default_max_results': must be between 1 and 100\n"
+            f"Invalid 'default_max_results': must be between 1 and 15\n"
             f"  Got: {max_results}\n"
             f"\n"
             f"  Rationale:\n"
             f"  - Minimum 1: At least one result is needed for useful search\n"
-            f"  - Maximum 100: Prevents excessive results that may slow down AI processing\n"
+            f"  - Maximum 15: Prevents excessive token usage that may exceed MCP client limits\n"
             f"\n"
-            f"  Recommended values: 3-10"
+            f"  Recommended values: 3-5"
         )
 
 
