@@ -708,7 +708,7 @@ except Exception as e:
 ```bash
 # Clone repository
 git clone <repo-url>
-cd search-markdown-notes
+cd minerva
 
 # Create virtual environment
 python -m venv .venv
