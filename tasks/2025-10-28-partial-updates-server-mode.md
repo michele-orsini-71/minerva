@@ -46,11 +46,21 @@ Based on exploration and user clarification:
   - Update data structures to include `note_content_hash`
 
 - [ ] **File:** `minerva/indexing/storage.py`
-  - Modify `insert_chunks()` to store `note_content_hash` in metadata
+  - Modify `insert_chunks()` to store `note_content_hash` **only in first chunk** (chunkIndex==0)
+    - This eliminates redundancy (hash stored once per note instead of once per chunk)
   - Add `get_existing_note_hashes(collection) -> Dict[str, str]`
     - Returns: `{noteId: content_hash}` mapping
+    - **Implementation:** Uses bulk fetch approach (see Phase 1A notes below)
   - Add `delete_chunks_by_note_id(collection, note_id: str) -> int`
     - Returns: count of deleted chunks
+
+**Bulk Fetch Strategy:**
+- Query all chunks once at start: `collection.get(include=['metadatas'])`
+- Build in-memory maps:
+  - `noteId_to_hash`: Extract from chunks where chunkIndex==0
+  - `noteId_to_chunks`: Map each noteId to its chunk IDs for deletion
+- All subsequent operations use in-memory data (no additional ChromaDB queries)
+- Trade-off: One slow query (~2-30 seconds) vs. many small queries, but still fast compared to embedding time
 
 #### Phase 1B: Update Logic
 - [ ] **New file:** `minerva/indexing/updater.py`
@@ -217,6 +227,20 @@ Based on exploration and user clarification:
 - Prevents stale data accumulation
 - User can always keep notes by leaving them in JSON
 
+### Note ID Stability
+- noteId is computed from `SHA1(title + creationDate)`
+- **Limitation:** Renaming a note changes its ID, causing delete+add (re-embedding)
+- This is acceptable behavior for v2.0 - title and creationDate are assumed immutable
+- Users who frequently rename notes can use `forceRecreate: true` for clean rebuilds
+- Future: Optional stable IDs from extractors could address this (v2.1+)
+
+### Query Performance (Bulk Fetch vs SQLite)
+- v2.0 uses single bulk fetch of all chunks to build in-memory maps
+- Simple, no sync issues, good enough for most users (< 50K chunks)
+- SQLite index was considered but deferred to v2.1+
+- Reason: Embedding time (minutes) >> query time (seconds), so optimization is low priority
+- If users report slow updates on 100K+ chunk collections, SQLite index can be added later
+
 ---
 
 ## Technical Details
@@ -232,15 +256,52 @@ def compute_note_content_hash(note: Dict) -> str:
 ### Update Detection Flow
 ```
 1. Load notes from JSON file
-2. Get existing noteId → hash mappings from ChromaDB
-3. For each note in JSON:
+2. Bulk fetch all chunks from ChromaDB (one query):
+   - all_chunks = collection.get(include=['metadatas'])
+3. Build in-memory maps:
+   - noteId_to_hash: Extract from chunks where chunkIndex==0
+   - noteId_to_chunks: Map noteId to list of chunk IDs
+4. For each note in JSON:
    - Compute noteId and content hash
-   - If noteId not in ChromaDB → ADD
+   - If noteId not in noteId_to_hash → ADD
    - If noteId exists but hash differs → UPDATE
    - If noteId exists and hash matches → SKIP
-4. For each noteId in ChromaDB not in JSON → DELETE
-5. Execute plan: delete → update → add (in that order)
+5. For each noteId in noteId_to_hash not in JSON → DELETE
+6. Execute plan: delete → update → add (in that order)
+   - Delete: Use noteId_to_chunks map (no additional queries)
+   - Update: Delete old chunks, add new ones
+   - Add: Insert new chunks
 ```
+
+**Key optimization:** Steps 3-5 use in-memory operations only. No additional ChromaDB queries needed after initial bulk fetch.
+
+### Chunk Metadata Structure (v2.0)
+
+**First chunk (chunkIndex==0) includes hash:**
+```python
+{
+    'noteId': 'abc123...',
+    'title': 'Machine Learning Basics',
+    'chunkIndex': 0,
+    'note_content_hash': 'xyz789...',  # Only in first chunk!
+    'modificationDate': '2025-10-28T10:00:00Z',
+    # ... other metadata ...
+}
+```
+
+**Subsequent chunks (chunkIndex > 0) do not include hash:**
+```python
+{
+    'noteId': 'abc123...',
+    'title': 'Machine Learning Basics',
+    'chunkIndex': 1,
+    # 'note_content_hash' NOT included (reduces redundancy)
+    'modificationDate': '2025-10-28T10:00:00Z',
+    # ... other metadata ...
+}
+```
+
+This optimization reduces storage from O(chunks) to O(notes) for hash data.
 
 ### Collection Metadata for Version Detection
 Collections will store version metadata:

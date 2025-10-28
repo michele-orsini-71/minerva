@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 
 @dataclass(frozen=True)
@@ -16,6 +16,9 @@ class Chunk:
 
     # Position within the note (0-indexed)
     chunkIndex: int
+
+    # Content hash (SHA256 of title + markdown), only set for first chunk
+    content_hash: Optional[str] = None
 
     def __post_init__(self):
         if not self.id:
@@ -72,6 +75,10 @@ class ChunkWithEmbedding:
     @property
     def chunkIndex(self) -> int:
         return self.chunk.chunkIndex
+
+    @property
+    def content_hash(self) -> Optional[str]:
+        return self.chunk.content_hash
 
 
 # Type aliases for better readability in function signatures

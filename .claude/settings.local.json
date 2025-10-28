@@ -5,7 +5,9 @@
       "Bash(git tag:*)",
       "Bash(pytest:*)",
       "Bash(source .venv/bin/activate)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Read(//Users/michele/code/claude-files/prompts/**)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

@@ -29,6 +29,11 @@ def generate_chunk_id(note_id: str, modification_date: str, chunk_index: int) ->
     return hashlib.sha256(chunk_source.encode('utf-8')).hexdigest()
 
 
+def compute_content_hash(title: str, markdown: str) -> str:
+    content = f"{title}|{markdown}"
+    return hashlib.sha256(content.encode('utf-8')).hexdigest()
+
+
 def build_text_splitters(target_chars: int = 1200, overlap_chars: int = 200):
     headers_to_split_on = [
         ("#", "Header 1"),
@@ -143,6 +148,7 @@ def print_chunking_summary(stats: Dict[str, Any], failed_notes: List[Dict[str, s
 
 def build_chunks_from_note(note: Dict[str, Any], target_chars: int, overlap_chars: int) -> List[Chunk]:
     note_id = generate_note_id(note['title'], note.get('creationDate'))
+    content_hash = compute_content_hash(note['title'], note['markdown'])
 
     markdown_chunks = chunk_markdown_content(
         note['markdown'],
@@ -162,7 +168,8 @@ def build_chunks_from_note(note: Dict[str, Any], target_chars: int, overlap_char
             modificationDate=note['modificationDate'],
             creationDate=note.get('creationDate', ''),
             size=chunk_data['size'],
-            chunkIndex=chunk_index
+            chunkIndex=chunk_index,
+            content_hash=content_hash if chunk_index == 0 else None
         )
         chunks.append(chunk)
 

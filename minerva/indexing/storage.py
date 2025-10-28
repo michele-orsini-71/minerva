@@ -105,10 +105,14 @@ def build_collection_metadata(description: str, embedding_metadata: Dict[str, An
             "  Suggestion: Ensure the pipeline initializes the AI provider and passes metadata to storage"
         )
 
+    current_timestamp = datetime.now(timezone.utc).isoformat()
+
     metadata = {
         "hnsw:space": HNSW_SPACE,
-        "version": "1.0",
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "version": "2.0",
+        "note_hash_algorithm": "sha256",
+        "created_at": current_timestamp,
+        "last_updated": current_timestamp,
         "description": description
     }
 
@@ -286,6 +290,10 @@ def prepare_chunk_batch_data(batch, adjacent_ids_map: Optional[Dict[str, Dict[st
             'size': chunk.size,
             'chunkIndex': chunk.chunkIndex
         }
+
+        # Add content hash for first chunk only
+        if chunk.content_hash is not None:
+            metadata['content_hash'] = chunk.content_hash
 
         # Add adjacent chunk IDs as a delimited string (schema-flexible for future extensions)
         # Format: "prev2:prev1:next1:next2" where None becomes empty string
