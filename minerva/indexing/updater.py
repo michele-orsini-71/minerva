@@ -38,6 +38,118 @@ class ExistingState:
     noteId_to_hash: Dict[str, str]
 
 
+def is_v1_collection(collection: chromadb.Collection) -> bool:
+    metadata = collection.metadata or {}
+    version = metadata.get('version')
+    return version is None or version == ""
+
+
+@dataclass
+class ConfigChange:
+    has_changes: bool
+    changed_fields: List[str]
+    old_values: Dict[str, Any] = field(default_factory=dict)
+    new_values: Dict[str, Any] = field(default_factory=dict)
+
+
+def detect_config_changes(
+    collection: chromadb.Collection,
+    current_embedding_model: str,
+    current_embedding_provider: str,
+    current_chunk_size: int
+) -> ConfigChange:
+    metadata = collection.metadata or {}
+
+    stored_embedding_model = metadata.get('embedding_model')
+    stored_embedding_provider = metadata.get('embedding_provider')
+    stored_chunk_size = metadata.get('chunk_size')
+
+    changed_fields = []
+    old_values = {}
+    new_values = {}
+
+    if stored_embedding_model and stored_embedding_model != current_embedding_model:
+        changed_fields.append('embedding_model')
+        old_values['embedding_model'] = stored_embedding_model
+        new_values['embedding_model'] = current_embedding_model
+
+    if stored_embedding_provider and stored_embedding_provider != current_embedding_provider:
+        changed_fields.append('embedding_provider')
+        old_values['embedding_provider'] = stored_embedding_provider
+        new_values['embedding_provider'] = current_embedding_provider
+
+    if stored_chunk_size and stored_chunk_size != current_chunk_size:
+        changed_fields.append('chunk_size')
+        old_values['chunk_size'] = stored_chunk_size
+        new_values['chunk_size'] = current_chunk_size
+
+    has_changes = len(changed_fields) > 0
+
+    return ConfigChange(
+        has_changes=has_changes,
+        changed_fields=changed_fields,
+        old_values=old_values,
+        new_values=new_values
+    )
+
+
+def format_v1_collection_error(collection_name: str, chromadb_path: str) -> str:
+    return (
+        f"\n"
+        f"{'=' * 60}\n"
+        f"Collection '{collection_name}' is v1.0 (legacy)\n"
+        f"{'=' * 60}\n"
+        f"\n"
+        f"This collection was created with Minerva v1.0 and does not support\n"
+        f"incremental updates. To use this collection, you must recreate it.\n"
+        f"\n"
+        f"Options:\n"
+        f"  1. Add 'forceRecreate': true to your config\n"
+        f"     (WARNING: This will permanently delete all existing data!)\n"
+        f"  2. Use a different collection name\n"
+        f"\n"
+        f"Backup recommendation: Copy {chromadb_path} to a safe location\n"
+        f"before upgrading.\n"
+    )
+
+
+def format_config_change_error(collection_name: str, config_change: ConfigChange) -> str:
+    changes_detail = []
+
+    if 'embedding_model' in config_change.changed_fields:
+        old_val = config_change.old_values['embedding_model']
+        new_val = config_change.new_values['embedding_model']
+        changes_detail.append(f"  - Embedding model: {old_val} → {new_val}")
+
+    if 'embedding_provider' in config_change.changed_fields:
+        old_val = config_change.old_values['embedding_provider']
+        new_val = config_change.new_values['embedding_provider']
+        changes_detail.append(f"  - Provider: {old_val} → {new_val}")
+
+    if 'chunk_size' in config_change.changed_fields:
+        old_val = config_change.old_values['chunk_size']
+        new_val = config_change.new_values['chunk_size']
+        changes_detail.append(f"  - Chunk size: {old_val} → {new_val}")
+
+    changes_text = "\n".join(changes_detail)
+
+    return (
+        f"\n"
+        f"{'=' * 60}\n"
+        f"Critical configuration change detected\n"
+        f"{'=' * 60}\n"
+        f"\n"
+        f"The following settings have changed since collection '{collection_name}'\n"
+        f"was created:\n"
+        f"{changes_text}\n"
+        f"\n"
+        f"Incremental update is not possible because embeddings are incompatible.\n"
+        f"\n"
+        f"To reindex with new AI settings, set 'forceRecreate': true in your\n"
+        f"configuration file.\n"
+    )
+
+
 def fetch_existing_state(collection: chromadb.Collection) -> ExistingState:
     logger.info("   Fetching existing chunks from ChromaDB...")
 

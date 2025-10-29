@@ -56,13 +56,13 @@ Date: 2025-10-28
   - [x] 2.9 Integrate incremental update into commands/index.py as alternative to full reindex
   - [x] 2.10 Handle metadata-only updates (description changes without note changes)
 
-- [ ] 3.0 Implement Configuration Change Detection and Version Migration
-  - [ ] 3.1 Implement is_v1_collection() function in updater.py to check for missing 'version' field
-  - [ ] 3.2 Implement detect_config_changes() function to compare current config vs stored metadata (embedding_model, embedding_provider, chunk_size)
-  - [ ] 3.3 Add error message template for v1.0 collections requiring forceRecreate (see PRD Appendix B)
-  - [ ] 3.4 Add error message template for critical config changes requiring forceRecreate (see PRD Appendix B)
-  - [ ] 3.5 Update check_collection_early() in commands/index.py to detect v1.0 and config changes before expensive operations
-  - [ ] 3.6 Modify collection existence handling to allow incremental updates when forceRecreate=false (default behavior change)
+- [x] 3.0 Implement Configuration Change Detection and Version Migration
+  - [x] 3.1 Implement is_v1_collection() function in updater.py to check for missing 'version' field
+  - [x] 3.2 Implement detect_config_changes() function to compare current config vs stored metadata (embedding_model, embedding_provider, chunk_size)
+  - [x] 3.3 Add error message template for v1.0 collections requiring forceRecreate (see PRD Appendix B)
+  - [x] 3.4 Add error message template for critical config changes requiring forceRecreate (see PRD Appendix B)
+  - [x] 3.5 Update check_collection_early() in commands/index.py to detect v1.0 and config changes before expensive operations
+  - [x] 3.6 Modify collection existence handling to allow incremental updates when forceRecreate=false (default behavior change)
 
 - [ ] 4.0 Implement HTTP Server Mode
   - [ ] 4.1 Research FastMCP HTTP transport support (check mcp library documentation and examples)

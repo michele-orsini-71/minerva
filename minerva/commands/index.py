@@ -16,7 +16,13 @@ from minerva.indexing.storage import (
     insert_chunks,
     StorageError
 )
-from minerva.indexing.updater import run_incremental_update
+from minerva.indexing.updater import (
+    run_incremental_update,
+    is_v1_collection,
+    detect_config_changes,
+    format_v1_collection_error,
+    format_config_change_error
+)
 from minerva.common.logger import get_logger
 
 logger = get_logger(__name__, simple=True, mode="cli")
@@ -142,7 +148,7 @@ def initialize_and_validate_provider(config: CollectionConfig, verbose: bool) ->
         sys.exit(1)
 
 
-def check_collection_early(config: CollectionConfig) -> tuple[bool, str]:
+def check_collection_early(config: CollectionConfig, provider: AIProvider) -> tuple[bool, str]:
     logger.info("Checking ChromaDB collection status...")
 
     try:
@@ -155,8 +161,6 @@ def check_collection_early(config: CollectionConfig) -> tuple[bool, str]:
             return False, "create"
 
         collection = client.get_collection(config.collection_name)
-        metadata = collection.metadata or {}
-        version = metadata.get('version')
 
         if config.force_recreate:
             logger.warning(f"   Collection '{config.collection_name}' exists and will be recreated")
@@ -164,20 +168,21 @@ def check_collection_early(config: CollectionConfig) -> tuple[bool, str]:
             logger.info("")
             return True, "recreate"
 
-        if not version or version != "2.0":
-            logger.error("")
-            logger.error("=" * 60)
-            logger.error(f"Collection '{config.collection_name}' is v1.0 (legacy)")
-            logger.error("=" * 60)
-            logger.error("")
-            logger.error("This collection was created with Minerva v1.0 and does not support")
-            logger.error("incremental updates. To use this collection, you must recreate it.")
-            logger.error("")
-            logger.error("Options:")
-            logger.error("  1. Add 'forceRecreate': true to your config")
-            logger.error("     (WARNING: This will permanently delete all existing data!)")
-            logger.error("  2. Use a different collection name")
-            logger.error("")
+        if is_v1_collection(collection):
+            error_msg = format_v1_collection_error(config.collection_name, config.chromadb_path)
+            logger.error(error_msg)
+            sys.exit(1)
+
+        config_change = detect_config_changes(
+            collection,
+            current_embedding_model=provider.embedding_model,
+            current_embedding_provider=provider.provider_type,
+            current_chunk_size=config.chunk_size
+        )
+
+        if config_change.has_changes:
+            error_msg = format_config_change_error(config.collection_name, config_change)
+            logger.error(error_msg)
             sys.exit(1)
 
         logger.success(f"   ✓ Collection '{config.collection_name}' exists (v2.0)")
@@ -194,9 +199,9 @@ def run_dry_run(config: CollectionConfig, notes: List[Dict[str, Any]], verbose: 
     logger.info("Running dry-run validation...")
     logger.info("")
 
-    exists, mode = check_collection_early(config)
+    provider = initialize_and_validate_provider(config, verbose)
 
-    _ = initialize_and_validate_provider(config, verbose)
+    exists, mode = check_collection_early(config, provider)
 
     logger.info("Creating semantic chunks (validation only)...")
     chunks = create_chunks_from_notes(notes, target_chars=config.chunk_size)
@@ -220,9 +225,9 @@ def run_incremental_indexing(
     config: CollectionConfig,
     notes: List[Dict[str, Any]],
     verbose: bool,
-    start_time: float
+    start_time: float,
+    provider: AIProvider
 ) -> None:
-    provider = initialize_and_validate_provider(config, verbose)
 
     logger.info(f"Initializing ChromaDB at: {config.chromadb_path}")
     try:
@@ -261,9 +266,9 @@ def run_full_indexing(
     config: CollectionConfig,
     notes: List[Dict[str, Any]],
     verbose: bool,
-    start_time: float
+    start_time: float,
+    provider: AIProvider
 ) -> None:
-    provider = initialize_and_validate_provider(config, verbose)
     embedding_metadata = provider.get_embedding_metadata()
 
     logger.info("Creating semantic chunks...")
@@ -296,7 +301,8 @@ def run_full_indexing(
                 client,
                 collection_name=config.collection_name,
                 description=config.description,
-                embedding_metadata=embedding_metadata
+                embedding_metadata=embedding_metadata,
+                chunk_size=config.chunk_size
             )
             logger.success("   ✓ Collection recreated")
         else:
@@ -304,7 +310,8 @@ def run_full_indexing(
                 client,
                 collection_name=config.collection_name,
                 description=config.description,
-                embedding_metadata=embedding_metadata
+                embedding_metadata=embedding_metadata,
+                chunk_size=config.chunk_size
             )
             logger.success("   ✓ Collection ready")
         logger.info("")
@@ -374,12 +381,14 @@ def run_index(args: Namespace) -> int:
         if args.dry_run:
             run_dry_run(config, notes, args.verbose)
         else:
-            exists, mode = check_collection_early(config)
+            provider = initialize_and_validate_provider(config, args.verbose)
+
+            exists, mode = check_collection_early(config, provider)
 
             if mode == "incremental":
-                run_incremental_indexing(config, notes, args.verbose, start_time)
+                run_incremental_indexing(config, notes, args.verbose, start_time, provider)
             else:
-                run_full_indexing(config, notes, args.verbose, start_time)
+                run_full_indexing(config, notes, args.verbose, start_time, provider)
 
         return 0
 
