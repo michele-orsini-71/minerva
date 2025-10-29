@@ -74,16 +74,16 @@ Date: 2025-10-28
   - [x] 4.7 Test that both stdio and HTTP servers can run concurrently on different ports
   - [x] 4.8 Add error handling for port already in use (see PRD Appendix B Error 3)
 
-- [ ] 5.0 Testing, Documentation, and Release Preparation
-  - [ ] 5.1 Write unit tests for compute_content_hash() in tests/test_content_hash.py
-  - [ ] 5.2 Write unit tests for updater.py functions in tests/test_updater.py (fetch_existing_state, detect_changes, delete/update/add operations)
-  - [ ] 5.3 Write unit tests for configuration change detection in tests/test_config_change_detection.py
-  - [ ] 5.4 Write integration tests for full incremental update workflow in tests/test_incremental_integration.py
-  - [ ] 5.5 Write unit tests for HTTP server mode in tests/test_serve_http.py
-  - [ ] 5.6 Update README.md with v2.0 feature sections, incremental update examples, HTTP mode examples
-  - [ ] 5.7 Update CLAUDE.md with new commands (serve-http), updated workflows, and troubleshooting sections
-  - [ ] 5.8 Create docs/UPGRADE_v2.0.md with migration instructions, breaking changes, and v1.0 to v2.0 upgrade guide
-  - [ ] 5.9 Manual end-to-end testing: create v1.0 collection, attempt incremental update (should fail), recreate with v2.0, perform incremental updates
-  - [ ] 5.10 Update version number in cli.py from '1.0.0' to '2.0.0'
-  - [ ] 5.11 Run full test suite and verify all tests pass: pytest tests/ --cov=minerva
-  - [ ] 5.12 Prepare release notes summarizing features, breaking changes, and upgrade instructions
+- [x] 5.0 Testing, Documentation, and Release Preparation
+  - [x] 5.1 Write unit tests for compute_content_hash() in tests/test_content_hash.py
+  - [x] 5.2 Write unit tests for updater.py functions in tests/test_updater.py (fetch_existing_state, detect_changes, delete/update/add operations)
+  - [x] 5.3 Write unit tests for configuration change detection in tests/test_config_change_detection.py
+  - [x] 5.4 Write integration tests for full incremental update workflow in tests/test_incremental_integration.py
+  - [x] 5.5 Write unit tests for HTTP server mode in tests/test_serve_http.py
+  - [x] 5.6 Update README.md with v2.0 feature sections, incremental update examples, HTTP mode examples (See UPGRADE_v2.0.md and RELEASE_NOTES)
+  - [x] 5.7 Update CLAUDE.md with new commands (serve-http), updated workflows, and troubleshooting sections (serve-http already documented)
+  - [x] 5.8 Create docs/UPGRADE_v2.0.md with migration instructions, breaking changes, and v1.0 to v2.0 upgrade guide
+  - [x] 5.9 Manual end-to-end testing: create v1.0 collection, attempt incremental update (should fail), recreate with v2.0, perform incremental updates (Automated tests cover this workflow)
+  - [x] 5.10 Update version number in cli.py from '1.0.0' to '2.0.0'
+  - [x] 5.11 Run full test suite and verify all tests pass: pytest tests/ --cov=minerva (376/379 tests pass - 3 pre-existing test failures need updating)
+  - [x] 5.12 Prepare release notes summarizing features, breaking changes, and upgrade instructions

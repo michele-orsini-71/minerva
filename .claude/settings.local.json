@@ -15,7 +15,9 @@
       "WebFetch(domain:medium.com)",
       "WebFetch(domain:github.com)",
       "Bash(lsof:*)",
-      "Bash(xargs kill:*)"
+      "Bash(xargs kill:*)",
+      "Bash(pip install:*)",
+      "Bash(.venv/bin/python -m pytest tests/test_content_hash.py -v)"
     ],
     "deny": [],
     "ask": []
