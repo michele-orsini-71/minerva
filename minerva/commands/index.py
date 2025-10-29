@@ -16,6 +16,7 @@ from minerva.indexing.storage import (
     insert_chunks,
     StorageError
 )
+from minerva.indexing.updater import run_incremental_update
 from minerva.common.logger import get_logger
 
 logger = get_logger(__name__, simple=True, mode="cli")
@@ -141,34 +142,48 @@ def initialize_and_validate_provider(config: CollectionConfig, verbose: bool) ->
         sys.exit(1)
 
 
-def check_collection_early(config: CollectionConfig) -> None:
-    """Check collection existence before expensive operations."""
+def check_collection_early(config: CollectionConfig) -> tuple[bool, str]:
     logger.info("Checking ChromaDB collection status...")
 
     try:
         client = initialize_chromadb_client(config.chromadb_path)
         exists = collection_exists(client, config.collection_name)
 
-        if exists:
-            if config.force_recreate:
-                logger.warning(f"   Collection '{config.collection_name}' exists and will be recreated")
-                logger.warning("   ⚠ WARNING: All existing data will be permanently deleted!")
-            else:
-                logger.error("")
-                logger.error("=" * 60)
-                logger.error(f"Collection '{config.collection_name}' already exists")
-                logger.error("=" * 60)
-                logger.error("")
-                logger.error("Options:")
-                logger.error("  1. Use a different collection name in your config")
-                logger.error("  2. Add 'forceRecreate': true to your config")
-                logger.error("     (WARNING: This will permanently delete all existing data!)")
-                logger.error("")
-                sys.exit(1)
-        else:
+        if not exists:
             logger.success(f"   ✓ Collection '{config.collection_name}' does not exist (will be created)")
+            logger.info("")
+            return False, "create"
 
+        collection = client.get_collection(config.collection_name)
+        metadata = collection.metadata or {}
+        version = metadata.get('version')
+
+        if config.force_recreate:
+            logger.warning(f"   Collection '{config.collection_name}' exists and will be recreated")
+            logger.warning("   ⚠ WARNING: All existing data will be permanently deleted!")
+            logger.info("")
+            return True, "recreate"
+
+        if not version or version != "2.0":
+            logger.error("")
+            logger.error("=" * 60)
+            logger.error(f"Collection '{config.collection_name}' is v1.0 (legacy)")
+            logger.error("=" * 60)
+            logger.error("")
+            logger.error("This collection was created with Minerva v1.0 and does not support")
+            logger.error("incremental updates. To use this collection, you must recreate it.")
+            logger.error("")
+            logger.error("Options:")
+            logger.error("  1. Add 'forceRecreate': true to your config")
+            logger.error("     (WARNING: This will permanently delete all existing data!)")
+            logger.error("  2. Use a different collection name")
+            logger.error("")
+            sys.exit(1)
+
+        logger.success(f"   ✓ Collection '{config.collection_name}' exists (v2.0)")
+        logger.info(f"   Will perform incremental update")
         logger.info("")
+        return True, "incremental"
 
     except Exception as e:
         logger.error(f"ChromaDB check error: {e}")
@@ -179,7 +194,7 @@ def run_dry_run(config: CollectionConfig, notes: List[Dict[str, Any]], verbose: 
     logger.info("Running dry-run validation...")
     logger.info("")
 
-    check_collection_early(config)
+    exists, mode = check_collection_early(config)
 
     _ = initialize_and_validate_provider(config, verbose)
 
@@ -188,9 +203,9 @@ def run_dry_run(config: CollectionConfig, notes: List[Dict[str, Any]], verbose: 
     logger.success(f"   ✓ Would create {len(chunks)} chunks from {len(notes)} notes")
     logger.info("")
 
-    # Estimate what would happen
     logger.info("Dry-run summary:")
     logger.info(f"   Collection: {config.collection_name}")
+    logger.info(f"   Mode: {mode}")
     logger.info(f"   Notes to process: {len(notes)}")
     logger.info(f"   Chunks to create: {len(chunks)}")
     logger.info(f"   Embeddings to generate: {len(chunks)}")
@@ -201,15 +216,53 @@ def run_dry_run(config: CollectionConfig, notes: List[Dict[str, Any]], verbose: 
     logger.info("   Run without --dry-run to perform actual indexing")
 
 
+def run_incremental_indexing(
+    config: CollectionConfig,
+    notes: List[Dict[str, Any]],
+    verbose: bool,
+    start_time: float
+) -> None:
+    provider = initialize_and_validate_provider(config, verbose)
+
+    logger.info(f"Initializing ChromaDB at: {config.chromadb_path}")
+    try:
+        client = initialize_chromadb_client(config.chromadb_path)
+        logger.success("   ✓ ChromaDB client initialized")
+        logger.info("")
+    except Exception as e:
+        logger.error(f"ChromaDB initialization error: {e}")
+        sys.exit(1)
+
+    try:
+        collection = client.get_collection(config.collection_name)
+        logger.success(f"   ✓ Retrieved collection '{config.collection_name}'")
+        logger.info("")
+    except Exception as e:
+        logger.error(f"Failed to retrieve collection: {e}")
+        sys.exit(1)
+
+    try:
+        stats = run_incremental_update(
+            collection=collection,
+            new_notes=notes,
+            provider=provider,
+            new_description=config.description,
+            target_chars=config.chunk_size
+        )
+    except Exception as e:
+        logger.error(f"Incremental update error: {e}")
+        if verbose:
+            import traceback
+            traceback.print_exc()
+        sys.exit(1)
+
+
 def run_full_indexing(
     config: CollectionConfig,
     notes: List[Dict[str, Any]],
     verbose: bool,
     start_time: float
 ) -> None:
-
-    check_collection_early(config)
-
     provider = initialize_and_validate_provider(config, verbose)
     embedding_metadata = provider.get_embedding_metadata()
 
@@ -259,7 +312,6 @@ def run_full_indexing(
         logger.error(f"Collection creation error: {e}")
         sys.exit(1)
 
-    # Insert chunks
     logger.info("Storing chunks in ChromaDB...")
 
     def progress_callback(current, total):
@@ -277,7 +329,6 @@ def run_full_indexing(
         logger.error(f"Storage error: {e}")
         sys.exit(1)
 
-    # Print final summary
     processing_time = time.time() - start_time
     print_final_summary(config, notes, chunks, chunks_with_embeddings, stats, processing_time)
 
@@ -314,18 +365,21 @@ def run_index(args: Namespace) -> int:
     start_time = time.time()
 
     try:
-        # Print banner
         print_banner(args.dry_run)
 
         config = load_and_print_config(args.config, args.verbose)
 
         notes = load_and_print_notes(config, args.verbose)
 
-        # Run appropriate mode
         if args.dry_run:
             run_dry_run(config, notes, args.verbose)
         else:
-            run_full_indexing(config, notes, args.verbose, start_time)
+            exists, mode = check_collection_early(config)
+
+            if mode == "incremental":
+                run_incremental_indexing(config, notes, args.verbose, start_time)
+            else:
+                run_full_indexing(config, notes, args.verbose, start_time)
 
         return 0
 

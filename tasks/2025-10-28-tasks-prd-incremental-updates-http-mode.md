@@ -44,17 +44,17 @@ Date: 2025-10-28
   - [x] 1.5 Update build_collection_metadata() in storage.py to include v2.0 fields: version="2.0", note_hash_algorithm="sha256", last_updated=ISO8601 timestamp
   - [x] 1.6 Verify content_hash storage by testing with peek command
 
-- [ ] 2.0 Implement Incremental Update Detection and Processing Logic
-  - [ ] 2.1 Create new minerva/indexing/updater.py module with UpdateStats class
-  - [ ] 2.2 Implement fetch_existing_state() function to bulk fetch all chunks and build in-memory maps (noteId_to_chunks, noteId_to_hash)
-  - [ ] 2.3 Implement detect_changes() function to compare new vs existing notes and categorize as added/updated/deleted/unchanged
-  - [ ] 2.4 Implement delete_note_chunks() function to remove chunks for deleted notes from ChromaDB
-  - [ ] 2.5 Implement update_note_chunks() function to delete old chunks and add new chunks for modified notes
-  - [ ] 2.6 Implement add_note_chunks() function to process and add chunks for new notes
-  - [ ] 2.7 Implement run_incremental_update() orchestrator function that calls fetch→detect→delete→update→add in sequence
-  - [ ] 2.8 Add progress reporting and summary output (added/updated/deleted/skipped counts, time comparison)
-  - [ ] 2.9 Integrate incremental update into commands/index.py as alternative to full reindex
-  - [ ] 2.10 Handle metadata-only updates (description changes without note changes)
+- [x] 2.0 Implement Incremental Update Detection and Processing Logic
+  - [x] 2.1 Create new minerva/indexing/updater.py module with UpdateStats class
+  - [x] 2.2 Implement fetch_existing_state() function to bulk fetch all chunks and build in-memory maps (noteId_to_chunks, noteId_to_hash)
+  - [x] 2.3 Implement detect_changes() function to compare new vs existing notes and categorize as added/updated/deleted/unchanged
+  - [x] 2.4 Implement delete_note_chunks() function to remove chunks for deleted notes from ChromaDB
+  - [x] 2.5 Implement update_note_chunks() function to delete old chunks and add new chunks for modified notes
+  - [x] 2.6 Implement add_note_chunks() function to process and add chunks for new notes
+  - [x] 2.7 Implement run_incremental_update() orchestrator function that calls fetch→detect→delete→update→add in sequence
+  - [x] 2.8 Add progress reporting and summary output (added/updated/deleted/skipped counts, time comparison)
+  - [x] 2.9 Integrate incremental update into commands/index.py as alternative to full reindex
+  - [x] 2.10 Handle metadata-only updates (description changes without note changes)
 
 - [ ] 3.0 Implement Configuration Change Detection and Version Migration
   - [ ] 3.1 Implement is_v1_collection() function in updater.py to check for missing 'version' field
