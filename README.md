@@ -537,7 +537,9 @@ See the [Extractor Guide](docs/EXTRACTOR_GUIDE.md) for detailed tutorials.
 
 - **[Note Schema](docs/NOTE_SCHEMA.md)** - Complete JSON schema specification
 - **[Extractor Guide](docs/EXTRACTOR_GUIDE.md)** - How to write custom extractors
-- **[Configuration Guide](CONFIGURATION_GUIDE.md)** - All configuration options
+- **[Configuration Guide](docs/CONFIGURATION_GUIDE.md)** - All configuration options
+- **[Release Notes v2.0](docs/RELEASE_NOTES_v2.0.md)** - What's new in version 2.0
+- **[Upgrade Guide v2.0](docs/UPGRADE_v2.0.md)** - How to upgrade from v1.x
 - **[CLAUDE.md](CLAUDE.md)** - Developer guide for working with this codebase
 
 ---

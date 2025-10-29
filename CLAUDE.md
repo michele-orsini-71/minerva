@@ -693,7 +693,9 @@ except Exception as e:
 - **docs/NOTE_SCHEMA.md**: Complete schema specification
 - **docs/EXTRACTOR_GUIDE.md**: How to write extractors
 - **extractors/README.md**: Overview of official extractors
-- **CONFIGURATION_GUIDE.md**: Configuration options
+- **docs/CONFIGURATION_GUIDE.md**: Configuration options
+- **docs/RELEASE_NOTES_v2.0.md**: Version 2.0 release notes
+- **docs/UPGRADE_v2.0.md**: Version 2.0 upgrade guide
 
 ### External Links
 
