@@ -8,6 +8,7 @@ from minerva.common.logger import get_logger
 
 from minerva.commands.index import run_index
 from minerva.commands.serve import run_serve
+from minerva.commands.serve_http import run_serve_http
 from minerva.commands.peek import run_peek
 from minerva.commands.validate import run_validate
 
@@ -41,7 +42,7 @@ For more information, visit: https://github.com/yourusername/minerva
     parser.add_argument(
         '--version',
         action='version',
-        version='%(prog)s 1.0.0'
+        version='%(prog)s 2.0.0'
     )
 
     # Create subparsers for commands
@@ -118,6 +119,51 @@ Examples:
         required=True,
         metavar='FILE',
         help='Path to server configuration JSON file'
+    )
+
+    # ========================================
+    # SERVE-HTTP command
+    # ========================================
+    serve_http_parser = subparsers.add_parser(
+        'serve-http',
+        help='Start the MCP server in HTTP mode',
+        description='Start the Model Context Protocol (MCP) server in HTTP mode for network access.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Start HTTP server on default port (8000)
+  minerva serve-http --config configs/server-config.json
+
+  # Start on custom host and port
+  minerva serve-http --config configs/server-config.json --host 0.0.0.0 --port 9000
+
+  # Start on localhost only
+  minerva serve-http --config configs/server-config.json --host 127.0.0.1 --port 8000
+        """
+    )
+
+    serve_http_parser.add_argument(
+        '--config',
+        type=Path,
+        required=True,
+        metavar='FILE',
+        help='Path to server configuration JSON file'
+    )
+
+    serve_http_parser.add_argument(
+        '--host',
+        type=str,
+        default='localhost',
+        metavar='HOST',
+        help='Host to bind to (default: localhost). Use 0.0.0.0 for all interfaces'
+    )
+
+    serve_http_parser.add_argument(
+        '--port',
+        type=int,
+        default=8000,
+        metavar='PORT',
+        help='Port to bind to (default: 8000)'
     )
 
     # ========================================
@@ -206,6 +252,8 @@ def main():
             return run_index(args)
         elif args.command == 'serve':
             return run_serve(args)
+        elif args.command == 'serve-http':
+            return run_serve_http(args)
         elif args.command == 'peek':
             return run_peek(args)
         elif args.command == 'validate':

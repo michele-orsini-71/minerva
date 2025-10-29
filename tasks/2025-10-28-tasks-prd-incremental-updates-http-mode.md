@@ -8,8 +8,8 @@ Date: 2025-10-28
 ## Relevant Files
 
 ### New Files (to be created)
-- `minerva/indexing/updater.py` - Core incremental update logic (change detection, deletion, update, add operations)
-- `minerva/commands/serve_http.py` - HTTP server mode command implementation
+- `minerva/indexing/updater.py` - Core incremental update logic (change detection, deletion, update, add operations) [CREATED]
+- `minerva/commands/serve_http.py` - HTTP server mode command implementation [CREATED]
 - `tests/test_content_hash.py` - Unit tests for content hash computation
 - `tests/test_updater.py` - Unit tests for incremental update logic
 - `tests/test_config_change_detection.py` - Unit tests for configuration change detection
@@ -21,9 +21,9 @@ Date: 2025-10-28
 - `minerva/common/models.py` - Added content_hash field to Chunk model (Optional[str], only for chunkIndex==0) and convenience property to ChunkWithEmbedding
 - `minerva/indexing/chunking.py` - Added compute_content_hash() function and integrated content hash computation in build_chunks_from_note()
 - `minerva/indexing/storage.py` - Updated build_collection_metadata() to v2.0 (version="2.0", note_hash_algorithm="sha256", last_updated timestamp); Updated prepare_chunk_batch_data() to store content_hash metadata
-- `minerva/commands/index.py` - Integrate incremental update logic, modify collection checking (TODO)
-- `minerva/cli.py` - Add serve-http subparser, update version to 2.0.0 (TODO)
-- `minerva/server/mcp_server.py` - Refactor for stdio/HTTP mode support (TODO)
+- `minerva/commands/index.py` - Integrated incremental update logic, modified collection checking
+- `minerva/cli.py` - Added serve-http subparser, updated version to 2.0.0
+- `minerva/server/mcp_server.py` - Refactored for stdio/HTTP mode support with main() and main_http() functions
 - `README.md` - Document v2.0 features and usage examples (TODO)
 - `CLAUDE.md` - Update with new commands and workflows (TODO)
 
@@ -64,15 +64,15 @@ Date: 2025-10-28
   - [x] 3.5 Update check_collection_early() in commands/index.py to detect v1.0 and config changes before expensive operations
   - [x] 3.6 Modify collection existence handling to allow incremental updates when forceRecreate=false (default behavior change)
 
-- [ ] 4.0 Implement HTTP Server Mode
-  - [ ] 4.1 Research FastMCP HTTP transport support (check mcp library documentation and examples)
-  - [ ] 4.2 Create minerva/commands/serve_http.py with run_serve_http() function
-  - [ ] 4.3 Add serve-http subparser to cli.py with arguments: --config (required), --host (default: localhost), --port (default: 8000)
-  - [ ] 4.4 Refactor server/mcp_server.py: extract initialize_server() logic into reusable function, add transport_mode parameter
-  - [ ] 4.5 Add transport-specific logging: "Starting FastMCP server in stdio mode..." vs "Starting FastMCP server in HTTP mode on http://localhost:8000..."
-  - [ ] 4.6 Implement HTTP mode startup in run_serve_http() using FastMCP HTTP API
-  - [ ] 4.7 Test that both stdio and HTTP servers can run concurrently on different ports
-  - [ ] 4.8 Add error handling for port already in use (see PRD Appendix B Error 3)
+- [x] 4.0 Implement HTTP Server Mode
+  - [x] 4.1 Research FastMCP HTTP transport support (check mcp library documentation and examples)
+  - [x] 4.2 Create minerva/commands/serve_http.py with run_serve_http() function
+  - [x] 4.3 Add serve-http subparser to cli.py with arguments: --config (required), --host (default: localhost), --port (default: 8000)
+  - [x] 4.4 Refactor server/mcp_server.py: extract initialize_server() logic into reusable function, add transport_mode parameter
+  - [x] 4.5 Add transport-specific logging: "Starting FastMCP server in stdio mode..." vs "Starting FastMCP server in HTTP mode on http://localhost:8000..."
+  - [x] 4.6 Implement HTTP mode startup in run_serve_http() using FastMCP HTTP API
+  - [x] 4.7 Test that both stdio and HTTP servers can run concurrently on different ports
+  - [x] 4.8 Add error handling for port already in use (see PRD Appendix B Error 3)
 
 - [ ] 5.0 Testing, Documentation, and Release Preparation
   - [ ] 5.1 Write unit tests for compute_content_hash() in tests/test_content_hash.py

@@ -208,12 +208,35 @@ def main(config_path: str):
 
     initialize_server(config_path)
 
-    # Run FastMCP server in stdio mode
     console_logger.info("Starting FastMCP server in stdio mode...")
     console_logger.info("Waiting for MCP protocol requests...\n")
 
     try:
-        mcp.run()
+        mcp.run(transport="stdio")
+    except KeyboardInterrupt:
+        console_logger.info("\n\nServer shutting down (keyboard interrupt)")
+        sys.exit(0)
+    except Exception as e:
+        console_logger.error(f"Server error: {e}")
+        sys.exit(1)
+
+
+def main_http(config_path: str, host: str = "localhost", port: int = 8000):
+    console_logger.info("=" * 60)
+    console_logger.info("Multi-Collection MCP Server for Markdown Notes")
+    console_logger.info("=" * 60)
+
+    initialize_server(config_path)
+
+    mcp.settings.host = host
+    mcp.settings.port = port
+
+    console_logger.info(f"Starting FastMCP server in HTTP mode on http://{host}:{port}...")
+    console_logger.info(f"MCP endpoint will be available at: http://{host}:{port}/mcp/")
+    console_logger.info("Waiting for HTTP requests...\n")
+
+    try:
+        mcp.run(transport="streamable-http")
     except KeyboardInterrupt:
         console_logger.info("\n\nServer shutting down (keyboard interrupt)")
         sys.exit(0)

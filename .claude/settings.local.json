@@ -8,7 +8,14 @@
       "Bash(python:*)",
       "Read(//Users/michele/code/claude-files/prompts/**)",
       "Bash(curl:*)",
-      "Bash(minerva:*)"
+      "Bash(minerva:*)",
+      "Bash(pip show:*)",
+      "WebSearch",
+      "WebFetch(domain:gofastmcp.com)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)"
     ],
     "deny": [],
     "ask": []
