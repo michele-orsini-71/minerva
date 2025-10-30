@@ -9,6 +9,14 @@ from minerva.common.logger import get_logger
 from minerva.chat.config import ChatConfig
 from minerva.chat.history import ConversationHistory
 from minerva.chat.tools import get_tool_definitions, execute_tool, format_tool_result
+from minerva.chat.context_window import (
+    check_context_window,
+    format_context_warning,
+    get_user_choice,
+    create_summary_messages,
+    replace_with_summary,
+    calculate_conversation_tokens
+)
 
 logger = get_logger(__name__)
 
@@ -63,11 +71,79 @@ class ChatEngine:
 
         sys.exit(0)
 
+    def _check_and_handle_context_window(self):
+        if not self.history or not self.provider or not self.config:
+            return
+
+        messages = self.history.get_messages()
+        model_name = self.config.ai_provider.llm_model
+
+        current_tokens, max_tokens, usage_ratio, should_warn = check_context_window(messages, model_name)
+
+        if should_warn:
+            warning_message = format_context_warning(current_tokens, max_tokens, usage_ratio)
+            print(warning_message)
+
+            choice = get_user_choice()
+
+            if choice == 'c':
+                logger.info("User chose to continue despite context warning")
+                return
+            elif choice == 's':
+                logger.info("User chose to summarize conversation")
+                self._summarize_conversation()
+            elif choice == 'n':
+                logger.info("User chose to start new conversation")
+                raise KeyboardInterrupt()
+
+    def _summarize_conversation(self):
+        if not self.history or not self.provider:
+            return
+
+        messages = self.history.get_messages()
+
+        system_message = messages[0] if messages and messages[0].get('role') == 'system' else None
+        messages_to_summarize = messages[1:] if system_message else messages
+
+        if len(messages_to_summarize) <= 6:
+            logger.warning("Too few messages to summarize")
+            print("\n⚠️  Not enough messages to summarize. Continuing...")
+            return
+
+        print("\n🔄 Generating conversation summary...")
+
+        summary_request = create_summary_messages(system_message, messages_to_summarize[:-6])
+
+        try:
+            response = self.provider.chat_completion(
+                messages=summary_request,
+                temperature=0.5,
+                stream=False
+            )
+
+            summary_text = response.get('content', 'Unable to generate summary.')
+
+            new_messages = replace_with_summary(messages, summary_text, keep_recent_count=6)
+
+            self.history.current_conversation['messages'] = new_messages
+
+            self.history.save()
+
+            logger.info(f"Conversation summarized: {len(messages)} -> {len(new_messages)} messages")
+            print(f"✓ Conversation compressed: {len(messages)} -> {len(new_messages)} messages\n")
+
+        except Exception as e:
+            logger.error(f"Failed to generate summary: {e}")
+            print(f"\n❌ Failed to generate summary: {e}")
+            print("Continuing with full conversation...\n")
+
     def send_message(self, user_message: str) -> str:
         if not self.history or not self.provider or not self.config:
             raise ChatEngineError("Chat engine not initialized. Call initialize_conversation() first.")
 
         self.history.add_message(role='user', content=user_message)
+
+        self._check_and_handle_context_window()
 
         messages = self._prepare_messages_for_api()
 
@@ -249,12 +325,7 @@ class ChatEngine:
         )
 
     def _estimate_total_tokens(self, messages: list[Dict]) -> int:
-        total = 0
-        for msg in messages:
-            content = msg.get('content', '')
-            if content:
-                total += len(content) // 4
-        return total
+        return calculate_conversation_tokens(messages)
 
     def resume_conversation(self, conversation_id: str, ai_provider: AIProvider, config: ChatConfig):
         self.config = config

@@ -10,14 +10,14 @@ Generated from: `tasks/prd-chat-command.md`
 - `minerva/chat/config.py` - [CREATED] Chat configuration schema and loading with dataclass, JSON schema validation, and env var substitution
 - `minerva/chat/tools.py` - [CREATED] Tool definitions and execution wrappers for list_knowledge_bases and search_knowledge_base
 - `minerva/chat/history.py` - [CREATED] Conversation persistence and management with ConversationHistory class, save/load/list functions, and auto-save support
-- `minerva/chat/chat_engine.py` - [CREATED] Core chat engine with conversation state management, tool execution loop, streaming support, and signal handling
-- `minerva/chat/context_window.py` - Token estimation and context management
+- `minerva/chat/chat_engine.py` - [CREATED] Core chat engine with conversation state management, tool execution loop, streaming support, signal handling, and context window management with automatic summarization
+- `minerva/chat/context_window.py` - [CREATED] Token estimation and context management with model limits, warning system, and summarization support
 - `minerva/commands/chat.py` - [CREATED] CLI command implementation for `minerva chat` with run_chat() function, interactive REPL, single-question mode, conversation listing/resuming, and comprehensive error handling
 - `tests/test_chat_config.py` - Unit tests for chat configuration
 - `tests/test_chat_tools.py` - Unit tests for tool registry
 - `tests/test_chat_history.py` - [CREATED] Unit tests for history manager with 25 comprehensive test cases
 - `tests/test_chat_engine.py` - Unit tests for chat engine
-- `tests/test_chat_context_window.py` - Unit tests for context window management
+- `tests/test_chat_context_window.py` - [CREATED] Unit tests for context window management with 32 comprehensive test cases
 - `tests/integration/test_chat_workflow.py` - Integration tests for full chat workflow
 - `configs/chat-config-ollama.json` - [CREATED] Example chat config for Ollama
 - `configs/chat-config-openai.json` - [CREATED] Example chat config for OpenAI
@@ -96,15 +96,15 @@ Generated from: `tasks/prd-chat-command.md`
   - [x] 6.8 Implement `--resume` flag to continue a previous conversation by ID
   - [x] 6.9 Add error handling for missing config, ChromaDB connection failures, and AI provider unavailable
 
-- [ ] 7.0 Add Context Window Management
-  - [ ] 7.1 Create `minerva/chat/context_window.py` with `estimate_tokens(text: str) -> int` function using `len(text) / 4`
-  - [ ] 7.2 Implement `calculate_conversation_tokens(messages: List[Dict]) -> int` to sum up all message tokens
-  - [ ] 7.3 Add context window limits map for common models (llama3.1:8b: 32K, gpt-4o-mini: 128K, claude-3-5-sonnet: 200K)
-  - [ ] 7.4 Implement warning at 85% of context limit with display showing current/max tokens
-  - [ ] 7.5 Create user prompt for choices: [c]ontinue, [s]ummarize, [n]ew conversation
-  - [ ] 7.6 Implement summarization flow that sends old messages to LLM with summarization prompt
-  - [ ] 7.7 Replace middle messages with summary while keeping system prompt and last 3-4 exchanges
-  - [ ] 7.8 Test context management with long conversations approaching token limits
+- [x] 7.0 Add Context Window Management
+  - [x] 7.1 Create `minerva/chat/context_window.py` with `estimate_tokens(text: str) -> int` function using `len(text) / 4`
+  - [x] 7.2 Implement `calculate_conversation_tokens(messages: List[Dict]) -> int` to sum up all message tokens
+  - [x] 7.3 Add context window limits map for common models (llama3.1:8b: 32K, gpt-4o-mini: 128K, claude-3-5-sonnet: 200K)
+  - [x] 7.4 Implement warning at 85% of context limit with display showing current/max tokens
+  - [x] 7.5 Create user prompt for choices: [c]ontinue, [s]ummarize, [n]ew conversation
+  - [x] 7.6 Implement summarization flow that sends old messages to LLM with summarization prompt
+  - [x] 7.7 Replace middle messages with summary while keeping system prompt and last 3-4 exchanges
+  - [x] 7.8 Test context management with long conversations approaching token limits
 
 - [ ] 8.0 Testing and Documentation
   - [ ] 8.1 Write unit tests for `ChatConfig` loading and validation (test invalid configs, missing fields)
