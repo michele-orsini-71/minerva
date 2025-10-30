@@ -6,6 +6,7 @@ prompts/
 
 # Test data directory
 test_data/
+test-data/
 
 # Python cache files
 __pycache__/
