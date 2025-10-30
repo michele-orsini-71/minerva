@@ -354,6 +354,72 @@ minerva serve --config server-config.json
 }
 ```
 
+### `minerva chat`
+
+Interactive AI-powered chat interface that can search and query your knowledge bases.
+
+```bash
+minerva chat --config chat-config.json [OPTIONS]
+```
+
+**Options:**
+
+- `--config FILE`: Chat configuration JSON file (required)
+- `-q "QUESTION"`: Single-question mode (ask and exit)
+- `--system "PROMPT"`: Custom system prompt
+- `--list`: List all past conversations
+- `--resume ID`: Resume a previous conversation
+
+**Example config:**
+
+```json
+{
+  "chromadb_path": "/absolute/path/to/chromadb_data",
+  "ai_provider": {
+    "type": "ollama",
+    "embedding": {
+      "model": "mxbai-embed-large:latest"
+    },
+    "llm": {
+      "model": "llama3.1:8b"
+    }
+  },
+  "conversation_dir": "~/.minerva/conversations",
+  "default_max_results": 3,
+  "enable_streaming": true
+}
+```
+
+**Interactive mode:**
+
+```bash
+minerva chat --config chat-config.json
+
+Welcome to Minerva Chat! 🤖
+Connected to 3 knowledge base(s) via Ollama (llama3.1:8b)
+
+Commands: /clear (new conversation) | /help | /exit
+
+You: What knowledge bases are available?
+AI: 🔍 Listing available knowledge bases...
+    I have access to 3 knowledge bases:
+    - personal-notes (1,234 chunks)
+    - python-books (5,678 chunks)
+    ...
+
+You: Search python-books for decorators
+AI: 🔍 Searching 'python-books' for: 'decorators'...
+    [AI provides information based on search results]
+```
+
+**Single-question mode:**
+
+```bash
+minerva chat --config chat-config.json -q "Summarize my Python notes"
+```
+
+See the [Chat Guide](docs/CHAT_GUIDE.md) for detailed usage, configuration, and examples.
+
 ---
 
 ## 🎨 Usage Examples
@@ -489,6 +555,71 @@ echo "Wikipedia:"
 minerva peek wikipedia_history --chromadb ./chromadb_data --format json | jq '.count'
 ```
 
+### Example 6: Interactive Chat with Your Knowledge Base
+
+```bash
+# Create chat configuration with Ollama (local AI)
+cat > chat-config.json << 'EOF'
+{
+  "chromadb_path": "/Users/you/chromadb_data",
+  "ai_provider": {
+    "type": "ollama",
+    "embedding": {
+      "model": "mxbai-embed-large:latest"
+    },
+    "llm": {
+      "model": "llama3.1:8b"
+    }
+  },
+  "conversation_dir": "~/.minerva/conversations",
+  "default_max_results": 3,
+  "enable_streaming": true
+}
+EOF
+
+# Start interactive chat session
+minerva chat --config chat-config.json
+
+# Example conversation:
+# You: What knowledge bases do I have?
+# AI: 🔍 Listing available knowledge bases...
+#     Found 2 knowledge bases:
+#     ✓ personal-notes (1,234 chunks)
+#     ✓ python-books (5,678 chunks)
+#
+# You: Search python-books for information about decorators
+# AI: 🔍 Searching 'python-books' for: 'decorators'...
+#     [Provides detailed information from your indexed Python books]
+#
+# You: Can you give me examples?
+# AI: [Continues conversation with examples based on previous context]
+
+# Single-question mode (useful for scripts)
+minerva chat --config chat-config.json \
+  -q "Summarize my notes about Docker best practices"
+
+# List previous conversations
+minerva chat --config chat-config.json --list
+
+# Resume a previous conversation
+minerva chat --config chat-config.json --resume 20251030-143022-abc123
+
+# Use custom system prompt
+minerva chat --config chat-config.json \
+  --system "You are a Python expert. Focus on code quality and best practices."
+```
+
+**Chat Features:**
+
+- 🔍 **Semantic Search**: AI searches your knowledge bases using natural language
+- 💬 **Context Aware**: Maintains conversation history for follow-up questions
+- 📚 **Multi-Collection**: Access all your indexed collections in one chat
+- 💾 **Auto-Save**: Conversations automatically saved and resumable
+- ⚡ **Streaming**: Real-time response streaming for better UX
+- 🎯 **Smart Context**: Automatic context window management with summarization
+
+See the [Chat Guide](docs/CHAT_GUIDE.md) for advanced usage, troubleshooting, and more examples.
+
 ---
 
 ## 🧩 Extending Minerva
@@ -536,6 +667,7 @@ See the [Extractor Guide](docs/EXTRACTOR_GUIDE.md) for detailed tutorials.
 
 ## 📚 Documentation
 
+- **[Chat Guide](docs/CHAT_GUIDE.md)** - Interactive chat command usage and examples
 - **[Note Schema](docs/NOTE_SCHEMA.md)** - Complete JSON schema specification
 - **[Extractor Guide](docs/EXTRACTOR_GUIDE.md)** - How to write custom extractors
 - **[Configuration Guide](docs/CONFIGURATION_GUIDE.md)** - All configuration options

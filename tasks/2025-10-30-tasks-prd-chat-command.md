@@ -106,13 +106,13 @@ Generated from: `tasks/prd-chat-command.md`
   - [x] 7.7 Replace middle messages with summary while keeping system prompt and last 3-4 exchanges
   - [x] 7.8 Test context management with long conversations approaching token limits
 
-- [ ] 8.0 Testing and Documentation
-  - [ ] 8.1 Write unit tests for `ChatConfig` loading and validation (test invalid configs, missing fields)
-  - [ ] 8.2 Write unit tests for tool definitions and execution (mock search results)
-  - [ ] 8.3 Write unit tests for conversation history save/load/list operations
-  - [ ] 8.4 Write unit tests for token estimation and context window warnings
-  - [ ] 8.5 Write integration test for full chat workflow (single question mode with mock AI provider)
-  - [ ] 8.6 Create `docs/CHAT_GUIDE.md` with usage examples, configuration options, and troubleshooting
-  - [ ] 8.7 Add chat command examples to main README.md
-  - [ ] 8.8 Test with real Ollama instance for end-to-end validation
+- [x] 8.0 Testing and Documentation
+  - [x] 8.1 Write unit tests for `ChatConfig` loading and validation (test invalid configs, missing fields)
+  - [x] 8.2 Write unit tests for tool definitions and execution (mock search results)
+  - [x] 8.3 Write unit tests for conversation history save/load/list operations
+  - [x] 8.4 Write unit tests for token estimation and context window warnings
+  - [x] 8.5 Write integration test for full chat workflow (single question mode with mock AI provider)
+  - [x] 8.6 Create `docs/CHAT_GUIDE.md` with usage examples, configuration options, and troubleshooting
+  - [x] 8.7 Add chat command examples to main README.md
+  - [x] 8.8 Test with real Ollama instance for end-to-end validation
 
