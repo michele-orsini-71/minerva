@@ -377,3 +377,271 @@ Be concise and direct."""
             result['feedback'] = "Could not validate description due to an error"
 
         return result
+
+    def chat_completion(
+        self,
+        messages: List[Dict[str, Any]],
+        temperature: float = 0.7,
+        max_tokens: Optional[int] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+        stream: bool = False
+    ) -> Dict[str, Any]:
+        if not messages:
+            raise ValueError("Messages list cannot be empty")
+
+        try:
+            model_name = self._get_model_name_for_litellm(self.llm_model, for_embedding=False)
+
+            completion_params = {
+                'model': model_name,
+                'messages': messages,
+                'temperature': temperature,
+                'stream': stream
+            }
+
+            if max_tokens is not None:
+                completion_params['max_tokens'] = max_tokens
+
+            if tools:
+                completion_params['tools'] = tools
+
+            response = self.litellm.completion(**completion_params)
+
+            if stream:
+                return {'stream': response}
+
+            if not response:
+                raise AIProviderError("Invalid response from LLM: empty response")
+
+            try:
+                choices = response.choices
+            except (AttributeError, TypeError):
+                try:
+                    choices = response['choices']
+                except (KeyError, TypeError):
+                    raise AIProviderError("Invalid response from LLM: no choices")
+
+            if not choices:
+                raise AIProviderError("Invalid response from LLM: empty choices list")
+
+            first_choice = choices[0]
+
+            try:
+                message = first_choice.message
+            except (AttributeError, TypeError):
+                try:
+                    message = first_choice['message']
+                except (KeyError, TypeError):
+                    raise AIProviderError("Invalid response from LLM: missing message")
+
+            result = {'role': 'assistant'}
+
+            try:
+                content = message.content
+            except (AttributeError, TypeError):
+                try:
+                    content = message['content']
+                except (KeyError, TypeError):
+                    content = None
+
+            result['content'] = content
+
+            try:
+                tool_calls = message.tool_calls
+            except (AttributeError, TypeError):
+                try:
+                    tool_calls = message.get('tool_calls')
+                except (AttributeError, TypeError):
+                    tool_calls = None
+
+            if tool_calls:
+                result['tool_calls'] = self._extract_tool_calls(tool_calls)
+
+            try:
+                finish_reason = first_choice.finish_reason
+            except (AttributeError, TypeError):
+                try:
+                    finish_reason = first_choice.get('finish_reason')
+                except (AttributeError, TypeError):
+                    finish_reason = None
+
+            if finish_reason:
+                result['finish_reason'] = finish_reason
+
+            return result
+
+        except (AIProviderError, ProviderUnavailableError):
+            raise
+        except Exception as error:
+            error_str = str(error).lower()
+            if any(keyword in error_str for keyword in ['connection', 'refused', 'unavailable', 'timeout']):
+                raise ProviderUnavailableError(
+                    f"{self.provider_type} provider is unavailable: {error}\n"
+                    f"  Check that the service is running and accessible"
+                ) from error
+            elif 'rate limit' in error_str or 'quota' in error_str:
+                raise AIProviderError(f"Rate limit exceeded: {error}") from error
+            elif 'token' in error_str and 'limit' in error_str:
+                raise AIProviderError(f"Token limit exceeded: {error}") from error
+            else:
+                raise AIProviderError(f"Chat completion failed: {error}") from error
+
+    def chat_completion_streaming(
+        self,
+        messages: List[Dict[str, Any]],
+        temperature: float = 0.7,
+        max_tokens: Optional[int] = None,
+        tools: Optional[List[Dict[str, Any]]] = None
+    ):
+        if not messages:
+            raise ValueError("Messages list cannot be empty")
+
+        try:
+            model_name = self._get_model_name_for_litellm(self.llm_model, for_embedding=False)
+
+            completion_params = {
+                'model': model_name,
+                'messages': messages,
+                'temperature': temperature,
+                'stream': True
+            }
+
+            if max_tokens is not None:
+                completion_params['max_tokens'] = max_tokens
+
+            if tools:
+                completion_params['tools'] = tools
+
+            response = self.litellm.completion(**completion_params)
+
+            accumulated_content = []
+            accumulated_tool_calls = []
+
+            for chunk in response:
+                if not chunk:
+                    continue
+
+                try:
+                    choices = chunk.choices
+                except (AttributeError, TypeError):
+                    try:
+                        choices = chunk['choices']
+                    except (KeyError, TypeError):
+                        continue
+
+                if not choices:
+                    continue
+
+                first_choice = choices[0]
+
+                try:
+                    delta = first_choice.delta
+                except (AttributeError, TypeError):
+                    try:
+                        delta = first_choice['delta']
+                    except (KeyError, TypeError):
+                        continue
+
+                chunk_data = {}
+
+                try:
+                    content = delta.content
+                except (AttributeError, TypeError):
+                    try:
+                        content = delta.get('content')
+                    except (AttributeError, TypeError):
+                        content = None
+
+                if content:
+                    accumulated_content.append(content)
+                    chunk_data['content'] = content
+
+                try:
+                    tool_calls = delta.tool_calls
+                except (AttributeError, TypeError):
+                    try:
+                        tool_calls = delta.get('tool_calls')
+                    except (AttributeError, TypeError):
+                        tool_calls = None
+
+                if tool_calls:
+                    accumulated_tool_calls.extend(tool_calls)
+                    chunk_data['tool_calls'] = tool_calls
+
+                try:
+                    finish_reason = first_choice.finish_reason
+                except (AttributeError, TypeError):
+                    try:
+                        finish_reason = first_choice.get('finish_reason')
+                    except (AttributeError, TypeError):
+                        finish_reason = None
+
+                if finish_reason:
+                    chunk_data['finish_reason'] = finish_reason
+                    chunk_data['full_content'] = ''.join(accumulated_content)
+                    if accumulated_tool_calls:
+                        chunk_data['full_tool_calls'] = self._extract_tool_calls(accumulated_tool_calls)
+
+                if chunk_data:
+                    yield chunk_data
+
+        except (AIProviderError, ProviderUnavailableError):
+            raise
+        except Exception as error:
+            error_str = str(error).lower()
+            if any(keyword in error_str for keyword in ['connection', 'refused', 'unavailable', 'timeout']):
+                raise ProviderUnavailableError(
+                    f"{self.provider_type} provider is unavailable: {error}\n"
+                    f"  Check that the service is running and accessible"
+                ) from error
+            elif 'rate limit' in error_str or 'quota' in error_str:
+                raise AIProviderError(f"Rate limit exceeded: {error}") from error
+            elif 'token' in error_str and 'limit' in error_str:
+                raise AIProviderError(f"Token limit exceeded: {error}") from error
+            else:
+                raise AIProviderError(f"Chat completion streaming failed: {error}") from error
+
+    def _extract_tool_calls(self, tool_calls) -> List[Dict[str, Any]]:
+        extracted = []
+        for tool_call in tool_calls:
+            try:
+                call_id = tool_call.id
+            except (AttributeError, TypeError):
+                try:
+                    call_id = tool_call['id']
+                except (KeyError, TypeError):
+                    call_id = None
+
+            try:
+                function = tool_call.function
+            except (AttributeError, TypeError):
+                try:
+                    function = tool_call['function']
+                except (KeyError, TypeError):
+                    continue
+
+            try:
+                function_name = function.name
+            except (AttributeError, TypeError):
+                try:
+                    function_name = function['name']
+                except (KeyError, TypeError):
+                    continue
+
+            try:
+                arguments_str = function.arguments
+            except (AttributeError, TypeError):
+                try:
+                    arguments_str = function['arguments']
+                except (KeyError, TypeError):
+                    arguments_str = '{}'
+
+            extracted.append({
+                'id': call_id,
+                'function': {
+                    'name': function_name,
+                    'arguments': arguments_str
+                }
+            })
+
+        return extracted
