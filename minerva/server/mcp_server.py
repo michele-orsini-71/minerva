@@ -24,7 +24,7 @@ from minerva.server.search_tools import (
 )
 from minerva.common.ai_provider import AIProvider
 
-mcp = FastMCP("markdown-notes-mcp-server")
+mcp = FastMCP("minerva-mcp-server")
 
 # Global configuration (loaded at startup)
 CONFIG: Dict[str, Any] = {}

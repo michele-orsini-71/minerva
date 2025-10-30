@@ -1,5 +1,5 @@
 # Core RAG Pipeline Dependencies
-# Generated from markdown-notes-cag-data-creator/setup.py
+# Generated from minerva/setup.py
 # Install with: pip install -r requirements.txt
 
 # Vector database and AI providers

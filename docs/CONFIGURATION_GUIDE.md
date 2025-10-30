@@ -128,7 +128,7 @@ Create server configuration (e.g., `server-config.json`):
 ```json
 {
   "chromadb_path": "./chromadb_data",
-  "log_level": "INFO"
+  "default_max_results": 5
 }
 ```
 
@@ -140,10 +140,10 @@ minerva serve --config server-config.json
 
 ### Fields
 
-| Field           | Type   | Required | Default  | Description                                        |
-| --------------- | ------ | -------- | -------- | -------------------------------------------------- |
-| `chromadb_path` | string | ✅       | -        | Path to ChromaDB storage                           |
-| `log_level`     | string | ❌       | `"INFO"` | Logging level: `DEBUG`, `INFO`, `WARNING`, `ERROR` |
+| Field                 | Type   | Required | Default | Description                                        |
+| --------------------- | ------ | -------- | ------- | -------------------------------------------------- |
+| `chromadb_path`       | string | ✅       | -       | Absolute path to ChromaDB storage directory        |
+| `default_max_results` | integer | ✅      | -       | Default number of search results (recommended: 3-5, max: 15) |
 
 ### What the Server Does
 
@@ -474,7 +474,7 @@ minerva peek my_notes --chromadb ./chromadb_data --format table
 cat > server-config.json << 'EOF'
 {
   "chromadb_path": "./chromadb_data",
-  "log_level": "INFO"
+  "default_max_results": 5
 }
 EOF
 
@@ -521,7 +521,7 @@ minerva index --config wiki-config.json --verbose
 cat > server-config.json << 'EOF'
 {
   "chromadb_path": "./chromadb_data",
-  "log_level": "INFO"
+  "default_max_results": 5
 }
 EOF
 minerva serve --config server-config.json

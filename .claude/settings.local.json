@@ -17,7 +17,8 @@
       "Bash(lsof:*)",
       "Bash(xargs kill:*)",
       "Bash(pip install:*)",
-      "Bash(.venv/bin/python -m pytest tests/test_content_hash.py -v)"
+      "Bash(.venv/bin/python -m pytest tests/test_content_hash.py -v)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []

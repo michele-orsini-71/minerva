@@ -2,29 +2,30 @@
 
 ## Overview
 - Multi-source knowledge ingestion stack for Bear backups, ZIM archives, and markdown notes.
-- Primary flow: extract → normalize JSON → chunk & embed via `markdown-notes-cag-data-creator` → inspect/search with Chroma + MCP.
+- Primary flow: extract → normalize JSON → chunk & embed via `minerva` → inspect/search with Chroma + MCP.
 - Entire pipeline runs locally: Ollama supplies embeddings and validations; ChromaDB persists vectors under `chromadb_data/`.
 
 ## Key Directories
-- `bear-notes-extractor/` – CLI + library that converts `.bear2bk` backups to normalized JSON; fixtures live in `test-data/`.
-- `zim-articles-parser/` – CLI (`extract-zim-articles`) for pulling markdown and catalogs from ZIM archives.
-- `markdown-notes-cag-data-creator/` – Config-driven multi-collection RAG pipeline (`full_pipeline.py`) with LangChain chunking, embedding, and storage modules.
+- `minerva/` – Core RAG pipeline package with CLI commands (`index`, `serve`, `validate`, `peek`), LangChain chunking, embedding, and storage modules.
+- `extractors/bear-notes-extractor/` – CLI + library that converts `.bear2bk` backups to normalized JSON; fixtures live in `test-data/`.
+- `extractors/zim-extractor/` – CLI (`zim-extractor`) for pulling markdown and catalogs from ZIM archives.
+- `extractors/markdown-books-extractor/` – CLI for extracting markdown books into note format.
 - `chroma-peek/` – Streamlit inspector pointed at local Chroma collections (keep `chromadb_data/` untracked).
-- `markdown-notes-mcp-server/` – FastMCP server exposing list/search tools over generated collections; reads `config.json`.
 - `prompts/`, `tasks/`, and `tools/` – Shared prompts, planning docs, automation/scripts (e.g., `tools/find_dead_code.py`).
 
 ## Environment & Installation
 - Activate the shared virtualenv: `source .venv/bin/activate` (Python 3.13 expected).
-- Editable installs after activation: `pip install -e bear-notes-extractor -e markdown-notes-cag-data-creator[dev] -e zim-articles-parser[dev]`.
+- Editable installs after activation: `pip install -e .` for minerva core, then `pip install -e extractors/bear-notes-extractor -e extractors/zim-extractor -e extractors/markdown-books-extractor` for extractors.
 - Ollama must be running (`ollama serve`) with `mxbai-embed-large:latest`; pull `llama3.1:8b` when enabling AI validation.
 - Point configs at the absolute `chromadb_data/` path; keep the directory out of version control.
 
 ## Core Workflows
-- **Bear extraction**: `python bear-notes-extractor/cli.py path/to/backup.bear2bk` → emits `{backup}.json`; console script alias `extract-bear-notes`.
-- **ZIM extraction**: `python zim-articles-parser/zim_cli.py archive.zim --json catalog.json --output-dir markdown/ --limit 1000`; supports installed `extract-zim-articles` entrypoint.
-- **RAG pipeline**: Create config in `markdown-notes-cag-data-creator/collections/*.json`, then run `python markdown-notes-cag-data-creator/full_pipeline.py --config collections/name.json --verbose` (`--dry-run` for validation-only run).
-- **Data inspection**: Launch `streamlit run chroma-peek/main.py -- --chromadb-path ./chromadb_data` to browse stored chunks.
-- **MCP server**: `python markdown-notes-mcp-server/server.py` loads `config.json`, validates Ollama + Chroma connectivity, and exposes tools to Claude Desktop (update Claude config with the absolute path).
+- **Bear extraction**: `bear-extractor "Bear Notes.bear2bk" -o notes.json` or use `python -m bear_extractor.cli`.
+- **ZIM extraction**: `zim-extractor archive.zim -o articles.json --limit 1000` or use `python -m zim_extractor.cli`.
+- **Validation**: `minerva validate notes.json --verbose` to check schema compliance.
+- **RAG pipeline**: Create config JSON, then run `minerva index --config config.json --verbose` (`--dry-run` for validation-only run).
+- **Data inspection**: `minerva peek COLLECTION_NAME --chromadb ./chromadb_data --format table` or launch `streamlit run chroma-peek/main.py -- --chromadb-path ./chromadb_data`.
+- **MCP server**: `minerva serve --config server-config.json` validates connectivity and exposes tools to Claude Desktop (update Claude config with the absolute path).
 
 ## Testing & Quality
 - Run `pytest` from the repo root; package-specific suites live under each module’s `tests/` directory.

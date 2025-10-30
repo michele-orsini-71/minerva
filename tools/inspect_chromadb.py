@@ -33,7 +33,7 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 
 # Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "markdown-notes-cag-data-creator"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "minerva"))
 
 try:
     import chromadb

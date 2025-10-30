@@ -123,7 +123,7 @@ def analyze_dead_code(directory: str):
 
 
 if __name__ == "__main__":
-    target_dir = "markdown-notes-cag-data-creator"
+    target_dir = "minerva"
 
     if not os.path.exists(target_dir):
         print(f"Error: Directory '{target_dir}' not found")

@@ -148,8 +148,8 @@ Sample Documents:
 - chromadb library (`pip install chromadb`)
 
 **Related Tools**:
-- `../markdown-notes-cag-data-creator/full_pipeline.py` - Create and populate collections
-- `../markdown-notes-mcp-server/server.py` - Query collections via MCP
+- `minerva index` - Create and populate collections
+- `minerva serve` - Query collections via MCP server
 - `../chroma-peek/` - Visual ChromaDB exploration tool
 
 ---

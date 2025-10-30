@@ -349,7 +349,7 @@ minerva serve --config server-config.json
 ```json
 {
   "chromadb_path": "./chromadb_data",
-  "log_level": "INFO"
+  "default_max_results": 5
 }
 ```
 
@@ -449,7 +449,7 @@ minerva peek personal_knowledge --chromadb ./chromadb_data --format json > colle
 cat > server-config.json << 'EOF'
 {
   "chromadb_path": "./chromadb_data",
-  "log_level": "INFO"
+  "default_max_results": 5
 }
 EOF
 
