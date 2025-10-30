@@ -6,8 +6,8 @@ Generated from: `tasks/prd-chat-command.md`
 
 ### New Files to Create
 
-- `minerva/chat/__init__.py` - Chat module initialization
-- `minerva/chat/config.py` - Chat configuration schema and loading
+- `minerva/chat/__init__.py` - [CREATED] Chat module initialization
+- `minerva/chat/config.py` - [CREATED] Chat configuration schema and loading with dataclass, JSON schema validation, and env var substitution
 - `minerva/chat/tools.py` - Tool definitions and execution wrappers
 - `minerva/chat/history.py` - Conversation persistence and management
 - `minerva/chat/chat_engine.py` - Core chat engine with conversation state management
@@ -19,8 +19,8 @@ Generated from: `tasks/prd-chat-command.md`
 - `tests/test_chat_engine.py` - Unit tests for chat engine
 - `tests/test_chat_context_window.py` - Unit tests for context window management
 - `tests/integration/test_chat_workflow.py` - Integration tests for full chat workflow
-- `configs/chat-config-ollama.json` - Example chat config for Ollama
-- `configs/chat-config-openai.json` - Example chat config for OpenAI
+- `configs/chat-config-ollama.json` - [CREATED] Example chat config for Ollama
+- `configs/chat-config-openai.json` - [CREATED] Example chat config for OpenAI
 - `docs/CHAT_GUIDE.md` - User guide for chat command
 
 ### Existing Files to Modify
@@ -50,13 +50,13 @@ Generated from: `tasks/prd-chat-command.md`
   - [x] 1.5 Add error handling for chat-specific errors (rate limits, token limits, tool execution failures)
   - [x] 1.6 Add `chat_completion_streaming()` generator method that yields message chunks for real-time display
 
-- [ ] 2.0 Create Chat Configuration and Schema
-  - [ ] 2.1 Create `minerva/chat/config.py` with `ChatConfig` dataclass containing chromadb_path, ai_provider, and chat_settings
-  - [ ] 2.2 Define JSON schema `CHAT_CONFIG_SCHEMA` with required fields (chromadb_path, ai_provider) and optional chat_settings
-  - [ ] 2.3 Implement `load_chat_config(config_path: str) -> ChatConfig` function with schema validation
-  - [ ] 2.4 Add support for environment variable substitution in API keys (reuse pattern from `config_loader.py`)
-  - [ ] 2.5 Add default values for optional settings (conversation_dir: ~/.minerva/conversations, default_max_results: 3, enable_streaming: true)
-  - [ ] 2.6 Create example config files in `configs/` for Ollama and OpenAI providers
+- [x] 2.0 Create Chat Configuration and Schema
+  - [x] 2.1 Create `minerva/chat/config.py` with `ChatConfig` dataclass containing chromadb_path, ai_provider, and chat_settings
+  - [x] 2.2 Define JSON schema `CHAT_CONFIG_SCHEMA` with required fields (chromadb_path, ai_provider) and optional chat_settings
+  - [x] 2.3 Implement `load_chat_config(config_path: str) -> ChatConfig` function with schema validation
+  - [x] 2.4 Add support for environment variable substitution in API keys (reuse pattern from `config_loader.py`)
+  - [x] 2.5 Add default values for optional settings (conversation_dir: ~/.minerva/conversations, default_max_results: 3, enable_streaming: true)
+  - [x] 2.6 Create example config files in `configs/` for Ollama and OpenAI providers
 
 - [ ] 3.0 Build Tool Registry and Definitions
   - [ ] 3.1 Create `minerva/chat/tools.py` module with tool definitions in OpenAI function calling format
