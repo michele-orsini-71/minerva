@@ -9,13 +9,13 @@ Generated from: `tasks/prd-chat-command.md`
 - `minerva/chat/__init__.py` - [CREATED] Chat module initialization
 - `minerva/chat/config.py` - [CREATED] Chat configuration schema and loading with dataclass, JSON schema validation, and env var substitution
 - `minerva/chat/tools.py` - [CREATED] Tool definitions and execution wrappers for list_knowledge_bases and search_knowledge_base
-- `minerva/chat/history.py` - Conversation persistence and management
+- `minerva/chat/history.py` - [CREATED] Conversation persistence and management with ConversationHistory class, save/load/list functions, and auto-save support
 - `minerva/chat/chat_engine.py` - Core chat engine with conversation state management
 - `minerva/chat/context_window.py` - Token estimation and context management
 - `minerva/commands/chat.py` - CLI command implementation for `minerva chat`
 - `tests/test_chat_config.py` - Unit tests for chat configuration
 - `tests/test_chat_tools.py` - Unit tests for tool registry
-- `tests/test_chat_history.py` - Unit tests for history manager
+- `tests/test_chat_history.py` - [CREATED] Unit tests for history manager with 25 comprehensive test cases
 - `tests/test_chat_engine.py` - Unit tests for chat engine
 - `tests/test_chat_context_window.py` - Unit tests for context window management
 - `tests/integration/test_chat_workflow.py` - Integration tests for full chat workflow
@@ -66,14 +66,14 @@ Generated from: `tasks/prd-chat-command.md`
   - [x] 3.5 Create `execute_tool(tool_name: str, arguments: Dict, context: Dict) -> Dict` function to dispatch tool calls
   - [x] 3.6 Format tool results into AI-friendly text summaries (e.g., "Found 3 results from 'my-notes'...")
 
-- [ ] 4.0 Implement Conversation History Manager
-  - [ ] 4.1 Create `minerva/chat/history.py` module with `ConversationHistory` class
-  - [ ] 4.2 Implement `generate_conversation_id()` function using timestamp format: YYYYMMDD-HHMMSS-{random}
-  - [ ] 4.3 Implement `save_conversation(conversation: Dict, conversation_dir: Path) -> str` to write JSON file
-  - [ ] 4.4 Implement `load_conversation(conversation_id: str, conversation_dir: Path) -> Dict` to read JSON file
-  - [ ] 4.5 Implement `list_conversations(conversation_dir: Path) -> List[Dict]` to show past conversations with metadata
-  - [ ] 4.6 Create conversation directory if it doesn't exist (handle ~/.minerva/conversations expansion)
-  - [ ] 4.7 Add auto-save after each message exchange to prevent data loss
+- [x] 4.0 Implement Conversation History Manager
+  - [x] 4.1 Create `minerva/chat/history.py` module with `ConversationHistory` class
+  - [x] 4.2 Implement `generate_conversation_id()` function using timestamp format: YYYYMMDD-HHMMSS-{random}
+  - [x] 4.3 Implement `save_conversation(conversation: Dict, conversation_dir: Path) -> str` to write JSON file
+  - [x] 4.4 Implement `load_conversation(conversation_id: str, conversation_dir: Path) -> Dict` to read JSON file
+  - [x] 4.5 Implement `list_conversations(conversation_dir: Path) -> List[Dict]` to show past conversations with metadata
+  - [x] 4.6 Create conversation directory if it doesn't exist (handle ~/.minerva/conversations expansion)
+  - [x] 4.7 Add auto-save after each message exchange to prevent data loss
 
 - [ ] 5.0 Build Chat Engine with REPL Interface
   - [ ] 5.1 Create `minerva/chat/chat_engine.py` with `ChatEngine` class that manages conversation state
