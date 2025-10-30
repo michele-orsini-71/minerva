@@ -10,7 +10,7 @@ Generated from: `tasks/prd-chat-command.md`
 - `minerva/chat/config.py` - [CREATED] Chat configuration schema and loading with dataclass, JSON schema validation, and env var substitution
 - `minerva/chat/tools.py` - [CREATED] Tool definitions and execution wrappers for list_knowledge_bases and search_knowledge_base
 - `minerva/chat/history.py` - [CREATED] Conversation persistence and management with ConversationHistory class, save/load/list functions, and auto-save support
-- `minerva/chat/chat_engine.py` - Core chat engine with conversation state management
+- `minerva/chat/chat_engine.py` - [CREATED] Core chat engine with conversation state management, tool execution loop, streaming support, and signal handling
 - `minerva/chat/context_window.py` - Token estimation and context management
 - `minerva/commands/chat.py` - CLI command implementation for `minerva chat`
 - `tests/test_chat_config.py` - Unit tests for chat configuration
@@ -75,15 +75,15 @@ Generated from: `tasks/prd-chat-command.md`
   - [x] 4.6 Create conversation directory if it doesn't exist (handle ~/.minerva/conversations expansion)
   - [x] 4.7 Add auto-save after each message exchange to prevent data loss
 
-- [ ] 5.0 Build Chat Engine with REPL Interface
-  - [ ] 5.1 Create `minerva/chat/chat_engine.py` with `ChatEngine` class that manages conversation state
-  - [ ] 5.2 Implement `initialize_conversation(system_prompt: str, ai_provider: AIProvider, config: ChatConfig)` method
-  - [ ] 5.3 Implement `send_message(user_message: str)` method that coordinates AI response and tool execution
-  - [ ] 5.4 Add tool call detection and execution loop (AI can make multiple tool calls before responding)
-  - [ ] 5.5 Implement streaming response display with word-by-word output using rich or simple print statements
-  - [ ] 5.6 Add visual feedback for tool executions (e.g., "🔍 Searching my-personal-notes...")
-  - [ ] 5.7 Handle Ctrl+C interruption gracefully by saving conversation state before exit
-  - [ ] 5.8 Track message history and update conversation metadata (token count, message count)
+- [x] 5.0 Build Chat Engine with REPL Interface
+  - [x] 5.1 Create `minerva/chat/chat_engine.py` with `ChatEngine` class that manages conversation state
+  - [x] 5.2 Implement `initialize_conversation(system_prompt: str, ai_provider: AIProvider, config: ChatConfig)` method
+  - [x] 5.3 Implement `send_message(user_message: str)` method that coordinates AI response and tool execution
+  - [x] 5.4 Add tool call detection and execution loop (AI can make multiple tool calls before responding)
+  - [x] 5.5 Implement streaming response display with word-by-word output using rich or simple print statements
+  - [x] 5.6 Add visual feedback for tool executions (e.g., "🔍 Searching my-personal-notes...")
+  - [x] 5.7 Handle Ctrl+C interruption gracefully by saving conversation state before exit
+  - [x] 5.8 Track message history and update conversation metadata (token count, message count)
 
 - [ ] 6.0 Create Chat CLI Command
   - [ ] 6.1 Create `minerva/commands/chat.py` with `run_chat(args)` function
