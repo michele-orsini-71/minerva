@@ -12,7 +12,7 @@ Generated from: `tasks/prd-chat-command.md`
 - `minerva/chat/history.py` - [CREATED] Conversation persistence and management with ConversationHistory class, save/load/list functions, and auto-save support
 - `minerva/chat/chat_engine.py` - [CREATED] Core chat engine with conversation state management, tool execution loop, streaming support, and signal handling
 - `minerva/chat/context_window.py` - Token estimation and context management
-- `minerva/commands/chat.py` - CLI command implementation for `minerva chat`
+- `minerva/commands/chat.py` - [CREATED] CLI command implementation for `minerva chat` with run_chat() function, interactive REPL, single-question mode, conversation listing/resuming, and comprehensive error handling
 - `tests/test_chat_config.py` - Unit tests for chat configuration
 - `tests/test_chat_tools.py` - Unit tests for tool registry
 - `tests/test_chat_history.py` - [CREATED] Unit tests for history manager with 25 comprehensive test cases
@@ -30,7 +30,7 @@ Generated from: `tasks/prd-chat-command.md`
   - Added `chat_completion_streaming()` generator method for real-time response streaming
   - Added `_extract_tool_calls()` helper for parsing tool call responses from LLM
   - Added error handling for rate limits, token limits, and connection failures
-- `minerva/cli.py` - Add chat subcommand to main CLI parser
+- `minerva/cli.py` - [MODIFIED] Added chat subcommand to main CLI parser with --config, -q, --system, --list, and --resume flags
 - `requirements.txt` - Add dependencies (rich for terminal UI, if not already present)
 
 ### Notes
@@ -85,16 +85,16 @@ Generated from: `tasks/prd-chat-command.md`
   - [x] 5.7 Handle Ctrl+C interruption gracefully by saving conversation state before exit
   - [x] 5.8 Track message history and update conversation metadata (token count, message count)
 
-- [ ] 6.0 Create Chat CLI Command
-  - [ ] 6.1 Create `minerva/commands/chat.py` with `run_chat(args)` function
-  - [ ] 6.2 Add argument parser in `minerva/cli.py` for chat subcommand with flags: --config, -q, --system, --list, --resume
-  - [ ] 6.3 Implement single-question mode (`-q` flag) that runs one query and exits
-  - [ ] 6.4 Implement interactive REPL loop with input prompt "You: " and exit on "exit", "quit", or Ctrl+D
-  - [ ] 6.5 Add special commands: `/clear` (start new conversation), `/help` (show commands), `/exit` (quit)
-  - [ ] 6.6 Display welcome message showing available collections count, AI provider/model, and available commands
-  - [ ] 6.7 Implement `--list` flag to show past conversations from history
-  - [ ] 6.8 Implement `--resume` flag to continue a previous conversation by ID
-  - [ ] 6.9 Add error handling for missing config, ChromaDB connection failures, and AI provider unavailable
+- [x] 6.0 Create Chat CLI Command
+  - [x] 6.1 Create `minerva/commands/chat.py` with `run_chat(args)` function
+  - [x] 6.2 Add argument parser in `minerva/cli.py` for chat subcommand with flags: --config, -q, --system, --list, --resume
+  - [x] 6.3 Implement single-question mode (`-q` flag) that runs one query and exits
+  - [x] 6.4 Implement interactive REPL loop with input prompt "You: " and exit on "exit", "quit", or Ctrl+D
+  - [x] 6.5 Add special commands: `/clear` (start new conversation), `/help` (show commands), `/exit` (quit)
+  - [x] 6.6 Display welcome message showing available collections count, AI provider/model, and available commands
+  - [x] 6.7 Implement `--list` flag to show past conversations from history
+  - [x] 6.8 Implement `--resume` flag to continue a previous conversation by ID
+  - [x] 6.9 Add error handling for missing config, ChromaDB connection failures, and AI provider unavailable
 
 - [ ] 7.0 Add Context Window Management
   - [ ] 7.1 Create `minerva/chat/context_window.py` with `estimate_tokens(text: str) -> int` function using `len(text) / 4`
