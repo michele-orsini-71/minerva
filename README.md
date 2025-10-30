@@ -26,6 +26,7 @@ Minerva solves the problem of **information overload** in personal knowledge man
 ✨ **Multi-Source Support**: Extract notes from Bear, Zim articles, markdown books, or any source via custom extractors
 🔍 **Semantic Search**: Find relevant information by meaning, not just keywords
 🤖 **MCP Integration**: Works seamlessly with Claude Desktop and other MCP-compatible AI tools
+📝 **Automatic Citations**: AI assistants automatically cite source notes when presenting information
 🌐 **Multi-Provider AI**: Choose between local (Ollama) or cloud (OpenAI, Gemini) AI providers
 📊 **Transparent Storage**: All data stored locally in ChromaDB with full control
 🔧 **Extensible**: Write custom extractors for any data source in any language

@@ -174,6 +174,40 @@ When started, the server:
 [INFO] MCP server ready
 ```
 
+### Citation Behavior
+
+The MCP server is configured to **automatically instruct Claude to cite sources** when presenting information from search results.
+
+**How it works**:
+
+- Each search result includes a `noteTitle` field indicating the source
+- The search tool description explicitly requires Claude to cite this information
+- Citations should appear naturally: `"According to [Note Title], ..."` or `"From [Note Title]: ..."`
+
+**Example interaction**:
+
+```
+User: What does my documentation say about error handling?
+
+Claude: According to "Python Best Practices", you should always use
+specific exception types rather than broad catches. The documentation
+recommends...
+```
+
+**Why citations matter**:
+
+- **Provenance**: Users know where information came from
+- **Trust**: Users can verify the source
+- **Context**: Users understand if information might be outdated
+- **Discoverability**: Users learn which notes contain relevant information
+
+**Troubleshooting**: If Claude is not citing sources consistently:
+
+1. Verify you're using the latest version of `mcp_server.py`
+2. Restart the MCP server after any code updates
+3. Check that search results include the `noteTitle` field (run tests: `pytest tests/test_search_tools.py`)
+4. The citation requirement is in the tool description and should be followed automatically
+
 ---
 
 ## AI Provider Setup

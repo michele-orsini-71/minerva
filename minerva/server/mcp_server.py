@@ -117,7 +117,10 @@ def initialize_server(config_path: str) -> None:
 
 @mcp.tool(
     description="Discover all available knowledge bases (collections) in the system. "
-                "Returns collection names, descriptions, and chunk counts to help users choose which knowledge base to search."
+                "Returns collection names, descriptions, and chunk counts to help users choose which knowledge base to search. "
+                "Use this first to see what collections are available before calling search_knowledge_base. "
+                "\n\n"
+                "NOTE: When you later search these collections, you MUST cite sources using the 'noteTitle' field from search results."
 )
 def list_knowledge_bases() -> List[Dict[str, Any]]:
     try:
@@ -139,10 +142,13 @@ def list_knowledge_bases() -> List[Dict[str, Any]]:
                 "Use this for conceptual queries like 'what does the documentation say about X?', 'how should I implement Y?', 'what are the standards for Z?'. "
                 "This searches curated, indexed content and returns ranked results by relevance. "
                 "More efficient than Grep/Glob for semantic/documentation searches. Not for searching raw source code - use Grep/Glob for exact string matching in source files. "
-                "IMPORTANT: Always cite sources by including the noteTitle field in your response to users. "
-                "The noteTitle indicates where the information came from (e.g., note name, article title, or document reference). "
-                "Format citations naturally, such as: 'According to [Note Title]...' or 'From [Note Title]: ...' "
-                "This ensures users know the provenance of the information. "
+                "\n\n"
+                "⚠️ CITATION REQUIREMENT - YOU MUST FOLLOW THIS:\n"
+                "ALWAYS cite the source by including the 'noteTitle' field when presenting information to users. "
+                "Every single response that uses information from search results MUST include the note title. "
+                "Format: 'According to [noteTitle], ...' or 'From [noteTitle]: ...' or '[noteTitle] states that ...' "
+                "Do NOT present information without citing its source. The noteTitle indicates where the information came from. "
+                "\n\n"
                 "TOKEN LIMITS: Each result includes surrounding context (~1,500 tokens). "
                 "Start with max_results=3-5 (default: 5). If you get a token limit error, retry with fewer results. "
                 "The system will self-regulate through error responses. Max allowed: 15 results."
