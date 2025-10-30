@@ -18,7 +18,9 @@
       "Bash(xargs kill:*)",
       "Bash(pip install:*)",
       "Bash(.venv/bin/python -m pytest tests/test_content_hash.py -v)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(chmod:*)",
+      "Bash(/Users/michele/my-code/minerva/test-mcp-http.sh)"
     ],
     "deny": [],
     "ask": []
