@@ -8,7 +8,7 @@ Generated from: `tasks/prd-chat-command.md`
 
 - `minerva/chat/__init__.py` - [CREATED] Chat module initialization
 - `minerva/chat/config.py` - [CREATED] Chat configuration schema and loading with dataclass, JSON schema validation, and env var substitution
-- `minerva/chat/tools.py` - Tool definitions and execution wrappers
+- `minerva/chat/tools.py` - [CREATED] Tool definitions and execution wrappers for list_knowledge_bases and search_knowledge_base
 - `minerva/chat/history.py` - Conversation persistence and management
 - `minerva/chat/chat_engine.py` - Core chat engine with conversation state management
 - `minerva/chat/context_window.py` - Token estimation and context management
@@ -58,13 +58,13 @@ Generated from: `tasks/prd-chat-command.md`
   - [x] 2.5 Add default values for optional settings (conversation_dir: ~/.minerva/conversations, default_max_results: 3, enable_streaming: true)
   - [x] 2.6 Create example config files in `configs/` for Ollama and OpenAI providers
 
-- [ ] 3.0 Build Tool Registry and Definitions
-  - [ ] 3.1 Create `minerva/chat/tools.py` module with tool definitions in OpenAI function calling format
-  - [ ] 3.2 Define `list_knowledge_bases` tool that wraps `minerva.server.collection_discovery.list_collections()`
-  - [ ] 3.3 Define `search_knowledge_base` tool that wraps `minerva.server.search_tools.search_knowledge_base()`
-  - [ ] 3.4 Create `get_tool_definitions() -> List[Dict]` function that returns tool schemas for AI
-  - [ ] 3.5 Create `execute_tool(tool_name: str, arguments: Dict, context: Dict) -> Dict` function to dispatch tool calls
-  - [ ] 3.6 Format tool results into AI-friendly text summaries (e.g., "Found 3 results from 'my-notes'...")
+- [x] 3.0 Build Tool Registry and Definitions
+  - [x] 3.1 Create `minerva/chat/tools.py` module with tool definitions in OpenAI function calling format
+  - [x] 3.2 Define `list_knowledge_bases` tool that wraps `minerva.server.collection_discovery.list_collections()`
+  - [x] 3.3 Define `search_knowledge_base` tool that wraps `minerva.server.search_tools.search_knowledge_base()`
+  - [x] 3.4 Create `get_tool_definitions() -> List[Dict]` function that returns tool schemas for AI
+  - [x] 3.5 Create `execute_tool(tool_name: str, arguments: Dict, context: Dict) -> Dict` function to dispatch tool calls
+  - [x] 3.6 Format tool results into AI-friendly text summaries (e.g., "Found 3 results from 'my-notes'...")
 
 - [ ] 4.0 Implement Conversation History Manager
   - [ ] 4.1 Create `minerva/chat/history.py` module with `ConversationHistory` class
