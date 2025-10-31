@@ -67,9 +67,9 @@ def list_conversations(conversation_dir: Path) -> List[Dict]:
     if not directory.exists():
         return []
 
-    conversations = []
+    conversations_with_sort_key = []
 
-    for file_path in sorted(directory.glob('*.json'), reverse=True):
+    for file_path in directory.glob('*.json'):
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 conversation = json.load(f)
@@ -81,13 +81,17 @@ def list_conversations(conversation_dir: Path) -> List[Dict]:
                 'message_count': len(conversation.get('messages', [])),
                 'title': _generate_conversation_title(conversation),
             }
-            conversations.append(metadata)
+            sort_timestamp = metadata['last_modified'] or metadata['created_at']
+            if not sort_timestamp:
+                sort_timestamp = datetime.fromtimestamp(file_path.stat().st_mtime).isoformat()
+            conversations_with_sort_key.append((metadata, sort_timestamp, file_path.stat().st_mtime))
 
         except (json.JSONDecodeError, KeyError) as e:
             logger.warning(f"Skipping invalid conversation file {file_path}: {e}")
             continue
 
-    return conversations
+    conversations_with_sort_key.sort(key=lambda item: ((item[1] or ''), item[2]), reverse=True)
+    return [item[0] for item in conversations_with_sort_key]
 
 
 def _generate_conversation_title(conversation: Dict) -> str:

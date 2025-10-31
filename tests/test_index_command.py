@@ -160,12 +160,25 @@ class TestRunIndex:
         mock_dry_run.assert_called_once_with(mock_config, valid_notes_list, False)
 
     @patch('minerva.commands.index.run_full_indexing')
+    @patch('minerva.commands.index.check_collection_early', return_value=(False, "create"))
+    @patch('minerva.commands.index.initialize_and_validate_provider')
     @patch('minerva.commands.index.load_and_print_notes')
     @patch('minerva.commands.index.load_and_print_config')
-    def test_index_full_mode(self, mock_load_config, mock_load_notes, mock_full_indexing, valid_notes_list, temp_dir: Path):
+    def test_index_full_mode(
+        self,
+        mock_load_config,
+        mock_load_notes,
+        mock_init_provider,
+        _mock_check_collection,
+        mock_full_indexing,
+        valid_notes_list,
+        temp_dir: Path
+    ):
         mock_config = Mock()
         mock_load_config.return_value = mock_config
         mock_load_notes.return_value = valid_notes_list
+        mock_provider = Mock()
+        mock_init_provider.return_value = mock_provider
 
         config_file = temp_dir / "config.json"
         args = Namespace(config=config_file, verbose=False, dry_run=False)
@@ -260,10 +273,8 @@ class TestRunFullIndexing:
     @patch('minerva.commands.index.initialize_chromadb_client')
     @patch('minerva.commands.index.generate_embeddings')
     @patch('minerva.commands.index.create_chunks_from_notes')
-    @patch('minerva.commands.index.initialize_and_validate_provider')
     def test_full_indexing_successful(
         self,
-        mock_init_provider,
         mock_create_chunks,
         mock_generate_embeddings,
         mock_init_chromadb,
@@ -279,7 +290,6 @@ class TestRunFullIndexing:
             'provider': 'ollama',
             'model': 'mxbai-embed-large:latest'
         }
-        mock_init_provider.return_value = mock_provider
 
         # Mock chunks
         mock_chunks = [{"chunk_id": "1"}, {"chunk_id": "2"}]
@@ -310,14 +320,13 @@ class TestRunFullIndexing:
         mock_config.chunk_size = 1200
         mock_config.force_recreate = False
 
-        run_full_indexing(mock_config, valid_notes_list, verbose=False, start_time=0.0)
+        run_full_indexing(mock_config, valid_notes_list, False, 0.0, mock_provider)
 
         # Verify all steps were called
-        mock_init_provider.assert_called_once()
         mock_create_chunks.assert_called_once()
         mock_generate_embeddings.assert_called_once()
-        # initialize_chromadb_client is called twice: once for early collection check, once for actual indexing
-        assert mock_init_chromadb.call_count == 2
+        # initialize_chromadb_client should be called once during indexing
+        assert mock_init_chromadb.call_count == 1
         mock_create_collection.assert_called_once()
         mock_insert_chunks.assert_called_once()
 
@@ -325,10 +334,8 @@ class TestRunFullIndexing:
     @patch('minerva.commands.index.initialize_chromadb_client')
     @patch('minerva.commands.index.generate_embeddings')
     @patch('minerva.commands.index.create_chunks_from_notes')
-    @patch('minerva.commands.index.initialize_and_validate_provider')
     def test_full_indexing_with_force_recreate(
         self,
-        mock_init_provider,
         mock_create_chunks,
         mock_generate_embeddings,
         mock_init_chromadb,
@@ -340,7 +347,6 @@ class TestRunFullIndexing:
         # Setup mocks
         mock_provider = Mock()
         mock_provider.get_embedding_metadata.return_value = {}
-        mock_init_provider.return_value = mock_provider
 
         mock_chunks = [{"chunk_id": "1"}]
         mock_create_chunks.return_value = mock_chunks
@@ -364,7 +370,7 @@ class TestRunFullIndexing:
 
         with patch('minerva.commands.index.insert_chunks') as mock_insert:
             mock_insert.return_value = {"successful": 1, "failed": 0}
-            run_full_indexing(mock_config, valid_notes_list, verbose=False, start_time=0.0)
+            run_full_indexing(mock_config, valid_notes_list, False, 0.0, mock_provider)
 
         # Verify recreate was called instead of create
         mock_recreate_collection.assert_called_once()
