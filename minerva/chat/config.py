@@ -23,6 +23,7 @@ class ChatConfig:
     conversation_dir: str
     default_max_results: int
     enable_streaming: bool
+    temperature: float
 
     def __post_init__(self):
         if not self.chromadb_path:
@@ -30,6 +31,10 @@ class ChatConfig:
         if not os.path.isabs(self.chromadb_path):
             raise ValueError(
                 f"chromadb_path must be an absolute path, got: {self.chromadb_path}"
+            )
+        if not (0.0 <= self.temperature <= 2.0):
+            raise ValueError(
+                f"temperature must be between 0.0 and 2.0, got: {self.temperature}"
             )
 
 
@@ -109,6 +114,12 @@ CHAT_CONFIG_SCHEMA = {
         "enable_streaming": {
             "type": "boolean",
             "description": "Enable streaming responses (default: true)"
+        },
+        "temperature": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 2.0,
+            "description": "Temperature for LLM responses (default: 0.0 for deterministic retrieval)"
         }
     },
     "additionalProperties": False
@@ -168,7 +179,8 @@ def validate_config_file_exists(config_path: str) -> Path:
             f"    - ai_provider (required, AI provider configuration)\n"
             f"    - conversation_dir (optional, default: ~/.minerva/conversations)\n"
             f"    - default_max_results (optional, default: 3)\n"
-            f"    - enable_streaming (optional, default: true)"
+            f"    - enable_streaming (optional, default: true)\n"
+            f"    - temperature (optional, default: 0.0)"
         )
 
     return config_file
@@ -235,13 +247,15 @@ def extract_config_fields(data: Dict[str, Any]) -> ChatConfig:
 
     default_max_results = data.get('default_max_results', 3)
     enable_streaming = data.get('enable_streaming', True)
+    temperature = data.get('temperature', 0.0)
 
     return ChatConfig(
         chromadb_path=chromadb_path,
         ai_provider=ai_provider,
         conversation_dir=conversation_dir,
         default_max_results=default_max_results,
-        enable_streaming=enable_streaming
+        enable_streaming=enable_streaming,
+        temperature=temperature
     )
 
 
