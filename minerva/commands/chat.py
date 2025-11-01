@@ -131,31 +131,6 @@ def initialize_chat_system(config_path: str) -> tuple:
             logger.error("  4. Check provider base URL is correct")
             return None, None, None
 
-        # Check tool calling support (informational only)
-        tool_support = provider.check_tool_calling_support()
-        if not tool_support['supported']:
-            logger.warning("⚠️  Tool Calling Support Check")
-            logger.warning("=" * 60)
-            logger.warning(f"Model: {tool_support['model']}")
-            logger.warning(f"Provider: {tool_support['provider_type']}")
-            logger.warning("")
-
-            if tool_support['error']:
-                logger.warning(f"Check failed: {tool_support['error']}")
-            elif tool_support['warning']:
-                logger.warning(tool_support['warning'])
-
-            logger.warning("")
-            logger.warning("Note: Minerva uses temperature 0.0 for deterministic retrieval.")
-            logger.warning("Many models work at temp 0.0 even if they're unreliable at higher temps.")
-            logger.warning("")
-            logger.warning("If you experience issues, try these recommended models:")
-            logger.warning("  • Ollama: qwen2.5:7b, mistral:latest, llama3.2:latest")
-            logger.warning("  • OpenAI: gpt-4o-mini, gpt-4o, gpt-3.5-turbo")
-            logger.warning("  • Anthropic: claude-3-5-sonnet, claude-3-haiku")
-            logger.warning("=" * 60)
-            logger.warning("")
-
     except (ProviderUnavailableError, AIProviderError) as e:
         logger.error("AI Provider Error")
         logger.error("=" * 60)

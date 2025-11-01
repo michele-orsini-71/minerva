@@ -23,13 +23,7 @@
       "Bash(/Users/michele/my-code/minerva/test-mcp-http.sh)",
       "Bash(mkdir:*)",
       "Read(//Users/michele/.minerva/test-conversations/**)",
-      "Bash(cat:*)",
-      "Bash(ollama list:*)",
-      "WebFetch(domain:docs.litellm.ai)",
-      "WebFetch(domain:www.baseten.co)",
-      "WebFetch(domain:kamenialexnea.github.io)",
-      "WebFetch(domain:pypi.org)",
-      "WebFetch(domain:teetracker.medium.com)"
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

@@ -221,7 +221,7 @@ class ChatEngine:
         response = self.provider.chat_completion(
             messages=messages,
             tools=tool_definitions,
-            temperature=self.config.temperature,
+            temperature=0.7,
             stream=False
         )
 
@@ -246,7 +246,7 @@ class ChatEngine:
         for chunk in self.provider.chat_completion_streaming(
             messages=messages,
             tools=tool_definitions,
-            temperature=self.config.temperature
+            temperature=0.7
         ):
             if 'content' in chunk:
                 content = chunk['content']
