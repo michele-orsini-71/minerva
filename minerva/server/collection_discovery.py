@@ -1,6 +1,7 @@
 import sys
 from typing import List, Dict, Any, Optional, Tuple
 
+from minerva.common.exceptions import CollectionDiscoveryError
 from minerva.common.logger import get_logger
 
 # Initialize console logger (simple mode for CLI usage) before optional imports
@@ -9,16 +10,13 @@ console_logger = get_logger(__name__, simple=True)
 try:
     import chromadb
 except ImportError as error:
-    console_logger.error("chromadb library not installed. Run: pip install chromadb")
-    raise SystemExit(1) from error
+    message = "chromadb library not installed. Run: pip install chromadb"
+    console_logger.error(message)
+    raise CollectionDiscoveryError(message) from error
 
 from minerva.indexing.storage import initialize_chromadb_client, ChromaDBConnectionError
 from minerva.common.ai_config import AIProviderConfig, APIKeyMissingError
 from minerva.common.ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
-
-
-class CollectionDiscoveryError(Exception):
-    pass
 
 
 def reconstruct_provider_from_metadata(metadata: Dict[str, Any]) -> Tuple[Optional[AIProvider], Optional[str]]:
@@ -166,21 +164,24 @@ def list_collections(chromadb_path: str) -> List[Dict[str, Any]]:
         ) from error
 
 
-if __name__ == "__main__":
+def main(argv: List[str]) -> None:
     import json
 
-    if len(sys.argv) < 2:
-        console_logger.error("Usage: python collection_discovery.py <chromadb_path>")
-        sys.exit(1)
+    if len(argv) < 2:
+        message = "Usage: python collection_discovery.py <chromadb_path>"
+        console_logger.error(message)
+        raise CollectionDiscoveryError(message)
 
-    chromadb_path = sys.argv[1]
+    chromadb_path = argv[1]
+    collections = list_collections(chromadb_path)
 
+    console_logger.info(f"Found {len(collections)} collection(s):\n")
+    console_logger.info(json.dumps(collections, indent=2))
+
+
+if __name__ == "__main__":
     try:
-        collections = list_collections(chromadb_path)
-
-        console_logger.info(f"Found {len(collections)} collection(s):\n")
-        console_logger.info(json.dumps(collections, indent=2))
-
+        main(sys.argv)
     except CollectionDiscoveryError as error:
         console_logger.error(f"Collection discovery error:\n{error}")
-        sys.exit(1)
+        raise

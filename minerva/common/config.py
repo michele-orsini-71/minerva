@@ -4,17 +4,11 @@ import re
 import sys
 from pathlib import Path
 from typing import Dict, Any, Optional
+
+from minerva.common.exceptions import ConfigError, ConfigValidationError
 from minerva.common.logger import get_logger
 
 console_logger = get_logger(__name__, simple=True)
-
-
-class ConfigError(Exception):
-    pass
-
-
-class ConfigValidationError(ConfigError):
-    pass
 
 
 def load_json_file(config_path: str) -> Dict[str, Any]:
@@ -195,4 +189,4 @@ if __name__ == "__main__":
         console_logger.info(json.dumps(config, indent=2))
     except (ConfigError, ConfigValidationError) as e:
         console_logger.error(f"Configuration error:\n{e}")
-        sys.exit(1)
+        raise

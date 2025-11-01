@@ -1,4 +1,3 @@
-import sys
 import time
 from argparse import Namespace
 from typing import Dict, Any, List
@@ -14,7 +13,7 @@ from minerva.indexing.storage import (
     create_collection,
     recreate_collection,
     insert_chunks,
-    StorageError
+    StorageError,
 )
 from minerva.indexing.updater import (
     run_incremental_update,
@@ -24,6 +23,14 @@ from minerva.indexing.updater import (
     format_config_change_error
 )
 from minerva.common.logger import get_logger
+from minerva.common.exceptions import (
+    MinervaError,
+    JsonLoaderError,
+    IndexingError,
+    ProviderUnavailableError,
+    IncrementalUpdateError,
+    resolve_exit_code,
+)
 
 logger = get_logger(__name__, simple=True, mode="cli")
 
@@ -64,9 +71,9 @@ def load_and_print_config(config_path: str, verbose: bool) -> CollectionConfig:
         logger.info("")
         return config
 
-    except ConfigError as e:
-        logger.error(f"Configuration Error:\n{e}")
-        sys.exit(1)
+    except ConfigError as error:
+        logger.error(f"Configuration Error:\n{error}")
+        raise
 
 
 def load_and_print_notes(config: CollectionConfig, verbose: bool) -> List[Dict[str, Any]]:
@@ -87,9 +94,13 @@ def load_and_print_notes(config: CollectionConfig, verbose: bool) -> List[Dict[s
         logger.info("")
         return notes
 
-    except Exception as e:
-        logger.error(f"Error loading notes: {e}")
-        sys.exit(1)
+    except JsonLoaderError as error:
+        logger.error(f"Error loading notes: {error}")
+        raise
+    except Exception as error:
+        message = f"Error loading notes: {error}"
+        logger.error(message)
+        raise JsonLoaderError(message) from error
 
 
 def initialize_and_validate_provider(config: CollectionConfig, verbose: bool) -> AIProvider:
@@ -115,7 +126,7 @@ def initialize_and_validate_provider(config: CollectionConfig, verbose: bool) ->
             if provider.provider_type == 'ollama':
                 logger.error("  $ ollama serve")
                 logger.error(f"  $ ollama pull {provider.embedding_model}")
-            sys.exit(1)
+            raise ProviderUnavailableError(error_msg)
 
         # Print provider details
         dimension = availability.get('dimension', 'unknown')
@@ -143,9 +154,11 @@ def initialize_and_validate_provider(config: CollectionConfig, verbose: bool) ->
         logger.info("")
         return provider
 
-    except AIProviderError as e:
-        logger.error(f"Provider initialization error: {e}")
-        sys.exit(1)
+    except ProviderUnavailableError:
+        raise
+    except AIProviderError as error:
+        logger.error(f"Provider initialization error: {error}")
+        raise
 
 
 def check_collection_early(config: CollectionConfig, provider: AIProvider) -> tuple[bool, str]:
@@ -160,7 +173,12 @@ def check_collection_early(config: CollectionConfig, provider: AIProvider) -> tu
             logger.info("")
             return False, "create"
 
-        collection = client.get_collection(config.collection_name)
+        try:
+            collection = client.get_collection(config.collection_name)
+        except Exception as error:
+            message = f"Failed to retrieve collection '{config.collection_name}': {error}"
+            logger.error(message)
+            raise StorageError(message) from error
 
         if config.force_recreate:
             logger.warning(f"   Collection '{config.collection_name}' exists and will be recreated")
@@ -171,7 +189,7 @@ def check_collection_early(config: CollectionConfig, provider: AIProvider) -> tu
         if is_v1_collection(collection):
             error_msg = format_v1_collection_error(config.collection_name, config.chromadb_path)
             logger.error(error_msg)
-            sys.exit(1)
+            raise IncrementalUpdateError(error_msg)
 
         config_change = detect_config_changes(
             collection,
@@ -183,16 +201,19 @@ def check_collection_early(config: CollectionConfig, provider: AIProvider) -> tu
         if config_change.has_changes:
             error_msg = format_config_change_error(config.collection_name, config_change)
             logger.error(error_msg)
-            sys.exit(1)
+            raise IncrementalUpdateError(error_msg)
 
         logger.success(f"   ✓ Collection '{config.collection_name}' exists (v2.0)")
         logger.info(f"   Will perform incremental update")
         logger.info("")
         return True, "incremental"
 
-    except Exception as e:
-        logger.error(f"ChromaDB check error: {e}")
-        sys.exit(1)
+    except MinervaError:
+        raise
+    except Exception as error:
+        message = f"ChromaDB check error: {error}"
+        logger.error(message)
+        raise IndexingError(message) from error
 
 
 def run_dry_run(config: CollectionConfig, notes: List[Dict[str, Any]], verbose: bool) -> None:
@@ -230,21 +251,18 @@ def run_incremental_indexing(
 ) -> None:
 
     logger.info(f"Initializing ChromaDB at: {config.chromadb_path}")
-    try:
-        client = initialize_chromadb_client(config.chromadb_path)
-        logger.success("   ✓ ChromaDB client initialized")
-        logger.info("")
-    except Exception as e:
-        logger.error(f"ChromaDB initialization error: {e}")
-        sys.exit(1)
+    client = initialize_chromadb_client(config.chromadb_path)
+    logger.success("   ✓ ChromaDB client initialized")
+    logger.info("")
 
     try:
         collection = client.get_collection(config.collection_name)
         logger.success(f"   ✓ Retrieved collection '{config.collection_name}'")
         logger.info("")
-    except Exception as e:
-        logger.error(f"Failed to retrieve collection: {e}")
-        sys.exit(1)
+    except Exception as error:
+        message = f"Failed to retrieve collection: {error}"
+        logger.error(message)
+        raise StorageError(message) from error
 
     try:
         stats = run_incremental_update(
@@ -254,12 +272,18 @@ def run_incremental_indexing(
             new_description=config.description,
             target_chars=config.chunk_size
         )
-    except Exception as e:
-        logger.error(f"Incremental update error: {e}")
+    except MinervaError as error:
+        logger.error(f"Incremental update error: {error}")
         if verbose:
             import traceback
             traceback.print_exc()
-        sys.exit(1)
+        raise
+    except Exception as error:
+        logger.error(f"Incremental update error: {error}")
+        if verbose:
+            import traceback
+            traceback.print_exc()
+        raise IndexingError(f"Incremental update error: {error}") from error
 
 
 def run_full_indexing(
@@ -281,18 +305,14 @@ def run_full_indexing(
         chunks_with_embeddings = generate_embeddings(provider, chunks)
         logger.success(f"   ✓ Generated {len(chunks_with_embeddings)} embeddings")
         logger.info("")
-    except EmbeddingError as e:
-        logger.error(f"Embedding generation error: {e}")
-        sys.exit(1)
+    except EmbeddingError as error:
+        logger.error(f"Embedding generation error: {error}")
+        raise
 
     logger.info(f"Initializing ChromaDB at: {config.chromadb_path}")
-    try:
-        client = initialize_chromadb_client(config.chromadb_path)
-        logger.success("   ✓ ChromaDB client initialized")
-        logger.info("")
-    except Exception as e:
-        logger.error(f"ChromaDB initialization error: {e}")
-        sys.exit(1)
+    client = initialize_chromadb_client(config.chromadb_path)
+    logger.success("   ✓ ChromaDB client initialized")
+    logger.info("")
 
     logger.info(f"Preparing collection '{config.collection_name}'...")
     try:
@@ -315,9 +335,9 @@ def run_full_indexing(
             )
             logger.success("   ✓ Collection ready")
         logger.info("")
-    except StorageError as e:
-        logger.error(f"Collection creation error: {e}")
-        sys.exit(1)
+    except StorageError as error:
+        logger.error(f"Collection creation error: {error}")
+        raise
 
     logger.info("Storing chunks in ChromaDB...")
 
@@ -332,9 +352,9 @@ def run_full_indexing(
         if stats['failed'] > 0:
             logger.warning(f"   ⚠ Failed to store {stats['failed']} chunks")
         logger.info("")
-    except StorageError as e:
-        logger.error(f"Storage error: {e}")
-        sys.exit(1)
+    except StorageError as error:
+        logger.error(f"Storage error: {error}")
+        raise
 
     processing_time = time.time() - start_time
     print_final_summary(config, notes, chunks, chunks_with_embeddings, stats, processing_time)
@@ -395,6 +415,15 @@ def run_index(args: Namespace) -> int:
     except KeyboardInterrupt:
         logger.error("Operation cancelled by user")
         return 130
+
+    except MinervaError as error:
+        message = str(error).strip()
+        if message:
+            logger.error(message)
+        if args.verbose:
+            import traceback
+            traceback.print_exc()
+        return resolve_exit_code(error)
 
     except Exception as e:
         logger.error(f"Unexpected error: {e}")

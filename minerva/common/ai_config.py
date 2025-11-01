@@ -3,9 +3,7 @@ import re
 from dataclasses import dataclass
 from typing import Optional
 
-
-class APIKeyMissingError(Exception):
-    pass
+from minerva.common.exceptions import APIKeyMissingError
 
 
 def resolve_env_variable(value: Optional[str]) -> Optional[str]:

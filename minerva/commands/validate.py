@@ -1,11 +1,11 @@
 import json
-import sys
 from argparse import Namespace
 from pathlib import Path
 from typing import Any
 
 from minerva.common.logger import get_logger
 from minerva.common.schemas import validate_notes_array, get_schema_summary
+from minerva.common.exceptions import ValidationError, MinervaError, resolve_exit_code
 
 logger = get_logger(__name__, simple=True, mode="cli")
 
@@ -23,19 +23,19 @@ def load_json_file(json_path: Path) -> Any:
     except FileNotFoundError:
         logger.error(f"Error: File not found: {json_path}")
         logger.error("   Please check the file path and try again.")
-        sys.exit(1)
-    except json.JSONDecodeError as e:
+        raise ValidationError(f"File not found: {json_path}")
+    except json.JSONDecodeError as error:
         logger.error(f"Error: Invalid JSON in file: {json_path}")
-        logger.error(f"   {e}")
+        logger.error(f"   {error}")
         logger.error("   Suggestion: Validate your JSON using a JSON linter")
-        sys.exit(1)
+        raise ValidationError(f"Invalid JSON in file: {json_path}") from error
     except PermissionError:
         logger.error(f"Error: Permission denied reading file: {json_path}")
-        sys.exit(1)
-    except Exception as e:
+        raise ValidationError(f"Permission denied reading file: {json_path}")
+    except Exception as error:
         logger.error(f"Error: Failed to read file: {json_path}")
-        logger.error(f"   {e}")
-        sys.exit(1)
+        logger.error(f"   {error}")
+        raise ValidationError(f"Failed to read file: {json_path}") from error
 
 
 def print_validation_statistics(data: list, verbose: bool) -> None:
@@ -161,6 +161,15 @@ def run_validate(args: Namespace) -> int:
     except KeyboardInterrupt:
         logger.error("Operation cancelled by user")
         return 130
+
+    except MinervaError as error:
+        message = str(error).strip()
+        if message:
+            logger.error(message)
+        if args.verbose:
+            import traceback
+            traceback.print_exc()
+        return resolve_exit_code(error)
 
     except Exception as e:
         logger.error(f"Unexpected error: {e}")

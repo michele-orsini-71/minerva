@@ -1,6 +1,7 @@
-import sys
 import hashlib
 from typing import List, Dict, Any
+
+from minerva.common.exceptions import ChunkingError
 from minerva.common.logger import get_logger
 
 logger = get_logger(__name__, mode="cli")
@@ -10,9 +11,10 @@ from minerva.common.models import Chunk, ChunkList
 
 try:
     from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
-except ImportError:
-    logger.error("langchain-text-splitters library not installed. Run: pip install langchain-text-splitters")
-    sys.exit(1)
+except ImportError as error:
+    message = "langchain-text-splitters library not installed"
+    logger.error(f"{message}. Run: pip install langchain-text-splitters")
+    raise ChunkingError(message) from error
 
 
 def generate_note_id(title: str, creation_date: str = None) -> str:
@@ -195,17 +197,19 @@ def create_chunks_from_notes(notes: List[Dict[str, Any]], target_chars: int = 12
             if should_report_progress(i, len(notes)):
                 log_chunking_progress(i + 1, len(notes), len(chunks))
         except Exception as error:
+            title = note.get('title', 'Unknown')
             failed_notes.append({
-                'title': note.get('title', 'Unknown'),
+                'title': title,
                 'error': str(error)
             })
-            logger.error(f"   Failed to process note '{note.get('title', 'Unknown')}': {error}")
+            logger.error(f"   Failed to process note '{title}': {error}")
 
     stats = calculate_chunk_statistics(chunks)
     print_chunking_summary(stats, failed_notes, len(chunks))
 
     if not chunks:
-        logger.error("No chunks were successfully created")
-        sys.exit(1)
+        message = "No chunks were successfully created"
+        logger.error(message)
+        raise ChunkingError(message)
 
     return chunks

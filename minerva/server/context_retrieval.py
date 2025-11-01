@@ -1,13 +1,10 @@
 from typing import List, Dict, Any, Tuple
 import chromadb
 import time
+from minerva.common.exceptions import ContextRetrievalError
 from minerva.common.logger import get_logger
 
 console_logger = get_logger(__name__)
-
-
-class ContextRetrievalError(Exception):
-    pass
 
 
 def get_chunk_only_content(

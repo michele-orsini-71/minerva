@@ -4,6 +4,7 @@ import sys
 
 import numpy as np
 
+from minerva.common.exceptions import EmbeddingError
 from minerva.common.logger import get_logger
 from minerva.common.models import Chunk, ChunkWithEmbedding, ChunkList, ChunkWithEmbeddingList
 from minerva.common.ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
@@ -14,10 +15,6 @@ logger = get_logger(__name__, mode="cli")
 
 DEFAULT_MAX_RETRIES = 3
 DEFAULT_RETRY_DELAY = 1.0
-
-
-class EmbeddingError(Exception):
-    pass
 
 
 def initialize_provider(config: CollectionConfig) -> AIProvider:

@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from minerva.common.logger import get_logger
+from minerva.common.exceptions import MinervaError, GracefulExit, resolve_exit_code
 
 from minerva.commands.index import run_index
 from minerva.commands.serve import run_serve
@@ -330,6 +331,16 @@ def main():
     except KeyboardInterrupt:
         logger.error("Interrupted by user")
         return 130  # Standard exit code for SIGINT
+
+    except MinervaError as error:
+        message = str(error).strip()
+        if isinstance(error, GracefulExit):
+            if message:
+                logger.info(message)
+        else:
+            if message:
+                logger.error(message)
+        return resolve_exit_code(error)
 
     except Exception as e:
         logger.error(f"Unexpected error: {e}")

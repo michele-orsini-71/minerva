@@ -1,22 +1,27 @@
 #!/usr/bin/env python3
-import sys
 from typing import List, Dict, Any, Optional
 
+from minerva.common.exceptions import (
+    GracefulExit,
+    ServerError,
+    StartupValidationError,
+    CollectionDiscoveryError,
+)
 from minerva.common.logger import get_logger
 
 console_logger = get_logger(__name__)
 
-# Import FastMCP framework
 try:
     from mcp.server.fastmcp import FastMCP
 except ImportError as error:
-    console_logger.error("FastMCP not installed. Run: pip install mcp")
-    raise SystemExit(1) from error
+    message = "FastMCP not installed. Run: pip install mcp"
+    console_logger.error(message)
+    raise StartupValidationError(message) from error
 
 # Import configuration and validation modules
 from minerva.common.config import load_config, ConfigError, ConfigValidationError
 from minerva.server.startup_validation import validate_server_prerequisites
-from minerva.server.collection_discovery import discover_collections_with_providers, CollectionDiscoveryError
+from minerva.server.collection_discovery import discover_collections_with_providers
 from minerva.server.search_tools import (
     search_knowledge_base as search_kb,
     SearchError,
@@ -34,6 +39,10 @@ AVAILABLE_COLLECTIONS: List[Dict[str, Any]] = []
 def initialize_server(config_path: str) -> None:
     global CONFIG, PROVIDER_MAP, AVAILABLE_COLLECTIONS
 
+    CONFIG = {}
+    PROVIDER_MAP = {}
+    AVAILABLE_COLLECTIONS = []
+
     try:
         console_logger.info("Loading configuration...")
         CONFIG = load_config(config_path)
@@ -43,31 +52,29 @@ def initialize_server(config_path: str) -> None:
 
     except (ConfigError, ConfigValidationError) as e:
         console_logger.error(f"Configuration Error:\n\n{e}")
-        sys.exit(1)
+        raise StartupValidationError(str(e)) from e
 
     try:
         console_logger.info("\nValidating server prerequisites...")
-        success, error = validate_server_prerequisites(CONFIG)
-
-        if not success:
-            console_logger.error(f"Server Validation Failed:\n\n{error}")
-            sys.exit(1)
-
+        validate_server_prerequisites(CONFIG)
         console_logger.success("✓ All validation checks passed")
 
-    except Exception as e:
-        console_logger.error(f"Validation Error:\n{e}")
-        sys.exit(1)
+    except StartupValidationError as error:
+        console_logger.error(f"Server Validation Failed:\n\n{error}")
+        raise
+    except Exception as error:
+        console_logger.error(f"Validation Error:\n{error}")
+        raise StartupValidationError(str(error)) from error
 
     try:
         console_logger.info("\nDiscovering collections and initializing AI providers...")
-        PROVIDER_MAP, all_collections = discover_collections_with_providers(CONFIG['chromadb_path'])
+        provider_map, all_collections = discover_collections_with_providers(CONFIG['chromadb_path'])
 
         total_count = len(all_collections)
         available_count = sum(1 for c in all_collections if c['available'])
         unavailable_count = total_count - available_count
 
-        AVAILABLE_COLLECTIONS = [c for c in all_collections if c['available']]
+        available_collections = [c for c in all_collections if c['available']]
 
         console_logger.info(f"\n{'='*60}")
         console_logger.info("Collection Discovery Results")
@@ -83,8 +90,9 @@ def initialize_server(config_path: str) -> None:
                 console_logger.info(f"  Provider: {collection['provider_type']}")
                 console_logger.info(f"  Embedding Model: {collection['embedding_model']}")
                 console_logger.info(f"  LLM Model: {collection['llm_model']}")
-                if collection.get('embedding_dimension'):
-                    console_logger.info(f"  Embedding Dimension: {collection['embedding_dimension']}")
+                embedding_dimension = collection.get('embedding_dimension')
+                if embedding_dimension:
+                    console_logger.info(f"  Embedding Dimension: {embedding_dimension}")
             else:
                 console_logger.info(f"  Reason: {collection['unavailable_reason']}")
 
@@ -103,16 +111,18 @@ def initialize_server(config_path: str) -> None:
                 "Run the pipeline with --verbose to create collections with proper metadata."
             )
             console_logger.error(error_msg)
-            sys.exit(1)
+            raise CollectionDiscoveryError(error_msg)
 
+        PROVIDER_MAP = provider_map
+        AVAILABLE_COLLECTIONS = available_collections
         console_logger.info("Server is ready to accept requests\n")
 
-    except CollectionDiscoveryError as e:
-        console_logger.error(f"Collection Discovery Error:\n\n{e}")
-        sys.exit(1)
-    except Exception as e:
-        console_logger.error(f"Collection Discovery Error:\n{e}")
-        sys.exit(1)
+    except CollectionDiscoveryError as error:
+        console_logger.error(f"Collection Discovery Error:\n\n{error}")
+        raise
+    except Exception as error:
+        console_logger.error(f"Collection Discovery Error:\n{error}")
+        raise ServerError(f"Failed to discover collections: {error}") from error
 
 
 @mcp.tool(
@@ -221,10 +231,10 @@ def main(config_path: str):
         mcp.run(transport="stdio")
     except KeyboardInterrupt:
         console_logger.info("\n\nServer shutting down (keyboard interrupt)")
-        sys.exit(0)
-    except Exception as e:
-        console_logger.error(f"Server error: {e}")
-        sys.exit(1)
+        raise GracefulExit("Server shutdown requested", exit_code=0)
+    except Exception as error:
+        console_logger.error(f"Server error: {error}")
+        raise ServerError(f"Server encountered an error: {error}") from error
 
 
 def main_http(config_path: str, host: str = "localhost", port: int = 8000):
@@ -245,7 +255,7 @@ def main_http(config_path: str, host: str = "localhost", port: int = 8000):
         mcp.run(transport="streamable-http")
     except KeyboardInterrupt:
         console_logger.info("\n\nServer shutting down (keyboard interrupt)")
-        sys.exit(0)
-    except Exception as e:
-        console_logger.error(f"Server error: {e}")
-        sys.exit(1)
+        raise GracefulExit("Server shutdown requested", exit_code=0)
+    except Exception as error:
+        console_logger.error(f"Server error: {error}")
+        raise ServerError(f"Server encountered an error: {error}") from error

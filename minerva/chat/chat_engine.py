@@ -1,10 +1,10 @@
 import json
 import signal
-import sys
 from pathlib import Path
 from typing import Optional, Dict, Any
 
 from minerva.common.ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
+from minerva.common.exceptions import ChatEngineError
 from minerva.common.logger import get_logger
 from minerva.chat.config import ChatConfig
 from minerva.chat.history import ConversationHistory
@@ -19,11 +19,6 @@ from minerva.chat.context_window import (
 )
 
 logger = get_logger(__name__)
-
-
-class ChatEngineError(Exception):
-    pass
-
 
 class ChatEngine:
     def __init__(self):
@@ -69,7 +64,7 @@ class ChatEngine:
         if self._original_sigint_handler:
             signal.signal(signal.SIGINT, self._original_sigint_handler)
 
-        sys.exit(0)
+        raise KeyboardInterrupt()
 
     def _check_and_handle_context_window(self):
         if not self.history or not self.provider or not self.config:

@@ -69,6 +69,12 @@ minerva serve-http --config config.json --port 9000  # Terminal 2
 - ✅ Version updated to 2.0.0
 - ✅ Improved error messages for v1.0 collections
 - ✅ Configuration conflict warnings
+- ✅ CLI entrypoints now translate `MinervaError` subclasses into consistent exit codes
+
+### Error Handling Improvements
+- ✅ Replaced ad-hoc `sys.exit` calls with a shared `MinervaError` hierarchy across indexing, validation, and server modules
+- ✅ Server startup surfaces `StartupValidationError` and `CollectionDiscoveryError` so long-running processes can manage shutdown flows
+- ✅ Chat engine and MCP launcher propagate interrupts via exceptions, keeping keyboard interrupts graceful for embedding hosts
 
 ### Storage Schema
 - ✅ `version` metadata field (identifies v2.0 collections)
@@ -81,6 +87,7 @@ minerva serve-http --config config.json --port 9000  # Terminal 2
 - ✅ 44 unit tests for incremental update logic
 - ✅ 10 integration tests for full update workflow
 - ✅ 12 tests for HTTP server mode
+- ✅ New suites covering server discovery and startup validation error propagation
 - ✅ 376/379 total tests passing
 
 ## ⚠️ Breaking Changes

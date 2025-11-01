@@ -1,22 +1,18 @@
 import os
 import sys
 from pathlib import Path
-from typing import Tuple, Optional, Dict, Any
+from typing import Dict, Any
 
-# Import ChromaDB client initialization from existing pipeline
+from minerva.common.exceptions import StartupValidationError
 from minerva.indexing.storage import initialize_chromadb_client
 from minerva.common.logger import get_logger
 
 console_logger = get_logger(__name__, simple=True)
 
 
-class ValidationError(Exception):
-    pass
-
-
-def validate_chromadb_path(chromadb_path: str) -> Tuple[bool, Optional[str]]:
+def validate_chromadb_path(chromadb_path: str) -> None:
     if not chromadb_path or not chromadb_path.strip():
-        return (False,
+        raise StartupValidationError(
             "ChromaDB path is empty or not configured\n"
             "\n"
             "  Please verify your config.json file contains:\n"
@@ -33,7 +29,7 @@ def validate_chromadb_path(chromadb_path: str) -> Tuple[bool, Optional[str]]:
 
     path = Path(chromadb_path)
     if not path.exists():
-        return (False,
+        raise StartupValidationError(
             f"ChromaDB path does not exist: {chromadb_path}\n"
             "\n"
             "  The configured ChromaDB directory was not found on the filesystem.\n"
@@ -53,7 +49,7 @@ def validate_chromadb_path(chromadb_path: str) -> Tuple[bool, Optional[str]]:
         )
 
     if not path.is_dir():
-        return (False,
+        raise StartupValidationError(
             f"ChromaDB path is not a directory: {chromadb_path}\n"
             "\n"
             "  The configured path exists but is a file, not a directory.\n"
@@ -65,7 +61,7 @@ def validate_chromadb_path(chromadb_path: str) -> Tuple[bool, Optional[str]]:
         )
 
     if not os.access(chromadb_path, os.R_OK):
-        return (False,
+        raise StartupValidationError(
             f"ChromaDB path is not readable: {chromadb_path}\n"
             "\n"
             "  Permission denied when trying to access the directory.\n"
@@ -80,18 +76,14 @@ def validate_chromadb_path(chromadb_path: str) -> Tuple[bool, Optional[str]]:
             "  3. If the directory is owned by another user, check ownership"
         )
 
-    return (True, None)
 
-
-def validate_collection_availability(chromadb_path: str) -> Tuple[bool, Optional[str]]:
+def validate_collection_availability(chromadb_path: str) -> None:
     try:
         client = initialize_chromadb_client(chromadb_path)
-
-        # List all collections
         collections = client.list_collections()
 
-        if not collections or len(collections) == 0:
-            return (False,
+        if not collections:
+            raise StartupValidationError(
                 "No collections found in ChromaDB\n"
                 "\n"
                 "  The ChromaDB database exists but contains no collections.\n"
@@ -105,18 +97,20 @@ def validate_collection_availability(chromadb_path: str) -> Tuple[bool, Optional
                 "  2. The pipeline will create embeddings and store them in ChromaDB\n"
                 "\n"
                 "  3. Verify collections were created:\n"
-                "     python -c \"import chromadb; client = chromadb.PersistentClient(path='" + chromadb_path + "'); print([c.name for c in client.list_collections()])\"\n"
+                "     python -c \"import chromadb; client = chromadb.PersistentClient(path='"
+                + chromadb_path
+                + "'); print([c.name for c in client.list_collections()])\"\n"
                 "\n"
                 "  4. Restart the MCP server once collections are available"
             )
 
-        return (True, None)
-
-    except Exception as e:
-        return (False,
-            f"Failed to connect to ChromaDB or list collections\n"
+    except StartupValidationError:
+        raise
+    except Exception as error:
+        raise StartupValidationError(
+            "Failed to connect to ChromaDB or list collections\n"
             "\n"
-            f"  Error: {str(e)}\n"
+            f"  Error: {error}\n"
             "\n"
             "  Remediation steps:\n"
             "  1. Verify the ChromaDB path in config.json is correct:\n"
@@ -129,47 +123,34 @@ def validate_collection_availability(chromadb_path: str) -> Tuple[bool, Optional
             "  3. If the database is corrupted, you may need to recreate it:\n"
             "     - Back up the directory first\n"
             "     - Rerun the RAG pipeline to create a fresh database"
-        )
+        ) from error
 
 
-def validate_server_prerequisites(config: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
+def validate_server_prerequisites(config: Dict[str, Any]) -> None:
     chromadb_path = config.get('chromadb_path', '')
-
-    # Validation 1: ChromaDB path exists and is accessible
-    success, error = validate_chromadb_path(chromadb_path)
-    if not success:
-        return (False, f"ChromaDB Path Validation Failed:\n\n{error}")
-
-    # Validation 2: At least one collection exists
-    success, error = validate_collection_availability(chromadb_path)
-    if not success:
-        return (False, f"Collection Availability Check Failed:\n\n{error}")
-
-    # All validations passed
-    return (True, None)
+    validate_chromadb_path(chromadb_path)
+    validate_collection_availability(chromadb_path)
 
 
-if __name__ == "__main__":
+def main(argv: list[str]) -> None:
     import json
     from config import load_config, get_config_file_path
 
+    config_path = argv[1] if len(argv) > 1 else get_config_file_path()
+    config = load_config(config_path)
+
+    console_logger.info("Running server validation checks...\n")
+    validate_server_prerequisites(config)
+    console_logger.success("✓ All validation checks passed!")
+    console_logger.info("\nServer is ready to start.")
+
+
+if __name__ == "__main__":
     try:
-        config_path = sys.argv[1] if len(sys.argv) > 1 else get_config_file_path()
-        config = load_config(config_path)
-
-        console_logger.info("Running server validation checks...\n")
-
-        # Run validation
-        success, error = validate_server_prerequisites(config)
-
-        if success:
-            console_logger.success("✓ All validation checks passed!")
-            console_logger.info("\nServer is ready to start.")
-            sys.exit(0)
-        else:
-            console_logger.error(f"Validation failed:\n\n{error}")
-            sys.exit(1)
-
-    except Exception as e:
-        console_logger.error(f"Validation error: {e}")
-        sys.exit(1)
+        main(sys.argv)
+    except StartupValidationError as error:
+        console_logger.error(f"Validation failed:\n\n{error}")
+        raise
+    except Exception as error:
+        console_logger.error(f"Validation error: {error}")
+        raise

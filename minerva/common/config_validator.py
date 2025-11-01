@@ -1,11 +1,9 @@
-import sys
-
 from minerva.common.config_loader import load_collection_config, ConfigError
+from minerva.common.exceptions import ValidationError
 from minerva.common.validation import (
     validate_collection_name,
     validate_description_regex_only,
     validate_description_with_ai,
-    ValidationError
 )
 from minerva.common.logger import get_logger
 
@@ -39,7 +37,7 @@ def load_and_validate_config(config_path: str, verbose: bool = False):
         logger.error("  3. Validate JSON syntax using a JSON linter")
         logger.error("  4. Ensure all required fields are present:")
         logger.error("     - collection_name, description, chromadb_path, json_file")
-        sys.exit(1)
+        raise
 
     logger.info("Validating collection metadata...")
     try:
@@ -50,7 +48,6 @@ def load_and_validate_config(config_path: str, verbose: bool = False):
             validate_description_regex_only(config.description, config.collection_name)
             validation_result = None
 
-            # Warning when AI validation is skipped
             logger.warning("   WARNING: AI validation was skipped (skipAiValidation: true)")
             logger.warning("   You are responsible for ensuring the description is:")
             logger.warning("     - Clear and specific about when to use this collection")
@@ -86,6 +83,6 @@ def load_and_validate_config(config_path: str, verbose: bool = False):
         logger.error("     - Adding 'skipAiValidation': true (use with caution)")
         logger.error("  4. Ensure AI model is available if using AI validation:")
         logger.error("     $ ollama pull llama3.1:8b")
-        sys.exit(1)
+        raise
 
     return config

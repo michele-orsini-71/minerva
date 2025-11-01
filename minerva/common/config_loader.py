@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
 
+from minerva.common.exceptions import ConfigError
 from minerva.common.logger import get_logger
 
 logger = get_logger(__name__, simple=True)
@@ -34,12 +35,6 @@ class CollectionConfig:
             raise ValueError("description cannot be empty")
         if not self.ai_provider:
             raise ValueError("ai_provider cannot be empty")
-
-
-class ConfigError(Exception):
-    pass
-
-
 # JSON Schema for collection configuration validation
 COLLECTION_CONFIG_SCHEMA = {
     "$schema": "http://json-schema.org/draft-07/schema#",

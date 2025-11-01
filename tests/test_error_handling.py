@@ -9,6 +9,7 @@ from minerva.commands.index import run_index, initialize_and_validate_provider
 from minerva.commands.peek import run_peek
 from minerva.common.config_loader import load_collection_config, ConfigError
 from minerva.common.schemas import validate_notes_file
+from minerva.common.exceptions import ProviderUnavailableError
 
 
 class TestMissingFileErrors:
@@ -19,20 +20,18 @@ class TestMissingFileErrors:
         nonexistent = temp_dir / "does_not_exist.json"
         args = Namespace(json_file=nonexistent, verbose=False)
 
-        with pytest.raises(SystemExit) as exc_info:
-            run_validate(args)
+        exit_code = run_validate(args)
 
-        assert exc_info.value.code == 1
+        assert exit_code == 1
 
     def test_index_nonexistent_config_file(self, temp_dir: Path):
         """Index command should exit cleanly when config file doesn't exist"""
         nonexistent = temp_dir / "does_not_exist.json"
         args = Namespace(config=nonexistent, verbose=False, dry_run=False)
 
-        with pytest.raises(SystemExit) as exc_info:
-            run_index(args)
+        exit_code = run_index(args)
 
-        assert exc_info.value.code == 1
+        assert exit_code == 1
 
     @patch('minerva.commands.index.load_collection_config')
     @patch('minerva.commands.index.load_json_notes')
@@ -45,10 +44,9 @@ class TestMissingFileErrors:
 
         args = Namespace(config=temp_dir / "config.json", verbose=False, dry_run=False)
 
-        with pytest.raises(SystemExit) as exc_info:
-            run_index(args)
+        exit_code = run_index(args)
 
-        assert exc_info.value.code == 1
+        assert exit_code == 1
 
     @patch('minerva.commands.peek.initialize_chromadb_client')
     def test_peek_nonexistent_chromadb_directory(self, mock_init_client, temp_dir: Path):
@@ -146,10 +144,9 @@ class TestInvalidConfigErrors:
         args = Namespace(config=config_file, verbose=False, dry_run=False)
 
         # Should exit with error code 1
-        with pytest.raises(SystemExit) as exc_info:
-            run_index(args)
+        exit_code = run_index(args)
 
-        assert exc_info.value.code == 1
+        assert exit_code == 1
 
 
 class TestProviderUnavailableErrors:
@@ -170,10 +167,8 @@ class TestProviderUnavailableErrors:
         mock_config = Mock()
         mock_config.skip_ai_validation = False
 
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(ProviderUnavailableError):
             initialize_and_validate_provider(mock_config, verbose=False)
-
-        assert exc_info.value.code == 1
 
     @patch('minerva.commands.index.initialize_provider')
     def test_invalid_api_key_for_openai(self, mock_init_provider):
@@ -190,10 +185,8 @@ class TestProviderUnavailableErrors:
         mock_config = Mock()
         mock_config.skip_ai_validation = False
 
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(ProviderUnavailableError):
             initialize_and_validate_provider(mock_config, verbose=False)
-
-        assert exc_info.value.code == 1
 
     @patch('minerva.commands.index.initialize_provider')
     def test_network_timeout_during_provider_check(self, mock_init_provider):
@@ -208,7 +201,7 @@ class TestProviderUnavailableErrors:
         mock_config = Mock()
         mock_config.skip_ai_validation = False
 
-        with pytest.raises((SystemExit, TimeoutError)):
+        with pytest.raises(TimeoutError):
             initialize_and_validate_provider(mock_config, verbose=False)
 
     @patch('minerva.commands.index.initialize_provider')
@@ -226,10 +219,8 @@ class TestProviderUnavailableErrors:
         mock_config = Mock()
         mock_config.skip_ai_validation = False
 
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(ProviderUnavailableError):
             initialize_and_validate_provider(mock_config, verbose=False)
-
-        assert exc_info.value.code == 1
 
 
 class TestSchemaViolationErrors:
@@ -381,10 +372,9 @@ class TestEdgeCaseErrors:
         args = Namespace(json_file=empty_file, verbose=False)
 
         # Should exit with error for empty/invalid JSON
-        with pytest.raises(SystemExit) as exc_info:
-            run_validate(args)
+        exit_code = run_validate(args)
 
-        assert exc_info.value.code == 1
+        assert exit_code == 1
 
     def test_validate_json_file_with_only_whitespace(self, temp_dir: Path):
         """Validate should handle files with only whitespace"""
@@ -393,10 +383,9 @@ class TestEdgeCaseErrors:
 
         args = Namespace(json_file=whitespace_file, verbose=False)
 
-        with pytest.raises(SystemExit) as exc_info:
-            run_validate(args)
+        exit_code = run_validate(args)
 
-        assert exc_info.value.code == 1
+        assert exit_code == 1
 
     def test_validate_extremely_large_note_title(self, temp_dir: Path):
         """Validate should handle notes with extremely large titles"""
@@ -455,13 +444,12 @@ class TestEdgeCaseErrors:
 
             args = Namespace(json_file=unreadable_file, verbose=False)
 
-            with pytest.raises(SystemExit) as exc_info:
-                run_validate(args)
+            exit_code = run_validate(args)
 
             # Restore permissions for cleanup
             os.chmod(unreadable_file, 0o644)
 
-            assert exc_info.value.code == 1
+            assert exit_code == 1
 
 
 class TestKeyboardInterruptHandling:

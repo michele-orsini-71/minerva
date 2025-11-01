@@ -1,7 +1,7 @@
-import sys
 import time
 from typing import Dict, List, Set, Tuple, Optional, Any
 from dataclasses import dataclass, field
+from minerva.common.exceptions import IncrementalUpdateError
 from minerva.common.logger import get_logger
 from minerva.common.models import Chunk, ChunkList
 from minerva.common.ai_provider import AIProvider
@@ -13,9 +13,10 @@ logger = get_logger(__name__, mode="cli")
 
 try:
     import chromadb
-except ImportError:
-    logger.error("chromadb library not installed. Run: pip install chromadb")
-    sys.exit(1)
+except ImportError as error:
+    message = "chromadb library not installed"
+    logger.error(f"{message}. Run: pip install chromadb")
+    raise IncrementalUpdateError(message) from error
 
 
 @dataclass

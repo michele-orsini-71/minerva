@@ -5,14 +5,7 @@ from typing import List, Dict, Any, Optional
 import numpy as np
 
 from minerva.common.ai_config import AIProviderConfig, APIKeyMissingError
-
-
-class AIProviderError(Exception):
-    pass
-
-
-class ProviderUnavailableError(AIProviderError):
-    pass
+from minerva.common.exceptions import AIProviderError, ProviderUnavailableError
 
 
 def l2_normalize(vectors: np.ndarray) -> np.ndarray:

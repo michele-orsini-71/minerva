@@ -11,6 +11,7 @@ from minerva.commands.validate import (
     print_validation_errors,
     print_banner,
 )
+from minerva.common.exceptions import ValidationError
 
 
 class TestLoadJsonFile:
@@ -21,14 +22,12 @@ class TestLoadJsonFile:
 
     def test_load_nonexistent_file_exits(self, temp_dir: Path):
         nonexistent = temp_dir / "does_not_exist.json"
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(ValidationError):
             load_json_file(nonexistent)
-        assert exc_info.value.code == 1
 
     def test_load_invalid_json_exits(self, temp_invalid_json_file: Path):
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(ValidationError):
             load_json_file(temp_invalid_json_file)
-        assert exc_info.value.code == 1
 
     def test_load_json_with_permission_error(self, temp_dir: Path, monkeypatch):
         json_file = temp_dir / "notes.json"
@@ -39,9 +38,8 @@ class TestLoadJsonFile:
             raise PermissionError("Permission denied")
 
         monkeypatch.setattr("builtins.open", mock_open)
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(ValidationError):
             load_json_file(json_file)
-        assert exc_info.value.code == 1
 
 
 class TestRunValidate:
@@ -85,17 +83,13 @@ class TestRunValidate:
     def test_validate_with_nonexistent_file(self, temp_dir: Path):
         nonexistent = temp_dir / "does_not_exist.json"
         args = Namespace(json_file=nonexistent, verbose=False)
-        # load_json_file calls sys.exit(1) which raises SystemExit
-        with pytest.raises(SystemExit) as exc_info:
-            run_validate(args)
-        assert exc_info.value.code == 1
+        exit_code = run_validate(args)
+        assert exit_code == 1
 
     def test_validate_with_malformed_json(self, temp_invalid_json_file: Path):
         args = Namespace(json_file=temp_invalid_json_file, verbose=False)
-        # load_json_file calls sys.exit(1) which raises SystemExit
-        with pytest.raises(SystemExit) as exc_info:
-            run_validate(args)
-        assert exc_info.value.code == 1
+        exit_code = run_validate(args)
+        assert exit_code == 1
 
     def test_validate_with_multiple_invalid_notes(self, temp_dir: Path):
         invalid_file = temp_dir / "multiple_invalid.json"

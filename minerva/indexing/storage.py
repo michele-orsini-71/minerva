@@ -1,8 +1,9 @@
 import os
 import re
-import sys
 from typing import List, Dict, Any, Optional, Callable
 from pathlib import Path
+
+from minerva.common.exceptions import StorageError, ChromaDBConnectionError
 from minerva.common.logger import get_logger
 
 logger = get_logger(__name__, mode="cli")
@@ -10,9 +11,10 @@ logger = get_logger(__name__, mode="cli")
 try:
     import chromadb
     from chromadb.config import Settings
-except ImportError:
-    logger.error("chromadb library not installed. Run: pip install chromadb")
-    sys.exit(1)
+except ImportError as error:
+    message = "chromadb library not installed"
+    logger.error(f"{message}. Run: pip install chromadb")
+    raise StorageError(message) from error
 
 # Import our immutable models
 from minerva.common.models import ChunkWithEmbedding, ChunkWithEmbeddingList
@@ -20,13 +22,6 @@ from minerva.common.models import ChunkWithEmbedding, ChunkWithEmbeddingList
 # Configuration constants
 DEFAULT_BATCH_SIZE = 64
 HNSW_SPACE = "cosine"  # Distance metric for HNSW index
-
-class StorageError(Exception):
-    pass
-
-
-class ChromaDBConnectionError(Exception):
-    pass
 
 
 def initialize_chromadb_client(db_path: str) -> chromadb.PersistentClient:

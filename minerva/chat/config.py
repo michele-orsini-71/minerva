@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 from minerva.common.ai_config import AIProviderConfig, resolve_env_variable
+from minerva.common.exceptions import ChatConfigError
 from minerva.common.logger import get_logger
 
 logger = get_logger(__name__, simple=True)
@@ -14,11 +15,6 @@ try:
 except ImportError as error:
     logger.error("jsonschema library not installed. Run: pip install jsonschema")
     raise SystemExit(1) from error
-
-
-class ChatConfigError(Exception):
-    pass
-
 
 @dataclass(frozen=True)
 class ChatConfig:

@@ -11,6 +11,7 @@ from minerva.commands.index import (
     load_and_print_notes,
     print_final_summary,
 )
+from minerva.common.exceptions import JsonLoaderError, ProviderUnavailableError
 
 
 class TestPrintBanner:
@@ -72,9 +73,8 @@ class TestLoadAndPrintConfig:
 
         config_path = str(temp_dir / "config.json")
 
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(ConfigError):
             load_and_print_config(config_path, verbose=False)
-        assert exc_info.value.code == 1
 
 
 class TestLoadAndPrintNotes:
@@ -105,9 +105,8 @@ class TestLoadAndPrintNotes:
         mock_config.json_file = "notes.json"
         mock_load.side_effect = Exception("File not found")
 
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(JsonLoaderError):
             load_and_print_notes(mock_config, verbose=False)
-        assert exc_info.value.code == 1
 
 
 class TestPrintFinalSummary:
@@ -418,9 +417,8 @@ class TestInitializeAndValidateProvider:
 
         mock_config = Mock()
 
-        with pytest.raises(SystemExit) as exc_info:
+        with pytest.raises(ProviderUnavailableError):
             initialize_and_validate_provider(mock_config, verbose=False)
-        assert exc_info.value.code == 1
 
     @patch('minerva.commands.index.initialize_provider')
     def test_provider_skip_validation(self, mock_init):
