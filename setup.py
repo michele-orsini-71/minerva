@@ -37,6 +37,7 @@ setup(
         "chromadb>=0.4.0",
         "ollama>=0.1.0",
         "litellm>=1.0.0",
+        "httpx>=0.26.0",
 
         # Text processing and embeddings
         "numpy>=1.21.0",

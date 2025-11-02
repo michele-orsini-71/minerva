@@ -3,6 +3,8 @@
 - `minerva/common/ai_provider.py` - Core provider abstraction that needs LM Studio support and rate limiting.
 - `minerva/common/ai_config.py` - Provider config dataclass to be updated for new schema fields and validation.
 - `minerva/common/config_loader.py` - New or existing module to centralize unified config parsing and validation.
+- `requirements.txt` - Project dependencies including HTTP client support.
+- `setup.py` - Package metadata and install requirements to align with runtime needs.
 - `minerva/chat/chat_engine.py` - Chat workflow to refactor around MCP interactions, streaming fallback, and history updates.
 - `minerva/chat/config.py` - Chat-specific config structure to align with unified config references.
 - `minerva/chat/history.py` - Conversation persistence/compression updates triggered by new requirements.
@@ -10,6 +12,8 @@
 - `minerva/chat/commands.py` - CLI entrypoint to enforce `--config` usage and integrate new loader.
 - `minerva/index/commands.py` - CLI index command to resolve provider IDs from unified config.
 - `minerva/serve/commands.py` - MCP server command to load shared config and provider definitions.
+- `minerva/indexing/embeddings.py` - Indexing entrypoint that boots providers for embedding generation.
+- `minerva/server/collection_discovery.py` - Server-side helper to restore providers from stored metadata.
 - `tasks/prd-lmstudio-integration-and-mcp-chat.md` - Source PRD for cross-reference during implementation.
 - `docs/LMSTUDIO_SETUP.md` - Needs expansion to cover new guidance and rate limits.
 - `docs/configuration.md` - New doc describing unified config schema and examples.
@@ -27,12 +31,12 @@
 
 ## Tasks
 
-- [ ] 1.0 Implement LM Studio provider support and rate-limited AI provider abstraction enhancements
-  - [ ] 1.1 Extend `AIProviderConfig` and related schema to allow LM Studio-specific fields and rate-limit metadata.
-  - [ ] 1.2 Implement `LMStudioProvider` (or extend existing provider logic) to call LM Studio’s OpenAI-compatible endpoints.
-  - [ ] 1.3 Add optional rate limiting (requests/minute and concurrency) enforced in `AIProvider` before network calls.
-  - [ ] 1.4 Update provider factory/registration to recognize LM Studio configurations by `provider_type`.
-  - [ ] 1.5 Write unit tests covering LM Studio embeddings/chat plus rate-limit edge cases.
+- [x] 1.0 Implement LM Studio provider support and rate-limited AI provider abstraction enhancements
+  - [x] 1.1 Extend `AIProviderConfig` and related schema to allow LM Studio-specific fields and rate-limit metadata.
+  - [x] 1.2 Implement `LMStudioProvider` (or extend existing provider logic) to call LM Studio’s OpenAI-compatible endpoints.
+  - [x] 1.3 Add optional rate limiting (requests/minute and concurrency) enforced in `AIProvider` before network calls.
+  - [x] 1.4 Update provider factory/registration to recognize LM Studio configurations by `provider_type`.
+  - [x] 1.5 Write unit tests covering LM Studio embeddings/chat plus rate-limit edge cases.
 
 - [ ] 2.0 Build the unified configuration system and shared loader across CLI commands
   - [ ] 2.1 Design JSON Schema representing `ai_providers`, `indexing`, `chat`, and `server` sections.

@@ -1,10 +1,17 @@
+import json
 import os
 import re
 import logging
-from typing import List, Dict, Any, Optional
+import threading
+import time
+from collections import deque
+from contextlib import contextmanager
+from typing import List, Dict, Any, Optional, Iterable
+
+import httpx
 import numpy as np
 
-from minerva.common.ai_config import AIProviderConfig, APIKeyMissingError
+from minerva.common.ai_config import AIProviderConfig, APIKeyMissingError, RateLimitConfig
 from minerva.common.exceptions import AIProviderError, ProviderUnavailableError
 
 
@@ -14,6 +21,162 @@ def l2_normalize(vectors: np.ndarray) -> np.ndarray:
     return vectors / norms
 
 
+class RateLimiter:
+    def __init__(self, requests_per_minute: Optional[int], concurrency: Optional[int]):
+        self.requests_per_minute = requests_per_minute
+        self.concurrency = concurrency
+        self._lock = threading.Lock()
+        self._request_times: deque[float] = deque()
+        self._window = 60.0
+        self._semaphore = threading.Semaphore(concurrency) if concurrency else None
+
+    @classmethod
+    def from_config(cls, config: Optional[RateLimitConfig]):
+        if config is None:
+            return None
+        return cls(config.requests_per_minute, config.concurrency)
+
+    def __enter__(self):
+        if self._semaphore:
+            self._semaphore.acquire()
+        if self.requests_per_minute:
+            self._acquire_token()
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        if self._semaphore:
+            self._semaphore.release()
+
+    def _acquire_token(self):
+        assert self.requests_per_minute is not None
+        while True:
+            now = time.monotonic()
+            with self._lock:
+                self._prune(now)
+                if len(self._request_times) < self.requests_per_minute:
+                    self._request_times.append(now)
+                    return
+                earliest = self._request_times[0]
+                wait_time = self._window - (now - earliest)
+            if wait_time > 0:
+                self._sleep(min(wait_time, 1.0))
+            else:
+                self._sleep(0.01)
+
+    def _prune(self, now: float) -> None:
+        while self._request_times and now - self._request_times[0] >= self._window:
+            self._request_times.popleft()
+
+    def _sleep(self, duration: float) -> None:
+        if duration > 0:
+            time.sleep(duration)
+
+
+class LMStudioClient:
+    def __init__(self, base_url: Optional[str], api_key: Optional[str]):
+        if not base_url:
+            raise AIProviderError("LM Studio base_url must be provided")
+        self.base_url = base_url.rstrip('/')
+        self.api_key = api_key
+
+    def embeddings(self, model: str, texts: List[str]) -> Dict[str, Any]:
+        payload = {
+            'model': model,
+            'input': texts
+        }
+        return self._request('POST', '/v1/embeddings', json=payload)
+
+    def chat_completion(
+        self,
+        model: str,
+        messages: List[Dict[str, Any]],
+        temperature: float,
+        max_tokens: Optional[int],
+        tools: Optional[List[Dict[str, Any]]],
+        stream: bool
+    ) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {
+            'model': model,
+            'messages': messages,
+            'temperature': temperature,
+            'stream': stream
+        }
+
+        if max_tokens is not None:
+            payload['max_tokens'] = max_tokens
+
+        if tools:
+            payload['tools'] = tools
+
+        if stream:
+            return {'stream': self._stream_request('/v1/chat/completions', payload)}
+
+        return self._request('POST', '/v1/chat/completions', json=payload)
+
+    def _headers(self) -> Dict[str, str]:
+        headers = {'Content-Type': 'application/json'}
+        if self.api_key:
+            headers['Authorization'] = f'Bearer {self.api_key}'
+        return headers
+
+    def _request(self, method: str, path: str, **kwargs) -> Dict[str, Any]:
+        url = f"{self.base_url}{path}"
+        headers = kwargs.pop('headers', None) or self._headers()
+
+        timeout = kwargs.pop('timeout', 60.0)
+
+        try:
+            with httpx.Client(timeout=timeout) as client:
+                response = client.request(method, url, headers=headers, **kwargs)
+        except httpx.RequestError as error:
+            raise ProviderUnavailableError(f"LM Studio unreachable: {error}") from error
+
+        try:
+            response.raise_for_status()
+        except httpx.HTTPError as error:
+            raise AIProviderError(f"LM Studio request failed: {error}") from error
+
+        try:
+            return response.json()
+        except json.JSONDecodeError as error:
+            raise AIProviderError(f"Invalid JSON response from LM Studio: {error}") from error
+
+    def _stream_request(self, path: str, payload: Dict[str, Any]) -> Iterable[Dict[str, Any]]:
+        url = f"{self.base_url}{path}"
+        headers = self._headers()
+
+        def stream_generator():
+            try:
+                stream_ctx = httpx.stream('POST', url, headers=headers, json=payload, timeout=None)
+            except httpx.RequestError as error:
+                raise ProviderUnavailableError(f"LM Studio unreachable: {error}") from error
+
+            with stream_ctx as response:
+                try:
+                    response.raise_for_status()
+                except httpx.HTTPError as error:
+                    raise AIProviderError(f"LM Studio streaming request failed: {error}") from error
+
+                for line in response.iter_lines():
+                    if not line:
+                        continue
+                    if line.startswith('data: '):
+                        data = line[len('data: '):].strip()
+                    else:
+                        data = line.strip()
+
+                    if not data:
+                        continue
+
+                    if data == '[DONE]':
+                        break
+
+                    try:
+                        yield json.loads(data)
+                    except json.JSONDecodeError:
+                        continue
+
+        return stream_generator()
 class AIProvider:
     def __init__(self, config: AIProviderConfig):
         self.config = config
@@ -22,19 +185,37 @@ class AIProvider:
         self.embedding_model = config.embedding_model
         self.llm_model = config.llm_model
         self.base_url = config.base_url
+        self.rate_limiter = RateLimiter.from_config(config.rate_limit)
+        self.using_lmstudio = self.provider_type == 'lmstudio'
+        self.litellm = None
+        self.lmstudio_client = None
 
-        try:
-            import litellm
+        if self.using_lmstudio:
+            self.lmstudio_client = LMStudioClient(self.base_url, self.api_key)
+        else:
+            try:
+                import litellm
+            except ImportError as error:
+                raise AIProviderError(
+                    "LiteLLM is not installed.\n"
+                    "  Install with: pip install litellm"
+                ) from error
+
             self.litellm = litellm
-        except ImportError:
-            raise AIProviderError(
-                "LiteLLM is not installed.\n"
-                "  Install with: pip install litellm"
-            )
+            self._configure_litellm()
 
-        self._configure_litellm()
+    @contextmanager
+    def _rate_limit_guard(self):
+        if not self.rate_limiter:
+            yield
+            return
+        with self.rate_limiter:
+            yield
 
     def _configure_litellm(self):
+        if self.using_lmstudio or not self.litellm:
+            return
+
         if self.api_key:
             if self.provider_type == 'openai':
                 os.environ['OPENAI_API_KEY'] = self.api_key
@@ -46,7 +227,10 @@ class AIProvider:
                 os.environ['ANTHROPIC_API_KEY'] = self.api_key
 
         if self.base_url:
-            os.environ['OLLAMA_API_BASE'] = self.base_url
+            if self.provider_type == 'ollama':
+                os.environ['OLLAMA_API_BASE'] = self.base_url
+            elif self.provider_type == 'openai':
+                os.environ['OPENAI_API_BASE'] = self.base_url
 
         # Suppress verbose LiteLLM logging
         # LiteLLM logs every API call at INFO level, which clutters the console
@@ -76,26 +260,20 @@ class AIProvider:
             )
 
         try:
-            # Get model name in LiteLLM format
-            model_name = self._get_model_name_for_litellm(self.embedding_model, for_embedding=True)
-
-            # Call LiteLLM's embedding function
-            response = self.litellm.embedding(
-                model=model_name,
-                input=[text]
-            )
+            with self._rate_limit_guard():
+                if self.using_lmstudio and self.lmstudio_client:
+                    response = self.lmstudio_client.embeddings(self.embedding_model, [text])
+                else:
+                    model_name = self._get_model_name_for_litellm(self.embedding_model, for_embedding=True)
+                    response = self.litellm.embedding(
+                        model=model_name,
+                        input=[text]
+                    )
 
             if not response:
                 raise AIProviderError("Invalid response from provider: empty response")
 
-            # LiteLLM returns an EmbeddingResponse object - try attribute access first, then dict
-            try:
-                data = response.data
-            except (AttributeError, TypeError):
-                try:
-                    data = response['data']  # type: ignore[index]
-                except (KeyError, TypeError):
-                    raise AIProviderError("Invalid response from provider: missing embedding data")
+            data = self._extract_embedding_data(response)
 
             if not data:
                 raise AIProviderError("Invalid response from provider: empty embedding data")
@@ -150,26 +328,20 @@ class AIProvider:
                 )
 
         try:
-            # Get model name in LiteLLM format
-            model_name = self._get_model_name_for_litellm(self.embedding_model, for_embedding=True)
-
-            # Call LiteLLM's embedding function with batch input
-            response = self.litellm.embedding(
-                model=model_name,
-                input=texts
-            )
+            with self._rate_limit_guard():
+                if self.using_lmstudio and self.lmstudio_client:
+                    response = self.lmstudio_client.embeddings(self.embedding_model, texts)
+                else:
+                    model_name = self._get_model_name_for_litellm(self.embedding_model, for_embedding=True)
+                    response = self.litellm.embedding(
+                        model=model_name,
+                        input=texts
+                    )
 
             if not response:
                 raise AIProviderError("Invalid response from provider: empty response")
 
-            # LiteLLM returns an EmbeddingResponse object - try attribute access first, then dict
-            try:
-                data = response.data
-            except (AttributeError, TypeError):
-                try:
-                    data = response['data']  # type: ignore[index]
-                except (KeyError, TypeError):
-                    raise AIProviderError("Invalid response from provider: missing embedding data")
+            data = self._extract_embedding_data(response)
 
             if not data:
                 raise AIProviderError("Invalid response from provider: empty embedding data")
@@ -219,6 +391,64 @@ class AIProvider:
                 ) from error
             else:
                 raise AIProviderError(f"Failed to generate embeddings batch: {error}") from error
+
+    def _extract_embedding_data(self, response) -> List[Any]:
+        if isinstance(response, dict):
+            data = response.get('data')
+        else:
+            try:
+                data = response.data
+            except (AttributeError, TypeError):
+                data = None
+            if data is None:
+                try:
+                    data = response['data']  # type: ignore[index]
+                except (KeyError, TypeError):
+                    data = None
+
+        if not data:
+            raise AIProviderError("Invalid response from provider: missing embedding data")
+
+        return data
+
+    def _chat_completion_request(
+        self,
+        messages: List[Dict[str, Any]],
+        temperature: float,
+        max_tokens: Optional[int],
+        tools: Optional[List[Dict[str, Any]]],
+        stream: bool
+    ):
+        with self._rate_limit_guard():
+            if self.using_lmstudio and self.lmstudio_client:
+                return self.lmstudio_client.chat_completion(
+                    model=self.llm_model,
+                    messages=messages,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    tools=tools,
+                    stream=stream
+                )
+
+            if not self.litellm:
+                raise AIProviderError("LiteLLM is not configured")
+
+            model_name = self._get_model_name_for_litellm(self.llm_model, for_embedding=False)
+
+            completion_params = {
+                'model': model_name,
+                'messages': messages,
+                'temperature': temperature,
+                'stream': stream
+            }
+
+            if max_tokens is not None:
+                completion_params['max_tokens'] = max_tokens
+
+            if tools:
+                completion_params['tools'] = tools
+
+            return self.litellm.completion(**completion_params)
 
     def get_embedding_metadata(self) -> Dict[str, Any]:
         metadata = {
@@ -281,9 +511,6 @@ class AIProvider:
             return result
 
         try:
-            # Get model name in LiteLLM format
-            model_name = self._get_model_name_for_litellm(self.llm_model, for_embedding=False)
-
             # Construct validation prompt
             prompt = f"""You are evaluating a description for a semantic search knowledge base collection.
 
@@ -301,12 +528,12 @@ FEEDBACK: [one sentence of constructive feedback]
 
 Be concise and direct."""
 
-            # Call LLM
-            response = self.litellm.completion(
-                model=model_name,
+            response = self._chat_completion_request(
                 messages=[{"role": "user", "content": prompt}],
-                temperature=0.3,  # Lower temperature for more consistent scoring
-                max_tokens=150
+                temperature=0.3,
+                max_tokens=150,
+                tools=None,
+                stream=False
             )
 
             if not response:
@@ -383,24 +610,17 @@ Be concise and direct."""
             raise ValueError("Messages list cannot be empty")
 
         try:
-            model_name = self._get_model_name_for_litellm(self.llm_model, for_embedding=False)
-
-            completion_params = {
-                'model': model_name,
-                'messages': messages,
-                'temperature': temperature,
-                'stream': stream
-            }
-
-            if max_tokens is not None:
-                completion_params['max_tokens'] = max_tokens
-
-            if tools:
-                completion_params['tools'] = tools
-
-            response = self.litellm.completion(**completion_params)
+            response = self._chat_completion_request(
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                tools=tools,
+                stream=stream
+            )
 
             if stream:
+                if isinstance(response, dict) and 'stream' in response:
+                    return response
                 return {'stream': response}
 
             if not response:
@@ -490,27 +710,26 @@ Be concise and direct."""
             raise ValueError("Messages list cannot be empty")
 
         try:
-            model_name = self._get_model_name_for_litellm(self.llm_model, for_embedding=False)
+            response = self._chat_completion_request(
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                tools=tools,
+                stream=True
+            )
 
-            completion_params = {
-                'model': model_name,
-                'messages': messages,
-                'temperature': temperature,
-                'stream': True
-            }
+            if isinstance(response, dict):
+                stream_source = response.get('stream')
+            else:
+                stream_source = response
 
-            if max_tokens is not None:
-                completion_params['max_tokens'] = max_tokens
-
-            if tools:
-                completion_params['tools'] = tools
-
-            response = self.litellm.completion(**completion_params)
+            if stream_source is None:
+                raise AIProviderError("Streaming response missing stream iterator")
 
             accumulated_content = []
             accumulated_tool_calls = []
 
-            for chunk in response:
+            for chunk in stream_source:
                 if not chunk:
                     continue
 

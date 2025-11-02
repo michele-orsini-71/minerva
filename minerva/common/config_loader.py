@@ -86,7 +86,7 @@ COLLECTION_CONFIG_SCHEMA = {
             "properties": {
                 "type": {
                     "type": "string",
-                    "enum": ["ollama", "openai", "gemini", "azure", "anthropic"],
+                    "enum": ["ollama", "openai", "gemini", "azure", "anthropic", "lmstudio"],
                     "description": "AI provider type"
                 },
                 "embedding": {
@@ -130,6 +130,23 @@ COLLECTION_CONFIG_SCHEMA = {
                         }
                     },
                     "additionalProperties": False
+                },
+                "rate_limit": {
+                    "type": "object",
+                    "properties": {
+                        "requests_per_minute": {
+                            "type": ["integer", "null"],
+                            "minimum": 1,
+                            "description": "Maximum number of requests per minute"
+                        },
+                        "concurrency": {
+                            "type": ["integer", "null"],
+                            "minimum": 1,
+                            "description": "Maximum concurrent requests"
+                        }
+                    },
+                    "additionalProperties": False,
+                    "description": "Optional rate limiting configuration"
                 }
             },
             "required": ["type", "embedding", "llm"],
@@ -216,7 +233,7 @@ def validate_config_schema(data: Dict[str, Any], config_path: str) -> None:
                 f"  Error: Missing 'type' field\n"
                 f"  Suggestion: Add provider type to ai_provider configuration:\n"
                 f"    \"ai_provider\": {{\n"
-                f"      \"type\": \"ollama\",  // or openai, gemini, azure, anthropic\n"
+                f"      \"type\": \"ollama\",  // or openai, gemini, azure, anthropic, lmstudio\n"
                 f"      \"embedding\": {{ \"model\": \"mxbai-embed-large:latest\" }},\n"
                 f"      \"llm\": {{ \"model\": \"llama3.1:8b\" }}\n"
                 f"    }}"
@@ -231,7 +248,8 @@ def validate_config_schema(data: Dict[str, Any], config_path: str) -> None:
                 f"    - openai (OpenAI API)\n"
                 f"    - gemini (Google Gemini API)\n"
                 f"    - azure (Azure OpenAI)\n"
-                f"    - anthropic (Anthropic API)"
+                f"    - anthropic (Anthropic API)\n"
+                f"    - lmstudio (Local LM Studio server)"
             )
         else:
             # Generic schema validation error

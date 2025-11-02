@@ -24,8 +24,9 @@ def initialize_provider(config: CollectionConfig) -> AIProvider:
         provider_type=ai_provider_config['type'],
         embedding_model=ai_provider_config['embedding']['model'],
         llm_model=ai_provider_config['llm']['model'],
-        base_url=ai_provider_config['embedding'].get('base_url'),
-        api_key=ai_provider_config['embedding'].get('api_key')
+        base_url=ai_provider_config['embedding'].get('base_url') or ai_provider_config['llm'].get('base_url'),
+        api_key=ai_provider_config['embedding'].get('api_key') or ai_provider_config['llm'].get('api_key'),
+        rate_limit=None
     )
 
     try:

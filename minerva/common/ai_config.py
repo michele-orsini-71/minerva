@@ -3,6 +3,18 @@ import re
 from dataclasses import dataclass
 from typing import Optional
 
+
+@dataclass(frozen=True)
+class RateLimitConfig:
+    requests_per_minute: Optional[int] = None
+    concurrency: Optional[int] = None
+
+    def __post_init__(self):
+        if self.requests_per_minute is not None and self.requests_per_minute <= 0:
+            raise ValueError("requests_per_minute must be positive when provided")
+        if self.concurrency is not None and self.concurrency <= 0:
+            raise ValueError("concurrency must be positive when provided")
+
 from minerva.common.exceptions import APIKeyMissingError
 
 
@@ -37,9 +49,10 @@ class AIProviderConfig:
     llm_model: str
     base_url: Optional[str] = None
     api_key: Optional[str] = None
+    rate_limit: Optional[RateLimitConfig] = None
 
     def __post_init__(self):
-        valid_providers = ['ollama', 'openai', 'gemini', 'azure', 'anthropic']
+        valid_providers = ['ollama', 'openai', 'gemini', 'azure', 'anthropic', 'lmstudio']
         if self.provider_type not in valid_providers:
             raise ValueError(
                 f"Invalid provider_type: {self.provider_type}\n"

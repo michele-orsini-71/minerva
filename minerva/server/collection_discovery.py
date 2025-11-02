@@ -35,7 +35,8 @@ def reconstruct_provider_from_metadata(metadata: Dict[str, Any]) -> Tuple[Option
             embedding_model=embedding_model,
             llm_model=llm_model,
             base_url=base_url,
-            api_key=api_key_ref
+            api_key=api_key_ref,
+            rate_limit=None
         )
 
         provider = AIProvider(config)

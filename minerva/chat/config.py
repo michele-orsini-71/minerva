@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Any, Optional
 
-from minerva.common.ai_config import AIProviderConfig, resolve_env_variable
+from minerva.common.ai_config import AIProviderConfig, RateLimitConfig, resolve_env_variable
 from minerva.common.exceptions import ChatConfigError
 from minerva.common.logger import get_logger
 
@@ -48,7 +48,7 @@ CHAT_CONFIG_SCHEMA = {
             "properties": {
                 "type": {
                     "type": "string",
-                    "enum": ["ollama", "openai", "gemini", "azure", "anthropic"],
+                    "enum": ["ollama", "openai", "gemini", "azure", "anthropic", "lmstudio"],
                     "description": "AI provider type"
                 },
                 "embedding": {
@@ -90,6 +90,23 @@ CHAT_CONFIG_SCHEMA = {
                         }
                     },
                     "additionalProperties": False
+                },
+                "rate_limit": {
+                    "type": "object",
+                    "properties": {
+                        "requests_per_minute": {
+                            "type": ["integer", "null"],
+                            "minimum": 1,
+                            "description": "Maximum number of requests per minute"
+                        },
+                        "concurrency": {
+                            "type": ["integer", "null"],
+                            "minimum": 1,
+                            "description": "Maximum number of concurrent requests"
+                        }
+                    },
+                    "additionalProperties": False,
+                    "description": "Optional rate limiting configuration"
                 }
             },
             "required": ["type", "embedding", "llm"],
@@ -140,7 +157,7 @@ def validate_config_schema(data: Dict[str, Any], config_path: str) -> None:
                 f"Invalid AI provider type in: {config_path}\n"
                 f"  Field: {error_path}\n"
                 f"  Error: {error.message}\n"
-                f"  Supported types: ollama, openai, gemini, azure, anthropic"
+                f"  Supported types: ollama, openai, gemini, azure, anthropic, lmstudio"
             )
         elif "Additional properties are not allowed" in error.message:
             raise ChatConfigError(
@@ -205,7 +222,10 @@ def expand_path(path: str) -> str:
 
 
 def create_ai_provider_config(ai_provider_data: Dict[str, Any]) -> AIProviderConfig:
-    provider_type = ai_provider_data['type']
+    provider_type = ai_provider_data.get('type') or ai_provider_data.get('provider_type')
+
+    if not provider_type:
+        raise ChatConfigError("ai_provider configuration missing 'type' field")
 
     embedding_config = ai_provider_data['embedding']
     llm_config = ai_provider_data['llm']
@@ -216,12 +236,15 @@ def create_ai_provider_config(ai_provider_data: Dict[str, Any]) -> AIProviderCon
     base_url = embedding_config.get('base_url') or llm_config.get('base_url')
     api_key = embedding_config.get('api_key') or llm_config.get('api_key')
 
+    rate_limit = None  # Chat command ignores rate limiting; reserved for MCP server configuration
+
     return AIProviderConfig(
         provider_type=provider_type,
         embedding_model=embedding_model,
         llm_model=llm_model,
         base_url=base_url,
-        api_key=api_key
+        api_key=api_key,
+        rate_limit=rate_limit
     )
 
 
