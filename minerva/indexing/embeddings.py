@@ -9,7 +9,6 @@ from minerva.common.logger import get_logger
 from minerva.common.models import Chunk, ChunkWithEmbedding, ChunkList, ChunkWithEmbeddingList
 from minerva.common.ai_provider import AIProvider, AIProviderError, ProviderUnavailableError
 from minerva.common.ai_config import AIProviderConfig
-from minerva.common.config_loader import CollectionConfig
 
 logger = get_logger(__name__, mode="cli")
 
@@ -17,21 +16,9 @@ DEFAULT_MAX_RETRIES = 3
 DEFAULT_RETRY_DELAY = 1.0
 
 
-def initialize_provider(config: CollectionConfig) -> AIProvider:
-    ai_provider_config = config.ai_provider
-
-    provider_config = AIProviderConfig(
-        provider_type=ai_provider_config['type'],
-        embedding_model=ai_provider_config['embedding']['model'],
-        llm_model=ai_provider_config['llm']['model'],
-        base_url=ai_provider_config['embedding'].get('base_url') or ai_provider_config['llm'].get('base_url'),
-        api_key=ai_provider_config['embedding'].get('api_key') or ai_provider_config['llm'].get('api_key'),
-        rate_limit=None
-    )
-
+def initialize_provider(provider_config: AIProviderConfig) -> AIProvider:
     try:
-        provider = AIProvider(provider_config)
-        return provider
+        return AIProvider(provider_config)
     except AIProviderError as error:
         raise EmbeddingError(f"Failed to initialize AI provider: {error}")
 

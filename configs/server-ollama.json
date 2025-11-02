@@ -1,0 +1,42 @@
+{
+  "ai_providers": [
+    {
+      "id": "ollama-server",
+      "provider_type": "ollama",
+      "base_url": "http://localhost:11434",
+      "embedding": {
+        "model": "mxbai-embed-large:latest"
+      },
+      "llm": {
+        "model": "llama3.1:8b"
+      }
+    }
+  ],
+  "indexing": {
+    "chromadb_path": "/srv/minerva/chromadb_data",
+    "collections": [
+      {
+        "collection_name": "team-knowledge-base",
+        "description": "Shared engineering knowledge base maintained on the central server.",
+        "json_file": "./test-data/team-knowledge.json",
+        "chunk_size": 1200,
+        "force_recreate": false,
+        "skip_ai_validation": false,
+        "ai_provider_id": "ollama-server"
+      }
+    ]
+  },
+  "chat": {
+    "chat_provider_id": "ollama-server",
+    "mcp_server_url": "http://localhost:8000/mcp",
+    "conversation_dir": "/var/minerva/conversations",
+    "enable_streaming": false,
+    "max_tool_iterations": 5
+  },
+  "server": {
+    "chromadb_path": "/srv/minerva/chromadb_data",
+    "default_max_results": 5,
+    "host": "0.0.0.0",
+    "port": 8000
+  }
+}

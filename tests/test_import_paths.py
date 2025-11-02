@@ -61,8 +61,8 @@ class TestCommonModuleImports:
         assert ConsoleLogger is not None
 
     def test_import_config_module(self):
-        from minerva.common.config import load_config
-        assert callable(load_config)
+        from minerva.common.config_loader import load_unified_config
+        assert callable(load_unified_config)
 
     def test_import_ai_provider_module(self):
         from minerva.common.ai_provider import AIProvider, AIProviderConfig
@@ -138,7 +138,7 @@ class TestNoCircularImports:
         assert True
 
     def test_common_imports_dont_create_cycles(self):
-        from minerva.common import schemas, logger, config, ai_provider
+        from minerva.common import schemas, logger, ai_provider, config_loader
         assert True
 
     def test_indexing_imports_dont_create_cycles(self):

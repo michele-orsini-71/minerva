@@ -6,12 +6,13 @@
 - `requirements.txt` - Project dependencies including HTTP client support.
 - `setup.py` - Package metadata and install requirements to align with runtime needs.
 - `minerva/chat/chat_engine.py` - Chat workflow to refactor around MCP interactions, streaming fallback, and history updates.
-- `minerva/chat/config.py` - Chat-specific config structure to align with unified config references.
+- `minerva/chat/config.py` - Chat runtime config builder sourced from unified configuration.
+- `minerva/commands/config.py` - CLI entrypoint for unified config validation utilities.
 - `minerva/chat/history.py` - Conversation persistence/compression updates triggered by new requirements.
 - `minerva/chat/mcp_client.py` - New module encapsulating FastMCP client usage, tool execution, and fallbacks.
 - `minerva/chat/commands.py` - CLI entrypoint to enforce `--config` usage and integrate new loader.
-- `minerva/index/commands.py` - CLI index command to resolve provider IDs from unified config.
-- `minerva/serve/commands.py` - MCP server command to load shared config and provider definitions.
+- `minerva/commands/index.py` - CLI index command to resolve provider IDs from unified config.
+- `minerva/commands/serve.py` - MCP server command to load shared config and provider definitions.
 - `minerva/indexing/embeddings.py` - Indexing entrypoint that boots providers for embedding generation.
 - `minerva/server/collection_discovery.py` - Server-side helper to restore providers from stored metadata.
 - `tasks/prd-lmstudio-integration-and-mcp-chat.md` - Source PRD for cross-reference during implementation.
@@ -21,7 +22,11 @@
 - `README.md` - High-level setup instructions for LM Studio and unified config.
 - `tests/test_ai_provider.py` - Unit tests for provider behavior, including LM Studio and rate limiting.
 - `tests/test_chat_engine.py` - Tests for chat loop, streaming fallback, and history compression.
-- `tests/test_config_loader.py` - New tests covering unified config parsing/validation.
+- `configs/desktop-lmstudio.json` - Sample unified config for all-LM Studio desktop workflow.
+- `configs/hybrid-ollama-lmstudio.json` - Sample unified config mixing Ollama indexing and LM Studio chat.
+- `configs/server-ollama.json` - Sample server-focused unified config for Ollama deployments.
+- `tests/test_unified_config_loader.py` - Tests covering unified config parsing/validation.
+- `tests/test_chat_config.py` - Tests for chat runtime config built from unified config.
 - `tests/test_mcp_chat_integration.py` - Integration tests for MCP chat workflow.
 
 ### Notes
@@ -38,13 +43,13 @@
   - [x] 1.4 Update provider factory/registration to recognize LM Studio configurations by `provider_type`.
   - [x] 1.5 Write unit tests covering LM Studio embeddings/chat plus rate-limit edge cases.
 
-- [ ] 2.0 Build the unified configuration system and shared loader across CLI commands
-  - [ ] 2.1 Design JSON Schema representing `ai_providers`, `indexing`, `chat`, and `server` sections.
-  - [ ] 2.2 Implement a config loader that reads a user-supplied file (`--config`), validates it, and resolves provider IDs.
-  - [ ] 2.3 Update CLI commands (`index`, `serve`, `chat`, etc.) to require `--config` and consume the shared loader outputs.
-  - [ ] 2.4 Add `minerva config validate` command to run schema validation and produce actionable error messages.
-  - [ ] 2.5 Provide sample configs (desktop, hybrid, server) aligned with the unified schema.
-  - [ ] 2.6 Create automated tests for config validation, including invalid and edge-case scenarios.
+- [x] 2.0 Build the unified configuration system and shared loader across CLI commands
+  - [x] 2.1 Design JSON Schema representing `ai_providers`, `indexing`, `chat`, and `server` sections.
+  - [x] 2.2 Implement a config loader that reads a user-supplied file (`--config`), validates it, and resolves provider IDs.
+  - [x] 2.3 Update CLI commands (`index`, `serve`, `chat`, etc.) to require `--config` and consume the shared loader outputs.
+  - [x] 2.4 Add `minerva config validate` command to run schema validation and produce actionable error messages.
+  - [x] 2.5 Provide sample configs (desktop, hybrid, server) aligned with the unified schema.
+  - [x] 2.6 Create automated tests for config validation, including invalid and edge-case scenarios.
 
 - [ ] 3.0 Refactor the chat command onto MCP, including streaming fallback, tool handling, and history compression updates
   - [ ] 3.1 Introduce an MCP client wrapper to manage FastMCP connections, tool definitions, and result ingestion.

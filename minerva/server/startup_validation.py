@@ -1,9 +1,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import Dict, Any
-
-from minerva.common.exceptions import StartupValidationError
+from minerva.common.exceptions import ConfigError, StartupValidationError
 from minerva.indexing.storage import initialize_chromadb_client
 from minerva.common.logger import get_logger
 
@@ -126,21 +124,30 @@ def validate_collection_availability(chromadb_path: str) -> None:
         ) from error
 
 
-def validate_server_prerequisites(config: Dict[str, Any]) -> None:
-    chromadb_path = config.get('chromadb_path', '')
+def validate_server_prerequisites(chromadb_path: str) -> None:
     validate_chromadb_path(chromadb_path)
     validate_collection_availability(chromadb_path)
 
 
 def main(argv: list[str]) -> None:
-    import json
-    from config import load_config, get_config_file_path
+    from minerva.common.config_loader import load_unified_config
+    from minerva.common.exceptions import ConfigError
 
-    config_path = argv[1] if len(argv) > 1 else get_config_file_path()
-    config = load_config(config_path)
+    if len(argv) < 2:
+        raise StartupValidationError(
+            "Configuration path is required.\n"
+            "Usage: python -m minerva.server.startup_validation <config.json>"
+        )
+
+    config_path = argv[1]
+
+    try:
+        unified_config = load_unified_config(config_path)
+    except ConfigError as error:
+        raise StartupValidationError(str(error)) from error
 
     console_logger.info("Running server validation checks...\n")
-    validate_server_prerequisites(config)
+    validate_server_prerequisites(unified_config.server.chromadb_path)
     console_logger.success("✓ All validation checks passed!")
     console_logger.info("\nServer is ready to start.")
 

@@ -7,9 +7,80 @@ from argparse import Namespace
 from minerva.commands.validate import run_validate
 from minerva.commands.index import run_index, initialize_and_validate_provider
 from minerva.commands.peek import run_peek
-from minerva.common.config_loader import load_collection_config, ConfigError
+from minerva.common.config_loader import (
+    load_unified_config,
+    ConfigError,
+    UnifiedConfig,
+    ProviderDefinition,
+    IndexingConfig,
+    IndexingCollectionConfig,
+    ChatSection,
+    ServerSection,
+)
 from minerva.common.schemas import validate_notes_file
-from minerva.common.exceptions import ProviderUnavailableError
+from minerva.common.exceptions import ProviderUnavailableError, JsonLoaderError
+
+
+def build_unified_config(temp_dir: Path) -> tuple[UnifiedConfig, IndexingCollectionConfig]:
+    chroma_path = temp_dir / "chromadb"
+    chroma_path.mkdir(parents=True, exist_ok=True)
+
+    notes_path = temp_dir / "notes.json"
+    notes_path.write_text("[]", encoding="utf-8")
+
+    providers = {
+        "lmstudio-local": ProviderDefinition(
+            id="lmstudio-local",
+            provider_type="lmstudio",
+            embedding_model="qwen-embed",
+            llm_model="qwen-chat",
+            base_url="http://localhost:1234/v1",
+            api_key=None,
+            rate_limit=None,
+            display_name=None
+        )
+    }
+
+    collection = IndexingCollectionConfig(
+        collection_name="test_collection",
+        description="Test description",
+        json_file=str(notes_path),
+        ai_provider_id="lmstudio-local",
+        chunk_size=1200,
+        skip_ai_validation=False,
+        force_recreate=False
+    )
+
+    indexing = IndexingConfig(
+        chromadb_path=str(chroma_path),
+        collections=(collection,)
+    )
+
+    chat_section = ChatSection(
+        chat_provider_id="lmstudio-local",
+        mcp_server_url="http://localhost:8000/mcp",
+        conversation_dir=str(temp_dir / "conversations"),
+        enable_streaming=False,
+        max_tool_iterations=5,
+        system_prompt_file=None
+    )
+
+    server_section = ServerSection(
+        chromadb_path=str(chroma_path),
+        default_max_results=5,
+        host=None,
+        port=None
+    )
+
+    unified_config = UnifiedConfig(
+        providers=providers,
+        indexing=indexing,
+        chat=chat_section,
+        server=server_section,
+        source_path=temp_dir / "config.json"
+    )
+
+    return unified_config, collection
 
 
 class TestMissingFileErrors:
@@ -33,14 +104,35 @@ class TestMissingFileErrors:
 
         assert exit_code == 1
 
-    @patch('minerva.commands.index.load_collection_config')
-    @patch('minerva.commands.index.load_json_notes')
+    @patch('minerva.commands.index.load_unified_config')
+    @patch('minerva.commands.index.load_and_print_notes')
     def test_index_nonexistent_notes_file(self, mock_load_notes, mock_load_config, temp_dir: Path):
         """Index command should exit cleanly when referenced JSON notes file doesn't exist"""
-        mock_config = Mock()
-        mock_config.json_file = str(temp_dir / "does_not_exist.json")
-        mock_load_config.return_value = mock_config
-        mock_load_notes.side_effect = FileNotFoundError("File not found")
+        unified_config, collection = build_unified_config(temp_dir)
+        missing_file = temp_dir / "does_not_exist.json"
+        collection = IndexingCollectionConfig(
+            collection_name=collection.collection_name,
+            description=collection.description,
+            json_file=str(missing_file),
+            ai_provider_id=collection.ai_provider_id,
+            chunk_size=collection.chunk_size,
+            skip_ai_validation=collection.skip_ai_validation,
+            force_recreate=collection.force_recreate
+        )
+
+        unified_config = UnifiedConfig(
+            providers=unified_config.providers,
+            indexing=IndexingConfig(
+                chromadb_path=unified_config.indexing.chromadb_path,
+                collections=(collection,)
+            ),
+            chat=unified_config.chat,
+            server=unified_config.server,
+            source_path=unified_config.source_path
+        )
+
+        mock_load_config.return_value = unified_config
+        mock_load_notes.side_effect = JsonLoaderError("File not found")
 
         args = Namespace(config=temp_dir / "config.json", verbose=False, dry_run=False)
 
@@ -64,89 +156,6 @@ class TestMissingFileErrors:
 
         assert exit_code == 1
 
-
-class TestInvalidConfigErrors:
-    """Test handling of invalid configuration files"""
-
-    def test_load_malformed_json_config(self, temp_dir: Path):
-        """Config loader should raise ConfigError for malformed JSON"""
-        config_file = temp_dir / "bad_config.json"
-        config_file.write_text("{ this is not valid json }")
-
-        with pytest.raises(ConfigError) as exc_info:
-            load_collection_config(str(config_file))
-
-        assert "JSON" in str(exc_info.value) or "parse" in str(exc_info.value).lower()
-
-    def test_load_config_missing_required_field(self, temp_dir: Path):
-        """Config loader should raise ConfigError when required fields are missing"""
-        config_file = temp_dir / "incomplete_config.json"
-        config_data = {
-            "collection_name": "test_collection"
-            # Missing required fields: chromadb_path, json_file, description
-        }
-        config_file.write_text(json.dumps(config_data))
-
-        with pytest.raises(ConfigError) as exc_info:
-            load_collection_config(str(config_file))
-
-        assert "required" in str(exc_info.value).lower() or "missing" in str(exc_info.value).lower()
-
-    def test_load_config_with_invalid_chunk_size(self, temp_dir: Path):
-        """Config loader should raise ConfigError for invalid chunk_size"""
-        config_file = temp_dir / "bad_chunk_size.json"
-        config_data = {
-            "collection_name": "test",
-            "description": "Test description",
-            "chromadb_path": "./chromadb_data",
-            "json_file": "notes.json",
-            "chunk_size": -100  # Invalid negative value
-        }
-        config_file.write_text(json.dumps(config_data))
-
-        with pytest.raises(ConfigError) as exc_info:
-            load_collection_config(str(config_file))
-
-        assert "chunk_size" in str(exc_info.value).lower()
-
-    def test_load_config_with_empty_collection_name(self, temp_dir: Path):
-        """Config loader should raise ConfigError for empty collection_name"""
-        config_file = temp_dir / "empty_name.json"
-        config_data = {
-            "collection_name": "",  # Empty string not allowed
-            "description": "Test description",
-            "chromadb_path": "./chromadb_data",
-            "json_file": "notes.json"
-        }
-        config_file.write_text(json.dumps(config_data))
-
-        with pytest.raises(ConfigError) as exc_info:
-            load_collection_config(str(config_file))
-
-        assert "collection_name" in str(exc_info.value).lower()
-
-    def test_index_with_invalid_ai_provider_config(self, temp_dir: Path):
-        """Index should handle invalid AI provider configuration gracefully"""
-        config_file = temp_dir / "bad_provider.json"
-        config_data = {
-            "collection_name": "test",
-            "description": "Test description",
-            "chromadb_path": "./chromadb_data",
-            "json_file": "notes.json",
-            "ai_provider": {
-                "type": "invalid_provider_type",  # Invalid provider
-                "embedding": {"model": "test"},
-                "llm": {"model": "test"}
-            }
-        }
-        config_file.write_text(json.dumps(config_data))
-
-        args = Namespace(config=config_file, verbose=False, dry_run=False)
-
-        # Should exit with error code 1
-        exit_code = run_index(args)
-
-        assert exit_code == 1
 
 
 class TestProviderUnavailableErrors:
@@ -408,28 +417,6 @@ class TestEdgeCaseErrors:
 
         # Should succeed - no schema violation
         assert exit_code == 0
-
-    def test_config_with_special_characters_in_paths(self, temp_dir: Path):
-        """Config loader should handle special characters in paths"""
-        config_file = temp_dir / "special_chars.json"
-        config_data = {
-            "collection_name": "test_collection",
-            "description": "Test description",
-            "chromadb_path": "./chromadb data with spaces/",
-            "json_file": "notes with spaces.json",
-            "ai_provider": {
-                "type": "ollama",
-                "embedding": {"model": "mxbai-embed-large:latest"},
-                "llm": {"model": "llama3.1:8b"}
-            }
-        }
-        config_file.write_text(json.dumps(config_data))
-
-        # Should load without errors
-        config = load_collection_config(str(config_file))
-
-        assert config.chromadb_path == "./chromadb data with spaces/"
-        assert config.json_file == "notes with spaces.json"
 
     def test_validate_json_file_not_readable(self, temp_dir: Path):
         """Validate should handle files that can't be read"""

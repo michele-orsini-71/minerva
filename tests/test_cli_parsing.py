@@ -181,10 +181,29 @@ class TestValidateCommand:
         assert args1.verbose == args2.verbose
 
 
+class TestConfigCommand:
+    def test_config_command_requires_subcommand(self):
+        parser = create_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(['config'])
+
+    def test_config_validate_requires_file(self):
+        parser = create_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(['config', 'validate'])
+
+    def test_config_validate_with_file(self):
+        parser = create_parser()
+        args = parser.parse_args(['config', 'validate', 'config.json'])
+        assert args.command == 'config'
+        assert args.config_command == 'validate'
+        assert args.config_file == Path('config.json')
+
+
 class TestCommandNames:
     def test_all_valid_commands(self):
         parser = create_parser()
-        commands = ['index', 'serve', 'peek', 'validate']
+        commands = ['index', 'serve', 'peek', 'validate', 'config']
         for command in commands:
             # Each command has different required args, so we provide them
             if command == 'index':
@@ -195,6 +214,8 @@ class TestCommandNames:
                 args = parser.parse_args([command, 'collection_name'])
             elif command == 'validate':
                 args = parser.parse_args([command, 'file.json'])
+            elif command == 'config':
+                args = parser.parse_args([command, 'validate', 'config.json'])
             assert args.command == command
 
     def test_invalid_command_rejected(self):

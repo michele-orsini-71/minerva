@@ -6,6 +6,7 @@ from minerva.common.exceptions import (
     ServerError,
     StartupValidationError,
     CollectionDiscoveryError,
+    ConfigError,
 )
 from minerva.common.logger import get_logger
 
@@ -19,7 +20,7 @@ except ImportError as error:
     raise StartupValidationError(message) from error
 
 # Import configuration and validation modules
-from minerva.common.config import load_config, ConfigError, ConfigValidationError
+from minerva.common.config_loader import load_unified_config, UnifiedConfig
 from minerva.server.startup_validation import validate_server_prerequisites
 from minerva.server.collection_discovery import discover_collections_with_providers
 from minerva.server.search_tools import (
@@ -28,35 +29,41 @@ from minerva.server.search_tools import (
     CollectionNotFoundError
 )
 from minerva.common.ai_provider import AIProvider
+from minerva.common.config_loader import ServerSection
 
 mcp = FastMCP("minerva-mcp-server")
 
 # Global configuration (loaded at startup)
-CONFIG: Dict[str, Any] = {}
+UNIFIED_CONFIG: Optional[UnifiedConfig] = None
+SERVER_SETTINGS: Optional[ServerSection] = None
 PROVIDER_MAP: Dict[str, AIProvider] = {}
 AVAILABLE_COLLECTIONS: List[Dict[str, Any]] = []
 
 def initialize_server(config_path: str) -> None:
-    global CONFIG, PROVIDER_MAP, AVAILABLE_COLLECTIONS
+    global UNIFIED_CONFIG, SERVER_SETTINGS, PROVIDER_MAP, AVAILABLE_COLLECTIONS
 
-    CONFIG = {}
+    UNIFIED_CONFIG = None
+    SERVER_SETTINGS = None
     PROVIDER_MAP = {}
     AVAILABLE_COLLECTIONS = []
 
     try:
         console_logger.info("Loading configuration...")
-        CONFIG = load_config(config_path)
+        UNIFIED_CONFIG = load_unified_config(config_path)
+        SERVER_SETTINGS = UNIFIED_CONFIG.server
         console_logger.success(f"✓ Configuration loaded from {config_path}")
-        console_logger.info(f"  ChromaDB path: {CONFIG['chromadb_path']}")
-        console_logger.info(f"  Default max results: {CONFIG['default_max_results']}")
+        console_logger.info(f"  ChromaDB path: {SERVER_SETTINGS.chromadb_path}")
+        console_logger.info(f"  Default max results: {SERVER_SETTINGS.default_max_results}")
 
-    except (ConfigError, ConfigValidationError) as e:
-        console_logger.error(f"Configuration Error:\n\n{e}")
-        raise StartupValidationError(str(e)) from e
+    except ConfigError as error:
+        console_logger.error(f"Configuration Error:\n\n{error}")
+        raise StartupValidationError(str(error)) from error
 
     try:
         console_logger.info("\nValidating server prerequisites...")
-        validate_server_prerequisites(CONFIG)
+        if SERVER_SETTINGS is None:
+            raise StartupValidationError("Server configuration missing after load")
+        validate_server_prerequisites(SERVER_SETTINGS.chromadb_path)
         console_logger.success("✓ All validation checks passed")
 
     except StartupValidationError as error:
@@ -68,7 +75,9 @@ def initialize_server(config_path: str) -> None:
 
     try:
         console_logger.info("\nDiscovering collections and initializing AI providers...")
-        provider_map, all_collections = discover_collections_with_providers(CONFIG['chromadb_path'])
+        if SERVER_SETTINGS is None:
+            raise StartupValidationError("Server configuration missing after validation")
+        provider_map, all_collections = discover_collections_with_providers(SERVER_SETTINGS.chromadb_path)
 
         total_count = len(all_collections)
         available_count = sum(1 for c in all_collections if c['available'])
@@ -171,7 +180,10 @@ def search_knowledge_base(
 ) -> List[Dict[str, Any]]:
     try:
         # Use default max_results from config if not provided
-        effective_max_results: int = max_results if max_results is not None else CONFIG['default_max_results']
+        if SERVER_SETTINGS is None:
+            raise ServerError("Server configuration not initialized")
+
+        effective_max_results: int = max_results if max_results is not None else SERVER_SETTINGS.default_max_results
 
         console_logger.info(f"Tool invoked: search_knowledge_base")
         console_logger.info(f"  Query: {query[:80]}{'...' if len(query) > 80 else ''}")
@@ -194,7 +206,7 @@ def search_knowledge_base(
         results = search_kb(
             query=query,
             collection_name=collection_name,
-            chromadb_path=CONFIG['chromadb_path'],
+            chromadb_path=SERVER_SETTINGS.chromadb_path,
             provider=provider,
             context_mode=context_mode,
             max_results=effective_max_results

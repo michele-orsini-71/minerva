@@ -13,6 +13,7 @@ from minerva.commands.serve_http import run_serve_http
 from minerva.commands.peek import run_peek
 from minerva.commands.validate import run_validate
 from minerva.commands.chat import run_chat
+from minerva.commands.config import run_config_command
 
 logger = get_logger(__name__, simple=True, mode="cli")
 
@@ -304,6 +305,40 @@ Examples:
         help='Resume a previous conversation by its ID'
     )
 
+    # ========================================
+    # CONFIG command
+    # ========================================
+    config_parser = subparsers.add_parser(
+        'config',
+        help='Configuration utilities',
+        description='Validate unified Minerva configuration files.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Validate a configuration file
+  minerva config validate configs/desktop.json
+        """
+    )
+
+    config_subparsers = config_parser.add_subparsers(
+        dest='config_command',
+        required=True,
+        help='Configuration subcommand to run'
+    )
+
+    config_validate_parser = config_subparsers.add_parser(
+        'validate',
+        help='Validate a unified configuration file',
+        description='Validate a unified configuration file and print a summary.'
+    )
+
+    config_validate_parser.add_argument(
+        'config_file',
+        type=Path,
+        metavar='FILE',
+        help='Path to unified configuration JSON file'
+    )
+
     return parser
 
 
@@ -324,6 +359,8 @@ def main():
             return run_validate(args)
         elif args.command == 'chat':
             return run_chat(args)
+        elif args.command == 'config':
+            return run_config_command(args)
         else:
             parser.print_help()
             return 1

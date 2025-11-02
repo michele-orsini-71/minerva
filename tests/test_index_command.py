@@ -12,6 +12,74 @@ from minerva.commands.index import (
     print_final_summary,
 )
 from minerva.common.exceptions import JsonLoaderError, ProviderUnavailableError
+from minerva.common.config_loader import (
+    UnifiedConfig,
+    ProviderDefinition,
+    IndexingConfig,
+    IndexingCollectionConfig,
+    ChatSection,
+    ServerSection,
+)
+
+
+def make_unified_config(temp_dir: Path) -> tuple[UnifiedConfig, IndexingCollectionConfig]:
+    chroma_path = temp_dir / "chromadb"
+    chroma_path.mkdir(exist_ok=True)
+
+    notes_path = temp_dir / "notes.json"
+    notes_path.write_text("[]", encoding="utf-8")
+
+    provider = ProviderDefinition(
+        id="lmstudio-local",
+        provider_type="lmstudio",
+        embedding_model="qwen-embed",
+        llm_model="qwen-chat",
+        base_url="http://localhost:1234/v1",
+        api_key=None,
+        rate_limit=None,
+        display_name=None
+    )
+
+    collection = IndexingCollectionConfig(
+        collection_name="test_collection",
+        description="Test collection",
+        json_file=str(notes_path),
+        ai_provider_id="lmstudio-local",
+        chunk_size=1200,
+        skip_ai_validation=False,
+        force_recreate=False
+    )
+
+    indexing = IndexingConfig(
+        chromadb_path=str(chroma_path),
+        collections=(collection,)
+    )
+
+    chat = ChatSection(
+        chat_provider_id="lmstudio-local",
+        mcp_server_url="http://localhost:8000/mcp",
+        conversation_dir=str(temp_dir / "conversations"),
+        enable_streaming=False,
+        max_tool_iterations=5,
+        system_prompt_file=None
+    )
+
+    server = ServerSection(
+        chromadb_path=str(chroma_path),
+        default_max_results=5,
+        host=None,
+        port=None
+    )
+
+    unified_config = UnifiedConfig(
+        providers={provider.id: provider},
+        indexing=indexing,
+        chat=chat,
+        server=server,
+        source_path=temp_dir / "config.json"
+    )
+
+    return unified_config, collection
 
 
 class TestPrintBanner:
@@ -25,48 +93,52 @@ class TestPrintBanner:
 
 
 class TestLoadAndPrintConfig:
-    @patch('minerva.commands.index.load_collection_config')
+    @patch('minerva.commands.index.load_unified_config')
     def test_load_config_successful(self, mock_load, temp_dir: Path):
-        mock_config = Mock()
-        mock_config.collection_name = "test_collection"
-        mock_config.description = "Test description for the collection"
-        mock_config.chromadb_path = "./chromadb_data"
-        mock_config.json_file = "notes.json"
-        mock_config.chunk_size = 1200
-        mock_config.force_recreate = False
-        mock_config.skip_ai_validation = False
-        mock_config.ai_provider = None
-        mock_load.return_value = mock_config
+        unified_config, collection = make_unified_config(temp_dir)
+        mock_load.return_value = unified_config
 
         config_path = str(temp_dir / "config.json")
-        result = load_and_print_config(config_path, verbose=False)
+        config, selected_collection = load_and_print_config(config_path, verbose=False)
 
-        assert result == mock_config
+        assert config == unified_config
+        assert selected_collection == collection
         mock_load.assert_called_once_with(config_path)
 
-    @patch('minerva.commands.index.load_collection_config')
+    @patch('minerva.commands.index.load_unified_config')
     def test_load_config_verbose(self, mock_load, temp_dir: Path):
-        mock_config = Mock()
-        mock_config.collection_name = "test_collection"
-        mock_config.description = "A" * 100  # Long description
-        mock_config.chromadb_path = "./chromadb_data"
-        mock_config.json_file = "notes.json"
-        mock_config.chunk_size = 1200
-        mock_config.force_recreate = True
-        mock_config.skip_ai_validation = True
-        mock_config.ai_provider = {
-            'type': 'ollama',
-            'embedding': {'model': 'mxbai-embed-large:latest'},
-            'llm': {'model': 'llama3.1:8b'}
-        }
-        mock_load.return_value = mock_config
+        unified_config, collection = make_unified_config(temp_dir)
+        long_description = "A" * 120
+        collection = IndexingCollectionConfig(
+            collection_name=collection.collection_name,
+            description=long_description,
+            json_file=collection.json_file,
+            ai_provider_id=collection.ai_provider_id,
+            chunk_size=collection.chunk_size,
+            skip_ai_validation=True,
+            force_recreate=True
+        )
+
+        unified_config = UnifiedConfig(
+            providers=unified_config.providers,
+            indexing=IndexingConfig(
+                chromadb_path=unified_config.indexing.chromadb_path,
+                collections=(collection,)
+            ),
+            chat=unified_config.chat,
+            server=unified_config.server,
+            source_path=unified_config.source_path
+        )
+
+        mock_load.return_value = unified_config
 
         config_path = str(temp_dir / "config.json")
-        result = load_and_print_config(config_path, verbose=True)
+        config, selected_collection = load_and_print_config(config_path, verbose=True)
 
-        assert result == mock_config
+        assert config == unified_config
+        assert selected_collection.description == long_description
 
-    @patch('minerva.commands.index.load_collection_config')
+    @patch('minerva.commands.index.load_unified_config')
     def test_load_config_error_exits(self, mock_load, temp_dir: Path):
         from minerva.common.config_loader import ConfigError
         mock_load.side_effect = ConfigError("Invalid configuration")
@@ -80,8 +152,15 @@ class TestLoadAndPrintConfig:
 class TestLoadAndPrintNotes:
     @patch('minerva.commands.index.load_json_notes')
     def test_load_notes_successful(self, mock_load, valid_notes_list):
-        mock_config = Mock()
-        mock_config.json_file = "notes.json"
+        mock_config = IndexingCollectionConfig(
+            collection_name="test",
+            description="Test",
+            json_file="notes.json",
+            ai_provider_id="lmstudio-local",
+            chunk_size=1200,
+            skip_ai_validation=False,
+            force_recreate=False
+        )
         mock_load.return_value = valid_notes_list
 
         result = load_and_print_notes(mock_config, verbose=False)
@@ -91,8 +170,15 @@ class TestLoadAndPrintNotes:
 
     @patch('minerva.commands.index.load_json_notes')
     def test_load_notes_verbose(self, mock_load, valid_notes_list):
-        mock_config = Mock()
-        mock_config.json_file = "notes.json"
+        mock_config = IndexingCollectionConfig(
+            collection_name="test",
+            description="Test",
+            json_file="notes.json",
+            ai_provider_id="lmstudio-local",
+            chunk_size=1200,
+            skip_ai_validation=False,
+            force_recreate=False
+        )
         mock_load.return_value = valid_notes_list
 
         result = load_and_print_notes(mock_config, verbose=True)
@@ -101,8 +187,15 @@ class TestLoadAndPrintNotes:
 
     @patch('minerva.commands.index.load_json_notes')
     def test_load_notes_error_exits(self, mock_load):
-        mock_config = Mock()
-        mock_config.json_file = "notes.json"
+        mock_config = IndexingCollectionConfig(
+            collection_name="test",
+            description="Test",
+            json_file="notes.json",
+            ai_provider_id="lmstudio-local",
+            chunk_size=1200,
+            skip_ai_validation=False,
+            force_recreate=False
+        )
         mock_load.side_effect = Exception("File not found")
 
         with pytest.raises(JsonLoaderError):
@@ -110,26 +203,19 @@ class TestLoadAndPrintNotes:
 
 
 class TestPrintFinalSummary:
-    def test_print_summary_with_data(self, capsys):
-        mock_config = Mock()
-        mock_config.collection_name = "test_collection"
-        mock_config.description = "Test description"
-        mock_config.chromadb_path = "./chromadb_data"
+    def test_print_summary_with_data(self, capsys, temp_dir: Path):
+        unified_config, collection = make_unified_config(temp_dir)
 
         notes = [{"title": "Note 1"}, {"title": "Note 2"}]
         chunks = [{"chunk_id": "1"}, {"chunk_id": "2"}, {"chunk_id": "3"}]
-        chunks_with_embeddings = chunks  # Same list for simplicity
+        chunks_with_embeddings = chunks
         stats = {"successful": 3, "failed": 0}
         processing_time = 10.5
 
-        print_final_summary(mock_config, notes, chunks, chunks_with_embeddings, stats, processing_time)
-        # Should print summary without errors
+        print_final_summary(unified_config, collection, notes, chunks, chunks_with_embeddings, stats, processing_time)
 
-    def test_print_summary_with_failures(self, capsys):
-        mock_config = Mock()
-        mock_config.collection_name = "test_collection"
-        mock_config.description = "Test description"
-        mock_config.chromadb_path = "./chromadb_data"
+    def test_print_summary_with_failures(self, capsys, temp_dir: Path):
+        unified_config, collection = make_unified_config(temp_dir)
 
         notes = [{"title": "Note 1"}]
         chunks = [{"chunk_id": "1"}]
@@ -137,8 +223,7 @@ class TestPrintFinalSummary:
         stats = {"successful": 0, "failed": 1}
         processing_time = 1.0
 
-        print_final_summary(mock_config, notes, chunks, chunks_with_embeddings, stats, processing_time)
-        # Should print summary with failure info
+        print_final_summary(unified_config, collection, notes, chunks, chunks_with_embeddings, stats, processing_time)
 
 
 class TestRunIndex:
@@ -146,8 +231,8 @@ class TestRunIndex:
     @patch('minerva.commands.index.load_and_print_notes')
     @patch('minerva.commands.index.load_and_print_config')
     def test_index_dry_run_mode(self, mock_load_config, mock_load_notes, mock_dry_run, valid_notes_list, temp_dir: Path):
-        mock_config = Mock()
-        mock_load_config.return_value = mock_config
+        unified_config, collection = make_unified_config(temp_dir)
+        mock_load_config.return_value = (unified_config, collection)
         mock_load_notes.return_value = valid_notes_list
 
         config_file = temp_dir / "config.json"
@@ -156,7 +241,7 @@ class TestRunIndex:
         exit_code = run_index(args)
 
         assert exit_code == 0
-        mock_dry_run.assert_called_once_with(mock_config, valid_notes_list, False)
+        mock_dry_run.assert_called_once_with(unified_config, collection, valid_notes_list, False)
 
     @patch('minerva.commands.index.run_full_indexing')
     @patch('minerva.commands.index.check_collection_early', return_value=(False, "create"))
@@ -173,8 +258,8 @@ class TestRunIndex:
         valid_notes_list,
         temp_dir: Path
     ):
-        mock_config = Mock()
-        mock_load_config.return_value = mock_config
+        unified_config, collection = make_unified_config(temp_dir)
+        mock_load_config.return_value = (unified_config, collection)
         mock_load_notes.return_value = valid_notes_list
         mock_provider = Mock()
         mock_init_provider.return_value = mock_provider
