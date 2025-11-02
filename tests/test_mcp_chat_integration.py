@@ -294,3 +294,84 @@ class TestChatEngineWithMCP:
         response = engine.send_message("Test message")
 
         assert mock_ai_provider.chat_completion.call_count <= 2 + 1
+
+    def test_streaming_successful_with_no_tool_calls(self, chat_config, mock_ai_provider, mock_mcp_client):
+        chat_config_streaming = ChatConfig(
+            ai_provider=chat_config.ai_provider,
+            conversation_dir=chat_config.conversation_dir,
+            chromadb_path=chat_config.chromadb_path,
+            enable_streaming=True,
+            mcp_server_url=chat_config.mcp_server_url,
+            max_tool_iterations=chat_config.max_tool_iterations,
+            system_prompt_file=None
+        )
+
+        streaming_called = []
+
+        def fake_streaming():
+            streaming_called.append(True)
+            yield {'content': 'Hello ', 'finish_reason': None}
+            yield {'content': 'world', 'finish_reason': 'stop', 'full_content': 'Hello world'}
+
+        mock_ai_provider.chat_completion_streaming = Mock(return_value=fake_streaming())
+
+        engine = ChatEngine()
+        engine.initialize_conversation(
+            system_prompt="Test prompt",
+            ai_provider=mock_ai_provider,
+            config=chat_config_streaming
+        )
+
+        response = engine.send_message("Test message")
+
+        assert len(streaming_called) > 0
+        assert engine._streaming_enabled is True
+        assert engine._streaming_fallback_triggered is False
+        assert mock_ai_provider.chat_completion_streaming.called
+
+    def test_streaming_fallback_persists_across_messages(self, chat_config, mock_ai_provider, mock_mcp_client):
+        chat_config_streaming = ChatConfig(
+            ai_provider=chat_config.ai_provider,
+            conversation_dir=chat_config.conversation_dir,
+            chromadb_path=chat_config.chromadb_path,
+            enable_streaming=True,
+            mcp_server_url=chat_config.mcp_server_url,
+            max_tool_iterations=chat_config.max_tool_iterations,
+            system_prompt_file=None
+        )
+
+        mock_ai_provider.chat_completion_streaming = Mock(side_effect=Exception("Not supported"))
+        mock_ai_provider.chat_completion = Mock(return_value={
+            'content': 'Response',
+            'tool_calls': None
+        })
+
+        engine = ChatEngine()
+        engine.initialize_conversation(
+            system_prompt="Test prompt",
+            ai_provider=mock_ai_provider,
+            config=chat_config_streaming
+        )
+
+        response1 = engine.send_message("First message")
+        assert engine._streaming_enabled is False
+        assert engine._streaming_fallback_triggered is True
+
+        response2 = engine.send_message("Second message")
+        assert mock_ai_provider.chat_completion_streaming.call_count == 1
+        assert mock_ai_provider.chat_completion.call_count == 2
+
+    def test_tool_execution_error_handled_gracefully(self, chat_config, mock_ai_provider, mock_mcp_client):
+        with patch('minerva.chat.mcp_client.FastMCPClient', MockFastMCPClient):
+            mock_mcp = MockFastMCPClient("http://localhost:8000")
+
+            async def failing_call_tool(tool_name, arguments):
+                raise Exception("Tool execution failed")
+
+            mock_mcp.call_tool = failing_call_tool
+
+            with patch('minerva.chat.mcp_client.FastMCPClient', return_value=mock_mcp):
+                client = MCPClient("http://localhost:8000")
+
+                with pytest.raises(MCPToolExecutionError):
+                    client.call_tool_sync("search_knowledge_base", {"query": "test"})

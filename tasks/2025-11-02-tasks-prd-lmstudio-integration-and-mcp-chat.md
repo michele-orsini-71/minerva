@@ -69,9 +69,9 @@
   - [x] 4.4 Document deployment patterns (all LM Studio, hybrid, server/client) with concrete config examples.
   - [x] 4.5 Remove or rewrite legacy per-command config references in docs and scripts.
 
-- [ ] 5.0 Expand automated testing and validation for providers, MCP chat flow, and configuration schema
-  - [ ] 5.1 Add provider unit tests (LM Studio + rate limiting) and ensure they run in CI.
-  - [ ] 5.2 Create integration tests for chat/MCP interactions, including streaming fallback scenarios.
-  - [ ] 5.3 Configure CI to run `minerva config validate` against bundled sample configs.
-  - [ ] 5.4 Remove manual test scripts (`test-qwen-mcp-chat.py`, `test-qwen-tools.pt`) and QWEN*.md docs
-  - [ ] 5.5 Ensure documentation references automated test commands for quick verification.
+- [x] 5.0 Expand automated testing and validation for providers, MCP chat flow, and configuration schema
+  - [x] 5.1 Add provider unit tests (LM Studio + rate limiting) and ensure they run in CI.
+  - [x] 5.2 Create integration tests for chat/MCP interactions, including streaming fallback scenarios.
+  - [x] 5.3 Configure CI to run `minerva config validate` against bundled sample configs.
+  - [x] 5.4 Remove manual test scripts (`test-qwen-mcp-chat.py`, `test-qwen-tools.pt`) and QWEN*.md docs
+  - [x] 5.5 Ensure documentation references automated test commands for quick verification.

@@ -26,7 +26,14 @@
       "Bash(cat:*)",
       "WebFetch(domain:lmstudio.ai)",
       "WebFetch(domain:run.tournament.org.il)",
-      "WebFetch(domain:deepwiki.com)"
+      "WebFetch(domain:deepwiki.com)",
+      "Bash(for config in configs/*.json)",
+      "Bash(do echo \"Validating $config...\")",
+      "Bash(echo:*)",
+      "Bash(done)",
+      "Bash(exit 1)",
+      "Bash(do echo \"✓ $config\")",
+      "Bash(/dev/null)"
     ],
     "deny": [],
     "ask": []

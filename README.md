@@ -808,6 +808,45 @@ See the [Extractor Guide](docs/EXTRACTOR_GUIDE.md) for detailed tutorials.
 
 ---
 
+## 🧪 Testing
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=minerva --cov-report=html
+
+# Run specific test suites
+pytest tests/test_ai_provider.py -v              # Provider tests
+pytest tests/test_mcp_chat_integration.py -v     # MCP integration tests
+pytest tests/test_unified_config_loader.py -v    # Config validation tests
+```
+
+### Validate Configuration
+
+```bash
+# Validate a configuration file
+minerva config validate path/to/config.json
+
+# Validate all sample configs
+for config in configs/*.json; do
+  minerva config validate "$config"
+done
+```
+
+### Continuous Integration
+
+The project includes GitHub Actions CI that automatically:
+- Runs all tests with coverage
+- Validates sample configurations
+- Lints code with black, isort, and flake8
+- Tests on Python 3.10, 3.11, 3.12, and 3.13
+
+---
+
 ## 📚 Documentation
 
 - **[Unified Configuration Guide](docs/configuration.md)** - Complete guide to unified configuration (recommended)

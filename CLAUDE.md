@@ -486,7 +486,38 @@ pytest tests/test_schemas.py
 
 # Verbose mode
 pytest -v
+
+# Run specific test suites
+pytest tests/test_ai_provider.py -v              # Provider and rate limiting tests
+pytest tests/test_mcp_chat_integration.py -v     # MCP chat integration tests
+pytest tests/test_unified_config_loader.py -v    # Config validation tests
 ```
+
+### Configuration Validation
+
+```bash
+# Validate a configuration file
+minerva config validate path/to/config.json
+
+# Validate all sample configs
+for config in configs/*.json; do
+  minerva config validate "$config"
+done
+```
+
+### Continuous Integration
+
+The project uses GitHub Actions for CI/CD. Tests run automatically on:
+- Push to `main` branch
+- Pull requests to `main`
+
+CI workflow includes:
+- Running full test suite with coverage
+- Validating all sample configurations
+- Code linting (black, isort, flake8)
+- Testing on Python 3.10, 3.11, 3.12, and 3.13
+
+See `.github/workflows/ci.yml` for complete CI configuration.
 
 ### Manual Testing
 
