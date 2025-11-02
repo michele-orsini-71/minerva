@@ -1,15 +1,12 @@
-import sys
 from argparse import Namespace
 from pathlib import Path
 
 from minerva.common.logger import get_logger
 from minerva.common.ai_provider import AIProvider, ProviderUnavailableError, AIProviderError
-from minerva.common.config_loader import load_unified_config, UnifiedConfig
-from minerva.chat.config import build_chat_config, ChatConfig, ChatConfigError
+from minerva.chat.config import ChatConfig, ChatConfigError, load_chat_config_from_file
 from minerva.chat.chat_engine import ChatEngine, ChatEngineError
 from minerva.chat.history import list_conversations
 from minerva.server.collection_discovery import list_collections, CollectionDiscoveryError
-from minerva.common.exceptions import ConfigError
 
 logger = get_logger(__name__, simple=True, mode="cli")
 
@@ -77,9 +74,8 @@ def display_help():
 
 def list_past_conversations(args: Namespace) -> int:
     try:
-        unified_config = load_unified_config(str(args.config))
-        config = build_chat_config(unified_config)
-    except (ConfigError, ChatConfigError) as e:
+        config = load_chat_config_from_file(str(args.config))
+    except ChatConfigError as e:
         logger.error(f"Configuration error: {e}")
         return 1
 
@@ -115,9 +111,8 @@ def list_past_conversations(args: Namespace) -> int:
 
 def initialize_chat_system(config_path: str) -> tuple:
     try:
-        unified_config = load_unified_config(config_path)
-        config = build_chat_config(unified_config)
-    except (ConfigError, ChatConfigError) as e:
+        config = load_chat_config_from_file(config_path)
+    except ChatConfigError as e:
         logger.error("Configuration Error")
         logger.error("=" * 60)
         logger.error(str(e))

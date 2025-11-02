@@ -40,6 +40,7 @@ class TestCommandModuleImports:
         assert minerva.commands.__name__ == 'minerva.commands'
 
 
+
 class TestCommonModuleImports:
     def test_import_schemas_module(self):
         from minerva.common.schemas import (
@@ -60,9 +61,17 @@ class TestCommonModuleImports:
         assert callable(get_logger)
         assert ConsoleLogger is not None
 
-    def test_import_config_module(self):
-        from minerva.common.config_loader import load_unified_config
-        assert callable(load_unified_config)
+    def test_import_index_config_module(self):
+        from minerva.common.index_config import load_index_config
+        assert callable(load_index_config)
+
+    def test_import_server_config_module(self):
+        from minerva.common.server_config import load_server_config
+        assert callable(load_server_config)
+
+    def test_import_chat_config_module(self):
+        from minerva.chat.config import load_chat_config_from_file
+        assert callable(load_chat_config_from_file)
 
     def test_import_ai_provider_module(self):
         from minerva.common.ai_provider import AIProvider, AIProviderConfig
@@ -72,6 +81,7 @@ class TestCommonModuleImports:
     def test_import_common_package(self):
         import minerva.common
         assert minerva.common.__name__ == 'minerva.common'
+
 
 
 class TestIndexingModuleImports:
@@ -138,7 +148,7 @@ class TestNoCircularImports:
         assert True
 
     def test_common_imports_dont_create_cycles(self):
-        from minerva.common import schemas, logger, ai_provider, config_loader
+        from minerva.common import schemas, logger, ai_provider, index_config
         assert True
 
     def test_indexing_imports_dont_create_cycles(self):
@@ -280,7 +290,7 @@ class TestDynamicImports:
             assert module is not None
 
     def test_dynamic_import_common_modules(self):
-        common_modules = ['schemas', 'logger', 'config', 'ai_provider']
+        common_modules = ['schemas', 'logger', 'index_config', 'server_config', 'ai_provider']
         for mod in common_modules:
             module = importlib.import_module(f'minerva.common.{mod}')
             assert module is not None

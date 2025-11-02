@@ -1,0 +1,6 @@
+{
+  "chromadb_path": "../../chromadb_data",
+  "default_max_results": 6,
+  "host": "127.0.0.1",
+  "port": 8337
+}

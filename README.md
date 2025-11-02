@@ -30,7 +30,7 @@ Minerva solves the problem of **information overload** in personal knowledge man
 🌐 **Multi-Provider AI**: Choose between local (Ollama, LM Studio) or cloud (OpenAI, Anthropic, Gemini) AI providers
 📊 **Transparent Storage**: All data stored locally in ChromaDB with full control
 🔧 **Extensible**: Write custom extractors for any data source in any language
-⚙️ **Unified Configuration**: Single config file for all components with provider reuse
+⚙️ **Command-Specific Configs**: Dedicated JSON files for index, chat, and server workflows
 
 ---
 
@@ -217,43 +217,43 @@ bear-extractor "Bear Notes 2025-10-20.bear2bk" -o bear-notes.json
 # 2. Validate the extracted JSON
 minerva validate bear-notes.json
 
-# 3. Create a unified configuration file
-cat > config.json << 'EOF'
+# 3. Create command-specific config files
+mkdir -p configs/index configs/server
+cat > configs/index/bear-notes-ollama.json << 'EOF'
 {
-  "ai_providers": [
-    {
-      "id": "ollama-local",
-      "provider_type": "ollama",
-      "embedding": {"model": "mxbai-embed-large:latest"},
-      "llm": {"model": "llama3.1:8b"}
-    }
-  ],
-  "indexing": {
-    "chromadb_path": "./chromadb_data",
-    "collections": [
-      {
-        "collection_name": "my_notes",
-        "description": "My personal notes from Bear app",
-        "json_file": "bear-notes.json",
-        "ai_provider_id": "ollama-local"
-      }
-    ]
+  "chromadb_path": "../../chromadb_data",
+  "collection": {
+    "name": "bear-notes",
+    "description": "My personal notes from Bear app",
+    "json_file": "../../bear-notes.json",
+    "chunk_size": 1200
   },
-  "server": {
-    "chromadb_path": "./chromadb_data",
-    "default_max_results": 5
+  "provider": {
+    "provider_type": "ollama",
+    "base_url": "http://localhost:11434",
+    "embedding_model": "mxbai-embed-large:latest",
+    "llm_model": "llama3.1:8b"
   }
 }
 EOF
 
+cat > configs/server/local.json << 'EOF'
+{
+  "chromadb_path": "../../chromadb_data",
+  "default_max_results": 5,
+  "host": "127.0.0.1",
+  "port": 8337
+}
+EOF
+
 # 4. Index the notes into ChromaDB
-minerva index --config config.json --verbose
+minerva index --config configs/index/bear-notes-ollama.json --verbose
 
 # 5. Peek at the indexed data
 minerva peek my_notes --chromadb ./chromadb_data
 
 # 6. Start the MCP server (for Claude Desktop integration)
-minerva serve --config config.json
+minerva serve --config configs/server/local.json
 ```
 
 ---
@@ -312,37 +312,33 @@ ChromaDB organizes data into **collections**. Each collection:
 Index markdown notes into ChromaDB with AI embeddings.
 
 ```bash
-minerva index --config index-config.json [--verbose] [--dry-run]
+minerva index --config configs/index/bear-notes-ollama.json [--verbose] [--dry-run]
 ```
 
 **Options:**
 
-- `--config FILE`: Configuration JSON file (required)
+- `--config FILE`: Index configuration JSON file (required)
 - `--verbose`: Show detailed progress information
 - `--dry-run`: Validate without actually indexing
 
-**Example config (unified):**
+**Example config (command-specific):**
 
 ```json
 {
-  "ai_providers": [
-    {
-      "id": "ollama-local",
-      "provider_type": "ollama",
-      "embedding": {"model": "mxbai-embed-large:latest"},
-      "llm": {"model": "llama3.1:8b"}
-    }
-  ],
-  "indexing": {
-    "chromadb_path": "./chromadb_data",
-    "collections": [
-      {
-        "collection_name": "my_notes",
-        "description": "Personal notes collection",
-        "json_file": "./notes.json",
-        "ai_provider_id": "ollama-local"
-      }
-    ]
+  "chromadb_path": "../../chromadb_data",
+  "collection": {
+    "name": "my-notes",
+    "description": "Personal notes collection",
+    "json_file": "../../data/notes.json",
+    "chunk_size": 1200,
+    "force_recreate": false,
+    "skip_ai_validation": false
+  },
+  "provider": {
+    "provider_type": "ollama",
+    "base_url": "http://localhost:11434",
+    "embedding_model": "mxbai-embed-large:latest",
+    "llm_model": "llama3.1:8b"
   }
 }
 ```
@@ -376,17 +372,17 @@ minerva peek bear_notes --chromadb ./chromadb_data --format table
 Start the MCP server to expose collections to AI assistants.
 
 ```bash
-minerva serve --config server-config.json
+minerva serve --config configs/server/local.json
 ```
 
-**Example config (unified):**
+**Example config:**
 
 ```json
 {
-  "server": {
-    "chromadb_path": "./chromadb_data",
-    "default_max_results": 5
-  }
+  "chromadb_path": "../../chromadb_data",
+  "default_max_results": 5,
+  "host": "127.0.0.1",
+  "port": 8337
 }
 ```
 
@@ -395,7 +391,7 @@ minerva serve --config server-config.json
 Interactive AI-powered chat interface that can search and query your knowledge bases.
 
 ```bash
-minerva chat --config chat-config.json [OPTIONS]
+minerva chat --config configs/chat/ollama.json [OPTIONS]
 ```
 
 **Options:**
@@ -410,26 +406,25 @@ minerva chat --config chat-config.json [OPTIONS]
 
 ```json
 {
-  "chromadb_path": "/absolute/path/to/chromadb_data",
-  "ai_provider": {
-    "type": "ollama",
-    "embedding": {
-      "model": "mxbai-embed-large:latest"
-    },
-    "llm": {
-      "model": "llama3.1:8b"
-    }
-  },
-  "conversation_dir": "~/.minerva/conversations",
-  "default_max_results": 3,
-  "enable_streaming": true
+  "chromadb_path": "../../chromadb_data",
+  "conversation_dir": "../../state/chat/conversations",
+  "mcp_server_url": "http://127.0.0.1:8337/mcp",
+  "enable_streaming": true,
+  "max_tool_iterations": 4,
+  "system_prompt_file": null,
+  "provider": {
+    "provider_type": "ollama",
+    "base_url": "http://localhost:11434",
+    "embedding_model": "mxbai-embed-large:latest",
+    "llm_model": "llama3.1:8b"
+  }
 }
 ```
 
 **Interactive mode:**
 
 ```bash
-minerva chat --config chat-config.json
+minerva chat --config configs/chat/ollama.json
 
 Welcome to Minerva Chat! 🤖
 Connected to 3 knowledge base(s) via Ollama (llama3.1:8b)
@@ -451,7 +446,7 @@ AI: 🔍 Searching 'python-books' for: 'decorators'...
 **Single-question mode:**
 
 ```bash
-minerva chat --config chat-config.json -q "Summarize my Python notes"
+minerva chat --config configs/chat/ollama.json -q "Summarize my Python notes"
 ```
 
 See the [Chat Guide](docs/CHAT_GUIDE.md) for detailed usage, configuration, and examples.
@@ -466,302 +461,116 @@ See the [Chat Guide](docs/CHAT_GUIDE.md) for detailed usage, configuration, and 
 # Extract Bear notes
 bear-extractor "Bear Backup.bear2bk" -o bear-notes.json
 
-# Create unified config for local AI
-cat > bear-ollama.json << 'EOF'
+# Create collection-specific config
+mkdir -p configs/index
+cat > configs/index/bear-notes-ollama.json << 'EOF'
 {
-  "ai_providers": [
-    {
-      "id": "ollama-local",
-      "provider_type": "ollama",
-      "embedding": {"model": "mxbai-embed-large:latest"},
-      "llm": {"model": "llama3.1:8b"}
-    }
-  ],
-  "indexing": {
-    "chromadb_path": "./chromadb_data",
-    "collections": [
-      {
-        "collection_name": "bear_notes_local",
-        "description": "Personal notes from Bear app",
-        "json_file": "bear-notes.json",
-        "ai_provider_id": "ollama-local"
-      }
-    ]
+  "chromadb_path": "../../chromadb_data",
+  "collection": {
+    "name": "bear-notes",
+    "description": "Personal notes from Bear app",
+    "json_file": "../../bear-notes.json",
+    "chunk_size": 1200
+  },
+  "provider": {
+    "provider_type": "ollama",
+    "base_url": "http://localhost:11434",
+    "embedding_model": "mxbai-embed-large:latest",
+    "llm_model": "llama3.1:8b"
   }
 }
 EOF
 
 # Index with verbose output
-minerva index --config bear-ollama.json --verbose
+minerva index --config configs/index/bear-notes-ollama.json --verbose
 ```
 
-### Example 2: Using LM Studio for Desktop
+### Example 2: Use LM Studio for Desktop Workflows
 
 ```bash
 # Start LM Studio and load a model (e.g., qwen2.5-7b-instruct)
-# Start the server in LM Studio on port 1234
 
-# Create config for LM Studio
-cat > lmstudio-config.json << 'EOF'
+# Update provider block to target LM Studio
+cat > configs/index/wiki-history.json << 'EOF'
 {
-  "ai_providers": [
-    {
-      "id": "lmstudio-local",
-      "provider_type": "lmstudio",
-      "base_url": "http://localhost:1234/v1",
-      "embedding_model": "qwen2.5-7b-instruct",
-      "llm_model": "qwen2.5-14b-instruct",
-      "rate_limit": {
-        "requests_per_minute": 60,
-        "concurrency": 1
-      }
+  "chromadb_path": "../../chromadb_data",
+  "collection": {
+    "name": "wiki-history",
+    "description": "Wikipedia history articles",
+    "json_file": "../../wiki.json"
+  },
+  "provider": {
+    "provider_type": "lmstudio",
+    "base_url": "http://localhost:1234/v1",
+    "embedding_model": "qwen2.5-7b-instruct",
+    "llm_model": "qwen2.5-14b-instruct",
+    "rate_limit": {
+      "requests_per_minute": 60,
+      "concurrency": 1
     }
-  ],
-  "indexing": {
-    "chromadb_path": "./chromadb_data",
-    "collections": [
-      {
-        "collection_name": "my_notes",
-        "description": "Personal knowledge base",
-        "json_file": "notes.json",
-        "ai_provider_id": "lmstudio-local"
-      }
-    ]
-  },
-  "chat": {
-    "chat_provider_id": "lmstudio-local",
-    "mcp_server_url": "http://localhost:8000/mcp",
-    "enable_streaming": false
-  },
-  "server": {
-    "chromadb_path": "./chromadb_data",
-    "default_max_results": 5
   }
 }
 EOF
 
-# Index, serve, and chat - all using LM Studio
-minerva index --config lmstudio-config.json --verbose
-minerva serve --config lmstudio-config.json &
-minerva chat --config lmstudio-config.json
+minerva index --config configs/index/wiki-history.json --verbose
 ```
 
-See the [LM Studio Setup Guide](docs/LMSTUDIO_SETUP.md) for detailed installation and configuration instructions.
+See the [LM Studio Setup Guide](docs/LMSTUDIO_SETUP.md) for detailed installation instructions.
 
-### Example 3: Index Multiple Sources
+### Example 3: Manage Multiple Collections
 
 ```bash
-# Extract from different sources
-bear-extractor "Bear.bear2bk" -o bear.json
-zim-extractor "wikipedia.zim" -o wiki.json
-markdown-books-extractor books/ -o books.json
+# Create one config per collection
+cp configs/index/bear-notes-ollama.json configs/index/books-notes.json
+cp configs/index/bear-notes-ollama.json configs/index/research-papers.json
 
-# Create unified config with multiple collections
-cat > multi-collection.json << 'EOF'
+# Update description/json_file/provider as needed, then run:
+minerva index --config configs/index/bear-notes-ollama.json
+minerva index --config configs/index/books-notes.json
+minerva index --config configs/index/research-papers.json
+
+# Serve every collection from the same ChromaDB path
+minerva serve --config configs/server/local.json
+```
+
+### Example 4: Interactive Chat with Your Knowledge Base
+
+```bash
+mkdir -p configs/chat
+cat > configs/chat/ollama.json << 'EOF'
 {
-  "ai_providers": [
-    {
-      "id": "ollama-local",
-      "provider_type": "ollama",
-      "embedding": {"model": "mxbai-embed-large:latest"},
-      "llm": {"model": "llama3.1:8b"}
-    }
-  ],
-  "indexing": {
-    "chromadb_path": "./chromadb_data",
-    "collections": [
-      {
-        "collection_name": "bear_notes",
-        "description": "Personal notes from Bear",
-        "json_file": "bear.json",
-        "ai_provider_id": "ollama-local"
-      },
-      {
-        "collection_name": "wikipedia",
-        "description": "Wikipedia articles",
-        "json_file": "wiki.json",
-        "ai_provider_id": "ollama-local"
-      },
-      {
-        "collection_name": "books",
-        "description": "Technical books",
-        "json_file": "books.json",
-        "ai_provider_id": "ollama-local"
-      }
-    ]
-  },
-  "server": {
-    "chromadb_path": "./chromadb_data",
-    "default_max_results": 5
+  "chromadb_path": "../../chromadb_data",
+  "conversation_dir": "../../state/chat/conversations",
+  "mcp_server_url": "http://127.0.0.1:8337/mcp",
+  "enable_streaming": true,
+  "max_tool_iterations": 4,
+  "system_prompt_file": null,
+  "provider": {
+    "provider_type": "ollama",
+    "base_url": "http://localhost:11434",
+    "embedding_model": "mxbai-embed-large:latest",
+    "llm_model": "llama3.1:8b"
   }
 }
 EOF
 
-# Index all collections
-minerva index --config multi-collection.json --verbose
+minerva chat --config configs/chat/ollama.json
 
-# All collections available through single MCP server
-minerva serve --config multi-collection.json
+# Single-question mode
+minerva chat --config configs/chat/ollama.json -q "Summarize my Docker notes"
+
+# List or resume stored conversations
+minerva chat --config configs/chat/ollama.json --list
+minerva chat --config configs/chat/ollama.json --resume 20251102-153000-bear
 ```
 
-### Example 3: Test Before Indexing
+### Example 5: Validate Configurations Quickly
 
 ```bash
-# First, validate the extracted data
-minerva validate notes.json --verbose
-
-# Then do a dry run to check configuration
-minerva index --config config.json --dry-run
-
-# Finally, index for real
-minerva index --config config.json --verbose
+python -c "from minerva.common.index_config import load_index_config; load_index_config('configs/index/bear-notes-ollama.json')"
+python -c "from minerva.chat.config import load_chat_config_from_file; load_chat_config_from_file('configs/chat/ollama.json')"
+python -c "from minerva.common.server_config import load_server_config; load_server_config('configs/server/local.json')"
 ```
-
-### Example 4: Complete Workflow with All Commands
-
-This example shows all four Minerva commands in a realistic workflow:
-
-```bash
-# Step 1: Extract notes from Bear backup
-bear-extractor "Bear Notes 2025-10-20.bear2bk" -o my-notes.json -v
-
-# Step 2: Validate the extracted JSON before indexing
-minerva validate my-notes.json --verbose
-# Output: ✓ JSON is valid
-# Output: Found 1,234 notes
-
-# Step 3: Create index configuration
-cat > index-config.json << 'EOF'
-{
-  "collection_name": "personal_knowledge",
-  "description": "My personal knowledge base from Bear notes covering software development, research, and project documentation",
-  "chromadb_path": "./chromadb_data",
-  "json_file": "my-notes.json",
-  "forceRecreate": false
-}
-EOF
-
-# Step 4: Index the notes (this may take a few minutes)
-minerva index --config index-config.json --verbose
-# Output: Processing 1,234 notes...
-# Output: Created 5,678 chunks...
-# Output: Generating embeddings...
-# Output: ✓ Indexing complete!
-
-# Step 5: Peek at the collection to verify what was indexed
-minerva peek personal_knowledge --chromadb ./chromadb_data --format table
-# Output shows: collection name, document count, sample entries, metadata
-
-# Step 6: Peek with JSON format for detailed inspection
-minerva peek personal_knowledge --chromadb ./chromadb_data --format json > collection-info.json
-
-# Step 7: Create MCP server configuration
-cat > server-config.json << 'EOF'
-{
-  "chromadb_path": "./chromadb_data",
-  "default_max_results": 5
-}
-EOF
-
-# Step 8: Start the MCP server (makes your notes available to Claude Desktop)
-minerva serve --config server-config.json
-# Output: MCP server listening...
-# Output: Collection 'personal_knowledge' available (5,678 chunks)
-```
-
-**What each command does:**
-
-- **`validate`**: Checks JSON structure before spending time on indexing
-- **`index`**: Processes notes, creates embeddings, stores in vector database
-- **`peek`**: Lets you inspect what's in the database (metadata, counts, samples)
-- **`serve`**: Exposes your indexed knowledge to AI assistants via MCP
-
-### Example 5: Using Peek to Explore Multiple Collections
-
-```bash
-# List all collections (peek will show available collections if you don't specify one)
-minerva peek --chromadb ./chromadb_data
-
-# Inspect your Bear notes collection
-minerva peek bear_notes --chromadb ./chromadb_data --format table
-
-# Inspect Wikipedia articles collection
-minerva peek wikipedia_history --chromadb ./chromadb_data --format table
-
-# Get detailed JSON output for programmatic analysis
-minerva peek bear_notes --chromadb ./chromadb_data --format json | jq '.metadata'
-
-# Compare collection sizes
-echo "Bear notes:"
-minerva peek bear_notes --chromadb ./chromadb_data --format json | jq '.count'
-echo "Wikipedia:"
-minerva peek wikipedia_history --chromadb ./chromadb_data --format json | jq '.count'
-```
-
-### Example 6: Interactive Chat with Your Knowledge Base
-
-```bash
-# Create chat configuration with Ollama (local AI)
-cat > chat-config.json << 'EOF'
-{
-  "chromadb_path": "/Users/you/chromadb_data",
-  "ai_provider": {
-    "type": "ollama",
-    "embedding": {
-      "model": "mxbai-embed-large:latest"
-    },
-    "llm": {
-      "model": "llama3.1:8b"
-    }
-  },
-  "conversation_dir": "~/.minerva/conversations",
-  "default_max_results": 3,
-  "enable_streaming": true
-}
-EOF
-
-# Start interactive chat session
-minerva chat --config chat-config.json
-
-# Example conversation:
-# You: What knowledge bases do I have?
-# AI: 🔍 Listing available knowledge bases...
-#     Found 2 knowledge bases:
-#     ✓ personal-notes (1,234 chunks)
-#     ✓ python-books (5,678 chunks)
-#
-# You: Search python-books for information about decorators
-# AI: 🔍 Searching 'python-books' for: 'decorators'...
-#     [Provides detailed information from your indexed Python books]
-#
-# You: Can you give me examples?
-# AI: [Continues conversation with examples based on previous context]
-
-# Single-question mode (useful for scripts)
-minerva chat --config chat-config.json \
-  -q "Summarize my notes about Docker best practices"
-
-# List previous conversations
-minerva chat --config chat-config.json --list
-
-# Resume a previous conversation
-minerva chat --config chat-config.json --resume 20251030-143022-abc123
-
-# Use custom system prompt
-minerva chat --config chat-config.json \
-  --system "You are a Python expert. Focus on code quality and best practices."
-```
-
-**Chat Features:**
-
-- 🔍 **Semantic Search**: AI searches your knowledge bases using natural language
-- 💬 **Context Aware**: Maintains conversation history for follow-up questions
-- 📚 **Multi-Collection**: Access all your indexed collections in one chat
-- 💾 **Auto-Save**: Conversations automatically saved and resumable
-- ⚡ **Streaming**: Real-time response streaming for better UX
-- 🎯 **Smart Context**: Automatic context window management with summarization
-
-See the [Chat Guide](docs/CHAT_GUIDE.md) for advanced usage, troubleshooting, and more examples.
 
 ---
 
@@ -801,7 +610,7 @@ Then validate and index:
 ```bash
 python my_extractor.py input.txt > notes.json
 minerva validate notes.json
-minerva index --config config.json
+minerva index --config configs/index/bear-notes-ollama.json
 ```
 
 See the [Extractor Guide](docs/EXTRACTOR_GUIDE.md) for detailed tutorials.
@@ -821,20 +630,17 @@ pytest --cov=minerva --cov-report=html
 
 # Run specific test suites
 pytest tests/test_ai_provider.py -v              # Provider tests
-pytest tests/test_mcp_chat_integration.py -v     # MCP integration tests
-pytest tests/test_unified_config_loader.py -v    # Config validation tests
+pytest tests/test_index_command.py -v            # Index command and config loader tests
+pytest tests/test_chat_config.py -v              # Chat config loader tests
 ```
 
 ### Validate Configuration
 
 ```bash
-# Validate a configuration file
-minerva config validate path/to/config.json
-
-# Validate all sample configs
-for config in configs/*.json; do
-  minerva config validate "$config"
-done
+# Validate sample configs
+python -c "from minerva.common.index_config import load_index_config; load_index_config('configs/index/bear-notes-ollama.json')"
+python -c "from minerva.chat.config import load_chat_config_from_file; load_chat_config_from_file('configs/chat/ollama.json')"
+python -c "from minerva.common.server_config import load_server_config; load_server_config('configs/server/local.json')"
 ```
 
 ### Continuous Integration
@@ -849,12 +655,12 @@ The project includes GitHub Actions CI that automatically:
 
 ## 📚 Documentation
 
-- **[Unified Configuration Guide](docs/configuration.md)** - Complete guide to unified configuration (recommended)
+- **[Configuration Guide](docs/configuration.md)** - Command-specific configuration reference for index, chat, and server
 - **[LM Studio Setup Guide](docs/LMSTUDIO_SETUP.md)** - Installing and configuring LM Studio
 - **[Chat Guide](docs/CHAT_GUIDE.md)** - Interactive chat command usage and examples
 - **[Note Schema](docs/NOTE_SCHEMA.md)** - Complete JSON schema specification
 - **[Extractor Guide](docs/EXTRACTOR_GUIDE.md)** - How to write custom extractors
-- **[Configuration Guide](docs/CONFIGURATION_GUIDE.md)** - Legacy per-command configuration (deprecated)
+- **[Legacy Config Guide](docs/CONFIGURATION_GUIDE.md)** - Archived reference for the pre-v3 unified system
 - **[Release Notes v2.0](docs/RELEASE_NOTES_v2.0.md)** - What's new in version 2.0
 - **[Upgrade Guide v2.0](docs/UPGRADE_v2.0.md)** - How to upgrade from v1.x
 - **[CLAUDE.md](CLAUDE.md)** - Developer guide for working with this codebase

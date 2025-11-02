@@ -13,7 +13,6 @@ from minerva.commands.serve_http import run_serve_http
 from minerva.commands.peek import run_peek
 from minerva.commands.validate import run_validate
 from minerva.commands.chat import run_chat
-from minerva.commands.config import run_config_command
 
 logger = get_logger(__name__, simple=True, mode="cli")
 
@@ -27,13 +26,13 @@ def create_parser():
         epilog="""
 Examples:
   # Index markdown notes into ChromaDB
-  minerva index --config configs/index-ollama.json
+  minerva index --config configs/index/bear-notes-ollama.json
 
   # Validate JSON notes without indexing
   minerva validate notes.json
 
   # Start the MCP server
-  minerva serve --config configs/server-config.json
+  minerva serve --config configs/server/local.json
 
   # Peek into a ChromaDB collection
   minerva peek bear_notes --chromadb ./chromadb_data
@@ -45,7 +44,7 @@ For more information, visit: https://github.com/yourusername/minerva
     parser.add_argument(
         '--version',
         action='version',
-        version='%(prog)s 2.0.0'
+        version='%(prog)s 3.0.0'
     )
 
     # Create subparsers for commands
@@ -68,13 +67,13 @@ For more information, visit: https://github.com/yourusername/minerva
         epilog="""
 Examples:
   # Index with Ollama provider
-  minerva index --config configs/index-ollama.json
+  minerva index --config configs/index/bear-notes-ollama.json
 
   # Index with verbose output
-  minerva index --config configs/index-ollama.json --verbose
+  minerva index --config configs/index/bear-notes-ollama.json --verbose
 
   # Dry run to validate configuration
-  minerva index --config configs/index-ollama.json --dry-run
+  minerva index --config configs/index/bear-notes-ollama.json --dry-run
         """
     )
 
@@ -83,7 +82,7 @@ Examples:
         type=Path,
         required=True,
         metavar='FILE',
-        help='Path to configuration JSON file'
+        help='Path to index configuration JSON file'
     )
 
     index_parser.add_argument(
@@ -112,7 +111,7 @@ Examples:
   minerva serve
 
   # Start with custom config
-  minerva serve --config configs/server-config.json
+  minerva serve --config configs/server/local.json
         """
     )
 
@@ -135,13 +134,13 @@ Examples:
         epilog="""
 Examples:
   # Start HTTP server on default port (8000)
-  minerva serve-http --config configs/server-config.json
+  minerva serve-http --config configs/server/local.json
 
   # Start on custom host and port
-  minerva serve-http --config configs/server-config.json --host 0.0.0.0 --port 9000
+  minerva serve-http --config configs/server/local.json --host 0.0.0.0 --port 9000
 
   # Start on localhost only
-  minerva serve-http --config configs/server-config.json --host 127.0.0.1 --port 8000
+  minerva serve-http --config configs/server/local.json --host 127.0.0.1 --port 8000
         """
     )
 
@@ -254,19 +253,19 @@ Examples:
         epilog="""
 Examples:
   # Start interactive chat session
-  minerva chat --config configs/chat-config-ollama.json
+  minerva chat --config configs/chat/ollama.json
 
   # Ask a single question and exit
-  minerva chat --config configs/chat-config.json -q "What are my notes about Python?"
+  minerva chat --config configs/chat/ollama.json -q "What are my notes about Python?"
 
   # List past conversations
-  minerva chat --config configs/chat-config.json --list
+  minerva chat --config configs/chat/ollama.json --list
 
   # Resume a previous conversation
-  minerva chat --config configs/chat-config.json --resume 20251030-143022-abc123
+  minerva chat --config configs/chat/ollama.json --resume 20251030-143022-abc123
 
   # Start chat with custom system prompt
-  minerva chat --config configs/chat-config.json --system "You are a code review assistant"
+  minerva chat --config configs/chat/ollama.json --system "You are a code review assistant"
         """
     )
 
@@ -305,40 +304,6 @@ Examples:
         help='Resume a previous conversation by its ID'
     )
 
-    # ========================================
-    # CONFIG command
-    # ========================================
-    config_parser = subparsers.add_parser(
-        'config',
-        help='Configuration utilities',
-        description='Validate unified Minerva configuration files.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Validate a configuration file
-  minerva config validate configs/desktop.json
-        """
-    )
-
-    config_subparsers = config_parser.add_subparsers(
-        dest='config_command',
-        required=True,
-        help='Configuration subcommand to run'
-    )
-
-    config_validate_parser = config_subparsers.add_parser(
-        'validate',
-        help='Validate a unified configuration file',
-        description='Validate a unified configuration file and print a summary.'
-    )
-
-    config_validate_parser.add_argument(
-        'config_file',
-        type=Path,
-        metavar='FILE',
-        help='Path to unified configuration JSON file'
-    )
-
     return parser
 
 
@@ -359,8 +324,6 @@ def main():
             return run_validate(args)
         elif args.command == 'chat':
             return run_chat(args)
-        elif args.command == 'config':
-            return run_config_command(args)
         else:
             parser.print_help()
             return 1

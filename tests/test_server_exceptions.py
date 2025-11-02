@@ -59,14 +59,18 @@ def test_validate_collection_availability_requires_collections(monkeypatch):
 
 
 def test_initialize_server_raises_when_no_available_collections(monkeypatch):
+    from pathlib import Path
     from minerva.server import mcp_server
+    from minerva.common.server_config import ServerConfig
 
-    config = {
-        "chromadb_path": "/tmp/db",
-        "default_max_results": 5,
-    }
+    server_config = ServerConfig(
+        chromadb_path="/tmp/db",
+        default_max_results=5,
+        host=None,
+        port=None,
+        source_path=Path("config.json")
+    )
 
-    monkeypatch.setattr(mcp_server, "load_config", lambda _path: config)
     monkeypatch.setattr(mcp_server, "validate_server_prerequisites", lambda _cfg: None)
 
     unavailable = {
@@ -89,6 +93,6 @@ def test_initialize_server_raises_when_no_available_collections(monkeypatch):
     )
 
     with pytest.raises(CollectionDiscoveryError) as exc_info:
-        mcp_server.initialize_server("config.json")
+        mcp_server.initialize_server(server_config)
 
     assert "No collections are available" in str(exc_info.value)

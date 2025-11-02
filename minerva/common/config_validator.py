@@ -1,5 +1,5 @@
-from minerva.common.config_loader import load_collection_config, ConfigError
-from minerva.common.exceptions import ValidationError
+from minerva.common.exceptions import ConfigError, ValidationError
+from minerva.common.index_config import load_index_config
 from minerva.common.validation import (
     validate_collection_name,
     validate_description_regex_only,
@@ -12,15 +12,16 @@ logger = get_logger(__name__, simple=True, mode="cli")
 def load_and_validate_config(config_path: str, verbose: bool = False):
     logger.info("Loading collection configuration...")
     try:
-        config = load_collection_config(config_path)
+        index_config = load_index_config(config_path)
+        collection = index_config.collection
         logger.info(f"   Configuration loaded from: {config_path}")
-        logger.info(f"   Json file: {config.json_file}")
-        logger.info(f"   ChromaDB path: {config.chromadb_path}")
-        logger.info(f"   Chunk size: {config.chunk_size}")
-        logger.info(f"   Collection name: {config.collection_name}")
-        logger.info(f"   Description: {config.description[:80]}...")
-        logger.info(f"   Force recreate: {config.force_recreate}")
-        logger.info(f"   Skip AI validation: {config.skip_ai_validation}")
+        logger.info(f"   Json file: {collection.json_file}")
+        logger.info(f"   ChromaDB path: {index_config.chromadb_path}")
+        logger.info(f"   Chunk size: {collection.chunk_size}")
+        logger.info(f"   Collection name: {collection.name}")
+        logger.info(f"   Description: {collection.description[:80]}...")
+        logger.info(f"   Force recreate: {collection.force_recreate}")
+        logger.info(f"   Skip AI validation: {collection.skip_ai_validation}")
         logger.info("")
     except ConfigError as error:
         logger.error("=" * 60)
@@ -41,12 +42,11 @@ def load_and_validate_config(config_path: str, verbose: bool = False):
 
     logger.info("Validating collection metadata...")
     try:
-        validate_collection_name(config.collection_name)
-        logger.info(f"   Collection name validated: {config.collection_name}")
+        validate_collection_name(collection.name)
+        logger.info(f"   Collection name validated: {collection.name}")
 
-        if config.skip_ai_validation:
-            validate_description_regex_only(config.description, config.collection_name)
-            validation_result = None
+        if collection.skip_ai_validation:
+            validate_description_regex_only(collection.description, collection.name)
 
             logger.warning("   WARNING: AI validation was skipped (skipAiValidation: true)")
             logger.warning("   You are responsible for ensuring the description is:")
@@ -59,8 +59,8 @@ def load_and_validate_config(config_path: str, verbose: bool = False):
             logger.warning("     - Poor AI routing decisions in production")
         else:
             validation_result = validate_description_with_ai(
-                config.description,
-                config.collection_name
+                collection.description,
+                collection.name
             )
             logger.info("   Description validated successfully")
             logger.info(f"   AI Quality Score: {validation_result['score']}/10")
@@ -73,7 +73,7 @@ def load_and_validate_config(config_path: str, verbose: bool = False):
         logger.error(str(error))
         logger.error("")
         logger.error(f"Configuration file: {config_path}")
-        logger.error(f"Collection name: {config.collection_name}")
+        logger.error(f"Collection name: {collection.name}")
         logger.error("")
         logger.error("Actionable Steps:")
         logger.error("  1. Review the validation error details above")
@@ -85,4 +85,4 @@ def load_and_validate_config(config_path: str, verbose: bool = False):
         logger.error("     $ ollama pull llama3.1:8b")
         raise
 
-    return config
+    return index_config

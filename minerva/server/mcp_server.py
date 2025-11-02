@@ -6,7 +6,6 @@ from minerva.common.exceptions import (
     ServerError,
     StartupValidationError,
     CollectionDiscoveryError,
-    ConfigError,
 )
 from minerva.common.logger import get_logger
 
@@ -20,7 +19,7 @@ except ImportError as error:
     raise StartupValidationError(message) from error
 
 # Import configuration and validation modules
-from minerva.common.config_loader import load_unified_config, UnifiedConfig
+from minerva.common.server_config import ServerConfig, load_server_config
 from minerva.server.startup_validation import validate_server_prerequisites
 from minerva.server.collection_discovery import discover_collections_with_providers
 from minerva.server.search_tools import (
@@ -29,41 +28,42 @@ from minerva.server.search_tools import (
     CollectionNotFoundError
 )
 from minerva.common.ai_provider import AIProvider
-from minerva.common.config_loader import ServerSection
 
 mcp = FastMCP("minerva-mcp-server")
 
 # Global configuration (loaded at startup)
-UNIFIED_CONFIG: Optional[UnifiedConfig] = None
-SERVER_SETTINGS: Optional[ServerSection] = None
+SERVER_CONFIG: Optional[ServerConfig] = None
 PROVIDER_MAP: Dict[str, AIProvider] = {}
 AVAILABLE_COLLECTIONS: List[Dict[str, Any]] = []
 
-def initialize_server(config_path: str) -> None:
-    global UNIFIED_CONFIG, SERVER_SETTINGS, PROVIDER_MAP, AVAILABLE_COLLECTIONS
 
-    UNIFIED_CONFIG = None
-    SERVER_SETTINGS = None
+def _ensure_server_config(config: ServerConfig | str) -> ServerConfig:
+    if isinstance(config, ServerConfig):
+        return config
+    return load_server_config(config)
+
+
+def initialize_server(server_config: ServerConfig) -> None:
+    global SERVER_CONFIG, PROVIDER_MAP, AVAILABLE_COLLECTIONS
+
+    SERVER_CONFIG = server_config
     PROVIDER_MAP = {}
     AVAILABLE_COLLECTIONS = []
 
-    try:
-        console_logger.info("Loading configuration...")
-        UNIFIED_CONFIG = load_unified_config(config_path)
-        SERVER_SETTINGS = UNIFIED_CONFIG.server
-        console_logger.success(f"✓ Configuration loaded from {config_path}")
-        console_logger.info(f"  ChromaDB path: {SERVER_SETTINGS.chromadb_path}")
-        console_logger.info(f"  Default max results: {SERVER_SETTINGS.default_max_results}")
+    console_logger.info("Loading configuration...")
+    source_display = server_config.source_path if server_config.source_path else "provided object"
+    console_logger.success(f"✓ Configuration loaded from {source_display}")
+    console_logger.info(f"  ChromaDB path: {server_config.chromadb_path}")
+    console_logger.info(f"  Default max results: {server_config.default_max_results}")
+    if server_config.host:
+        console_logger.info(f"  Host override: {server_config.host}")
+    if server_config.port:
+        console_logger.info(f"  Port override: {server_config.port}")
 
-    except ConfigError as error:
-        console_logger.error(f"Configuration Error:\n\n{error}")
-        raise StartupValidationError(str(error)) from error
+    console_logger.info("\nValidating server prerequisites...")
 
     try:
-        console_logger.info("\nValidating server prerequisites...")
-        if SERVER_SETTINGS is None:
-            raise StartupValidationError("Server configuration missing after load")
-        validate_server_prerequisites(SERVER_SETTINGS.chromadb_path)
+        validate_server_prerequisites(server_config.chromadb_path)
         console_logger.success("✓ All validation checks passed")
 
     except StartupValidationError as error:
@@ -73,11 +73,10 @@ def initialize_server(config_path: str) -> None:
         console_logger.error(f"Validation Error:\n{error}")
         raise StartupValidationError(str(error)) from error
 
+    console_logger.info("\nDiscovering collections and initializing AI providers...")
+
     try:
-        console_logger.info("\nDiscovering collections and initializing AI providers...")
-        if SERVER_SETTINGS is None:
-            raise StartupValidationError("Server configuration missing after validation")
-        provider_map, all_collections = discover_collections_with_providers(SERVER_SETTINGS.chromadb_path)
+        provider_map, all_collections = discover_collections_with_providers(server_config.chromadb_path)
 
         total_count = len(all_collections)
         available_count = sum(1 for c in all_collections if c['available'])
@@ -180,10 +179,10 @@ def search_knowledge_base(
 ) -> List[Dict[str, Any]]:
     try:
         # Use default max_results from config if not provided
-        if SERVER_SETTINGS is None:
+        if SERVER_CONFIG is None:
             raise ServerError("Server configuration not initialized")
 
-        effective_max_results: int = max_results if max_results is not None else SERVER_SETTINGS.default_max_results
+        effective_max_results: int = max_results if max_results is not None else SERVER_CONFIG.default_max_results
 
         console_logger.info(f"Tool invoked: search_knowledge_base")
         console_logger.info(f"  Query: {query[:80]}{'...' if len(query) > 80 else ''}")
@@ -206,7 +205,7 @@ def search_knowledge_base(
         results = search_kb(
             query=query,
             collection_name=collection_name,
-            chromadb_path=SERVER_SETTINGS.chromadb_path,
+            chromadb_path=SERVER_CONFIG.chromadb_path,
             provider=provider,
             context_mode=context_mode,
             max_results=effective_max_results
@@ -229,12 +228,13 @@ def search_knowledge_base(
         raise SearchError(f"Search failed: {e}")
 
 
-def main(config_path: str):
+def main(config: ServerConfig | str):
     console_logger.info("=" * 60)
     console_logger.info("Multi-Collection MCP Server for Markdown Notes")
     console_logger.info("=" * 60)
 
-    initialize_server(config_path)
+    server_config = _ensure_server_config(config)
+    initialize_server(server_config)
 
     console_logger.info("Starting FastMCP server in stdio mode...")
     console_logger.info("Waiting for MCP protocol requests...\n")
@@ -249,18 +249,26 @@ def main(config_path: str):
         raise ServerError(f"Server encountered an error: {error}") from error
 
 
-def main_http(config_path: str, host: str = "localhost", port: int = 8000):
+def main_http(
+    config: ServerConfig | str,
+    host: str | None = None,
+    port: int | None = None
+):
     console_logger.info("=" * 60)
     console_logger.info("Multi-Collection MCP Server for Markdown Notes")
     console_logger.info("=" * 60)
 
-    initialize_server(config_path)
+    server_config = _ensure_server_config(config)
+    initialize_server(server_config)
 
-    mcp.settings.host = host
-    mcp.settings.port = port
+    resolved_host = host if host is not None else server_config.host or "localhost"
+    resolved_port = port if port is not None else server_config.port or 8000
 
-    console_logger.info(f"Starting FastMCP server in HTTP mode on http://{host}:{port}...")
-    console_logger.info(f"MCP endpoint will be available at: http://{host}:{port}/mcp/")
+    mcp.settings.host = resolved_host
+    mcp.settings.port = resolved_port
+
+    console_logger.info(f"Starting FastMCP server in HTTP mode on http://{resolved_host}:{resolved_port}...")
+    console_logger.info(f"MCP endpoint will be available at: http://{resolved_host}:{resolved_port}/mcp/")
     console_logger.info("Waiting for HTTP requests...\n")
 
     try:

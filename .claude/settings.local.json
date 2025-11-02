@@ -33,7 +33,9 @@
       "Bash(done)",
       "Bash(exit 1)",
       "Bash(do echo \"✓ $config\")",
-      "Bash(/dev/null)"
+      "Bash(/dev/null)",
+      "Bash(find:*)",
+      "Bash(OPENAI_API_KEY=sk-test python:*)"
     ],
     "deny": [],
     "ask": []

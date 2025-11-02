@@ -1,15 +1,14 @@
 import asyncio
 import pytest
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
+from unittest.mock import Mock, AsyncMock, patch
 from pathlib import Path
-import tempfile
 import json
 
 from minerva.chat.mcp_client import MCPClient, MCPToolDefinition, MCPConnectionError, MCPToolExecutionError
 from minerva.chat.chat_engine import ChatEngine
 from minerva.chat.config import ChatConfig
-from minerva.common.ai_config import AIProviderConfig
 from minerva.common.ai_provider import AIProvider
+from tests.helpers.config_builders import make_chat_config
 
 
 class MockFastMCPClient:
@@ -71,29 +70,9 @@ def mock_mcp_client():
 
 
 @pytest.fixture
-def temp_conversation_dir():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        yield tmpdir
-
-
-@pytest.fixture
-def chat_config(temp_conversation_dir):
-    ai_config = AIProviderConfig(
-        provider_type="ollama",
-        embedding_model="test-embed",
-        llm_model="test-llm",
-        base_url="http://localhost:11434"
-    )
-
-    return ChatConfig(
-        ai_provider=ai_config,
-        conversation_dir=temp_conversation_dir,
-        chromadb_path="/tmp/test_chromadb",
-        enable_streaming=False,
-        mcp_server_url="http://localhost:8000",
-        max_tool_iterations=5,
-        system_prompt_file=None
-    )
+def chat_config(tmp_path: Path):
+    chat_config, _ = make_chat_config(tmp_path)
+    return chat_config
 
 
 @pytest.fixture

@@ -31,13 +31,13 @@ cd extractors/markdown-books-extractor && pip install -e .
 minerva validate notes.json [--verbose]
 
 # Index notes into ChromaDB
-minerva index --config config.json [--verbose] [--dry-run]
+minerva index --config configs/index/bear-notes-ollama.json [--verbose] [--dry-run]
 
 # Peek at indexed collection
 minerva peek COLLECTION_NAME --chromadb PATH [--format table|json]
 
 # Start MCP server
-minerva serve --config server-config.json
+minerva serve --config configs/server/local.json
 ```
 
 ### Extractor Commands
@@ -136,31 +136,44 @@ bear-extractor "Bear Notes 2025-10-20.bear2bk" -v -o bear-notes.json
 # 2. Validate
 minerva validate bear-notes.json --verbose
 
-# 3. Create index configuration
-cat > bear-config.json << 'EOF'
+# 3. Create index configuration (command-specific)
+mkdir -p configs/index
+cat > configs/index/bear-notes-ollama.json << 'EOF'
 {
-  "collection_name": "bear_notes",
-  "description": "Personal notes from Bear app",
-  "chromadb_path": "./chromadb_data",
-  "json_file": "bear-notes.json"
+  "chromadb_path": "../../chromadb_data",
+  "collection": {
+    "name": "bear-notes",
+    "description": "Personal notes from Bear app",
+    "json_file": "../../bear-notes.json",
+    "chunk_size": 1200
+  },
+  "provider": {
+    "provider_type": "ollama",
+    "base_url": "http://localhost:11434",
+    "embedding_model": "mxbai-embed-large:latest",
+    "llm_model": "llama3.1:8b"
+  }
 }
 EOF
 
 # 4. Index
-minerva index --config bear-config.json --verbose
+minerva index --config configs/index/bear-notes-ollama.json --verbose
 
 # 5. Peek at results
 minerva peek bear_notes --chromadb ./chromadb_data --format table
 
 # 6. Start MCP server
-cat > server-config.json << 'EOF'
+mkdir -p configs/server
+cat > configs/server/local.json << 'EOF'
 {
-  "chromadb_path": "./chromadb_data",
-  "default_max_results": 5
+  "chromadb_path": "../../chromadb_data",
+  "default_max_results": 5,
+  "host": "127.0.0.1",
+  "port": 8337
 }
 EOF
 
-minerva serve --config server-config.json
+minerva serve --config configs/server/local.json
 ```
 
 ### Working with Multiple Sources
@@ -177,12 +190,12 @@ minerva validate wiki.json
 minerva validate alice.json
 
 # Index as separate collections
-minerva index --config bear-config.json
-minerva index --config wiki-config.json
-minerva index --config alice-config.json
+minerva index --config configs/index/bear-notes-ollama.json
+minerva index --config configs/index/wiki-history.json
+minerva index --config configs/index/alice-notes.json
 
 # All available through single MCP server
-minerva serve --config server-config.json
+minerva serve --config configs/server/local.json
 ```
 
 ### Testing Individual Components
@@ -338,96 +351,95 @@ ollama list
 
 ## Configuration Files
 
-### Unified Configuration (Recommended)
+Minerva uses **command-specific JSON configuration files** stored under `configs/`:
 
-Minerva now uses a unified configuration system that consolidates all settings into a single JSON file:
+- `configs/index/` – one file per collection you want to index
+- `configs/chat/` – personal chat settings for MCP-assisted conversations
+- `configs/server/` – deployment profiles for the MCP server (stdio or HTTP)
+
+Each file is designed to be self-contained and readable. The schemas below match the runtime loaders in `minerva/common/index_config.py`, `minerva/chat/config.py`, and `minerva/common/server_config.py`.
+
+### Index Configuration
+
+Location: `configs/index/<collection-name>.json`
 
 ```json
 {
-  "ai_providers": [
-    {
-      "id": "ollama-local",
-      "provider_type": "ollama",
-      "embedding": {"model": "mxbai-embed-large:latest"},
-      "llm": {"model": "llama3.1:8b"}
-    },
-    {
-      "id": "lmstudio-local",
-      "provider_type": "lmstudio",
-      "base_url": "http://localhost:1234/v1",
-      "embedding_model": "qwen2.5-7b-instruct",
-      "llm_model": "qwen2.5-14b-instruct",
-      "rate_limit": {
-        "requests_per_minute": 60,
-        "concurrency": 1
-      }
-    }
-  ],
-  "indexing": {
-    "chromadb_path": "./chromadb_data",
-    "collections": [
-      {
-        "collection_name": "my_notes",
-        "description": "Personal knowledge base",
-        "json_file": "./notes.json",
-        "chunk_size": 1200,
-        "ai_provider_id": "ollama-local"
-      }
-    ]
+  "chromadb_path": "../../chromadb_data",
+  "collection": {
+    "name": "bear-notes",
+    "description": "Notes exported from Bear with metadata preserved for personal knowledge management.",
+    "json_file": "../../data/bear-notes/normalized-notes.json",
+    "chunk_size": 1200,
+    "force_recreate": false,
+    "skip_ai_validation": false
   },
-  "chat": {
-    "chat_provider_id": "lmstudio-local",
-    "mcp_server_url": "http://localhost:8000/mcp",
-    "conversation_dir": "~/.minerva/conversations",
-    "enable_streaming": false,
-    "max_tool_iterations": 5
-  },
-  "server": {
-    "chromadb_path": "./chromadb_data",
-    "default_max_results": 5,
-    "host": "127.0.0.1",
-    "port": 8000
+  "provider": {
+    "provider_type": "ollama",
+    "base_url": "http://localhost:11434",
+    "embedding_model": "mxbai-embed-large:latest",
+    "llm_model": "llama3.1:8b"
   }
 }
 ```
 
-**Benefits:**
-- Define AI providers once, reference by ID
-- Mix and match providers for different purposes
-- Single source of truth for all configuration
-- Consistent provider usage across indexing and querying
+- `chromadb_path` must be absolute after resolution; relative entries are resolved against the config file.
+- `collection.json_file` points to normalized notes exported by an extractor.
+- `provider` reuses the AI provider schema shared across commands (Ollama, LM Studio, OpenAI, Anthropic, Gemini).
+- Environment variables may be referenced with `${NAME}` in any provider credential field; values are resolved at load time.
 
-**Configuration sections:**
-- `ai_providers`: Define available AI providers with unique IDs
-- `indexing`: Collections to index with provider assignments
-- `chat`: Chat command configuration with MCP integration
-- `server`: MCP server settings
+### Chat Configuration
 
-See [docs/configuration.md](docs/configuration.md) for complete guide.
+Location: `configs/chat/<environment>.json`
 
-### Legacy Per-Command Configuration (Deprecated)
-
-The old approach used separate config files per command. This is still supported but deprecated:
-
-**Index Config:**
 ```json
 {
-  "collection_name": "my_notes",
-  "description": "Personal notes",
-  "chromadb_path": "./chromadb_data",
-  "json_file": "./notes.json"
+  "chromadb_path": "../../chromadb_data",
+  "conversation_dir": "../../state/chat/conversations",
+  "mcp_server_url": "http://127.0.0.1:8337/mcp",
+  "enable_streaming": true,
+  "max_tool_iterations": 4,
+  "system_prompt_file": null,
+  "provider": {
+    "provider_type": "lmstudio",
+    "base_url": "http://localhost:1234/v1",
+    "embedding_model": "qwen2.5-7b-instruct",
+    "llm_model": "qwen2.5-14b-instruct",
+    "rate_limit": {
+      "requests_per_minute": 60,
+      "concurrency": 1
+    }
+  }
 }
 ```
 
-**Server Config:**
+- `conversation_dir` is created automatically if it does not exist.
+- `system_prompt_file` can be set to an absolute or relative path with a custom system prompt; use `null` to disable.
+- The chat provider schema matches the index loader, so you can swap between Ollama, LM Studio, OpenAI, Anthropic, or Gemini by editing a single block.
+
+### Server Configuration
+
+Location: `configs/server/<profile>.json`
+
 ```json
 {
-  "chromadb_path": "./chromadb_data",
-  "default_max_results": 5
+  "chromadb_path": "../../chromadb_data",
+  "default_max_results": 6,
+  "host": "127.0.0.1",
+  "port": 8337
 }
 ```
 
-Migrate to unified configuration for new projects.
+- `host` and `port` are optional and mainly used for HTTP deployments; `serve` (stdio) ignores them.
+- `default_max_results` is clamped between 1 and 15 to prevent overwhelming output in Claude Desktop.
+
+### Recommended Workflow
+
+1. Copy a sample config from `configs/**/` and adjust paths and provider settings.
+2. Run `minerva index --config <path>` or `minerva chat --config <path>` to validate and execute.
+3. Store personal or environment-specific configs outside version control if they contain secrets.
+
+See [docs/configuration.md](docs/configuration.md) for full schema documentation and advanced examples.
 
 ## Writing Extractors
 
@@ -489,20 +501,17 @@ pytest -v
 
 # Run specific test suites
 pytest tests/test_ai_provider.py -v              # Provider and rate limiting tests
-pytest tests/test_mcp_chat_integration.py -v     # MCP chat integration tests
-pytest tests/test_unified_config_loader.py -v    # Config validation tests
+pytest tests/test_index_command.py -v            # Index command and config loader tests
+pytest tests/test_chat_config.py -v              # Chat config loader tests
 ```
 
 ### Configuration Validation
 
 ```bash
-# Validate a configuration file
-minerva config validate path/to/config.json
-
-# Validate all sample configs
-for config in configs/*.json; do
-  minerva config validate "$config"
-done
+# Validate sample configs
+python -c "from minerva.common.index_config import load_index_config; load_index_config('configs/index/bear-notes-ollama.json')"
+python -c "from minerva.chat.config import load_chat_config_from_file; load_chat_config_from_file('configs/chat/ollama.json')"
+python -c "from minerva.common.server_config import load_server_config; load_server_config('configs/server/local.json')"
 ```
 
 ### Continuous Integration
@@ -525,7 +534,7 @@ See `.github/workflows/ci.yml` for complete CI configuration.
 # Test complete workflow with sample data
 bear-extractor test-data/sample.bear2bk -o /tmp/test.json
 minerva validate /tmp/test.json
-minerva index --config test-configs/sample-config.json --dry-run
+minerva index --config configs/index/bear-notes-ollama.json --dry-run
 ```
 
 ## Common Tasks
@@ -667,11 +676,11 @@ print(f'Collections: {len(client.list_collections())}')
 "
 
 # Check server config
-cat server-config.json
+cat configs/server/local.json
 
 # Run with verbose logging
 # (MCP servers log to stderr)
-minerva serve --config server-config.json 2>&1 | tee server.log
+minerva serve --config configs/server/local.json 2>&1 | tee server.log
 ```
 
 ### Performance Issues

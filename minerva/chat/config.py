@@ -1,10 +1,61 @@
+from __future__ import annotations
+
+import copy
+import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
+from urllib.parse import urlparse
 
-from minerva.common.ai_config import AIProviderConfig
-from minerva.common.config_loader import UnifiedConfig
-from minerva.common.exceptions import ChatConfigError
+from jsonschema import Draft7Validator
+from jsonschema import ValidationError as JsonSchemaValidationError
+
+from minerva.common.ai_config import (
+    AIProviderConfig,
+    AI_PROVIDER_JSON_SCHEMA,
+    build_ai_provider_config,
+)
+from minerva.common.exceptions import ChatConfigError, ConfigError
+
+
+CHAT_CONFIG_SCHEMA: Dict[str, Any] = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": [
+        "chromadb_path",
+        "conversation_dir",
+        "mcp_server_url",
+        "provider"
+    ],
+    "properties": {
+        "chromadb_path": {
+            "type": "string",
+            "minLength": 1
+        },
+        "conversation_dir": {
+            "type": "string",
+            "minLength": 1
+        },
+        "mcp_server_url": {
+            "type": "string",
+            "minLength": 1
+        },
+        "enable_streaming": {
+            "type": "boolean"
+        },
+        "max_tool_iterations": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+        },
+        "system_prompt_file": {
+            "type": ["string", "null"],
+            "minLength": 1
+        },
+        "provider": copy.deepcopy(AI_PROVIDER_JSON_SCHEMA)
+    },
+    "additionalProperties": False
+}
 
 
 @dataclass(frozen=True)
@@ -16,40 +67,156 @@ class ChatConfig:
     mcp_server_url: str
     max_tool_iterations: int
     system_prompt_file: Optional[str]
+    source_path: Optional[Path] = None
 
 
-def build_chat_config(unified_config: UnifiedConfig) -> ChatConfig:
-    chat_section = unified_config.chat
-    server_section = unified_config.server
+def load_chat_config_from_file(config_path: str) -> ChatConfig:
+    path = Path(config_path)
 
-    ai_provider_config = unified_config.get_ai_provider_config(chat_section.chat_provider_id)
+    if not path.exists():
+        raise ChatConfigError(
+            f"Chat configuration file not found: {config_path}\n"
+            f"  Expected location: {path.resolve()}"
+        )
 
-    conversation_dir = chat_section.conversation_dir
-    if not conversation_dir:
-        raise ChatConfigError("conversation_dir must be provided in chat configuration")
+    payload = _read_json(path)
+    _validate_schema(payload, path)
 
-    conversation_path = Path(conversation_dir)
     try:
-        conversation_path.mkdir(parents=True, exist_ok=True)
+        return _build_chat_config(payload, path)
+    except ConfigError as error:
+        raise ChatConfigError(str(error)) from error
+
+
+def _read_json(path: Path) -> Dict[str, Any]:
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            data = json.load(handle)
+    except json.JSONDecodeError as error:
+        raise ChatConfigError(
+            f"Invalid JSON syntax in configuration file: {path}\n"
+            f"  Error: {error.msg} at line {error.lineno}, column {error.colno}"
+        ) from error
+    except Exception as error:
+        raise ChatConfigError(f"Failed to read configuration file: {error}") from error
+
+    if not isinstance(data, dict):
+        raise ChatConfigError(
+            f"Configuration must be a JSON object at the root\n"
+            f"  File: {path}"
+        )
+
+    return data
+
+
+def _validate_schema(payload: Dict[str, Any], path: Path) -> None:
+    validator = Draft7Validator(CHAT_CONFIG_SCHEMA)
+    try:
+        validator.validate(payload)
+    except JsonSchemaValidationError as error:
+        location = " → ".join(str(piece) for piece in error.path) or "root"
+        raise ChatConfigError(
+            f"Schema validation error in chat configuration: {path}\n"
+            f"  Field: {location}\n"
+            f"  Error: {error.message}"
+        ) from error
+
+
+def _build_chat_config(payload: Dict[str, Any], path: Path) -> ChatConfig:
+    base_dir = path.parent
+
+    chromadb_path = _resolve_path(payload["chromadb_path"], base_dir)
+    _ensure_absolute_path(chromadb_path, "chromadb_path", path)
+
+    conversation_dir_raw = str(payload["conversation_dir"]).strip()
+    if not conversation_dir_raw:
+        raise ChatConfigError(
+            "conversation_dir cannot be empty after trimming whitespace\n"
+            f"  File: {path}"
+        )
+
+    conversation_dir = _resolve_path(conversation_dir_raw, base_dir)
+    _ensure_directory(conversation_dir)
+
+    mcp_server_url = str(payload["mcp_server_url"]).strip()
+    _validate_mcp_url(mcp_server_url, path)
+
+    enable_streaming = bool(payload.get("enable_streaming", False))
+
+    try:
+        max_tool_iterations = int(payload.get("max_tool_iterations", 5))
+    except (TypeError, ValueError):
+        raise ChatConfigError(
+            "max_tool_iterations must be an integer value\n"
+            f"  File: {path}"
+        )
+
+    if max_tool_iterations < 1 or max_tool_iterations > 10:
+        raise ChatConfigError(
+            "max_tool_iterations must be between 1 and 10\n"
+            f"  Value: {max_tool_iterations}\n"
+            f"  File: {path}"
+        )
+
+    system_prompt_file = payload.get("system_prompt_file")
+    system_prompt_path: Optional[str] = None
+    if system_prompt_file:
+        trimmed = str(system_prompt_file).strip()
+        if not trimmed:
+            raise ChatConfigError(
+                "system_prompt_file cannot be empty string\n"
+                f"  File: {path}"
+            )
+        system_prompt_path = _resolve_path(trimmed, base_dir)
+
+    provider_payload = payload["provider"]
+    provider = build_ai_provider_config(provider_payload, source_path=path, context="provider")
+
+    return ChatConfig(
+        ai_provider=provider,
+        conversation_dir=conversation_dir,
+        chromadb_path=chromadb_path,
+        enable_streaming=enable_streaming,
+        mcp_server_url=mcp_server_url,
+        max_tool_iterations=max_tool_iterations,
+        system_prompt_file=system_prompt_path,
+        source_path=path
+    )
+
+
+def _resolve_path(value: Any, base_dir: Path) -> str:
+    path = Path(str(value).strip()).expanduser()
+    if not path.is_absolute():
+        path = (base_dir / path).resolve()
+    return str(path)
+
+
+def _ensure_absolute_path(value: str, field_name: str, source_path: Path) -> None:
+    if not Path(value).is_absolute():
+        raise ChatConfigError(
+            f"Expected absolute path for {field_name}\n"
+            f"  Value: {value}\n"
+            f"  File: {source_path}"
+        )
+
+
+def _ensure_directory(directory: str) -> None:
+    path = Path(directory)
+    try:
+        path.mkdir(parents=True, exist_ok=True)
     except Exception as error:
         raise ChatConfigError(
-            f"Failed to create conversation directory: {conversation_dir}\n"
+            f"Failed to create conversation directory: {directory}\n"
             f"  Error: {error}"
         ) from error
 
-    chromadb_path = server_section.chromadb_path
-    if not chromadb_path:
-        raise ChatConfigError("Server chromadb_path is missing from configuration")
 
-    if chat_section.max_tool_iterations < 1:
-        raise ChatConfigError("max_tool_iterations must be at least 1")
+def _validate_mcp_url(url: str, source_path: Path) -> None:
+    parsed = urlparse(url)
+    if not parsed.scheme or not parsed.netloc:
+        raise ChatConfigError(
+            f"Invalid MCP server URL: {url}\n"
+            f"  File: {source_path}\n"
+            f"  Expected format: http(s)://host[:port]/path"
+        )
 
-    return ChatConfig(
-        ai_provider=ai_provider_config,
-        conversation_dir=str(conversation_path),
-        chromadb_path=chromadb_path,
-        enable_streaming=chat_section.enable_streaming,
-        mcp_server_url=chat_section.mcp_server_url,
-        max_tool_iterations=chat_section.max_tool_iterations,
-        system_prompt_file=chat_section.system_prompt_file,
-    )

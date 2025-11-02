@@ -130,8 +130,8 @@ def validate_server_prerequisites(chromadb_path: str) -> None:
 
 
 def main(argv: list[str]) -> None:
-    from minerva.common.config_loader import load_unified_config
     from minerva.common.exceptions import ConfigError
+    from minerva.common.server_config import load_server_config
 
     if len(argv) < 2:
         raise StartupValidationError(
@@ -142,12 +142,12 @@ def main(argv: list[str]) -> None:
     config_path = argv[1]
 
     try:
-        unified_config = load_unified_config(config_path)
+        server_config = load_server_config(config_path)
     except ConfigError as error:
         raise StartupValidationError(str(error)) from error
 
     console_logger.info("Running server validation checks...\n")
-    validate_server_prerequisites(unified_config.server.chromadb_path)
+    validate_server_prerequisites(server_config.chromadb_path)
     console_logger.success("✓ All validation checks passed!")
     console_logger.info("\nServer is ready to start.")
 

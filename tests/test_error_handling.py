@@ -1,86 +1,17 @@
 import pytest
 import json
+from dataclasses import replace
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from argparse import Namespace
 
 from minerva.commands.validate import run_validate
 from minerva.commands.index import run_index, initialize_and_validate_provider
 from minerva.commands.peek import run_peek
-from minerva.common.config_loader import (
-    load_unified_config,
-    ConfigError,
-    UnifiedConfig,
-    ProviderDefinition,
-    IndexingConfig,
-    IndexingCollectionConfig,
-    ChatSection,
-    ServerSection,
-)
 from minerva.common.schemas import validate_notes_file
+from tests.helpers.config_builders import make_index_config
 from minerva.common.exceptions import ProviderUnavailableError, JsonLoaderError
 
-
-def build_unified_config(temp_dir: Path) -> tuple[UnifiedConfig, IndexingCollectionConfig]:
-    chroma_path = temp_dir / "chromadb"
-    chroma_path.mkdir(parents=True, exist_ok=True)
-
-    notes_path = temp_dir / "notes.json"
-    notes_path.write_text("[]", encoding="utf-8")
-
-    providers = {
-        "lmstudio-local": ProviderDefinition(
-            id="lmstudio-local",
-            provider_type="lmstudio",
-            embedding_model="qwen-embed",
-            llm_model="qwen-chat",
-            base_url="http://localhost:1234/v1",
-            api_key=None,
-            rate_limit=None,
-            display_name=None
-        )
-    }
-
-    collection = IndexingCollectionConfig(
-        collection_name="test_collection",
-        description="Test description",
-        json_file=str(notes_path),
-        ai_provider_id="lmstudio-local",
-        chunk_size=1200,
-        skip_ai_validation=False,
-        force_recreate=False
-    )
-
-    indexing = IndexingConfig(
-        chromadb_path=str(chroma_path),
-        collections=(collection,)
-    )
-
-    chat_section = ChatSection(
-        chat_provider_id="lmstudio-local",
-        mcp_server_url="http://localhost:8000/mcp",
-        conversation_dir=str(temp_dir / "conversations"),
-        enable_streaming=False,
-        max_tool_iterations=5,
-        system_prompt_file=None
-    )
-
-    server_section = ServerSection(
-        chromadb_path=str(chroma_path),
-        default_max_results=5,
-        host=None,
-        port=None
-    )
-
-    unified_config = UnifiedConfig(
-        providers=providers,
-        indexing=indexing,
-        chat=chat_section,
-        server=server_section,
-        source_path=temp_dir / "config.json"
-    )
-
-    return unified_config, collection
 
 
 class TestMissingFileErrors:
@@ -104,37 +35,17 @@ class TestMissingFileErrors:
 
         assert exit_code == 1
 
-    @patch('minerva.commands.index.load_unified_config')
+    @patch('minerva.commands.index.load_and_print_config')
     @patch('minerva.commands.index.load_and_print_notes')
     def test_index_nonexistent_notes_file(self, mock_load_notes, mock_load_config, temp_dir: Path):
         """Index command should exit cleanly when referenced JSON notes file doesn't exist"""
-        unified_config, collection = build_unified_config(temp_dir)
+        index_config, config_path = make_index_config(temp_dir)
         missing_file = temp_dir / "does_not_exist.json"
-        collection = IndexingCollectionConfig(
-            collection_name=collection.collection_name,
-            description=collection.description,
-            json_file=str(missing_file),
-            ai_provider_id=collection.ai_provider_id,
-            chunk_size=collection.chunk_size,
-            skip_ai_validation=collection.skip_ai_validation,
-            force_recreate=collection.force_recreate
-        )
-
-        unified_config = UnifiedConfig(
-            providers=unified_config.providers,
-            indexing=IndexingConfig(
-                chromadb_path=unified_config.indexing.chromadb_path,
-                collections=(collection,)
-            ),
-            chat=unified_config.chat,
-            server=unified_config.server,
-            source_path=unified_config.source_path
-        )
-
-        mock_load_config.return_value = unified_config
+        updated_collection = replace(index_config.collection, json_file=str(missing_file))
+        mock_load_config.return_value = replace(index_config, collection=updated_collection)
         mock_load_notes.side_effect = JsonLoaderError("File not found")
 
-        args = Namespace(config=temp_dir / "config.json", verbose=False, dry_run=False)
+        args = Namespace(config=config_path, verbose=False, dry_run=False)
 
         exit_code = run_index(args)
 
@@ -158,11 +69,13 @@ class TestMissingFileErrors:
 
 
 
+
+
 class TestProviderUnavailableErrors:
     """Test handling of unavailable AI providers"""
 
     @patch('minerva.commands.index.initialize_provider')
-    def test_ollama_server_not_running(self, mock_init_provider):
+    def test_ollama_server_not_running(self, mock_init_provider, temp_dir: Path):
         """Index should handle Ollama server not running"""
         mock_provider = Mock()
         mock_provider.provider_type = "ollama"
@@ -173,14 +86,13 @@ class TestProviderUnavailableErrors:
         }
         mock_init_provider.return_value = mock_provider
 
-        mock_config = Mock()
-        mock_config.skip_ai_validation = False
+        index_config, _ = make_index_config(temp_dir)
 
         with pytest.raises(ProviderUnavailableError):
-            initialize_and_validate_provider(mock_config, verbose=False)
+            initialize_and_validate_provider(index_config, verbose=False)
 
     @patch('minerva.commands.index.initialize_provider')
-    def test_invalid_api_key_for_openai(self, mock_init_provider):
+    def test_invalid_api_key_for_openai(self, mock_init_provider, temp_dir: Path):
         """Index should handle invalid OpenAI API key"""
         mock_provider = Mock()
         mock_provider.provider_type = "openai"
@@ -191,14 +103,13 @@ class TestProviderUnavailableErrors:
         }
         mock_init_provider.return_value = mock_provider
 
-        mock_config = Mock()
-        mock_config.skip_ai_validation = False
+        index_config, _ = make_index_config(temp_dir)
 
         with pytest.raises(ProviderUnavailableError):
-            initialize_and_validate_provider(mock_config, verbose=False)
+            initialize_and_validate_provider(index_config, verbose=False)
 
     @patch('minerva.commands.index.initialize_provider')
-    def test_network_timeout_during_provider_check(self, mock_init_provider):
+    def test_network_timeout_during_provider_check(self, mock_init_provider, temp_dir: Path):
         """Index should handle network timeouts gracefully"""
         mock_provider = Mock()
         mock_provider.provider_type = "ollama"
@@ -207,14 +118,13 @@ class TestProviderUnavailableErrors:
 
         mock_init_provider.return_value = mock_provider
 
-        mock_config = Mock()
-        mock_config.skip_ai_validation = False
+        index_config, _ = make_index_config(temp_dir)
 
         with pytest.raises(TimeoutError):
-            initialize_and_validate_provider(mock_config, verbose=False)
+            initialize_and_validate_provider(index_config, verbose=False)
 
     @patch('minerva.commands.index.initialize_provider')
-    def test_invalid_model_name(self, mock_init_provider):
+    def test_invalid_model_name(self, mock_init_provider, temp_dir: Path):
         """Index should handle invalid/non-existent model names"""
         mock_provider = Mock()
         mock_provider.provider_type = "ollama"
@@ -225,11 +135,11 @@ class TestProviderUnavailableErrors:
         }
         mock_init_provider.return_value = mock_provider
 
-        mock_config = Mock()
-        mock_config.skip_ai_validation = False
+        index_config, _ = make_index_config(temp_dir)
 
         with pytest.raises(ProviderUnavailableError):
-            initialize_and_validate_provider(mock_config, verbose=False)
+            initialize_and_validate_provider(index_config, verbose=False)
+
 
 
 class TestSchemaViolationErrors:

@@ -1,12 +1,12 @@
 import time
 from argparse import Namespace
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 from minerva.common.ai_provider import AIProvider, AIProviderError
-from minerva.common.config_loader import (
-    IndexingCollectionConfig,
-    UnifiedConfig,
-    load_unified_config,
+from minerva.common.index_config import (
+    CollectionConfig,
+    IndexConfig,
+    load_index_config,
 )
 from minerva.indexing.json_loader import load_json_notes
 from minerva.indexing.chunking import create_chunks_from_notes
@@ -51,35 +51,25 @@ def print_banner(is_dry_run: bool) -> None:
 def load_and_print_config(
     config_path: str,
     verbose: bool
-) -> Tuple[UnifiedConfig, IndexingCollectionConfig]:
+) -> IndexConfig:
     logger.info("")
     logger.info(f"Loading configuration from: {config_path}")
 
     try:
-        unified_config = load_unified_config(str(config_path))
+        index_config = load_index_config(str(config_path))
     except ConfigError as error:
         logger.error(f"Configuration Error:\n{error}")
         raise
 
-    collections = list(unified_config.indexing.collections)
-    if not collections:
-        raise ConfigError("No collections defined in indexing.collections")
-
-    if len(collections) > 1:
-        raise ConfigError(
-            "Configuration defines multiple collections. "
-            "Specify a dedicated config or add a CLI option to select a collection."
-        )
-
-    collection = collections[0]
-    provider = unified_config.get_provider(collection.ai_provider_id)
+    collection = index_config.collection
+    provider = index_config.provider
 
     logger.success("   ✓ Configuration loaded successfully")
 
     if verbose:
-        logger.info(f"   Collection name: {collection.collection_name}")
+        logger.info(f"   Collection name: {collection.name}")
         logger.info(f"   Description: {collection.description[:80]}...")
-        logger.info(f"   ChromaDB path: {unified_config.indexing.chromadb_path}")
+        logger.info(f"   ChromaDB path: {index_config.chromadb_path}")
         logger.info(f"   JSON file: {collection.json_file}")
         logger.info(f"   Chunk size: {collection.chunk_size} characters")
         logger.info(f"   Force recreate: {collection.force_recreate}")
@@ -89,10 +79,10 @@ def load_and_print_config(
         logger.info(f"   LLM model: {provider.llm_model}")
 
     logger.info("")
-    return unified_config, collection
+    return index_config
 
 
-def load_and_print_notes(collection: IndexingCollectionConfig, verbose: bool) -> List[Dict[str, Any]]:
+def load_and_print_notes(collection: CollectionConfig, verbose: bool) -> List[Dict[str, Any]]:
     logger.info("Loading notes from JSON file...")
 
     try:
@@ -120,15 +110,14 @@ def load_and_print_notes(collection: IndexingCollectionConfig, verbose: bool) ->
 
 
 def initialize_and_validate_provider(
-    unified_config: UnifiedConfig,
-    collection: IndexingCollectionConfig,
+    index_config: IndexConfig,
     verbose: bool
 ) -> AIProvider:
     logger.info("Initializing AI provider...")
 
     try:
-        provider_config = unified_config.get_ai_provider_config(collection.ai_provider_id)
-        provider = initialize_provider(provider_config)
+        provider = initialize_provider(index_config.provider)
+        collection = index_config.collection
 
         # Check provider availability
         availability = provider.check_availability()
@@ -184,35 +173,35 @@ def initialize_and_validate_provider(
 
 def check_collection_early(
     chromadb_path: str,
-    collection: IndexingCollectionConfig,
+    collection: CollectionConfig,
     provider: AIProvider
 ) -> tuple[bool, str]:
     logger.info("Checking ChromaDB collection status...")
 
     try:
         client = initialize_chromadb_client(chromadb_path)
-        exists = collection_exists(client, collection.collection_name)
+        exists = collection_exists(client, collection.name)
 
         if not exists:
-            logger.success(f"   ✓ Collection '{collection.collection_name}' does not exist (will be created)")
+            logger.success(f"   ✓ Collection '{collection.name}' does not exist (will be created)")
             logger.info("")
             return False, "create"
 
         try:
-            collection_obj = client.get_collection(collection.collection_name)
+            collection_obj = client.get_collection(collection.name)
         except Exception as error:
-            message = f"Failed to retrieve collection '{collection.collection_name}': {error}"
+            message = f"Failed to retrieve collection '{collection.name}': {error}"
             logger.error(message)
             raise StorageError(message) from error
 
         if collection.force_recreate:
-            logger.warning(f"   Collection '{collection.collection_name}' exists and will be recreated")
+            logger.warning(f"   Collection '{collection.name}' exists and will be recreated")
             logger.warning("   ⚠ WARNING: All existing data will be permanently deleted!")
             logger.info("")
             return True, "recreate"
 
         if is_v1_collection(collection_obj):
-            error_msg = format_v1_collection_error(collection.collection_name, chromadb_path)
+            error_msg = format_v1_collection_error(collection.name, chromadb_path)
             logger.error(error_msg)
             raise IncrementalUpdateError(error_msg)
 
@@ -224,11 +213,11 @@ def check_collection_early(
         )
 
         if config_change.has_changes:
-            error_msg = format_config_change_error(collection.collection_name, config_change)
+            error_msg = format_config_change_error(collection.name, config_change)
             logger.error(error_msg)
             raise IncrementalUpdateError(error_msg)
 
-        logger.success(f"   ✓ Collection '{collection.collection_name}' exists (v2.0)")
+        logger.success(f"   ✓ Collection '{collection.name}' exists (v2.0)")
         logger.info(f"   Will perform incremental update")
         logger.info("")
         return True, "incremental"
@@ -242,18 +231,19 @@ def check_collection_early(
 
 
 def run_dry_run(
-    unified_config: UnifiedConfig,
-    collection: IndexingCollectionConfig,
+    index_config: IndexConfig,
     notes: List[Dict[str, Any]],
     verbose: bool
 ) -> None:
     logger.info("Running dry-run validation...")
     logger.info("")
 
-    provider = initialize_and_validate_provider(unified_config, collection, verbose)
+    provider = initialize_and_validate_provider(index_config, verbose)
+    collection = index_config.collection
+    chromadb_path = index_config.chromadb_path
 
     _, mode = check_collection_early(
-        unified_config.indexing.chromadb_path,
+        chromadb_path,
         collection,
         provider
     )
@@ -264,12 +254,12 @@ def run_dry_run(
     logger.info("")
 
     logger.info("Dry-run summary:")
-    logger.info(f"   Collection: {collection.collection_name}")
+    logger.info(f"   Collection: {collection.name}")
     logger.info(f"   Mode: {mode}")
     logger.info(f"   Notes to process: {len(notes)}")
     logger.info(f"   Chunks to create: {len(chunks)}")
     logger.info(f"   Embeddings to generate: {len(chunks)}")
-    logger.info(f"   ChromaDB location: {unified_config.indexing.chromadb_path}")
+    logger.info(f"   ChromaDB location: {chromadb_path}")
     logger.info(f"   Force recreate: {collection.force_recreate}")
     logger.info("")
     logger.success("✓ Dry-run validation completed successfully!")
@@ -277,15 +267,14 @@ def run_dry_run(
 
 
 def run_incremental_indexing(
-    unified_config: UnifiedConfig,
-    collection: IndexingCollectionConfig,
+    index_config: IndexConfig,
     notes: List[Dict[str, Any]],
     verbose: bool,
     start_time: float,
     provider: AIProvider
 ) -> None:
-
-    chromadb_path = unified_config.indexing.chromadb_path
+    collection = index_config.collection
+    chromadb_path = index_config.chromadb_path
 
     logger.info(f"Initializing ChromaDB at: {chromadb_path}")
     client = initialize_chromadb_client(chromadb_path)
@@ -293,8 +282,8 @@ def run_incremental_indexing(
     logger.info("")
 
     try:
-        collection_obj = client.get_collection(collection.collection_name)
-        logger.success(f"   ✓ Retrieved collection '{collection.collection_name}'")
+        collection_obj = client.get_collection(collection.name)
+        logger.success(f"   ✓ Retrieved collection '{collection.name}'")
         logger.info("")
     except Exception as error:
         message = f"Failed to retrieve collection: {error}"
@@ -324,13 +313,13 @@ def run_incremental_indexing(
 
 
 def run_full_indexing(
-    unified_config: UnifiedConfig,
-    collection: IndexingCollectionConfig,
+    index_config: IndexConfig,
     notes: List[Dict[str, Any]],
     verbose: bool,
     start_time: float,
     provider: AIProvider
 ) -> None:
+    collection = index_config.collection
     embedding_metadata = provider.get_embedding_metadata()
 
     logger.info("Creating semantic chunks...")
@@ -347,18 +336,18 @@ def run_full_indexing(
         logger.error(f"Embedding generation error: {error}")
         raise
 
-    chromadb_path = unified_config.indexing.chromadb_path
+    chromadb_path = index_config.chromadb_path
     logger.info(f"Initializing ChromaDB at: {chromadb_path}")
     client = initialize_chromadb_client(chromadb_path)
     logger.success("   ✓ ChromaDB client initialized")
     logger.info("")
 
-    logger.info(f"Preparing collection '{collection.collection_name}'...")
+    logger.info(f"Preparing collection '{collection.name}'...")
     try:
         if collection.force_recreate:
             collection_obj = recreate_collection(
                 client,
-                collection_name=collection.collection_name,
+                collection_name=collection.name,
                 description=collection.description,
                 embedding_metadata=embedding_metadata,
                 chunk_size=collection.chunk_size
@@ -367,7 +356,7 @@ def run_full_indexing(
         else:
             collection_obj = create_collection(
                 client,
-                collection_name=collection.collection_name,
+                collection_name=collection.name,
                 description=collection.description,
                 embedding_metadata=embedding_metadata,
                 chunk_size=collection.chunk_size
@@ -397,8 +386,7 @@ def run_full_indexing(
 
     processing_time = time.time() - start_time
     print_final_summary(
-        unified_config,
-        collection,
+        index_config,
         notes,
         chunks,
         chunks_with_embeddings,
@@ -408,18 +396,18 @@ def run_full_indexing(
 
 
 def print_final_summary(
-    unified_config: UnifiedConfig,
-    collection: IndexingCollectionConfig,
+    index_config: IndexConfig,
     notes: List[Dict[str, Any]],
     chunks: List[Any],
     chunks_with_embeddings: List[Any],
     stats: Dict[str, int],
     processing_time: float
 ) -> None:
+    collection = index_config.collection
     logger.info("=" * 60)
     logger.success("✓ Indexing completed successfully!")
     logger.info("=" * 60)
-    logger.info(f"Collection: {collection.collection_name}")
+    logger.info(f"Collection: {collection.name}")
     logger.info(f"Description: {collection.description[:60]}...")
     logger.info(f"Notes processed: {len(notes)}")
     logger.info(f"Chunks created: {len(chunks)}")
@@ -431,8 +419,8 @@ def print_final_summary(
         logger.info(f"Performance: {len(chunks) / processing_time:.1f} chunks/second")
 
     logger.info("")
-    logger.info(f"Collection '{collection.collection_name}' is ready for queries")
-    logger.info(f"Database location: {unified_config.indexing.chromadb_path}")
+    logger.info(f"Collection '{collection.name}' is ready for queries")
+    logger.info(f"Database location: {index_config.chromadb_path}")
     logger.info("")
 
 
@@ -442,25 +430,25 @@ def run_index(args: Namespace) -> int:
     try:
         print_banner(args.dry_run)
 
-        unified_config, collection = load_and_print_config(args.config, args.verbose)
+        index_config = load_and_print_config(args.config, args.verbose)
+        collection = index_config.collection
 
         notes = load_and_print_notes(collection, args.verbose)
 
         if args.dry_run:
-            run_dry_run(unified_config, collection, notes, args.verbose)
+            run_dry_run(index_config, notes, args.verbose)
         else:
-            provider = initialize_and_validate_provider(unified_config, collection, args.verbose)
+            provider = initialize_and_validate_provider(index_config, args.verbose)
 
             _, mode = check_collection_early(
-                unified_config.indexing.chromadb_path,
+                index_config.chromadb_path,
                 collection,
                 provider
             )
 
             if mode == "incremental":
                 run_incremental_indexing(
-                    unified_config,
-                    collection,
+                    index_config,
                     notes,
                     args.verbose,
                     start_time,
@@ -468,8 +456,7 @@ def run_index(args: Namespace) -> int:
                 )
             else:
                 run_full_indexing(
-                    unified_config,
-                    collection,
+                    index_config,
                     notes,
                     args.verbose,
                     start_time,
