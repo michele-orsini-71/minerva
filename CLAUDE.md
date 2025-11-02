@@ -270,7 +270,19 @@ config = AIProviderConfig(
     base_url='http://localhost:11434'
 )
 
-# OpenAI
+# LM Studio (local, OpenAI-compatible)
+config = AIProviderConfig(
+    provider_type='lmstudio',
+    embedding_model='qwen2.5-7b-instruct',
+    llm_model='qwen2.5-14b-instruct',
+    base_url='http://localhost:1234/v1',
+    rate_limit=RateLimitConfig(
+        requests_per_minute=60,
+        concurrency=1
+    )
+)
+
+# OpenAI (cloud)
 config = AIProviderConfig(
     provider_type='openai',
     embedding_model='text-embedding-3-small',
@@ -281,6 +293,13 @@ config = AIProviderConfig(
 provider = AIProvider(config)
 embeddings = provider.generate_embeddings(['text1', 'text2'])
 ```
+
+**Supported Providers:**
+- `ollama` - Local Ollama server
+- `lmstudio` - LM Studio desktop application (OpenAI-compatible API)
+- `openai` - OpenAI API
+- `anthropic` - Anthropic Claude API
+- `gemini` - Google Gemini API
 
 ### Logging System
 
@@ -319,21 +338,88 @@ ollama list
 
 ## Configuration Files
 
-### Index Configuration
+### Unified Configuration (Recommended)
+
+Minerva now uses a unified configuration system that consolidates all settings into a single JSON file:
 
 ```json
 {
-  "collection_name": "my_notes",
-  "description": "Descriptive text about this collection",
-  "chromadb_path": "./chromadb_data",
-  "json_file": "./notes.json",
-  "forceRecreate": false,
-  "skipAiValidation": false
+  "ai_providers": [
+    {
+      "id": "ollama-local",
+      "provider_type": "ollama",
+      "embedding": {"model": "mxbai-embed-large:latest"},
+      "llm": {"model": "llama3.1:8b"}
+    },
+    {
+      "id": "lmstudio-local",
+      "provider_type": "lmstudio",
+      "base_url": "http://localhost:1234/v1",
+      "embedding_model": "qwen2.5-7b-instruct",
+      "llm_model": "qwen2.5-14b-instruct",
+      "rate_limit": {
+        "requests_per_minute": 60,
+        "concurrency": 1
+      }
+    }
+  ],
+  "indexing": {
+    "chromadb_path": "./chromadb_data",
+    "collections": [
+      {
+        "collection_name": "my_notes",
+        "description": "Personal knowledge base",
+        "json_file": "./notes.json",
+        "chunk_size": 1200,
+        "ai_provider_id": "ollama-local"
+      }
+    ]
+  },
+  "chat": {
+    "chat_provider_id": "lmstudio-local",
+    "mcp_server_url": "http://localhost:8000/mcp",
+    "conversation_dir": "~/.minerva/conversations",
+    "enable_streaming": false,
+    "max_tool_iterations": 5
+  },
+  "server": {
+    "chromadb_path": "./chromadb_data",
+    "default_max_results": 5,
+    "host": "127.0.0.1",
+    "port": 8000
+  }
 }
 ```
 
-### Server Configuration
+**Benefits:**
+- Define AI providers once, reference by ID
+- Mix and match providers for different purposes
+- Single source of truth for all configuration
+- Consistent provider usage across indexing and querying
 
+**Configuration sections:**
+- `ai_providers`: Define available AI providers with unique IDs
+- `indexing`: Collections to index with provider assignments
+- `chat`: Chat command configuration with MCP integration
+- `server`: MCP server settings
+
+See [docs/configuration.md](docs/configuration.md) for complete guide.
+
+### Legacy Per-Command Configuration (Deprecated)
+
+The old approach used separate config files per command. This is still supported but deprecated:
+
+**Index Config:**
+```json
+{
+  "collection_name": "my_notes",
+  "description": "Personal notes",
+  "chromadb_path": "./chromadb_data",
+  "json_file": "./notes.json"
+}
+```
+
+**Server Config:**
 ```json
 {
   "chromadb_path": "./chromadb_data",
@@ -341,9 +427,7 @@ ollama list
 }
 ```
 
-**Configuration fields:**
-- `chromadb_path` (required): Absolute path to ChromaDB storage directory
-- `default_max_results` (required): Default number of search results (recommended: 3-5, max: 15)
+Migrate to unified configuration for new projects.
 
 ## Writing Extractors
 
@@ -690,10 +774,13 @@ except Exception as e:
 ### Documentation
 
 - **README.md**: Project overview and quick start
+- **docs/configuration.md**: Unified configuration guide (recommended)
+- **docs/LMSTUDIO_SETUP.md**: LM Studio installation and setup
+- **docs/CHAT_GUIDE.md**: Interactive chat command guide
 - **docs/NOTE_SCHEMA.md**: Complete schema specification
 - **docs/EXTRACTOR_GUIDE.md**: How to write extractors
 - **extractors/README.md**: Overview of official extractors
-- **docs/CONFIGURATION_GUIDE.md**: Configuration options
+- **docs/CONFIGURATION_GUIDE.md**: Legacy per-command configuration (deprecated)
 - **docs/RELEASE_NOTES_v2.0.md**: Version 2.0 release notes
 - **docs/UPGRADE_v2.0.md**: Version 2.0 upgrade guide
 

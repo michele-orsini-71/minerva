@@ -17,8 +17,9 @@
 - `minerva/indexing/embeddings.py` - Indexing entrypoint that boots providers for embedding generation.
 - `minerva/server/collection_discovery.py` - Server-side helper to restore providers from stored metadata.
 - `tasks/prd-lmstudio-integration-and-mcp-chat.md` - Source PRD for cross-reference during implementation.
-- `docs/LMSTUDIO_SETUP.md` - Needs expansion to cover new guidance and rate limits.
-- `docs/configuration.md` - New doc describing unified config schema and examples.
+- `docs/LMSTUDIO_SETUP.md` - Complete guide for LM Studio installation, configuration, and troubleshooting.
+- `docs/configuration.md` - Unified configuration guide with schema, examples, and migration instructions.
+- `docs/DEPLOYMENT_PATTERNS.md` - Deployment patterns documentation with concrete config examples.
 - `CLAUDE.md` - Documentation updates reflecting architecture changes.
 - `README.md` - High-level setup instructions for LM Studio and unified config.
 - `tests/test_ai_provider.py` - Unit tests for provider behavior, including LM Studio and rate limiting.
@@ -61,12 +62,12 @@
   - [x] 3.6 Update chat CLI UX for connection banners, slash commands (`/help`, `/clear`, `/exit`), and resume support.
   - [x] 3.7 Add integration tests simulating tool calls via a mock MCP server.
 
-- [ ] 4.0 Update documentation and examples for LM Studio setup, unified config, and deployment patterns
-  - [ ] 4.1 Expand `docs/LMSTUDIO_SETUP.md` with installation, model selection, rate limiting, and server startup instructions.
-  - [ ] 4.2 Author `docs/configuration.md` describing the unified schema, API key handling, and sample configs.
-  - [ ] 4.3 Refresh `README.md` and `CLAUDE.md` to highlight LM Studio workflows, MCP architecture, and new CLI usage.
-  - [ ] 4.4 Document deployment patterns (all LM Studio, hybrid, server/client) with concrete config examples.
-  - [ ] 4.5 Remove or rewrite legacy per-command config references in docs and scripts.
+- [x] 4.0 Update documentation and examples for LM Studio setup, unified config, and deployment patterns
+  - [x] 4.1 Expand `docs/LMSTUDIO_SETUP.md` with installation, model selection, rate limiting, and server startup instructions.
+  - [x] 4.2 Author `docs/configuration.md` describing the unified schema, API key handling, and sample configs.
+  - [x] 4.3 Refresh `README.md` and `CLAUDE.md` to highlight LM Studio workflows, MCP architecture, and new CLI usage.
+  - [x] 4.4 Document deployment patterns (all LM Studio, hybrid, server/client) with concrete config examples.
+  - [x] 4.5 Remove or rewrite legacy per-command config references in docs and scripts.
 
 - [ ] 5.0 Expand automated testing and validation for providers, MCP chat flow, and configuration schema
   - [ ] 5.1 Add provider unit tests (LM Studio + rate limiting) and ensure they run in CI.

@@ -25,11 +25,12 @@ Minerva solves the problem of **information overload** in personal knowledge man
 
 ✨ **Multi-Source Support**: Extract notes from Bear, Zim articles, markdown books, or any source via custom extractors
 🔍 **Semantic Search**: Find relevant information by meaning, not just keywords
-🤖 **MCP Integration**: Works seamlessly with Claude Desktop and other MCP-compatible AI tools
+🤖 **MCP Integration**: Works seamlessly with Claude Desktop and other MCP-compatible AI tools via Model Context Protocol
 📝 **Automatic Citations**: AI assistants automatically cite source notes when presenting information
-🌐 **Multi-Provider AI**: Choose between local (Ollama) or cloud (OpenAI, Gemini) AI providers
+🌐 **Multi-Provider AI**: Choose between local (Ollama, LM Studio) or cloud (OpenAI, Anthropic, Gemini) AI providers
 📊 **Transparent Storage**: All data stored locally in ChromaDB with full control
 🔧 **Extensible**: Write custom extractors for any data source in any language
+⚙️ **Unified Configuration**: Single config file for all components with provider reuse
 
 ---
 
@@ -103,8 +104,8 @@ Minerva follows a three-stage pipeline architecture:
 ### Prerequisites
 
 - Python 3.10 or higher
-- For local AI: [Ollama](https://ollama.ai) with `mxbai-embed-large` model
-- For cloud AI: API keys for OpenAI or Google Gemini
+- For local AI: [Ollama](https://ollama.ai) with `mxbai-embed-large` model, or [LM Studio](https://lmstudio.ai)
+- For cloud AI: API keys for OpenAI, Anthropic Claude, or Google Gemini
 
 ### Installation
 
@@ -216,13 +217,32 @@ bear-extractor "Bear Notes 2025-10-20.bear2bk" -o bear-notes.json
 # 2. Validate the extracted JSON
 minerva validate bear-notes.json
 
-# 3. Create an index configuration file
+# 3. Create a unified configuration file
 cat > config.json << 'EOF'
 {
-  "collection_name": "my_notes",
-  "description": "My personal notes from Bear app",
-  "chromadb_path": "./chromadb_data",
-  "json_file": "bear-notes.json"
+  "ai_providers": [
+    {
+      "id": "ollama-local",
+      "provider_type": "ollama",
+      "embedding": {"model": "mxbai-embed-large:latest"},
+      "llm": {"model": "llama3.1:8b"}
+    }
+  ],
+  "indexing": {
+    "chromadb_path": "./chromadb_data",
+    "collections": [
+      {
+        "collection_name": "my_notes",
+        "description": "My personal notes from Bear app",
+        "json_file": "bear-notes.json",
+        "ai_provider_id": "ollama-local"
+      }
+    ]
+  },
+  "server": {
+    "chromadb_path": "./chromadb_data",
+    "default_max_results": 5
+  }
 }
 EOF
 
@@ -233,7 +253,7 @@ minerva index --config config.json --verbose
 minerva peek my_notes --chromadb ./chromadb_data
 
 # 6. Start the MCP server (for Claude Desktop integration)
-minerva serve --config server-config.json
+minerva serve --config config.json
 ```
 
 ---
@@ -301,15 +321,29 @@ minerva index --config index-config.json [--verbose] [--dry-run]
 - `--verbose`: Show detailed progress information
 - `--dry-run`: Validate without actually indexing
 
-**Example config:**
+**Example config (unified):**
 
 ```json
 {
-  "collection_name": "my_notes",
-  "description": "Personal notes collection",
-  "chromadb_path": "./chromadb_data",
-  "json_file": "./notes.json",
-  "forceRecreate": false
+  "ai_providers": [
+    {
+      "id": "ollama-local",
+      "provider_type": "ollama",
+      "embedding": {"model": "mxbai-embed-large:latest"},
+      "llm": {"model": "llama3.1:8b"}
+    }
+  ],
+  "indexing": {
+    "chromadb_path": "./chromadb_data",
+    "collections": [
+      {
+        "collection_name": "my_notes",
+        "description": "Personal notes collection",
+        "json_file": "./notes.json",
+        "ai_provider_id": "ollama-local"
+      }
+    ]
+  }
 }
 ```
 
@@ -345,12 +379,14 @@ Start the MCP server to expose collections to AI assistants.
 minerva serve --config server-config.json
 ```
 
-**Example config:**
+**Example config (unified):**
 
 ```json
 {
-  "chromadb_path": "./chromadb_data",
-  "default_max_results": 5
+  "server": {
+    "chromadb_path": "./chromadb_data",
+    "default_max_results": 5
+  }
 }
 ```
 
@@ -430,13 +466,28 @@ See the [Chat Guide](docs/CHAT_GUIDE.md) for detailed usage, configuration, and 
 # Extract Bear notes
 bear-extractor "Bear Backup.bear2bk" -o bear-notes.json
 
-# Create config for local AI
+# Create unified config for local AI
 cat > bear-ollama.json << 'EOF'
 {
-  "collection_name": "bear_notes_local",
-  "description": "Personal notes from Bear app",
-  "chromadb_path": "./chromadb_data",
-  "json_file": "bear-notes.json"
+  "ai_providers": [
+    {
+      "id": "ollama-local",
+      "provider_type": "ollama",
+      "embedding": {"model": "mxbai-embed-large:latest"},
+      "llm": {"model": "llama3.1:8b"}
+    }
+  ],
+  "indexing": {
+    "chromadb_path": "./chromadb_data",
+    "collections": [
+      {
+        "collection_name": "bear_notes_local",
+        "description": "Personal notes from Bear app",
+        "json_file": "bear-notes.json",
+        "ai_provider_id": "ollama-local"
+      }
+    ]
+  }
 }
 EOF
 
@@ -444,7 +495,60 @@ EOF
 minerva index --config bear-ollama.json --verbose
 ```
 
-### Example 2: Index Multiple Sources
+### Example 2: Using LM Studio for Desktop
+
+```bash
+# Start LM Studio and load a model (e.g., qwen2.5-7b-instruct)
+# Start the server in LM Studio on port 1234
+
+# Create config for LM Studio
+cat > lmstudio-config.json << 'EOF'
+{
+  "ai_providers": [
+    {
+      "id": "lmstudio-local",
+      "provider_type": "lmstudio",
+      "base_url": "http://localhost:1234/v1",
+      "embedding_model": "qwen2.5-7b-instruct",
+      "llm_model": "qwen2.5-14b-instruct",
+      "rate_limit": {
+        "requests_per_minute": 60,
+        "concurrency": 1
+      }
+    }
+  ],
+  "indexing": {
+    "chromadb_path": "./chromadb_data",
+    "collections": [
+      {
+        "collection_name": "my_notes",
+        "description": "Personal knowledge base",
+        "json_file": "notes.json",
+        "ai_provider_id": "lmstudio-local"
+      }
+    ]
+  },
+  "chat": {
+    "chat_provider_id": "lmstudio-local",
+    "mcp_server_url": "http://localhost:8000/mcp",
+    "enable_streaming": false
+  },
+  "server": {
+    "chromadb_path": "./chromadb_data",
+    "default_max_results": 5
+  }
+}
+EOF
+
+# Index, serve, and chat - all using LM Studio
+minerva index --config lmstudio-config.json --verbose
+minerva serve --config lmstudio-config.json &
+minerva chat --config lmstudio-config.json
+```
+
+See the [LM Studio Setup Guide](docs/LMSTUDIO_SETUP.md) for detailed installation and configuration instructions.
+
+### Example 3: Index Multiple Sources
 
 ```bash
 # Extract from different sources
@@ -452,13 +556,52 @@ bear-extractor "Bear.bear2bk" -o bear.json
 zim-extractor "wikipedia.zim" -o wiki.json
 markdown-books-extractor books/ -o books.json
 
-# Create separate collections for each
-minerva index --config bear-config.json
-minerva index --config wiki-config.json
-minerva index --config books-config.json
+# Create unified config with multiple collections
+cat > multi-collection.json << 'EOF'
+{
+  "ai_providers": [
+    {
+      "id": "ollama-local",
+      "provider_type": "ollama",
+      "embedding": {"model": "mxbai-embed-large:latest"},
+      "llm": {"model": "llama3.1:8b"}
+    }
+  ],
+  "indexing": {
+    "chromadb_path": "./chromadb_data",
+    "collections": [
+      {
+        "collection_name": "bear_notes",
+        "description": "Personal notes from Bear",
+        "json_file": "bear.json",
+        "ai_provider_id": "ollama-local"
+      },
+      {
+        "collection_name": "wikipedia",
+        "description": "Wikipedia articles",
+        "json_file": "wiki.json",
+        "ai_provider_id": "ollama-local"
+      },
+      {
+        "collection_name": "books",
+        "description": "Technical books",
+        "json_file": "books.json",
+        "ai_provider_id": "ollama-local"
+      }
+    ]
+  },
+  "server": {
+    "chromadb_path": "./chromadb_data",
+    "default_max_results": 5
+  }
+}
+EOF
+
+# Index all collections
+minerva index --config multi-collection.json --verbose
 
 # All collections available through single MCP server
-minerva serve --config server-config.json
+minerva serve --config multi-collection.json
 ```
 
 ### Example 3: Test Before Indexing
@@ -667,10 +810,12 @@ See the [Extractor Guide](docs/EXTRACTOR_GUIDE.md) for detailed tutorials.
 
 ## 📚 Documentation
 
+- **[Unified Configuration Guide](docs/configuration.md)** - Complete guide to unified configuration (recommended)
+- **[LM Studio Setup Guide](docs/LMSTUDIO_SETUP.md)** - Installing and configuring LM Studio
 - **[Chat Guide](docs/CHAT_GUIDE.md)** - Interactive chat command usage and examples
 - **[Note Schema](docs/NOTE_SCHEMA.md)** - Complete JSON schema specification
 - **[Extractor Guide](docs/EXTRACTOR_GUIDE.md)** - How to write custom extractors
-- **[Configuration Guide](docs/CONFIGURATION_GUIDE.md)** - All configuration options
+- **[Configuration Guide](docs/CONFIGURATION_GUIDE.md)** - Legacy per-command configuration (deprecated)
 - **[Release Notes v2.0](docs/RELEASE_NOTES_v2.0.md)** - What's new in version 2.0
 - **[Upgrade Guide v2.0](docs/UPGRADE_v2.0.md)** - How to upgrade from v1.x
 - **[CLAUDE.md](CLAUDE.md)** - Developer guide for working with this codebase

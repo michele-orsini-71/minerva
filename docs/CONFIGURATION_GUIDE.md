@@ -1,6 +1,8 @@
-# Minerva Configuration Guide
+# Minerva Configuration Guide (Legacy)
 
-This guide explains how to configure Minerva for indexing notes and serving them through the MCP server, with support for multiple AI providers (Ollama, OpenAI, Google Gemini, Azure OpenAI).
+> **⚠️ DEPRECATED:** This guide describes the legacy per-command configuration approach. For new projects, use the [Unified Configuration Guide](configuration.md) instead, which provides better provider management and consistency across commands.
+
+This guide explains the legacy approach to configuring Minerva with separate configuration files per command.
 
 ## Table of Contents
 

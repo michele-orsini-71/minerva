@@ -2,6 +2,8 @@
 
 The `minerva chat` command provides an interactive AI-powered chat interface that can search and query your indexed knowledge bases. This guide covers installation, configuration, usage, and troubleshooting.
 
+> **💡 Note:** This guide shows the legacy standalone chat configuration. For new projects, consider using the [Unified Configuration Guide](configuration.md) which integrates chat, indexing, and server configuration in a single file.
+
 ## Table of Contents
 
 - [Overview](#overview)
@@ -65,6 +67,8 @@ AI: [Searches and provides relevant information]
 ```
 
 ## Configuration
+
+> **Recommended:** Use the [Unified Configuration](configuration.md) approach for new projects. The examples below show the legacy standalone chat configuration for backward compatibility.
 
 ### Required Fields
 
