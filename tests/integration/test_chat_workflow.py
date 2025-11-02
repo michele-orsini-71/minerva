@@ -3,7 +3,8 @@ import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 from minerva.chat.chat_engine import ChatEngine, ChatEngineError
-from minerva.chat.config import ChatConfig, create_ai_provider_config
+from minerva.chat.config import ChatConfig
+from minerva.common.ai_config import AIProviderConfig
 from minerva.common.ai_provider import AIProvider
 
 
@@ -23,18 +24,21 @@ def temp_conversations(tmp_path):
 
 @pytest.fixture
 def mock_config(temp_chromadb, temp_conversations):
-    ai_provider_config = create_ai_provider_config({
-        'type': 'ollama',
-        'embedding': {'model': 'test-embed'},
-        'llm': {'model': 'test-llm'}
-    })
+    ai_provider_config = AIProviderConfig(
+        provider_type='ollama',
+        embedding_model='test-embed',
+        llm_model='test-llm',
+        base_url='http://localhost:11434'
+    )
 
     return ChatConfig(
         chromadb_path=str(temp_chromadb),
         ai_provider=ai_provider_config,
         conversation_dir=str(temp_conversations),
-        default_max_results=3,
-        enable_streaming=False
+        enable_streaming=False,
+        mcp_server_url='http://localhost:8000',
+        max_tool_iterations=5,
+        system_prompt_file=None
     )
 
 
@@ -98,7 +102,7 @@ def test_send_message_without_initialization(mock_config, mock_provider):
         engine.send_message('Hello')
 
 
-@patch('minerva.chat.chat_engine.get_tool_definitions')
+@patch.object(ChatEngine, '_get_tool_definitions')
 def test_send_message_simple_response(mock_get_tools, mock_config, mock_provider):
     mock_get_tools.return_value = []
 
@@ -121,8 +125,8 @@ def test_send_message_simple_response(mock_get_tools, mock_config, mock_provider
     assert engine.get_message_count() == 3
 
 
-@patch('minerva.chat.chat_engine.get_tool_definitions')
-@patch('minerva.chat.chat_engine.execute_tool')
+@patch.object(ChatEngine, '_get_tool_definitions')
+@patch('minerva.chat.mcp_client.MCPClient.call_tool_sync')
 def test_send_message_with_tool_call(mock_execute_tool, mock_get_tools, mock_config, mock_provider):
     mock_get_tools.return_value = [
         {
@@ -181,8 +185,8 @@ def test_send_message_with_tool_call(mock_execute_tool, mock_get_tools, mock_con
     assert engine.get_message_count() > 3
 
 
-@patch('minerva.chat.chat_engine.get_tool_definitions')
-@patch('minerva.chat.chat_engine.execute_tool')
+@patch.object(ChatEngine, '_get_tool_definitions')
+@patch('minerva.chat.mcp_client.MCPClient.call_tool_sync')
 def test_send_message_with_search_tool(mock_execute_tool, mock_get_tools, mock_config, mock_provider):
     mock_get_tools.return_value = [
         {
@@ -297,7 +301,7 @@ def test_get_message_count_before_initialization():
     assert engine.get_message_count() == 0
 
 
-@patch('minerva.chat.chat_engine.get_tool_definitions')
+@patch.object(ChatEngine, '_get_tool_definitions')
 def test_clear_conversation(mock_get_tools, mock_config, mock_provider):
     mock_get_tools.return_value = []
     mock_provider.chat_completion.return_value = {
@@ -323,7 +327,7 @@ def test_clear_conversation(mock_get_tools, mock_config, mock_provider):
     assert engine.get_message_count() == 1
 
 
-@patch('minerva.chat.chat_engine.get_tool_definitions')
+@patch.object(ChatEngine, '_get_tool_definitions')
 def test_message_history_persistence(mock_get_tools, mock_config, mock_provider):
     mock_get_tools.return_value = []
     mock_provider.chat_completion.return_value = {
@@ -352,7 +356,7 @@ def test_message_history_persistence(mock_get_tools, mock_config, mock_provider)
     assert data['messages'][2]['content'] == 'Test response'
 
 
-@patch('minerva.chat.chat_engine.get_tool_definitions')
+@patch.object(ChatEngine, '_get_tool_definitions')
 def test_multiple_messages_conversation(mock_get_tools, mock_config, mock_provider):
     mock_get_tools.return_value = []
 
@@ -379,8 +383,8 @@ def test_multiple_messages_conversation(mock_get_tools, mock_config, mock_provid
     assert engine.get_message_count() == 7
 
 
-@patch('minerva.chat.chat_engine.get_tool_definitions')
-@patch('minerva.chat.chat_engine.execute_tool')
+@patch.object(ChatEngine, '_get_tool_definitions')
+@patch('minerva.chat.mcp_client.MCPClient.call_tool_sync')
 def test_multiple_tool_calls_in_sequence(mock_execute_tool, mock_get_tools, mock_config, mock_provider):
     mock_get_tools.return_value = []
 
@@ -471,7 +475,7 @@ def test_conversation_metadata_updated(mock_config, mock_provider):
     assert data['metadata']['message_count'] == 3
 
 
-@patch('minerva.chat.chat_engine.get_tool_definitions')
+@patch.object(ChatEngine, '_get_tool_definitions')
 def test_max_iterations_protection(mock_get_tools, mock_config, mock_provider):
     mock_get_tools.return_value = []
 

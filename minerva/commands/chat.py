@@ -29,12 +29,29 @@ When searching:
 Be concise, helpful, and accurate."""
 
 
-def display_welcome_banner(collections_count: int, provider_type: str, model_name: str):
+def display_welcome_banner(
+    collections_count: int,
+    provider_type: str,
+    model_name: str,
+    mcp_connected: bool,
+    mcp_url: str,
+    streaming_enabled: bool
+):
     print("\n" + "=" * 60)
     print("  Minerva Chat - Interactive Knowledge Assistant")
     print("=" * 60)
-    print(f"\n📚 Knowledge Bases: {collections_count} available")
-    print(f"🤖 AI Provider: {provider_type} ({model_name})")
+
+    print(f"\n🤖 AI Provider: {provider_type} ({model_name})")
+
+    mcp_status = "✓ Connected" if mcp_connected else "✗ Disconnected"
+    mcp_icon = "🔗" if mcp_connected else "⚠️"
+    print(f"{mcp_icon} MCP Server: {mcp_status} ({mcp_url})")
+
+    print(f"📚 Knowledge Bases: {collections_count} available")
+
+    streaming_status = "enabled" if streaming_enabled else "disabled"
+    print(f"⚡ Streaming: {streaming_status}")
+
     print("\nCommands:")
     print("  /help   - Show this help message")
     print("  /clear  - Start a new conversation")
@@ -186,18 +203,26 @@ def run_interactive_mode(config, provider, collections_count: int, resume_id: st
         if resume_id:
             print(f"\n🔄 Resuming conversation: {resume_id}\n")
             engine.resume_conversation(resume_id, provider, config)
-            print(f"💬 Conversation resumed. You have {engine.get_message_count()} messages in history.\n")
-        else:
-            display_welcome_banner(
-                collections_count,
-                config.ai_provider.provider_type,
-                config.ai_provider.llm_model
-            )
+            print(f"💬 Conversation resumed. You have {engine.get_message_count()} messages in history.")
 
+            mcp_status = "✓ Connected" if engine._mcp_available else "✗ Disconnected"
+            mcp_icon = "🔗" if engine._mcp_available else "⚠️"
+            print(f"{mcp_icon} MCP Server: {mcp_status} ({config.mcp_server_url})")
+            print()
+        else:
             conversation_id = engine.initialize_conversation(
                 system_prompt=system_prompt,
                 ai_provider=provider,
                 config=config
+            )
+
+            display_welcome_banner(
+                collections_count,
+                config.ai_provider.provider_type,
+                config.ai_provider.llm_model,
+                engine._mcp_available,
+                config.mcp_server_url,
+                config.enable_streaming
             )
 
             logger.info(f"Conversation started: {conversation_id}")

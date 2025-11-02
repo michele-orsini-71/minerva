@@ -10,6 +10,8 @@ from minerva.common.logger import get_logger
 
 logger = get_logger(__name__)
 
+LARGE_TOOL_RESULT_THRESHOLD = 2000
+
 
 def generate_conversation_id() -> str:
     timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
@@ -106,6 +108,47 @@ def _generate_conversation_title(conversation: Dict) -> str:
     return "Empty conversation"
 
 
+def _estimate_content_size(content: str) -> int:
+    if not content:
+        return 0
+    return len(content)
+
+
+def _compress_large_tool_result(content: str, max_size: int = LARGE_TOOL_RESULT_THRESHOLD) -> str:
+    if len(content) <= max_size:
+        return content
+
+    try:
+        data = json.loads(content)
+        if isinstance(data, list):
+            item_count = len(data)
+            preview = data[:2] if len(data) > 2 else data
+            compressed = {
+                "_compressed": True,
+                "_original_count": item_count,
+                "_preview": preview,
+                "_note": f"Large result truncated. Showing 2 of {item_count} items."
+            }
+            return json.dumps(compressed, ensure_ascii=False)
+        elif isinstance(data, dict):
+            if 'results' in data and isinstance(data['results'], list):
+                result_count = len(data['results'])
+                data['results'] = data['results'][:2]
+                data['_compressed'] = True
+                data['_original_count'] = result_count
+                data['_note'] = f"Large result truncated. Showing 2 of {result_count} results."
+                return json.dumps(data, ensure_ascii=False)
+    except (json.JSONDecodeError, TypeError):
+        pass
+
+    preview_size = max_size // 2
+    return (
+        content[:preview_size] +
+        f"\n\n[... truncated {len(content) - max_size} characters ...]" +
+        content[-preview_size:]
+    )
+
+
 class ConversationHistory:
     def __init__(self, conversation_dir: Path, auto_save: bool = True):
         self.conversation_dir = conversation_dir
@@ -169,11 +212,19 @@ class ConversationHistory:
         if not self.current_conversation:
             raise RuntimeError("No active conversation. Call start_new_conversation() first.")
 
+        content_size = _estimate_content_size(result)
+        compressed_result = result
+
+        if content_size > LARGE_TOOL_RESULT_THRESHOLD:
+            logger.info(f"Tool result is large ({content_size} chars), compressing...")
+            compressed_result = _compress_large_tool_result(result)
+            logger.info(f"Compressed to {len(compressed_result)} chars")
+
         message = {
             'role': 'tool',
             'tool_call_id': tool_call_id,
             'name': tool_name,
-            'content': result,
+            'content': compressed_result,
             'timestamp': datetime.now().isoformat(),
         }
 

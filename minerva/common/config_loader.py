@@ -631,4 +631,3 @@ def _validate_mcp_url(url: str) -> None:
             f"Invalid MCP server URL: {url}\n"
             f"  Expected format: http(s)://host[:port]/path"
         )
-*** End of File

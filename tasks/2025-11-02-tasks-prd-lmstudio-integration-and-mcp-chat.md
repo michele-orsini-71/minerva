@@ -10,7 +10,8 @@
 - `minerva/commands/config.py` - CLI entrypoint for unified config validation utilities.
 - `minerva/chat/history.py` - Conversation persistence/compression updates triggered by new requirements.
 - `minerva/chat/mcp_client.py` - New module encapsulating FastMCP client usage, tool execution, and fallbacks.
-- `minerva/chat/commands.py` - CLI entrypoint to enforce `--config` usage and integrate new loader.
+- `tests/test_mcp_chat_integration.py` - Integration tests for MCP chat workflow with mock server.
+- `minerva/commands/chat.py` - CLI entrypoint for chat command with MCP integration and enhanced UX.
 - `minerva/commands/index.py` - CLI index command to resolve provider IDs from unified config.
 - `minerva/commands/serve.py` - MCP server command to load shared config and provider definitions.
 - `minerva/indexing/embeddings.py` - Indexing entrypoint that boots providers for embedding generation.
@@ -51,14 +52,14 @@
   - [x] 2.5 Provide sample configs (desktop, hybrid, server) aligned with the unified schema.
   - [x] 2.6 Create automated tests for config validation, including invalid and edge-case scenarios.
 
-- [ ] 3.0 Refactor the chat command onto MCP, including streaming fallback, tool handling, and history compression updates
-  - [ ] 3.1 Introduce an MCP client wrapper to manage FastMCP connections, tool definitions, and result ingestion.
-  - [ ] 3.2 Update `ChatEngine` to fetch tool definitions from MCP, combine multi-content responses, and log progress.
-  - [ ] 3.3 Implement streaming fallback logic: detect incompatibilities and downgrade to non-streaming with user warning.
-  - [ ] 3.4 Enhance conversation history compression to summarize large tool responses per PRD guidance.
-  - [ ] 3.5 Ensure chat respects max tool iterations and surfaces clear errors when MCP/LM Studio are unreachable.
-  - [ ] 3.6 Update chat CLI UX for connection banners, slash commands (`/help`, `/clear`, `/exit`), and resume support.
-  - [ ] 3.7 Add integration tests simulating tool calls via a mock MCP server.
+- [x] 3.0 Refactor the chat command onto MCP, including streaming fallback, tool handling, and history compression updates
+  - [x] 3.1 Introduce an MCP client wrapper to manage FastMCP connections, tool definitions, and result ingestion.
+  - [x] 3.2 Update `ChatEngine` to fetch tool definitions from MCP, combine multi-content responses, and log progress.
+  - [x] 3.3 Implement streaming fallback logic: detect incompatibilities and downgrade to non-streaming with user warning.
+  - [x] 3.4 Enhance conversation history compression to summarize large tool responses per PRD guidance.
+  - [x] 3.5 Ensure chat respects max tool iterations and surfaces clear errors when MCP/LM Studio are unreachable.
+  - [x] 3.6 Update chat CLI UX for connection banners, slash commands (`/help`, `/clear`, `/exit`), and resume support.
+  - [x] 3.7 Add integration tests simulating tool calls via a mock MCP server.
 
 - [ ] 4.0 Update documentation and examples for LM Studio setup, unified config, and deployment patterns
   - [ ] 4.1 Expand `docs/LMSTUDIO_SETUP.md` with installation, model selection, rate limiting, and server startup instructions.
