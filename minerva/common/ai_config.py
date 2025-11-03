@@ -46,8 +46,8 @@ def resolve_env_variable(value: Optional[str]) -> Optional[str]:
 @dataclass(frozen=True)
 class AIProviderConfig:
     provider_type: str
-    embedding_model: str
-    llm_model: str
+    embedding_model: Optional[str] = None
+    llm_model: Optional[str] = None
     base_url: Optional[str] = None
     api_key: Optional[str] = None
     rate_limit: Optional[RateLimitConfig] = None
@@ -60,11 +60,18 @@ class AIProviderConfig:
                 f"Must be one of: {', '.join(valid_providers)}"
             )
 
-        if not self.embedding_model:
-            raise ValueError("embedding_model cannot be empty")
+        # At least one model must be specified
+        if not self.embedding_model and not self.llm_model:
+            raise ValueError(
+                "At least one of embedding_model or llm_model must be specified"
+            )
 
-        if not self.llm_model:
-            raise ValueError("llm_model cannot be empty")
+        # If specified, models cannot be empty strings
+        if self.embedding_model is not None and not self.embedding_model:
+            raise ValueError("embedding_model cannot be empty string")
+
+        if self.llm_model is not None and not self.llm_model:
+            raise ValueError("llm_model cannot be empty string")
 
     def resolve_api_key(self) -> Optional[str]:
         return resolve_env_variable(self.api_key)
@@ -133,16 +140,11 @@ AI_PROVIDER_JSON_SCHEMA: dict[str, Any] = {
         }
     },
     "anyOf": [
+        # At least one of: embedding_model, embedding, llm_model, or llm must be present
         {"required": ["embedding_model"]},
-        {"required": ["embedding"]}
-    ],
-    "allOf": [
-        {
-            "anyOf": [
-                {"required": ["llm_model"]},
-                {"required": ["llm"]}
-            ]
-        }
+        {"required": ["embedding"]},
+        {"required": ["llm_model"]},
+        {"required": ["llm"]}
     ],
     "additionalProperties": False
 }
@@ -200,7 +202,7 @@ def _resolve_model(
     key: str,
     context: str,
     source_path: Path
-) -> str:
+) -> Optional[str]:
     explicit_key = f"{key}_model"
     model_value = provider_data.get(explicit_key)
 
@@ -217,11 +219,8 @@ def _resolve_model(
             if candidate:
                 return candidate
 
-    raise ConfigError(
-        f"Missing {key} model in {context}\n"
-        f"  File: {source_path}\n"
-        f"  Provide '{explicit_key}' or a '{key}' object with a 'model' field"
-    )
+    # Models are now optional - return None if not specified
+    return None
 
 
 def _resolve_endpoint(provider_data: Mapping[str, Any]) -> Optional[str]:

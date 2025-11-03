@@ -642,13 +642,13 @@ logger.success("✓ Pipeline completed!")
   "forceRecreate": false,
   "skipAiValidation": false,
   "ai_provider": {
-    "type": "ollama",
-    "embedding": {
+    "provider_type": "ollama",
+    "embedding_model": {
       "model": "mxbai-embed-large:latest",
       "base_url": "http://localhost:11434",
       "api_key": null
     },
-    "llm": {
+    "llm_model": {
       "model": "llama3.1:8b",
       "base_url": "http://localhost:11434",
       "api_key": null

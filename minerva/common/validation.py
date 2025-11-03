@@ -1,18 +1,14 @@
 import re
 import sys
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, TYPE_CHECKING
 
 from minerva.common.exceptions import ValidationError
 from minerva.common.logger import get_logger
 
-logger = get_logger(__name__, simple=True, mode="cli")
+if TYPE_CHECKING:
+    from minerva.common.ai_provider import AIProvider
 
-try:
-    from ollama import chat as ollama_chat
-    from ollama import list as ollama_list
-except ImportError as error:
-    logger.error("ollama library not installed. Run: pip install ollama")
-    raise ValidationError("ollama library not installed") from error
+logger = get_logger(__name__, simple=True, mode="cli")
 
 # Constants for validation rules
 COLLECTION_NAME_PATTERN = r'^[a-zA-Z0-9][a-zA-Z0-9_-]*$'
@@ -46,7 +42,6 @@ VAGUE_DESCRIPTIONS_BLACKLIST = [
 ]
 
 # AI validation configuration
-AI_MODEL = "llama3.1:8b"
 AI_VALIDATION_THRESHOLD = 7
 AI_VALIDATION_PROMPT = """You are a technical reviewer evaluating collection descriptions for a RAG (Retrieval-Augmented Generation) system.
 
@@ -162,44 +157,6 @@ def validate_description_regex(description: str, collection_name: str) -> None:
             )
 
 
-def extract_models_list(models_response):
-    if hasattr(models_response, 'models'):
-        return models_response.models
-
-    if isinstance(models_response, dict):
-        return models_response.get('models', [])
-
-    return None
-
-
-def extract_model_name(model_entry):
-    if hasattr(model_entry, 'model'):
-        return model_entry.model
-
-    if isinstance(model_entry, dict) and 'name' in model_entry:
-        return model_entry['name']
-
-    return None
-
-
-def is_model_match(model_name: str, available_model: str) -> bool:
-    return model_name in available_model or available_model in model_name
-
-
-def check_model_availability(model_name: str = AI_MODEL) -> bool:
-    try:
-        models_response = ollama_list()
-        models_list = extract_models_list(models_response)
-
-        if not models_list:
-            return False
-
-        available_models = [extract_model_name(m) for m in models_list]
-        available_models = [name for name in available_models if name is not None]
-
-        return any(is_model_match(model_name, model) for model in available_models)
-    except Exception:
-        return False
 
 
 def extract_json_from_response(response_text: str) -> str:
@@ -239,59 +196,37 @@ def validate_ai_score(score: Any) -> int:
     return int(score)
 
 
-def call_ollama_ai(description: str, collection_name: str, model: str) -> str:
+def call_llm_for_validation(provider: 'AIProvider', description: str, collection_name: str) -> str:
     prompt = AI_VALIDATION_PROMPT.format(
         collection_name=collection_name,
         description=description
     )
 
-    response = ollama_chat(
-        model=model,
-        messages=[{
-            'role': 'user',
-            'content': prompt
-        }],
-        options={
-            'temperature': 0.1,  # Low temperature for consistent scoring
-            'num_predict': 500
-        }
-    )
+    messages = [{'role': 'user', 'content': prompt}]
+    response = provider.chat_completion(messages, temperature=0.1, max_tokens=500)
 
-    return response['message']['content'].strip()
+    return response['content'].strip()
 
 
-def check_model_availability_or_raise(model: str) -> None:
-    if not check_model_availability(model):
-        raise ValidationError(
-            f"AI model '{model}' not available for validation\n"
-            f"  Suggestion: Pull the model first:\n"
-            f"    ollama pull {model}\n"
-            f"  Or skip AI validation by setting:\n"
-            f'    "skipAiValidation": true\n'
-            f"  in your configuration file"
-        )
-
-
-def wrap_generic_ai_error(error: Exception) -> ValidationError:
+def wrap_generic_ai_error(error: Exception, provider_type: str) -> ValidationError:
     if isinstance(error, ValidationError):
         return error
 
     return ValidationError(
         f"AI validation failed: {error}\n"
-        f"  Suggestion: Check Ollama is running (ollama serve) or skip AI validation with 'skipAiValidation': true"
+        f"  Provider: {provider_type}\n"
+        f"  Suggestion: Ensure the AI provider is available or skip AI validation with 'skip_ai_validation': true"
     )
 
 
-def validate_with_ai(description: str, collection_name: str, model: str = AI_MODEL) -> Tuple[int, str, str]:
-    check_model_availability_or_raise(model)
-
+def validate_with_ai(provider: 'AIProvider', description: str, collection_name: str) -> Tuple[int, str, str]:
     try:
-        response_text = call_ollama_ai(description, collection_name, model)
+        response_text = call_llm_for_validation(provider, description, collection_name)
         score, reasoning, suggestions = parse_ai_validation_response(response_text)
         validated_score = validate_ai_score(score)
         return (validated_score, reasoning, suggestions)
     except Exception as error:
-        raise wrap_generic_ai_error(error)
+        raise wrap_generic_ai_error(error, provider.provider_type)
 
 
 def validate_description_regex_only(
@@ -310,14 +245,17 @@ def validate_description_regex_only(
 
 
 def validate_description_with_ai(
+    provider: 'AIProvider',
     description: str,
-    collection_name: str,
-    model: str = AI_MODEL
+    collection_name: str
 ) -> Dict[str, Any]:
     validate_description_regex(description, collection_name)
 
     logger.info(f"Running AI validation for collection '{collection_name}'...")
-    score, reasoning, suggestions = validate_with_ai(description, collection_name, model)
+    logger.info(f"   Provider: {provider.provider_type}")
+    logger.info(f"   Model: {provider.llm_model}")
+
+    score, reasoning, suggestions = validate_with_ai(provider, description, collection_name)
 
     logger.info(f"   AI Score: {score}/10")
     logger.info(f"   Reasoning: {reasoning}")
@@ -336,7 +274,7 @@ def validate_description_with_ai(
             f"\n"
             f"  Options:\n"
             f"    1. Improve the description based on AI feedback\n"
-            f"    2. Use validate_description_regex_only() if you believe AI is too strict\n"
+            f"    2. Skip AI validation with 'skip_ai_validation': true in your config\n"
         )
 
         raise ValidationError(error_msg)
@@ -350,87 +288,16 @@ def validate_description_with_ai(
     }
 
 
-# Backward compatibility: Keep old function but mark as deprecated
 def validate_description_hybrid(
+    provider: Optional['AIProvider'],
     description: str,
     collection_name: str,
-    skip_ai_validation: bool = False,
-    model: str = AI_MODEL
+    skip_ai_validation: bool = False
 ) -> Optional[Dict[str, Any]]:
-    if skip_ai_validation:
+    if skip_ai_validation or provider is None:
         validate_description_regex_only(description, collection_name)
         return None
     else:
-        return validate_description_with_ai(description, collection_name, model)
+        return validate_description_with_ai(provider, description, collection_name)
 
 
-if __name__ == "__main__":
-    logger.info("Testing validation.py module")
-    logger.info("=" * 60)
-
-    logger.info("")
-    logger.info("📋 Test 1: Valid collection names")
-    for name in ["bear_notes", "project-docs", "team123", "research_papers_2024"]:
-        validate_collection_name(name)
-    logger.success("   All valid names passed")
-
-    logger.info("")
-    logger.info("📋 Test 2: Invalid collection names")
-    invalid_names = ["-invalid", "_invalid", "invalid space", "invalid@name", "a" * 64]
-    for name in invalid_names:
-        try:
-            validate_collection_name(name)
-            raise ValidationError(f"Should have rejected: {name}")
-        except ValidationError:
-            logger.success(f"   Correctly rejected: {name}")
-
-    logger.info("")
-    logger.info("📋 Test 3: Description length validation")
-    try:
-        validate_description_regex("short", "test")
-        raise ValidationError("Should have rejected short description")
-    except ValidationError:
-        logger.success("   Correctly rejected short description")
-
-    logger.info("")
-    logger.info("📋 Test 4: Required phrase validation")
-    try:
-        validate_description_regex("A" * 100, "test")
-        raise ValidationError("Should have rejected description without required phrase")
-    except ValidationError:
-        logger.success("   Correctly rejected description without required phrase")
-
-    logger.info("")
-    logger.info("📋 Test 5: Valid description")
-    validate_description_regex(
-        "Use this collection when searching for personal notes and ideas from Bear Notes app. "
-        "Contains project notes, research, and daily thoughts.",
-        "bear_notes"
-    )
-    logger.success("   Valid description passed")
-
-    logger.info("")
-    logger.info("📋 Test 6: Check AI model availability")
-    is_available = check_model_availability(AI_MODEL)
-    if is_available:
-        logger.success(f"   AI model '{AI_MODEL}' is available")
-    else:
-        logger.warning(f"   AI model '{AI_MODEL}' is not available")
-        logger.warning(f"   Run: ollama pull {AI_MODEL}")
-
-    if is_available:
-        logger.info("")
-        logger.info("📋 Test 7: AI validation")
-        score, reasoning, suggestions = validate_with_ai(
-            "Use this collection when searching through personal notes from Bear Notes app. "
-            "Contains my private notes about projects, ideas, research, and daily thoughts.",
-            "bear_notes"
-        )
-        logger.success("   AI validation completed:")
-        logger.info(f"   Score: {score}/10")
-        logger.info(f"   Reasoning: {reasoning[:80]}...")
-    else:
-        logger.info("")
-        logger.info("📋 Test 7: Skipping AI validation (model not available)")
-
-    logger.success("\n🎉 All validation.py tests completed!")

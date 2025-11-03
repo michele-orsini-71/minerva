@@ -1,4 +1,5 @@
 # AI Provider Abstraction Layer Analysis (v2)
+
 ## Switching Between Ollama and OpenAI-compatible Services
 
 **Version:** 2.0
@@ -12,6 +13,7 @@
 ⚠️ **CRITICAL:** The embedding of notes data (CAG data creator) and the embedding of the user question (MCP server) **MUST** be done with the **SAME** engine.
 
 **Implementation requirement:** The embedding engine specification must:
+
 1. Appear in the ChromaDB collection metadata at creation time
 2. Be validated by the MCP server at query time to verify embedding engine compatibility
 
@@ -28,6 +30,7 @@
 The following architectural decisions have been finalized:
 
 ### 1. Configuration File Strategy ✓
+
 - **Two separate JSON config files** (one per tool)
   - `markdown-notes-cag-data-creator/config.json` - Pipeline configuration
   - `markdown-notes-mcp-server/config.json` - MCP server configuration
@@ -35,39 +38,46 @@ The following architectural decisions have been finalized:
 - **Config files CAN be committed to git** - They contain template references like `"${OPENAI_API_KEY}"`
 
 ### 2. Embedding Dimension Validation ✓
+
 - **Hard error on mismatch** - No warnings, complete blocking
 - Validation occurs at query time in MCP server
 - Clear error message explaining the mismatch
 
 ### 3. Provider Initialization ✓
+
 - **Assertion-based protection** for uninitialized provider
 - Programming error (not user error) - should never happen in production
 - Clear error messages for debugging
 
 ### 4. Backward Compatibility ✓
+
 - **REMOVED** - No existing users, clean slate implementation
 - No legacy compatibility shims
 - No deprecation warnings needed
 
 ### 5. API Key Security ✓
+
 - **Environment variable injection only**
 - Config files reference env vars: `"${OPENAI_API_KEY}"`
 - Resolution happens at runtime via `AIProviderConfig._resolve_api_key()`
 - No `.env` files, no secrets in config files
 
 ### 6. Metadata Flow ✓
+
 - **Config → Provider → ChromaDB collection metadata**
 - No hardcoded model values anywhere
 - Metadata flows through the entire pipeline
 - Specific implementation in `AIProvider.get_embedding_metadata()`
 
 ### 7. LiteLLM Model Naming ✓
+
 - **Model names come directly from config**
 - LiteLLM auto-detects provider from model string format
 - No prefix transformations needed
 - `provider_type` is for metadata only
 
 ### 8. Testing Strategy ✓
+
 - **Post-implementation testing**
 - Priority: Ollama first, cloud providers optional
 - No CI/CD constraints for API key exposure
@@ -79,13 +89,16 @@ The following architectural decisions have been finalized:
 I've identified **THREE distinct AI operations** across the pipeline and MCP server:
 
 ### 1. **Vector Embedding Creation** (Primary Use)
+
 **Current Implementation:**
+
 - **Location:** `markdown-notes-cag-data-creator/embedding.py`
 - **Model:** `mxbai-embed-large:latest` via Ollama
 - **Usage:** Converting text chunks to 1024-dimensional vectors
 - **Frequency:** Batch processing during pipeline runs (hundreds to thousands of calls)
 
 **Code Pattern:**
+
 ```python
 from ollama import embeddings as ollama_embeddings
 
@@ -97,13 +110,16 @@ def generate_embedding(text: str, model: str = EMBED_MODEL):
 ```
 
 ### 2. **Collection Description Validation** (AI-Enhanced QA)
+
 **Future Implementation (PRD Spec):**
+
 - **Location:** Will be added to `markdown-notes-cag-data-creator/full_pipeline.py`
 - **Model:** Configured LLM (e.g., `llama3.1:8b`)
 - **Usage:** Validating collection descriptions for AI-friendliness (scoring 0-10)
 - **Frequency:** Once per collection creation (low volume)
 
 **Expected Code Pattern (from PRD):**
+
 ```python
 # TIER 2: Optional AI validation
 ai_result = validate_with_ai(description)  # Uses configured LLM
@@ -112,13 +128,16 @@ if not ai_result["passed"]:
 ```
 
 ### 3. **Query Embedding Generation** (Search-time)
+
 **Current Implementation:**
+
 - **Location:** `test-files/chromadb_query_client.py` (will move to MCP server)
 - **Model:** Same embedding model as pipeline
 - **Usage:** Converting user queries to embeddings for semantic search
 - **Frequency:** Per user query (interactive, low-to-medium volume)
 
 **Code Pattern:**
+
 ```python
 def generate_query_embedding(query: str):
     embedding = generate_embedding(query.strip())  # Reuses embedding.py
@@ -132,6 +151,7 @@ def generate_query_embedding(query: str):
 ### Solution: LiteLLM Abstraction Layer
 
 **LiteLLM** is the ideal choice for this use case:
+
 - ✅ Unified API for 100+ providers (OpenAI, Anthropic, Google Gemini, Azure, Ollama, etc.)
 - ✅ **Supports both embeddings AND completions** (covers all 3 use cases)
 - ✅ Drop-in replacement for OpenAI SDK
@@ -163,15 +183,15 @@ Project Structure:
   "default_max_results": 5,
 
   "ai_provider": {
-    "type": "ollama",
+    "provider_type": "ollama",
 
-    "embedding": {
+    "embedding_model": {
       "model": "mxbai-embed-large:latest",
       "base_url": "http://localhost:11434",
       "api_key": null
     },
 
-    "llm": {
+    "llm_model": {
       "model": "llama3.1:8b",
       "base_url": "http://localhost:11434",
       "api_key": null
@@ -181,20 +201,21 @@ Project Structure:
 ```
 
 **OpenAI Example (with environment variable reference):**
+
 ```json
 {
   "chromadb_path": "../chromadb_data",
   "default_max_results": 5,
 
   "ai_provider": {
-    "type": "openai",
+    "provider_type": "openai",
 
-    "embedding": {
+    "embedding_model": {
       "model": "text-embedding-3-large",
       "api_key": "${OPENAI_API_KEY}"
     },
 
-    "llm": {
+    "llm_model": {
       "model": "gpt-4o-mini",
       "api_key": "${OPENAI_API_KEY}"
     }
@@ -203,20 +224,21 @@ Project Structure:
 ```
 
 **Gemini Example:**
+
 ```json
 {
   "chromadb_path": "../chromadb_data",
   "default_max_results": 5,
 
   "ai_provider": {
-    "type": "gemini",
+    "provider_type": "gemini",
 
-    "embedding": {
+    "embedding_model": {
       "model": "text-embedding-004",
       "api_key": "${GEMINI_API_KEY}"
     },
 
-    "llm": {
+    "llm_model": {
       "model": "gemini-1.5-flash",
       "api_key": "${GEMINI_API_KEY}"
     }
@@ -381,7 +403,7 @@ class AIProvider:
                 messages=[{"role": "user", "content": prompt}],
                 api_key=self.config.api_key,
                 api_base=self.config.base_url,
-                response_format={"type": "json_object"}
+                response_format={"provider_type": "json_object"}
             )
 
             result = json.loads(response.choices[0].message.content)
@@ -480,6 +502,7 @@ def load_provider_from_config(config_path: str) -> AIProvider:
 #### 2.1 Update `embedding.py`
 
 **Before:**
+
 ```python
 from ollama import embeddings as ollama_embeddings
 
@@ -489,6 +512,7 @@ def generate_embedding(text: str, model: str = EMBED_MODEL):
 ```
 
 **After:**
+
 ```python
 from typing import List, Optional
 from ai_provider import AIProvider, load_provider_from_config, AIProviderError
@@ -818,11 +842,12 @@ if __name__ == "__main__":
 #### Environment Variable Resolution
 
 **Configuration files reference environment variables:**
+
 ```json
 {
   "ai_provider": {
-    "type": "openai",
-    "embedding": {
+    "provider_type": "openai",
+    "embedding_model": {
       "model": "text-embedding-3-small",
       "api_key": "${OPENAI_API_KEY}"
     }
@@ -831,6 +856,7 @@ if __name__ == "__main__":
 ```
 
 **Environment variables must be set before running:**
+
 ```bash
 # Set API keys in shell
 export OPENAI_API_KEY="sk-..."
@@ -842,6 +868,7 @@ python full_pipeline.py --config config.json --verbose input.json
 ```
 
 **The `AIProviderConfig._resolve_api_key()` method handles resolution:**
+
 ```python
 def _resolve_api_key(self, api_key: Optional[str]) -> Optional[str]:
     """Resolve API key from environment variables if needed"""
@@ -857,6 +884,7 @@ def _resolve_api_key(self, api_key: Optional[str]) -> Optional[str]:
 #### Git Repository Structure
 
 **Config files CAN be committed:**
+
 ```gitignore
 # .gitignore - MINIMAL APPROACH
 # Config files are safe to commit (they reference env vars, not secrets)
@@ -866,6 +894,7 @@ config.local.json
 ```
 
 **Provide example templates:**
+
 ```json
 // config.example.json (committed to git)
 {
@@ -873,15 +902,15 @@ config.local.json
   "default_max_results": 5,
 
   "ai_provider": {
-    "type": "ollama",
+    "provider_type": "ollama",
 
-    "embedding": {
+    "embedding_model": {
       "model": "mxbai-embed-large:latest",
       "base_url": "http://localhost:11434",
       "api_key": null
     },
 
-    "llm": {
+    "llm_model": {
       "model": "llama3.1:8b",
       "base_url": "http://localhost:11434",
       "api_key": null
@@ -898,16 +927,17 @@ config.local.json
 
 **CRITICAL: Different models have different embedding dimensions!**
 
-| Provider | Model | Dimensions |
-|----------|-------|------------|
-| Ollama | mxbai-embed-large | 1024 |
-| OpenAI | text-embedding-3-small | 1536 |
-| OpenAI | text-embedding-3-large | 3072 |
-| Google | text-embedding-004 | 768 |
+| Provider | Model                  | Dimensions |
+| -------- | ---------------------- | ---------- |
+| Ollama   | mxbai-embed-large      | 1024       |
+| OpenAI   | text-embedding-3-small | 1536       |
+| OpenAI   | text-embedding-3-large | 3072       |
+| Google   | text-embedding-004     | 768        |
 
 **Solution: Metadata validation enforced at query time**
 
 **Storage (at collection creation):**
+
 ```python
 # In full_pipeline.py - metadata flows from provider → ChromaDB
 embedding_metadata = get_embedding_metadata()  # From ai_provider
@@ -929,6 +959,7 @@ collection = get_or_create_collection(
 ```
 
 **Validation (at query time in MCP server):**
+
 ```python
 def search_knowledge_base(query: str, collection_name: str):
     collection = chromadb_client.get_collection(collection_name)
@@ -974,12 +1005,14 @@ def search_knowledge_base(query: str, collection_name: str):
 ### Cost Considerations
 
 **Local (Ollama):**
+
 - ✅ Free
 - ✅ Unlimited usage
 - ⚠️ Requires local GPU/CPU
 - ⚠️ Slower inference
 
 **OpenAI:**
+
 - 💰 `text-embedding-3-small`: $0.02 per 1M tokens
 - 💰 `text-embedding-3-large`: $0.13 per 1M tokens
 - ✅ Fast inference
@@ -987,11 +1020,13 @@ def search_knowledge_base(query: str, collection_name: str):
 - ⚠️ API rate limits
 
 **Google Gemini:**
+
 - 💰 `text-embedding-004`: Free tier available, then $0.025 per 1M chars
 - ✅ Fast inference
 - ⚠️ Requires internet
 
 **Recommendation:** Start with Ollama for development, switch to cloud providers for production if:
+
 1. Need faster inference
 2. Don't want to manage local models
 3. Want multi-region availability
@@ -1005,6 +1040,7 @@ def search_knowledge_base(query: str, collection_name: str):
 ### Testing Priority (Post-Implementation)
 
 #### Phase 1: Core Functionality (Required)
+
 1. ✅ Test `ai_provider.py` with Ollama (local, no API key needed)
 2. ✅ Test metadata flow from config → ChromaDB
 3. ✅ Test embedding dimension validation (mismatch detection)
@@ -1012,12 +1048,14 @@ def search_knowledge_base(query: str, collection_name: str):
 5. ✅ Test assertion errors for uninitialized provider
 
 #### Phase 2: Cloud Providers (Optional - if API keys available)
+
 6. ⭕ Test with OpenAI (requires `OPENAI_API_KEY`)
 7. ⭕ Test with Gemini (requires `GEMINI_API_KEY`)
 8. ⭕ Test environment variable resolution
 9. ⭕ Test missing environment variable errors
 
 #### Phase 3: Integration (Final)
+
 10. ✅ Full pipeline test (JSON → ChromaDB with Ollama)
 11. ✅ MCP server query test with embedding validation
 12. ⭕ Performance benchmarking (Ollama vs cloud providers)
@@ -1086,6 +1124,7 @@ def test_metadata_generation():
 ### Step-by-Step Implementation
 
 #### Step 1: Add Dependencies
+
 ```bash
 cd markdown-notes-cag-data-creator
 source ../.venv/bin/activate
@@ -1093,6 +1132,7 @@ pip install litellm
 ```
 
 #### Step 2: Create Configuration Files
+
 ```bash
 # Pipeline config
 cat > markdown-notes-cag-data-creator/config.json << EOF
@@ -1100,12 +1140,12 @@ cat > markdown-notes-cag-data-creator/config.json << EOF
   "chromadb_path": "../chromadb_data",
   "default_max_results": 5,
   "ai_provider": {
-    "type": "ollama",
-    "embedding": {
+    "provider_type": "ollama",
+    "embedding_model": {
       "model": "mxbai-embed-large:latest",
       "base_url": "http://localhost:11434"
     },
-    "llm": {
+    "llm_model": {
       "model": "llama3.1:8b",
       "base_url": "http://localhost:11434"
     }
@@ -1118,29 +1158,35 @@ cp markdown-notes-cag-data-creator/config.json markdown-notes-mcp-server/config.
 ```
 
 #### Step 3: Implement `ai_provider.py`
+
 - Create the abstraction layer module
 - Implement all methods as specified above
 
 #### Step 4: Refactor `embedding.py`
+
 - Replace direct Ollama calls with abstraction layer
 - Add assertion-based initialization checks
 - Add `get_embedding_metadata()` function
 
 #### Step 5: Update `storage.py`
+
 - Modify `get_or_create_collection()` to accept `embedding_metadata` parameter
 - Merge metadata into collection metadata
 
 #### Step 6: Update `full_pipeline.py`
+
 - Add `--config` required parameter
 - Initialize provider at startup
 - Get metadata and pass to collection creation
 
 #### Step 7: Update MCP Server
+
 - Load provider from config
 - Add embedding validation in `search_knowledge_base()`
 - Display provider info at startup
 
 #### Step 8: Testing (Post-Implementation)
+
 - Test with Ollama
 - Test metadata flow
 - Test validation errors
@@ -1154,20 +1200,20 @@ cp markdown-notes-cag-data-creator/config.json markdown-notes-mcp-server/config.
 
 **Embedding Generation (1000 chunks, ~500 chars each):**
 
-| Provider | Model | Time | Cost | Notes |
-|----------|-------|------|------|-------|
-| Ollama (CPU) | mxbai-embed-large | ~120s | $0 | MacBook Pro M1 |
-| Ollama (GPU) | mxbai-embed-large | ~25s | $0 | NVIDIA RTX 3090 |
-| OpenAI | text-embedding-3-small | ~15s | $0.01 | Batch API |
-| OpenAI | text-embedding-3-large | ~20s | $0.06 | Batch API |
-| Google Gemini | text-embedding-004 | ~18s | $0.01 | Free tier |
+| Provider      | Model                  | Time  | Cost  | Notes           |
+| ------------- | ---------------------- | ----- | ----- | --------------- |
+| Ollama (CPU)  | mxbai-embed-large      | ~120s | $0    | MacBook Pro M1  |
+| Ollama (GPU)  | mxbai-embed-large      | ~25s  | $0    | NVIDIA RTX 3090 |
+| OpenAI        | text-embedding-3-small | ~15s  | $0.01 | Batch API       |
+| OpenAI        | text-embedding-3-large | ~20s  | $0.06 | Batch API       |
+| Google Gemini | text-embedding-004     | ~18s  | $0.01 | Free tier       |
 
 **LLM Validation (1 description check):**
 
-| Provider | Model | Time | Cost |
-|----------|-------|------|------|
-| Ollama | llama3.1:8b | ~2s | $0 |
-| OpenAI | gpt-4o-mini | ~0.5s | $0.0001 |
+| Provider      | Model            | Time  | Cost     |
+| ------------- | ---------------- | ----- | -------- |
+| Ollama        | llama3.1:8b      | ~2s   | $0       |
+| OpenAI        | gpt-4o-mini      | ~0.5s | $0.0001  |
 | Google Gemini | gemini-1.5-flash | ~0.8s | $0.00001 |
 
 ---
@@ -1179,6 +1225,7 @@ cp markdown-notes-cag-data-creator/config.json markdown-notes-mcp-server/config.
 **All major design decisions have been finalized.**
 
 ✅ **Finalized:**
+
 1. Two-config architecture (pipeline + MCP server)
 2. Environment variable-only API key management
 3. Hard error on embedding dimension mismatch
@@ -1190,17 +1237,20 @@ cp markdown-notes-cag-data-creator/config.json markdown-notes-mcp-server/config.
 ### Recommended Implementation Order
 
 1. **Week 1: Foundation**
+
    - Implement `ai_provider.py` (Phase 1)
    - Create config files and templates
    - Add LiteLLM dependency
 
 2. **Week 2: Pipeline Integration**
+
    - Refactor `embedding.py` (Phase 2.1)
    - Update `storage.py` (Phase 2.2)
    - Update `full_pipeline.py` (Phase 2.3)
    - Test metadata flow
 
 3. **Week 3: MCP Server Integration**
+
    - Update MCP server (Phase 2.4)
    - Add embedding validation
    - Test with Claude Desktop
@@ -1226,15 +1276,18 @@ cp markdown-notes-cag-data-creator/config.json markdown-notes-mcp-server/config.
 ### Immediate Steps
 
 1. **Install LiteLLM:**
+
    ```bash
    pip install litellm
    ```
 
 2. **Create `ai_provider.py`:**
+
    - Copy implementation from Phase 1 above
    - Test basic functionality with Ollama
 
 3. **Create config files:**
+
    - `markdown-notes-cag-data-creator/config.json`
    - `markdown-notes-mcp-server/config.json`
    - Both using Ollama configuration
@@ -1252,6 +1305,7 @@ cp markdown-notes-cag-data-creator/config.json markdown-notes-mcp-server/config.
 **The AI provider abstraction layer is implementation-ready.** All architectural decisions have been made, and the design is clean, secure, and maintainable.
 
 **Key Benefits:**
+
 1. ✅ Flexibility to switch AI providers via configuration
 2. ✅ Security-first approach (no secrets in files)
 3. ✅ Strong validation (embedding compatibility checks)

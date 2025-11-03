@@ -46,32 +46,32 @@ Extractors must output a **JSON array** of note objects:
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "array",
+  "provider_type": "array",
   "items": {
-    "type": "object",
+    "provider_type": "object",
     "required": ["title", "markdown", "size", "modificationDate"],
     "properties": {
       "title": {
-        "type": "string",
+        "provider_type": "string",
         "description": "The title or name of the note",
         "minLength": 1
       },
       "markdown": {
-        "type": "string",
+        "provider_type": "string",
         "description": "The full markdown content of the note"
       },
       "size": {
-        "type": "integer",
+        "provider_type": "integer",
         "description": "Size of the note content in bytes (UTF-8 encoded)",
         "minimum": 0
       },
       "modificationDate": {
-        "type": "string",
+        "provider_type": "string",
         "description": "ISO 8601 formatted modification date (UTC timezone preferred)",
         "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
       },
       "creationDate": {
-        "type": "string",
+        "provider_type": "string",
         "description": "ISO 8601 formatted creation date (UTC timezone preferred) - optional",
         "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
       }

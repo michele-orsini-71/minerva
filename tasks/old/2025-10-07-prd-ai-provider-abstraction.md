@@ -38,36 +38,43 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 ### Primary User: Developer/System Administrator
 
 **US-1: Choose AI Provider**
+
 - **As a** developer setting up a notes collection,
 - **I want to** specify which AI provider to use (Ollama, OpenAI, etc.),
 - **So that** I can optimize for cost, speed, or offline operation based on my needs.
 
 **US-2: Multiple Providers**
+
 - **As a** system administrator,
 - **I want to** run multiple collections with different AI providers in the same ChromaDB instance,
 - **So that** I can use local Ollama for personal notes and cloud providers for work notes.
 
 **US-3: Automatic Provider Detection**
+
 - **As a** developer running the MCP server,
 - **I want to** see which collections are available and which failed to load,
 - **So that** I can troubleshoot missing API keys or configuration issues.
 
 **US-4: Secure API Key Management**
+
 - **As a** security-conscious developer,
 - **I want to** store API keys only in environment variables,
 - **So that** I don't accidentally commit secrets to version control.
 
 **US-5: Configuration Validation**
+
 - **As a** developer creating a new collection,
 - **I want to** know immediately if my AI provider configuration is invalid,
 - **So that** I don't waste time processing notes with a broken configuration.
 
 **US-6: Embedding Compatibility Protection**
+
 - **As a** user querying a collection,
 - **I want to** be prevented from querying with the wrong embedding model,
 - **So that** I get accurate search results and clear error messages.
 
 **US-7: Collection Description Quality**
+
 - **As a** developer creating a collection,
 - **I want to** validate my collection description for AI-friendliness,
 - **So that** AI agents can better understand when to query this collection.
@@ -81,6 +88,7 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 **FR-1:** The system MUST provide a new module `ai_provider.py` that abstracts AI operations across multiple providers.
 
 **FR-2:** The abstraction layer MUST support the following providers via LiteLLM:
+
 - Ollama (local)
 - OpenAI
 - Google Gemini
@@ -88,6 +96,7 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 - Anthropic Claude
 
 **FR-3:** The `AIProvider` class MUST expose these methods:
+
 - `generate_embedding(text: str) -> List[float]` - Generate single embedding
 - `generate_embeddings_batch(texts: List[str]) -> List[List[float]]` - Generate batch embeddings
 - `validate_description(description: str) -> Dict[str, Any]` - Validate collection description quality using LLM
@@ -95,6 +104,7 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 - `check_availability() -> Dict[str, Any]` - Test provider availability
 
 **FR-4:** The `AIProviderConfig` class MUST support configuration parameters:
+
 - `provider_type`: Type of provider (ollama, openai, gemini, azure, anthropic)
 - `embedding_model`: Model name for embeddings
 - `llm_model`: Model name for LLM operations (description validation)
@@ -110,6 +120,7 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 **FR-7:** The pipeline MUST accept a `--config` parameter pointing to a JSON configuration file.
 
 **FR-8:** Each pipeline configuration file MUST contain:
+
 - `collection_name`: Name of the ChromaDB collection
 - `description`: Human-readable description for AI agents
 - `chromadb_path`: Path to ChromaDB storage
@@ -120,6 +131,7 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 - `ai_provider`: Object containing embedding and LLM configuration
 
 **FR-9:** The `ai_provider` configuration MUST contain:
+
 - `type`: Provider type (ollama, openai, gemini, etc.)
 - `embedding`: Object with `model`, optional `base_url`, optional `api_key`
 - `llm`: Object with `model`, optional `base_url`, optional `api_key`
@@ -127,6 +139,7 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 **FR-10:** Configuration files with environment variable references (e.g., `"${OPENAI_API_KEY}"`) MUST be safe to commit to version control.
 
 **FR-11:** Example configuration files MUST be provided for:
+
 - Ollama (local, no API key)
 - OpenAI (cloud, API key required)
 - Google Gemini (cloud, API key required)
@@ -134,6 +147,7 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 ### 4.3 ChromaDB Metadata Storage
 
 **FR-12:** When creating a collection, the pipeline MUST store AI provider metadata in ChromaDB collection metadata:
+
 - `embedding_model`: Model name used for embeddings
 - `embedding_provider`: Provider type (ollama, openai, etc.)
 - `embedding_dimension`: Detected embedding dimension
@@ -152,9 +166,11 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 ### 4.4 MCP Server Dynamic Discovery
 
 **FR-16:** The MCP server MUST have a minimal configuration file containing ONLY:
+
 - `chromadb_path`: Path to ChromaDB storage
 
 **FR-17:** At startup, the MCP server MUST:
+
 1. Connect to ChromaDB
 2. List all collections
 3. For each collection, read metadata to extract AI provider configuration
@@ -163,6 +179,7 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 6. Mark collection as available or unavailable based on test result
 
 **FR-17:** The MCP server MUST log detailed status for each collection:
+
 - Collection name
 - Provider type and model
 - Availability status (✅ AVAILABLE or ❌ UNAVAILABLE)
@@ -170,6 +187,7 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 - Embedding dimension if available
 
 **FR-18:** The MCP server MUST print a summary at startup:
+
 - Total collections found
 - Number available
 - Number unavailable
@@ -191,12 +209,14 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 ### 4.6 Query-Time Embedding Validation
 
 **FR-25:** When processing a query, the MCP server MUST:
+
 1. Retrieve the AI provider for the target collection
 2. Generate query embedding using the same provider as the collection
 3. Validate embedding dimension matches collection metadata
 4. Query ChromaDB with the embedding
 
 **FR-26:** If embedding dimensions mismatch, the system MUST raise an error:
+
 ```
 "Embedding dimension mismatch! Query embedding: {actual}, Collection expects: {expected}"
 ```
@@ -210,6 +230,7 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 **FR-29:** Description validation MUST score the description from 0-10 based on AI agent usability.
 
 **FR-30:** The validation MUST check if the description clearly explains:
+
 1. What content is in the collection
 2. When an AI should query this collection
 3. What types of questions it answers
@@ -221,6 +242,7 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 ### 4.8 Refactored Existing Modules
 
 **FR-33:** The `embedding.py` module MUST be refactored to use the AI provider abstraction:
+
 - Remove direct Ollama dependency
 - Add `initialize_provider(config_path)` function
 - Add `get_embedding_metadata()` function
@@ -228,10 +250,12 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 - Maintain backward-compatible function signatures for `generate_embedding()` and `generate_embeddings_batch()`
 
 **FR-34:** The `storage.py` module MUST be updated to accept embedding metadata:
+
 - Add `embedding_metadata` parameter to `get_or_create_collection()`
 - Merge embedding metadata into collection metadata
 
 **FR-35:** The `full_pipeline.py` MUST be updated to:
+
 - Require `--config` parameter
 - Initialize AI provider from config
 - Test provider availability before processing
@@ -240,6 +264,7 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 - Support optional description validation
 
 **FR-36:** The MCP server MUST be updated to:
+
 - Load provider from collection metadata
 - Dynamically discover collections at startup
 - Store provider instances for available collections
@@ -248,11 +273,13 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 ### 4.9 Error Handling
 
 **FR-37:** Uninitialized provider usage in `embedding.py` MUST raise an assertion error with message:
+
 ```
 "AI Provider not initialized! This is a programming error. Call initialize_provider(config_path) before using embedding functions."
 ```
 
 **FR-38:** Missing environment variables MUST raise a `ValueError` with message:
+
 ```
 "Environment variable '{name}' not set. Please export {name}=<your-api-key>"
 ```
@@ -264,6 +291,7 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 ### 4.10 Testing Requirements
 
 **FR-41:** The `ai_provider.py` module MUST have unit tests covering:
+
 - AIProviderConfig initialization
 - Environment variable resolution
 - API key template handling
@@ -272,6 +300,7 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 - Error conditions (missing env vars, invalid config)
 
 **FR-42:** Integration tests MUST verify:
+
 - Metadata flow: config → ChromaDB → MCP reconstruction
 - MCP collection discovery with mixed availability
 - Embedding dimension validation (mismatch detection)
@@ -314,6 +343,7 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 **Location:** `configs/` directory at project root
 
 **Ollama Example (`configs/example-ollama.json`):**
+
 ```json
 {
   "collection_name": "personal_notes",
@@ -323,13 +353,13 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
   "chromadb_path": "../chromadb_data",
   "json_file": "../test-data/personal-notes.json",
   "ai_provider": {
-    "type": "ollama",
-    "embedding": {
+    "provider_type": "ollama",
+    "embedding_model": {
       "model": "mxbai-embed-large:latest",
       "base_url": "http://localhost:11434",
       "api_key": null
     },
-    "llm": {
+    "llm_model": {
       "model": "llama3.1:8b",
       "base_url": "http://localhost:11434",
       "api_key": null
@@ -339,6 +369,7 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 ```
 
 **OpenAI Example (`configs/example-openai.json`):**
+
 ```json
 {
   "collection_name": "work_notes",
@@ -348,12 +379,12 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
   "chromadb_path": "../chromadb_data",
   "json_file": "../test-data/work-notes.json",
   "ai_provider": {
-    "type": "openai",
-    "embedding": {
+    "provider_type": "openai",
+    "embedding_model": {
       "model": "text-embedding-3-small",
       "api_key": "${OPENAI_API_KEY}"
     },
-    "llm": {
+    "llm_model": {
       "model": "gpt-4o-mini",
       "api_key": "${OPENAI_API_KEY}"
     }
@@ -437,9 +468,11 @@ Expected console output when starting MCP server:
 ### 7.1 Dependencies
 
 **New Dependency:**
+
 - `litellm` - Unified interface for 100+ AI providers
 
 **Installation:**
+
 ```bash
 pip install litellm
 ```
@@ -448,12 +481,12 @@ pip install litellm
 
 Different models produce different embedding dimensions:
 
-| Provider | Model | Dimensions |
-|----------|-------|------------|
-| Ollama | mxbai-embed-large | 1024 |
-| OpenAI | text-embedding-3-small | 1536 |
-| OpenAI | text-embedding-3-large | 3072 |
-| Google | text-embedding-004 | 768 |
+| Provider | Model                  | Dimensions |
+| -------- | ---------------------- | ---------- |
+| Ollama   | mxbai-embed-large      | 1024       |
+| OpenAI   | text-embedding-3-small | 1536       |
+| OpenAI   | text-embedding-3-large | 3072       |
+| Google   | text-embedding-004     | 768        |
 
 Each collection stores its embedding dimension in metadata. The MCP server validates dimensions match at query time.
 
@@ -466,6 +499,7 @@ Each collection stores its embedding dimension in metadata. The MCP server valid
 3. **Runtime (Resolution):** `os.environ.get("OPENAI_API_KEY")`
 
 **What's Safe to Commit:**
+
 - ✅ Config files (contain templates like `${OPENAI_API_KEY}`)
 - ✅ Code and scripts
 - ❌ Actual API keys
@@ -474,17 +508,20 @@ Each collection stores its embedding dimension in metadata. The MCP server valid
 ### 7.4 Known Limitations
 
 **Secret Coupling:**
+
 - Pipeline and MCP server must use **same environment variable names**
 - Example: If pipeline uses `${OPENAI_API_KEY}`, MCP must have that exact variable
 - This is a **naming contract** between pipeline and MCP
 - Trade-off accepted for simplicity
 
 **Backward Compatibility:**
+
 - Collections created with old pipeline (without AI metadata) are unavailable
 - Users must re-run pipeline to add metadata
 - No automatic migration tool
 
 **Re-indexing Required:**
+
 - Changing embedding model requires re-creating the collection
 - ChromaDB doesn't support schema migrations for embedding dimensions
 
@@ -518,6 +555,7 @@ project-root/
 **Target:** Successfully configure and use at least 3 different AI providers (Ollama + 2 cloud providers) across different collections in the same ChromaDB instance.
 
 **Measurement:**
+
 - Create test collections with Ollama, OpenAI, and Gemini
 - Verify all collections are available in MCP server
 - Execute queries against each collection
@@ -528,18 +566,22 @@ project-root/
 ### 8.2 Secondary Metrics
 
 **SM-1: Configuration Simplicity**
+
 - Developer can create a valid config file in < 5 minutes
 - Config validation catches errors before processing starts
 
 **SM-2: Error Clarity**
+
 - Missing API key error messages clearly state which variable to set
 - Dimension mismatch errors explain the incompatibility
 
 **SM-3: Reliability**
+
 - Unit test coverage ≥ 80% for `ai_provider.py`
 - Integration tests pass with Ollama (no failures)
 
 **SM-4: Security**
+
 - Zero API keys found in config files (only templates)
 - Zero API keys found in ChromaDB metadata (only references)
 
@@ -548,22 +590,27 @@ project-root/
 ## 9. Open Questions
 
 **OQ-1:** Should we provide a config validation script (`validate_config.py`) to check configs before running the pipeline?
+
 - **Context:** Would catch config errors early
 - **Trade-off:** Adds development time but improves UX
 
 **OQ-2:** Should the MCP server support hot-reloading when collections change?
+
 - **Context:** Currently requires restart to discover new collections
 - **Trade-off:** Complex implementation vs. rare use case
 
 **OQ-3:** Should we log embedding generation costs for cloud providers?
+
 - **Context:** Would help users track API usage
 - **Trade-off:** Requires provider-specific cost calculation
 
 **OQ-4:** Should dimension validation happen during pipeline execution (early warning)?
+
 - **Context:** Currently only validated at query time
 - **Trade-off:** More robust but adds complexity
 
 **OQ-5:** Should we support multiple API keys for the same provider (e.g., different OpenAI accounts)?
+
 - **Context:** Would allow per-collection billing separation
 - **Trade-off:** More complex configuration schema
 
@@ -572,6 +619,7 @@ project-root/
 ## 10. Implementation Phases
 
 ### Phase 1: Foundation (Week 1)
+
 - Create `ai_provider.py` with `AIProvider` and `AIProviderConfig` classes
 - Implement environment variable resolution
 - Add LiteLLM dependency
@@ -581,6 +629,7 @@ project-root/
 **Acceptance:** `ai_provider.py` works with Ollama, tests pass
 
 ### Phase 2: Pipeline Integration (Week 2)
+
 - Refactor `embedding.py` to use abstraction
 - Update `storage.py` to accept metadata
 - Update `full_pipeline.py` for config-driven execution
@@ -589,6 +638,7 @@ project-root/
 **Acceptance:** Pipeline creates collections with AI metadata, Ollama works end-to-end
 
 ### Phase 3: MCP Server (Week 3)
+
 - Implement dynamic collection discovery
 - Add provider loading from metadata
 - Update query flow to use collection-specific providers
@@ -597,6 +647,7 @@ project-root/
 **Acceptance:** MCP server discovers collections, queries work with correct providers
 
 ### Phase 4: Testing & Documentation (Week 4)
+
 - Complete integration tests
 - Test multi-provider scenarios (Ollama + OpenAI + Gemini)
 - Write user guide for creating configs

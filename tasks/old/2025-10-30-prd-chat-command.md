@@ -56,6 +56,7 @@ A standalone chat interface (`minerva chat`) that runs entirely within the termi
 7. **The system must read configuration from a JSON file** specified via `--config` flag.
 
 8. **The configuration must specify**:
+
    - ChromaDB path (where indexed collections are stored)
    - AI provider settings (type, models, API keys, base URLs)
    - Chat settings (default system prompt, conversation directory)
@@ -79,6 +80,7 @@ A standalone chat interface (`minerva chat`) that runs entirely within the termi
 ### Tool Integration
 
 16. **The system must provide two tools to the AI**:
+
     - `list_knowledge_bases`: Lists available collections with descriptions
     - `search_knowledge_base`: Searches a specific collection for relevant information
 
@@ -91,6 +93,7 @@ A standalone chat interface (`minerva chat`) that runs entirely within the termi
 19. **The system must monitor token usage** and warn users when approaching the AI provider's context window limit.
 
 20. **When near the context limit, the system must offer users choices**:
+
     - Continue (risk exceeding limit)
     - Summarize old messages (auto-compress conversation history)
     - Start fresh (save current conversation and begin new one)
@@ -100,6 +103,7 @@ A standalone chat interface (`minerva chat`) that runs entirely within the termi
 ### Error Handling
 
 22. **The system must display clear error messages** when:
+
     - AI provider is unavailable
     - Knowledge base search fails
     - Configuration file is invalid or missing
@@ -110,11 +114,13 @@ A standalone chat interface (`minerva chat`) that runs entirely within the termi
 ### User Experience
 
 24. **The system must provide visual feedback** for:
+
     - AI thinking/processing (spinner or progress indicator)
     - Tool calls being executed (e.g., "🔍 Searching my-personal-notes...")
     - Streaming responses (word-by-word display)
 
 25. **The system must display a welcome message** showing:
+
     - Number of available collections
     - Current AI provider and model
     - Available commands (e.g., `/clear`, `/help`)
@@ -146,6 +152,7 @@ The following features are **explicitly excluded** from the initial version:
 ### CLI Interface Design
 
 **Interactive Mode:**
+
 ```bash
 $ minerva chat --config ~/.minerva/chat-config.json
 
@@ -165,6 +172,7 @@ AI: According to your documentation in "my-personal-notes", indexing in Minerva 
 ```
 
 **Single Question Mode:**
+
 ```bash
 $ minerva chat --config ~/.minerva/chat-config.json -q "How do I index notes?"
 
@@ -174,10 +182,11 @@ Answer: To index notes in Minerva, you need to...
 ```
 
 **Context Window Warning:**
+
 ```bash
 ⚠️  Context Window Warning
 Current: 28,450 tokens
-Limit: 32,768 tokens  
+Limit: 32,768 tokens
 
 Options:
   [c] Continue (may exceed limit)
@@ -212,6 +221,7 @@ Your choice:
 **Alternative providers:**
 
 **OpenAI:**
+
 ```json
 {
   "ai_provider": {
@@ -224,6 +234,7 @@ Your choice:
 ```
 
 **Anthropic:**
+
 ```json
 {
   "ai_provider": {
@@ -281,22 +292,26 @@ Your choice:
 ### Architecture Components
 
 1. **Chat Engine** (`minerva/chat/chat_engine.py`):
+
    - Manages conversation state and history
    - Coordinates between AI provider and tool execution
    - Handles streaming responses
    - Monitors token usage
 
 2. **Tool Registry** (`minerva/chat/tools.py`):
+
    - Defines tool schemas for AI (JSON format compatible with function calling)
    - Wraps Minerva's search functions (`search_knowledge_base`, `list_collections`)
    - Converts tool results to AI-friendly format
 
 3. **History Manager** (`minerva/chat/history.py`):
+
    - Loads/saves conversations to disk
    - Lists past conversations
    - Manages conversation IDs and metadata
 
 4. **Configuration** (`minerva/chat/config.py`):
+
    - Parses and validates chat configuration JSON
    - Handles environment variable substitution
    - Provides defaults for optional settings
@@ -310,6 +325,7 @@ Your choice:
 ### Dependencies
 
 **Existing Minerva modules:**
+
 - `minerva.common.ai_provider` - AI provider abstraction (already supports LLMs and embeddings)
 - `minerva.server.search_tools` - Search function implementation
 - `minerva.server.collection_discovery` - Collection listing and provider discovery
@@ -317,6 +333,7 @@ Your choice:
 - `minerva.common.logger` - Logging system
 
 **New dependencies** (may need to add to `requirements.txt`):
+
 - `rich` or `prompt_toolkit` - Enhanced terminal UI (spinners, colors, formatting)
 - `tiktoken` - Accurate token counting for context window management
 
@@ -325,24 +342,25 @@ Your choice:
 The AI provider's `chat_completion()` method must support function/tool calling. Most modern LLM providers support this:
 
 - **Ollama**: Supports function calling with llama3.1:8b and newer models
-- **OpenAI**: Native function calling support  
+- **OpenAI**: Native function calling support
 - **Anthropic**: Tool use via the API
 - **Gemini**: Function calling supported
 
 **Tool definition format** (OpenAI-compatible):
+
 ```python
 tools = [
     {
-        "type": "function",
+        "provider_type": "function",
         "function": {
             "name": "search_knowledge_base",
             "description": "Search indexed knowledge bases for relevant information...",
             "parameters": {
-                "type": "object",
+                "provider_type": "object",
                 "properties": {
-                    "query": {"type": "string", "description": "Search query"},
-                    "collection_name": {"type": "string", "description": "Collection to search"},
-                    "max_results": {"type": "integer", "default": 3}
+                    "query": {"provider_type": "string", "description": "Search query"},
+                    "collection_name": {"provider_type": "string", "description": "Collection to search"},
+                    "max_results": {"provider_type": "integer", "default": 3}
                 },
                 "required": ["query", "collection_name"]
             }
@@ -367,9 +385,10 @@ tools = [
 ### Error Handling Strategy
 
 **Provider unavailable:**
+
 ```
 ❌ Error: Cannot connect to Ollama at http://localhost:11434
-   
+
    Troubleshooting:
    - Is Ollama running? Try: ollama serve
    - Check base_url in config file
@@ -377,6 +396,7 @@ tools = [
 ```
 
 **Search fails:**
+
 ```
 ⚠️  Search failed: Collection 'my-notes' not found
 
@@ -389,11 +409,12 @@ Continuing without search results...
 ```
 
 **Config invalid:**
+
 ```
 ❌ Configuration Error: /Users/you/.minerva/chat-config.json
 
    Missing required field: chromadb_path
-   
+
    Example:
    {
      "chromadb_path": "./chromadb_data",
@@ -411,6 +432,7 @@ The feature's success will be measured primarily by **user satisfaction**, indic
 4. **Feature requests**: Users asking for enhancements (indicates active use)
 
 **Secondary indicators:**
+
 - Query success rate (AI finds relevant information from knowledge bases)
 - Tool call frequency (how often search functions are invoked)
 - Conversation length (users engaging in multi-turn conversations)
@@ -425,6 +447,7 @@ These questions were resolved during the design phase:
 **Decision:** Use universal estimation approach (character-based approximation).
 
 **Implementation:**
+
 - Estimate tokens as `len(text) / 4` (rough industry standard)
 - Works across all AI providers (Ollama, OpenAI, Anthropic, Gemini)
 - Acceptable ~10-15% margin of error for context warnings
@@ -437,6 +460,7 @@ These questions were resolved during the design phase:
 **Decision:** Use the same LLM that's handling the conversation.
 
 **Implementation:**
+
 - When user chooses "summarize" option, send old messages to the LLM with a summarization prompt
 - Replace middle messages with a single "Conversation summary: ..." message
 - Keep system prompt, last 3-4 exchanges, and add summary in between
@@ -448,6 +472,7 @@ These questions were resolved during the design phase:
 **Decision:** Ask the user for confirmation when multiple collections might be relevant.
 
 **Implementation:**
+
 - AI can call `list_knowledge_bases` to see available collections
 - When searching, AI must specify a single collection name
 - If user's question is ambiguous, AI asks: "Should I search in 'my-personal-notes' or 'wikipedia-history'?"
@@ -459,6 +484,7 @@ These questions were resolved during the design phase:
 **Decision:** No offline browsing mode. Issue clear error and recommend local models.
 
 **Implementation:**
+
 - If AI provider is unavailable, display error message
 - Suggest troubleshooting steps (check if Ollama is running, verify config)
 - Recommend using Ollama for fully offline operation
@@ -470,6 +496,7 @@ These questions were resolved during the design phase:
 **Decision:** Not necessary for initial version.
 
 **Implementation:**
+
 - Conversations stored as plain JSON files
 - Users responsible for disk-level encryption (FileVault, LUKS, BitLocker)
 
@@ -480,6 +507,7 @@ These questions were resolved during the design phase:
 **Decision:** Yes, implement rate limiting for cloud providers.
 
 **Implementation:**
+
 - Track API calls per minute/hour for cloud providers (OpenAI, Anthropic, Gemini)
 - Warn user when approaching rate limits
 - Add configurable `max_requests_per_minute` in chat settings (optional)
@@ -491,6 +519,7 @@ These questions were resolved during the design phase:
 **Decision:** Spinner only, no progress bars.
 
 **Implementation:**
+
 - Show spinner during AI thinking: "⏳ Thinking..."
 - Show search indicator: "🔍 Searching my-personal-notes..."
 - Stream responses word-by-word as they arrive
@@ -502,6 +531,7 @@ These questions were resolved during the design phase:
 **Decision:** Emphasize accuracy and source citation.
 
 **Implementation:**
+
 ```
 You are a helpful AI assistant with access to the user's personal knowledge bases.
 When answering questions, search relevant collections to find accurate information.
@@ -516,6 +546,7 @@ Prioritize accuracy over speed. If you're unsure, say so.
 **Decision:** Conversations persist indefinitely (no auto-expiration).
 
 **Implementation:**
+
 - Save all conversations to `~/.minerva/conversations/` by default
 - Users manually delete old conversations if desired
 - No automatic cleanup or expiration logic
@@ -527,6 +558,7 @@ Prioritize accuracy over speed. If you're unsure, say so.
 **Decision:** No. Use direct function calls only.
 
 **Implementation:**
+
 - `minerva chat` calls search functions directly via Python imports
 - Reuses `minerva.server.search_tools` module for search logic
 - No HTTP requests, MCP protocol, or server communication
@@ -538,19 +570,22 @@ Prioritize accuracy over speed. If you're unsure, say so.
 ## Implementation Phases
 
 ### Phase 1: Core MVP
+
 - Basic REPL interface
 - Single AI provider (Ollama)
 - Direct function call integration
 - Simple streaming responses
 - Minimal error handling
 
-### Phase 2: History & Configuration  
+### Phase 2: History & Configuration
+
 - Conversation history save/load
 - Configuration file support
 - Multiple AI provider support
 - `/clear` command
 
 ### Phase 3: Advanced Features
+
 - Context window monitoring
 - Conversation summarization
 - `--list` and `--resume` flags
@@ -558,6 +593,7 @@ Prioritize accuracy over speed. If you're unsure, say so.
 - Visual feedback (spinners, colors)
 
 ### Phase 4: Polish & Documentation
+
 - Comprehensive testing
 - User documentation
 - Example configurations

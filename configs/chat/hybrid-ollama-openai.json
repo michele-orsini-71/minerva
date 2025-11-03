@@ -1,0 +1,22 @@
+{
+  "chromadb_path": "../../chromadb_data",
+  "conversation_dir": "../../state/chat/conversations",
+  "mcp_server_url": "http://127.0.0.1:8337/mcp",
+  "enable_streaming": true,
+  "max_tool_iterations": 4,
+  "system_prompt_file": null,
+  "embedding_provider": {
+    "provider_type": "ollama",
+    "base_url": "http://localhost:11434",
+    "embedding_model": "mxbai-embed-large:latest"
+  },
+  "llm_provider": {
+    "provider_type": "openai",
+    "api_key": "${OPENAI_API_KEY}",
+    "llm_model": "gpt-4o-mini",
+    "rate_limit": {
+      "requests_per_minute": 60,
+      "concurrency": 5
+    }
+  }
+}

@@ -24,8 +24,7 @@ CHAT_CONFIG_SCHEMA: Dict[str, Any] = {
     "required": [
         "chromadb_path",
         "conversation_dir",
-        "mcp_server_url",
-        "provider"
+        "mcp_server_url"
     ],
     "properties": {
         "chromadb_path": {
@@ -52,15 +51,22 @@ CHAT_CONFIG_SCHEMA: Dict[str, Any] = {
             "type": ["string", "null"],
             "minLength": 1
         },
-        "provider": copy.deepcopy(AI_PROVIDER_JSON_SCHEMA)
+        "provider": copy.deepcopy(AI_PROVIDER_JSON_SCHEMA),
+        "embedding_provider": copy.deepcopy(AI_PROVIDER_JSON_SCHEMA),
+        "llm_provider": copy.deepcopy(AI_PROVIDER_JSON_SCHEMA)
     },
+    "oneOf": [
+        {"required": ["provider"]},
+        {"required": ["embedding_provider", "llm_provider"]}
+    ],
     "additionalProperties": False
 }
 
 
 @dataclass(frozen=True)
 class ChatConfig:
-    ai_provider: AIProviderConfig
+    embedding_provider: AIProviderConfig
+    llm_provider: AIProviderConfig
     conversation_dir: str
     chromadb_path: str
     enable_streaming: bool
@@ -68,6 +74,10 @@ class ChatConfig:
     max_tool_iterations: int
     system_prompt_file: Optional[str]
     source_path: Optional[Path] = None
+
+    @property
+    def ai_provider(self) -> AIProviderConfig:
+        return self.llm_provider
 
 
 def load_chat_config_from_file(config_path: str) -> ChatConfig:
@@ -169,11 +179,25 @@ def _build_chat_config(payload: Dict[str, Any], path: Path) -> ChatConfig:
             )
         system_prompt_path = _resolve_path(trimmed, base_dir)
 
-    provider_payload = payload["provider"]
-    provider = build_ai_provider_config(provider_payload, source_path=path, context="provider")
+    if "provider" in payload:
+        provider = build_ai_provider_config(payload["provider"], source_path=path, context="provider")
+        embedding_provider = provider
+        llm_provider = provider
+    else:
+        embedding_provider = build_ai_provider_config(
+            payload["embedding_provider"],
+            source_path=path,
+            context="embedding_provider"
+        )
+        llm_provider = build_ai_provider_config(
+            payload["llm_provider"],
+            source_path=path,
+            context="llm_provider"
+        )
 
     return ChatConfig(
-        ai_provider=provider,
+        embedding_provider=embedding_provider,
+        llm_provider=llm_provider,
         conversation_dir=conversation_dir,
         chromadb_path=chromadb_path,
         enable_streaming=enable_streaming,

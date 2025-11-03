@@ -63,20 +63,22 @@ Index configs describe a single collection and its embedding provider. Loader: `
     "force_recreate": false,
     "skip_ai_validation": false
   },
-  "provider": { /* AI provider payload */ }
+  "provider": {
+    /* AI provider payload */
+  }
 }
 ```
 
-| Field | Type | Required | Notes |
-|-------|------|----------|-------|
-| `chromadb_path` | string | ✅ | Resolved to absolute path; directory is created if missing by downstream storage layer. |
-| `collection.name` | string | ✅ | Regex `^[a-zA-Z0-9][a-zA-Z0-9_-]*$`, max 63 chars. |
-| `collection.description` | string | ✅ | 10–2000 characters after trimming. Used for AI validation messages. |
-| `collection.json_file` | string | ✅ | Path to normalized notes JSON. Resolver accepts relative paths. |
-| `collection.chunk_size` | integer | ❌ | 300–20,000 (default 1200). |
-| `collection.force_recreate` | boolean | ❌ | When `true`, drops and rebuilds the collection. |
-| `collection.skip_ai_validation` | boolean | ❌ | Bypasses optional LLM-based note validation. |
-| `provider` | object | ✅ | See [AI Provider Schema](#ai-provider-schema). |
+| Field                           | Type    | Required | Notes                                                                                   |
+| ------------------------------- | ------- | -------- | --------------------------------------------------------------------------------------- |
+| `chromadb_path`                 | string  | ✅       | Resolved to absolute path; directory is created if missing by downstream storage layer. |
+| `collection.name`               | string  | ✅       | Regex `^[a-zA-Z0-9][a-zA-Z0-9_-]*$`, max 63 chars.                                      |
+| `collection.description`        | string  | ✅       | 10–2000 characters after trimming. Used for AI validation messages.                     |
+| `collection.json_file`          | string  | ✅       | Path to normalized notes JSON. Resolver accepts relative paths.                         |
+| `collection.chunk_size`         | integer | ❌       | 300–20,000 (default 1200).                                                              |
+| `collection.force_recreate`     | boolean | ❌       | When `true`, drops and rebuilds the collection.                                         |
+| `collection.skip_ai_validation` | boolean | ❌       | Bypasses optional LLM-based note validation.                                            |
+| `provider`                      | object  | ✅       | See [AI Provider Schema](#ai-provider-schema).                                          |
 
 Validation failures identify the offending field with a helpful trace (for example `collection → name`).
 
@@ -140,19 +142,21 @@ Chat configs control conversational features and provider selection. Loader: `mi
   "enable_streaming": false,
   "max_tool_iterations": 5,
   "system_prompt_file": null,
-  "provider": { /* AI provider payload */ }
+  "provider": {
+    /* AI provider payload */
+  }
 }
 ```
 
-| Field | Type | Required | Notes |
-|-------|------|----------|-------|
-| `chromadb_path` | string | ✅ | Must resolve to absolute path; reused for local caching and tool routing. |
-| `conversation_dir` | string | ✅ | Directory is created if it does not exist. Supports `~` expansion. |
-| `mcp_server_url` | string | ✅ | Must include scheme + host (e.g., `http://127.0.0.1:8337/mcp`). |
-| `enable_streaming` | boolean | ❌ | Default `false`. Enables streaming responses in supported providers. |
-| `max_tool_iterations` | integer | ❌ | 1–10, defaults to 5. |
-| `system_prompt_file` | string or null | ❌ | Optional path to custom system prompt; `null` clears it. |
-| `provider` | object | ✅ | Embedding/LLM provider for chat completions. |
+| Field                 | Type           | Required | Notes                                                                     |
+| --------------------- | -------------- | -------- | ------------------------------------------------------------------------- |
+| `chromadb_path`       | string         | ✅       | Must resolve to absolute path; reused for local caching and tool routing. |
+| `conversation_dir`    | string         | ✅       | Directory is created if it does not exist. Supports `~` expansion.        |
+| `mcp_server_url`      | string         | ✅       | Must include scheme + host (e.g., `http://127.0.0.1:8337/mcp`).           |
+| `enable_streaming`    | boolean        | ❌       | Default `false`. Enables streaming responses in supported providers.      |
+| `max_tool_iterations` | integer        | ❌       | 1–10, defaults to 5.                                                      |
+| `system_prompt_file`  | string or null | ❌       | Optional path to custom system prompt; `null` clears it.                  |
+| `provider`            | object         | ✅       | Embedding/LLM provider for chat completions.                              |
 
 ### Example: Ollama
 
@@ -186,10 +190,10 @@ Chat configs control conversational features and provider selection. Loader: `mi
   "provider": {
     "provider_type": "openai",
     "api_key": "${OPENAI_API_KEY}",
-    "embedding": {
+    "embedding_model": {
       "model": "text-embedding-3-small"
     },
-    "llm": {
+    "llm_model": {
       "model": "gpt-4o-mini"
     }
   }
@@ -211,12 +215,12 @@ Server configs are lightweight and affect both `minerva serve` (stdio) and `mine
 }
 ```
 
-| Field | Type | Required | Notes |
-|-------|------|----------|-------|
-| `chromadb_path` | string | ✅ | Must resolve to absolute path. |
-| `default_max_results` | integer | ✅ | Range 1–15. Controls result count when clients omit `max_results`. |
-| `host` | string or null | ❌ | Optional override; ignored by stdio server. |
-| `port` | integer or null | ❌ | Required for HTTP deployments. |
+| Field                 | Type            | Required | Notes                                                              |
+| --------------------- | --------------- | -------- | ------------------------------------------------------------------ |
+| `chromadb_path`       | string          | ✅       | Must resolve to absolute path.                                     |
+| `default_max_results` | integer         | ✅       | Range 1–15. Controls result count when clients omit `max_results`. |
+| `host`                | string or null  | ❌       | Optional override; ignored by stdio server.                        |
+| `port`                | integer or null | ❌       | Required for HTTP deployments.                                     |
 
 ### Example Profiles
 
@@ -265,8 +269,8 @@ Use `${NAME}` placeholders anywhere a secret or host-specific value is required:
 {
   "provider_type": "openai",
   "api_key": "${OPENAI_API_KEY}",
-  "llm": {"model": "gpt-4o-mini"},
-  "embedding": {"model": "text-embedding-3-small"}
+  "llm_model": { "model": "gpt-4o-mini" },
+  "embedding_model": { "model": "text-embedding-3-small" }
 }
 ```
 

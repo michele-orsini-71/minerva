@@ -213,7 +213,8 @@ class TestChatEngineWithMCP:
 
     def test_streaming_fallback_on_error(self, chat_config, mock_ai_provider, mock_mcp_client):
         chat_config_with_streaming = ChatConfig(
-            ai_provider=chat_config.ai_provider,
+            embedding_provider=chat_config.embedding_provider,
+            llm_provider=chat_config.llm_provider,
             conversation_dir=chat_config.conversation_dir,
             chromadb_path=chat_config.chromadb_path,
             enable_streaming=True,
@@ -254,7 +255,8 @@ class TestChatEngineWithMCP:
         })
 
         config_with_low_max = ChatConfig(
-            ai_provider=chat_config.ai_provider,
+            embedding_provider=chat_config.embedding_provider,
+            llm_provider=chat_config.llm_provider,
             conversation_dir=chat_config.conversation_dir,
             chromadb_path=chat_config.chromadb_path,
             enable_streaming=False,
@@ -276,7 +278,8 @@ class TestChatEngineWithMCP:
 
     def test_streaming_successful_with_no_tool_calls(self, chat_config, mock_ai_provider, mock_mcp_client):
         chat_config_streaming = ChatConfig(
-            ai_provider=chat_config.ai_provider,
+            embedding_provider=chat_config.embedding_provider,
+            llm_provider=chat_config.llm_provider,
             conversation_dir=chat_config.conversation_dir,
             chromadb_path=chat_config.chromadb_path,
             enable_streaming=True,
@@ -310,7 +313,8 @@ class TestChatEngineWithMCP:
 
     def test_streaming_fallback_persists_across_messages(self, chat_config, mock_ai_provider, mock_mcp_client):
         chat_config_streaming = ChatConfig(
-            ai_provider=chat_config.ai_provider,
+            embedding_provider=chat_config.embedding_provider,
+            llm_provider=chat_config.llm_provider,
             conversation_dir=chat_config.conversation_dir,
             chromadb_path=chat_config.chromadb_path,
             enable_streaming=True,

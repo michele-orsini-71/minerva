@@ -12,6 +12,7 @@
 Minerva currently uses a "unified configuration" system where a single JSON file contains configuration for all commands (index, chat, serve). This design has a critical flaw: the index command can only process ONE collection per run, despite the unified config supporting multiple collections. This defeats the purpose of having a unified configuration and creates unnecessary complexity.
 
 **Problem:** Users must either:
+
 - Create separate unified config files for each collection (defeating "unified" purpose)
 - Edit the same unified config file repeatedly to index different collections
 - Define all settings (AI providers, chat, server) even when only indexing
@@ -33,21 +34,25 @@ Minerva currently uses a "unified configuration" system where a single JSON file
 ## User Stories
 
 ### Story 1: Indexing Multiple Collections
+
 **As a** knowledge worker with multiple note sources
 **I want to** index each source with a dedicated config file
 **So that** I can run `minerva index --config bear.json` and `minerva index --config wiki.json` without editing files
 
 ### Story 2: Sharing Configurations
+
 **As a** team member
 **I want to** share my index config for our team knowledge base
 **So that** others can index the same data without seeing my personal chat/server settings
 
 ### Story 3: Simple Server Deployment
+
 **As a** system administrator
 **I want to** configure just the MCP server
 **So that** I don't need to define indexing or chat settings I'm not using
 
 ### Story 4: Personal Chat Setup
+
 **As a** developer using Minerva
 **I want to** configure my preferred AI model for chat
 **So that** I can switch between local LM Studio and Ollama without touching server configs
@@ -57,6 +62,7 @@ Minerva currently uses a "unified configuration" system where a single JSON file
 ## Functional Requirements
 
 ### FR1: Index Command Configuration
+
 1.1. Index command MUST accept a simple JSON config file via `--config` flag
 1.2. Config MUST include: `collection_name`, `description`, `json_file`, `chromadb_path`
 1.3. Config MUST include inline provider definition: `provider.type`, `provider.embedding_model`, `provider.llm_model`
@@ -65,6 +71,7 @@ Minerva currently uses a "unified configuration" system where a single JSON file
 1.6. Index command MUST validate config on load and fail fast with clear error messages
 
 ### FR2: Chat Command Configuration
+
 2.1. Chat command MUST accept a simple JSON config file via `--config` flag
 2.2. Config MUST include: inline provider definition, `mcp_server_url`, `conversation_dir`
 2.3. Config MAY include: `enable_streaming`, `max_tool_iterations`, `system_prompt_file`
@@ -72,18 +79,21 @@ Minerva currently uses a "unified configuration" system where a single JSON file
 2.5. Chat command MUST validate config on load
 
 ### FR3: Serve Command Configuration
+
 3.1. Serve command MUST accept a simple JSON config file via `--config` flag
 3.2. Config MUST include: `chromadb_path`, `default_max_results`
 3.3. Config MAY include: `host`, `port` (for serve-http)
 3.4. Serve command MUST validate config on load
 
 ### FR4: Remove Unified Config System
+
 4.1. Delete `minerva/common/config_loader.py` (634 lines)
 4.2. Remove all `UnifiedConfig`, `ProviderDefinition`, and related classes
 4.3. Remove `minerva config validate` command entirely
 4.4. Remove all imports and references to unified config across codebase
 
 ### FR5: Sample Configurations
+
 5.1. Provide sample index configs: `configs/index/bear-notes-ollama.json`, `configs/index/wikipedia-lmstudio.json`
 5.2. Provide sample chat configs: `configs/chat/ollama.json`, `configs/chat/lmstudio.json`, `configs/chat/openai.json`
 5.3. Provide sample server configs: `configs/server/local.json`, `configs/server/network.json`
@@ -91,6 +101,7 @@ Minerva currently uses a "unified configuration" system where a single JSON file
 5.5. Delete existing unified configs: `configs/desktop-lmstudio.json`, `configs/hybrid-ollama-lmstudio.json`, `configs/server-ollama.json`
 
 ### FR6: Test Suite Updates
+
 6.1. Rewrite `tests/test_index_command.py` to use simple index configs
 6.2. Rewrite `tests/test_chat_config.py` to use simple chat configs
 6.3. Delete `tests/test_unified_config_loader.py` entirely
@@ -98,6 +109,7 @@ Minerva currently uses a "unified configuration" system where a single JSON file
 6.5. All existing tests MUST pass with new config system
 
 ### FR7: Documentation Updates
+
 7.1. Update `CLAUDE.md`: Remove unified config section, add command-specific config examples
 7.2. Update `README.md`: Remove unified config from features, update all examples
 7.3. Rewrite `docs/configuration.md` as comprehensive guide to command-specific configs
@@ -105,6 +117,7 @@ Minerva currently uses a "unified configuration" system where a single JSON file
 7.5. All documentation MUST accurately reflect new system
 
 ### FR8: CI/CD Updates
+
 8.1. Update `.github/workflows/ci.yml` to validate new sample configs
 8.2. Remove unified config validation from CI pipeline
 8.3. All CI tests MUST pass with new system
@@ -125,6 +138,7 @@ Minerva currently uses a "unified configuration" system where a single JSON file
 ## Design Considerations
 
 ### Index Config Schema Example
+
 ```json
 {
   "collection_name": "bear_notes",
@@ -135,7 +149,7 @@ Minerva currently uses a "unified configuration" system where a single JSON file
   "force_recreate": false,
   "skip_ai_validation": false,
   "provider": {
-    "type": "ollama",
+    "provider_type": "ollama",
     "base_url": "http://localhost:11434",
     "embedding_model": "mxbai-embed-large:latest",
     "llm_model": "llama3.1:8b"
@@ -144,10 +158,11 @@ Minerva currently uses a "unified configuration" system where a single JSON file
 ```
 
 ### Chat Config Schema Example
+
 ```json
 {
   "provider": {
-    "type": "lmstudio",
+    "provider_type": "lmstudio",
     "base_url": "http://localhost:1234/v1",
     "model": "qwen2.5-14b-instruct",
     "rate_limit": {
@@ -163,6 +178,7 @@ Minerva currently uses a "unified configuration" system where a single JSON file
 ```
 
 ### Server Config Schema Example
+
 ```json
 {
   "chromadb_path": "./chromadb_data",
@@ -177,11 +193,13 @@ Minerva currently uses a "unified configuration" system where a single JSON file
 ## Technical Considerations
 
 ### Implementation Files to Create
+
 - `minerva/common/index_config.py` - Index config loader and schema
 - `minerva/common/chat_config_loader.py` - Chat config loader and schema
 - `minerva/common/server_config.py` - Server config loader and schema
 
 ### Files to Modify
+
 - `minerva/commands/index.py` - Use new index config loader
 - `minerva/commands/chat.py` - Use new chat config loader
 - `minerva/commands/serve.py` - Use new server config loader
@@ -191,6 +209,7 @@ Minerva currently uses a "unified configuration" system where a single JSON file
 - `minerva/cli.py` - Update help text and examples
 
 ### Files to Delete
+
 - `minerva/common/config_loader.py` (634 lines)
 - `minerva/commands/config.py` (47 lines)
 - `tests/test_unified_config_loader.py` (113 lines)
@@ -199,6 +218,7 @@ Minerva currently uses a "unified configuration" system where a single JSON file
 - `configs/server-ollama.json`
 
 ### Dependencies
+
 - No new external dependencies required
 - All existing validation libraries (jsonschema) remain useful
 - Existing AIProvider system unchanged, just initialized differently

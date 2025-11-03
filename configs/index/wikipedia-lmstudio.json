@@ -11,10 +11,10 @@
   "provider": {
     "provider_type": "lmstudio",
     "base_url": "http://localhost:1234",
-    "embedding": {
+    "embedding_model": {
       "model": "nomic-embed-text-v1.5"
     },
-    "llm": {
+    "llm_model": {
       "model": "Meta-Llama-3-8B-Instruct-Q4_K_M"
     },
     "rate_limit": {

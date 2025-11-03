@@ -261,8 +261,8 @@ class TestRunFullIndexing:
         mock_create_chunks.return_value = mock_chunks
 
         mock_chunks_with_embeddings = [
-            {"chunk_id": "1", "embedding": [0.1] * 4},
-            {"chunk_id": "2", "embedding": [0.2] * 4},
+            {"chunk_id": "1", "embedding_model": [0.1] * 4},
+            {"chunk_id": "2", "embedding_model": [0.2] * 4},
         ]
         mock_generate_embeddings.return_value = mock_chunks_with_embeddings
 
@@ -305,7 +305,7 @@ class TestRunFullIndexing:
         mock_chunks = [{"chunk_id": "1"}]
         mock_create_chunks.return_value = mock_chunks
 
-        mock_generate_embeddings.return_value = [{"chunk_id": "1", "embedding": [0.1] * 4}]
+        mock_generate_embeddings.return_value = [{"chunk_id": "1", "embedding_model": [0.1] * 4}]
 
         mock_client = Mock()
         mock_init_chromadb.return_value = mock_client

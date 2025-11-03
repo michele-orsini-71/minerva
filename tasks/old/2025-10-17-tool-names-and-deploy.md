@@ -1189,7 +1189,7 @@ minerva-books: (no external dependencies)
   "forceRecreate": false,
   "skipAiValidation": false,
   "provider": {
-    "type": "ollama",
+    "provider_type": "ollama",
     "embedding_model": "mxbai-embed-large:latest",
     "llm_model": "llama3.1:8b",
     "base_url": "http://localhost:11434"

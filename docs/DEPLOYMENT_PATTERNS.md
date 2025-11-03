@@ -17,12 +17,14 @@ This guide covers common deployment patterns for Minerva, from simple desktop se
 **Use case:** Desktop user who wants everything running locally with a user-friendly GUI
 
 **Pros:**
+
 - User-friendly interface for model management
 - No API costs
 - Completely offline after models downloaded
 - Privacy (all processing local)
 
 **Cons:**
+
 - Requires powerful hardware (8GB+ VRAM recommended)
 - Manual model switching for different operations
 - LM Studio must be running
@@ -42,6 +44,7 @@ Download and install from [lmstudio.ai](https://lmstudio.ai)
 **2. Download Models**
 
 In LM Studio:
+
 - Download `qwen2.5-7b-instruct` (Q4_K_M) for embeddings
 - Download `qwen2.5-14b-instruct` (Q4_K_M) for chat
 
@@ -144,12 +147,14 @@ minerva chat --config config-lmstudio-desktop.json
 **Use case:** Desktop user who wants fast indexing (Ollama) and high-quality chat (LM Studio)
 
 **Pros:**
+
 - Fast indexing with Ollama (optimized for embeddings)
 - Better chat quality with LM Studio
 - Flexible: can use either independently
 - Best of both worlds
 
 **Cons:**
+
 - Requires both Ollama and LM Studio running
 - More complex setup
 - Higher resource usage
@@ -185,10 +190,10 @@ ollama pull llama3.1:8b
       "id": "ollama-indexing",
       "provider_type": "ollama",
       "base_url": "http://localhost:11434",
-      "embedding": {
+      "embedding_model": {
         "model": "mxbai-embed-large:latest"
       },
-      "llm": {
+      "llm_model": {
         "model": "llama3.1:8b"
       }
     },
@@ -267,12 +272,14 @@ minerva chat --config config-hybrid.json
 **Use case:** User willing to pay for API access, wants highest quality
 
 **Pros:**
+
 - Highest quality embeddings and chat
 - No local hardware requirements
 - Always latest models
 - No setup or maintenance
 
 **Cons:**
+
 - Ongoing API costs
 - Requires internet connection
 - Privacy concerns (data sent to OpenAI)
@@ -281,10 +288,12 @@ minerva chat --config config-hybrid.json
 ### Cost Estimates
 
 **Indexing 1000 notes (avg 500 tokens each):**
+
 - Embeddings: ~$0.01 (text-embedding-3-small)
 - Total: < $0.10
 
 **Chat usage (typical):**
+
 - ~100 messages/day
 - ~50,000 tokens/day
 - Cost: ~$0.75/day with gpt-4o-mini
@@ -315,10 +324,10 @@ echo 'export OPENAI_API_KEY="sk-proj-..."' >> ~/.zshrc
       "id": "openai-cloud",
       "provider_type": "openai",
       "api_key": "${OPENAI_API_KEY}",
-      "embedding": {
+      "embedding_model": {
         "model": "text-embedding-3-small"
       },
-      "llm": {
+      "llm_model": {
         "model": "gpt-4o-mini"
       }
     }
@@ -372,6 +381,7 @@ minerva chat --config config-openai.json
 **Use case:** Shared server for team access, all local processing
 
 **Pros:**
+
 - Centralized knowledge base
 - No individual hardware requirements
 - Team collaboration
@@ -379,6 +389,7 @@ minerva chat --config config-openai.json
 - Private (all data on server)
 
 **Cons:**
+
 - Requires server setup
 - Network dependency
 - Single point of failure
@@ -438,10 +449,10 @@ minerva --version
       "id": "ollama-server",
       "provider_type": "ollama",
       "base_url": "http://localhost:11434",
-      "embedding": {
+      "embedding_model": {
         "model": "mxbai-embed-large:latest"
       },
-      "llm": {
+      "llm_model": {
         "model": "llama3.1:8b"
       }
     }
@@ -533,12 +544,14 @@ Clients configure MCP to point to server:
 ### Security Considerations
 
 **Firewall:**
+
 ```bash
 # Allow only internal network
 sudo ufw allow from 192.168.1.0/24 to any port 8000
 ```
 
 **Reverse Proxy (Nginx):**
+
 ```nginx
 server {
     listen 443 ssl;
@@ -598,8 +611,8 @@ Each user has local config pointing to shared server:
       "id": "ollama-local",
       "provider_type": "ollama",
       "base_url": "http://localhost:11434",
-      "embedding": {"model": "mxbai-embed-large:latest"},
-      "llm": {"model": "llama3.1:8b"}
+      "embedding_model": { "model": "mxbai-embed-large:latest" },
+      "llm_model": { "model": "llama3.1:8b" }
     }
   ],
   "chat": {
@@ -635,8 +648,8 @@ minerva chat --config config-client.json
     {
       "id": "ollama-dev",
       "provider_type": "ollama",
-      "embedding": {"model": "mxbai-embed-large:latest"},
-      "llm": {"model": "llama3.1:8b"}
+      "embedding_model": { "model": "mxbai-embed-large:latest" },
+      "llm_model": { "model": "llama3.1:8b" }
     }
   ],
   "indexing": {
@@ -669,8 +682,8 @@ minerva chat --config config-client.json
     {
       "id": "ollama-prod",
       "provider_type": "ollama",
-      "embedding": {"model": "mxbai-embed-large:latest"},
-      "llm": {"model": "llama3.1:8b"}
+      "embedding_model": { "model": "mxbai-embed-large:latest" },
+      "llm_model": { "model": "llama3.1:8b" }
     }
   ],
   "indexing": {
@@ -709,48 +722,54 @@ ssh server "sudo systemctl restart minerva-mcp"
 
 ## Comparison Matrix
 
-| Pattern | Hardware | Cost | Quality | Privacy | Complexity | Best For |
-|---------|----------|------|---------|---------|------------|----------|
-| All LM Studio | High | None | Good | High | Medium | Desktop users, privacy-focused |
-| Hybrid Ollama+LM | High | None | Very Good | High | Medium | Power users, best quality local |
-| All Cloud | Low | Medium | Excellent | Low | Low | Users prioritizing quality |
-| Server (Ollama) | Server | None | Good | High | High | Teams, shared knowledge |
-| Multi-User | Server | None | Good | High | High | Teams, individual conversations |
-| Dev+Prod | Both | None/Low | Good | High | High | Development workflows |
+| Pattern          | Hardware | Cost     | Quality   | Privacy | Complexity | Best For                        |
+| ---------------- | -------- | -------- | --------- | ------- | ---------- | ------------------------------- |
+| All LM Studio    | High     | None     | Good      | High    | Medium     | Desktop users, privacy-focused  |
+| Hybrid Ollama+LM | High     | None     | Very Good | High    | Medium     | Power users, best quality local |
+| All Cloud        | Low      | Medium   | Excellent | Low     | Low        | Users prioritizing quality      |
+| Server (Ollama)  | Server   | None     | Good      | High    | High       | Teams, shared knowledge         |
+| Multi-User       | Server   | None     | Good      | High    | High       | Teams, individual conversations |
+| Dev+Prod         | Both     | None/Low | Good      | High    | High       | Development workflows           |
 
 ## Choosing a Pattern
 
 **Choose Pattern 1 (All LM Studio) if:**
+
 - You have powerful desktop hardware
 - You want a GUI for model management
 - Privacy is important
 - You're comfortable with local-only setup
 
 **Choose Pattern 2 (Hybrid) if:**
+
 - You want the best local quality
 - You have resources for both Ollama and LM Studio
 - You index frequently but chat occasionally
 - You want flexibility
 
 **Choose Pattern 3 (All Cloud) if:**
+
 - You have budget for API costs
 - You prioritize quality over cost
 - You have reliable internet
 - You need minimal local setup
 
 **Choose Pattern 4 (Server) if:**
+
 - You're deploying for a team
 - You have server infrastructure
 - You want centralized knowledge
 - Privacy is important
 
 **Choose Pattern 5 (Multi-User) if:**
+
 - Multiple users need access
 - Each user needs private conversations
 - You want shared knowledge base
 - You have server infrastructure
 
 **Choose Pattern 6 (Dev+Prod) if:**
+
 - You're developing/testing Minerva
 - You need separate environments
 - You want to test before deploying

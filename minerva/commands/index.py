@@ -55,11 +55,7 @@ def load_and_print_config(
     logger.info("")
     logger.info(f"Loading configuration from: {config_path}")
 
-    try:
-        index_config = load_index_config(str(config_path))
-    except ConfigError as error:
-        logger.error(f"Configuration Error:\n{error}")
-        raise
+    index_config = load_index_config(str(config_path))
 
     collection = index_config.collection
     provider = index_config.provider
@@ -468,6 +464,10 @@ def run_index(args: Namespace) -> int:
     except KeyboardInterrupt:
         logger.error("Operation cancelled by user")
         return 130
+
+    except ConfigError as error:
+        logger.error(f"Configuration Error:\n{error}")
+        return 1
 
     except MinervaError as error:
         message = str(error).strip()

@@ -1,4 +1,5 @@
 # AI Provider Abstraction Layer Analysis
+
 ## Switching Between Ollama and OpenAI-compatible Services
 
 Please note: the embedding of notes data (cag data creator) and the embedding of the user question (mcp server) must be done with the SAME engine. That means that the embedding engine should appear in the database metadata and checked by MCP in order to verify the embedding engine availability.
@@ -14,13 +15,16 @@ Please note: the embedding of notes data (cag data creator) and the embedding of
 I've identified **THREE distinct AI operations** across the pipeline and MCP server:
 
 ### 1. **Vector Embedding Creation** (Primary Use)
+
 **Current Implementation:**
+
 - **Location:** `markdown-notes-cag-data-creator/embedding.py`
 - **Model:** `mxbai-embed-large:latest` via Ollama
 - **Usage:** Converting text chunks to 1024-dimensional vectors
 - **Frequency:** Batch processing during pipeline runs (hundreds to thousands of calls)
 
 **Code Pattern:**
+
 ```python
 from ollama import embeddings as ollama_embeddings
 
@@ -32,13 +36,16 @@ def generate_embedding(text: str, model: str = EMBED_MODEL):
 ```
 
 ### 2. **Collection Description Validation** (AI-Enhanced QA)
+
 **Future Implementation (PRD Spec):**
+
 - **Location:** Will be added to `markdown-notes-cag-data-creator/full_pipeline.py`
 - **Model:** `llama3.1:8b` (currently hardcoded in PRD line 109)
 - **Usage:** Validating collection descriptions for AI-friendliness (scoring 0-10)
 - **Frequency:** Once per collection creation (low volume)
 
 **Expected Code Pattern (from PRD):**
+
 ```python
 # TIER 2: Optional AI validation
 ai_result = validate_with_ai(description)  # Uses llama3.1:8b
@@ -47,13 +54,16 @@ if not ai_result["passed"]:
 ```
 
 ### 3. **Query Embedding Generation** (Search-time)
+
 **Current Implementation:**
+
 - **Location:** `test-files/chromadb_query_client.py` (will move to MCP server)
 - **Model:** Same `mxbai-embed-large:latest` as pipeline
 - **Usage:** Converting user queries to embeddings for semantic search
 - **Frequency:** Per user query (interactive, low-to-medium volume)
 
 **Code Pattern:**
+
 ```python
 def generate_query_embedding(query: str):
     embedding = generate_embedding(query.strip())  # Reuses embedding.py
@@ -67,6 +77,7 @@ def generate_query_embedding(query: str):
 ### Solution: LiteLLM Abstraction Layer
 
 **LiteLLM** is the ideal choice for this use case:
+
 - ✅ Unified API for 100+ providers (OpenAI, Anthropic, Google Gemini, Azure, Ollama, etc.)
 - ✅ **Supports both embeddings AND completions** (covers all 3 use cases)
 - ✅ Drop-in replacement for OpenAI SDK
@@ -86,17 +97,17 @@ def generate_query_embedding(query: str):
 
   // NEW: AI Provider Configuration
   "ai_provider": {
-    "type": "ollama",  // or "openai", "gemini", "azure", etc.
+    "provider_type": "ollama", // or "openai", "gemini", "azure", etc.
 
     // Embedding Configuration
-    "embedding": {
+    "embedding_model": {
       "model": "mxbai-embed-large:latest",
-      "base_url": "http://localhost:11434",  // Ollama default
-      "api_key": null  // Not needed for local Ollama
+      "base_url": "http://localhost:11434", // Ollama default
+      "api_key": null // Not needed for local Ollama
     },
 
     // LLM Configuration (for description validation)
-    "llm": {
+    "llm_model": {
       "model": "llama3.1:8b",
       "base_url": "http://localhost:11434",
       "api_key": null
@@ -106,17 +117,18 @@ def generate_query_embedding(query: str):
 ```
 
 **OpenAI Example:**
+
 ```json
 {
   "ai_provider": {
-    "type": "openai",
+    "provider_type": "openai",
 
-    "embedding": {
+    "embedding_model": {
       "model": "text-embedding-3-large",
-      "api_key": "${OPENAI_API_KEY}"  // From environment variable
+      "api_key": "${OPENAI_API_KEY}" // From environment variable
     },
 
-    "llm": {
+    "llm_model": {
       "model": "gpt-4o-mini",
       "api_key": "${OPENAI_API_KEY}"
     }
@@ -125,17 +137,18 @@ def generate_query_embedding(query: str):
 ```
 
 **Gemini Example:**
+
 ```json
 {
   "ai_provider": {
-    "type": "gemini",
+    "provider_type": "gemini",
 
-    "embedding": {
+    "embedding_model": {
       "model": "gemini/text-embedding-004",
       "api_key": "${GEMINI_API_KEY}"
     },
 
-    "llm": {
+    "llm_model": {
       "model": "gemini/gemini-1.5-flash",
       "api_key": "${GEMINI_API_KEY}"
     }
@@ -287,7 +300,7 @@ class AIProvider:
                 messages=[{"role": "user", "content": prompt}],
                 api_key=self.config.api_key,
                 api_base=self.config.base_url,
-                response_format={"type": "json_object"}
+                response_format={"provider_type": "json_object"}
             )
 
             result = json.loads(response.choices[0].message.content)
@@ -366,6 +379,7 @@ def load_provider_from_config(config_path: str) -> AIProvider:
 #### 2.1 Update `embedding.py`
 
 **Before:**
+
 ```python
 from ollama import embeddings as ollama_embeddings
 
@@ -375,6 +389,7 @@ def generate_embedding(text: str, model: str = EMBED_MODEL):
 ```
 
 **After:**
+
 ```python
 from ai_provider import AIProvider, load_provider_from_config
 
@@ -410,6 +425,7 @@ def initialize_embedding_service(model: str = EMBED_MODEL):
 #### 2.2 Update `full_pipeline.py`
 
 **Before:**
+
 ```python
 from embedding import generate_embeddings, EmbeddingError
 
@@ -418,6 +434,7 @@ chunks_with_embeddings = generate_embeddings(chunks)
 ```
 
 **After:**
+
 ```python
 from embedding import initialize_provider, generate_embeddings, AIProviderError
 from ai_provider import load_provider_from_config
@@ -510,11 +527,13 @@ if __name__ == "__main__":
 ### Step-by-Step Migration
 
 #### Step 1: Add Dependencies
+
 ```bash
 pip install litellm
 ```
 
 #### Step 2: Create Configuration File
+
 ```bash
 # Create config.json with Ollama settings (backward compatible)
 cat > config.json << EOF
@@ -522,12 +541,12 @@ cat > config.json << EOF
   "chromadb_path": "../chromadb_data",
   "default_max_results": 5,
   "ai_provider": {
-    "type": "ollama",
-    "embedding": {
+    "provider_type": "ollama",
+    "embedding_model": {
       "model": "mxbai-embed-large:latest",
       "base_url": "http://localhost:11434"
     },
-    "llm": {
+    "llm_model": {
       "model": "llama3.1:8b",
       "base_url": "http://localhost:11434"
     }
@@ -537,30 +556,36 @@ EOF
 ```
 
 #### Step 3: Implement `ai_provider.py`
+
 - Create the abstraction layer module
 - Add tests for Ollama compatibility
 
 #### Step 4: Refactor `embedding.py`
+
 - Replace direct Ollama calls with abstraction layer
 - Keep existing function signatures for compatibility
 - Add deprecation warnings for removed parameters
 
 #### Step 5: Update Pipeline
+
 - Add `--config` parameter to `full_pipeline.py`
 - Initialize provider before embeddings
 - Update error handling
 
 #### Step 6: Update MCP Server
+
 - Load provider from config
 - Use abstraction layer for query embeddings
 - Add provider status to startup logs
 
 #### Step 7: Documentation
+
 - Update README with configuration examples
 - Add provider switching guide
 - Document API key management
 
 #### Step 8: Testing
+
 - Test Ollama (existing setup)
 - Test OpenAI (if API key available)
 - Test fallback scenarios
@@ -574,12 +599,12 @@ EOF
 
 **CRITICAL: Different models have different embedding dimensions!**
 
-| Provider | Model | Dimensions |
-|----------|-------|------------|
-| Ollama | mxbai-embed-large | 1024 |
-| OpenAI | text-embedding-3-small | 1536 |
-| OpenAI | text-embedding-3-large | 3072 |
-| Google | text-embedding-004 | 768 |
+| Provider | Model                  | Dimensions |
+| -------- | ---------------------- | ---------- |
+| Ollama   | mxbai-embed-large      | 1024       |
+| OpenAI   | text-embedding-3-small | 1536       |
+| OpenAI   | text-embedding-3-large | 3072       |
+| Google   | text-embedding-004     | 768        |
 
 **Solution: Store dimension metadata in ChromaDB collection**
 
@@ -600,6 +625,7 @@ collection = client.create_collection(
 ```
 
 **Validation on query:**
+
 ```python
 def search_knowledge_base(query: str, collection_name: str):
     # Get collection metadata
@@ -620,12 +646,14 @@ def search_knowledge_base(query: str, collection_name: str):
 ### Cost Considerations
 
 **Local (Ollama):**
+
 - ✅ Free
 - ✅ Unlimited usage
 - ⚠️ Requires local GPU/CPU
 - ⚠️ Slower inference
 
 **OpenAI:**
+
 - 💰 `text-embedding-3-small`: $0.02 per 1M tokens
 - 💰 `text-embedding-3-large`: $0.13 per 1M tokens
 - ✅ Fast inference
@@ -633,11 +661,13 @@ def search_knowledge_base(query: str, collection_name: str):
 - ⚠️ API rate limits
 
 **Google Gemini:**
+
 - 💰 `text-embedding-004`: Free tier available, then $0.025 per 1M chars
 - ✅ Fast inference
 - ⚠️ Requires internet
 
 **Recommendation:** Start with Ollama for development, switch to cloud providers for production if:
+
 1. Need faster inference
 2. Don't want to manage local models
 3. Want multi-region availability
@@ -669,27 +699,28 @@ class AIProviderWithFallback(AIProvider):
 ```
 
 **Configuration with fallback:**
+
 ```json
 {
   "ai_provider": {
-    "type": "openai",
-    "embedding": {
+    "provider_type": "openai",
+    "embedding_model": {
       "model": "text-embedding-3-small",
       "api_key": "${OPENAI_API_KEY}"
     },
-    "llm": {
+    "llm_model": {
       "model": "gpt-4o-mini",
       "api_key": "${OPENAI_API_KEY}"
     }
   },
 
   "fallback_provider": {
-    "type": "ollama",
-    "embedding": {
+    "provider_type": "ollama",
+    "embedding_model": {
       "model": "mxbai-embed-large:latest",
       "base_url": "http://localhost:11434"
     },
-    "llm": {
+    "llm_model": {
       "model": "llama3.1:8b",
       "base_url": "http://localhost:11434"
     }
@@ -779,20 +810,20 @@ def test_embedding_dimension_validation():
 
 **Embedding Generation (1000 chunks, ~500 chars each):**
 
-| Provider | Model | Time | Cost | Notes |
-|----------|-------|------|------|-------|
-| Ollama (CPU) | mxbai-embed-large | ~120s | $0 | MacBook Pro M1 |
-| Ollama (GPU) | mxbai-embed-large | ~25s | $0 | NVIDIA RTX 3090 |
-| OpenAI | text-embedding-3-small | ~15s | $0.01 | Batch API |
-| OpenAI | text-embedding-3-large | ~20s | $0.06 | Batch API |
-| Google Gemini | text-embedding-004 | ~18s | $0.01 | Free tier |
+| Provider      | Model                  | Time  | Cost  | Notes           |
+| ------------- | ---------------------- | ----- | ----- | --------------- |
+| Ollama (CPU)  | mxbai-embed-large      | ~120s | $0    | MacBook Pro M1  |
+| Ollama (GPU)  | mxbai-embed-large      | ~25s  | $0    | NVIDIA RTX 3090 |
+| OpenAI        | text-embedding-3-small | ~15s  | $0.01 | Batch API       |
+| OpenAI        | text-embedding-3-large | ~20s  | $0.06 | Batch API       |
+| Google Gemini | text-embedding-004     | ~18s  | $0.01 | Free tier       |
 
 **LLM Validation (1 description check):**
 
-| Provider | Model | Time | Cost |
-|----------|-------|------|------|
-| Ollama | llama3.1:8b | ~2s | $0 |
-| OpenAI | gpt-4o-mini | ~0.5s | $0.0001 |
+| Provider      | Model            | Time  | Cost     |
+| ------------- | ---------------- | ----- | -------- |
+| Ollama        | llama3.1:8b      | ~2s   | $0       |
+| OpenAI        | gpt-4o-mini      | ~0.5s | $0.0001  |
 | Google Gemini | gemini-1.5-flash | ~0.8s | $0.00001 |
 
 ---
@@ -806,19 +837,21 @@ def test_embedding_dimension_validation():
 **Best Practices:**
 
 1. **Environment Variables:**
+
    ```json
    {
      "ai_provider": {
-       "type": "openai",
-       "embedding": {
+       "provider_type": "openai",
+       "embedding_model": {
          "model": "text-embedding-3-small",
-         "api_key": "${OPENAI_API_KEY}"  // ✅ Reference env var
+         "api_key": "${OPENAI_API_KEY}" // ✅ Reference env var
        }
      }
    }
    ```
 
 2. **Secrets Manager (Production):**
+
    ```python
    def load_api_key_from_secrets(key_name: str) -> str:
        # AWS Secrets Manager
@@ -829,6 +862,7 @@ def test_embedding_dimension_validation():
    ```
 
 3. **.gitignore Configuration Files:**
+
    ```gitignore
    # .gitignore
    config.json
@@ -842,8 +876,8 @@ def test_embedding_dimension_validation():
    // config.example.json (checked into git)
    {
      "ai_provider": {
-       "type": "ollama",
-       "embedding": {
+       "provider_type": "ollama",
+       "embedding_model": {
          "model": "mxbai-embed-large:latest",
          "base_url": "http://localhost:11434",
          "api_key": null
@@ -859,6 +893,7 @@ def test_embedding_dimension_validation():
 **Why LiteLLM is better than direct OpenAI SDK:**
 
 ### Direct OpenAI SDK Approach:
+
 ```python
 # ❌ Less flexible - locks you to OpenAI
 from openai import OpenAI
@@ -874,12 +909,14 @@ def generate_embedding(text: str):
 ```
 
 **Problems:**
+
 1. ❌ Only works with OpenAI
 2. ❌ Need separate code for Ollama, Gemini, etc.
 3. ❌ No unified error handling
 4. ❌ No automatic retries
 
 ### LiteLLM Approach:
+
 ```python
 # ✅ Works with 100+ providers
 from litellm import embedding
@@ -897,6 +934,7 @@ def generate_embedding(text: str, model: str):
 ```
 
 **Advantages:**
+
 1. ✅ Single API for all providers
 2. ✅ Easy to switch providers
 3. ✅ Built-in retries and fallbacks
@@ -907,24 +945,28 @@ def generate_embedding(text: str, model: str):
 ## Recommended Implementation Timeline
 
 ### Week 1: Foundation
+
 - **Day 1-2:** Implement `ai_provider.py` abstraction layer
 - **Day 3:** Add LiteLLM dependency and basic tests
 - **Day 4:** Create configuration schema and examples
 - **Day 5:** Documentation and migration guide
 
 ### Week 2: Pipeline Integration
+
 - **Day 1-2:** Refactor `embedding.py` to use abstraction
 - **Day 3:** Update `full_pipeline.py` with config support
 - **Day 4:** Add collection description validation
 - **Day 5:** Integration testing with Ollama
 
 ### Week 3: MCP Server Integration
+
 - **Day 1-2:** Update MCP server to use abstraction
 - **Day 3:** Add provider status endpoint
 - **Day 4:** Test with Claude Desktop
 - **Day 5:** Performance benchmarking
 
 ### Week 4: Cloud Provider Support
+
 - **Day 1:** OpenAI integration and testing
 - **Day 2:** Google Gemini integration
 - **Day 3:** Fallback mechanism implementation
@@ -942,6 +984,7 @@ def generate_embedding(text: str, model: str):
 The codebase is exceptionally well-structured for this abstraction:
 
 ✅ **Pros:**
+
 1. Clean separation of concerns (embedding logic isolated in `embedding.py`)
 2. PRD already anticipates multi-provider support (description validation)
 3. Minimal code changes required (~300 lines of new code, ~100 lines of refactoring)
@@ -949,6 +992,7 @@ The codebase is exceptionally well-structured for this abstraction:
 5. Backward compatibility achievable with minimal effort
 
 ⚠️ **Challenges:**
+
 1. Embedding dimension compatibility (solvable with metadata validation)
 2. API key management (solvable with environment variables)
 3. Cost monitoring for cloud providers (solvable with usage tracking)
@@ -965,21 +1009,22 @@ The codebase is exceptionally well-structured for this abstraction:
 6. ✅ Implement fallback mechanism for reliability
 
 **Configuration File Design:**
+
 ```json
 {
   "chromadb_path": "/path/to/chromadb_data",
   "default_max_results": 5,
 
   "ai_provider": {
-    "type": "ollama",  // Switch here: "ollama" | "openai" | "gemini"
+    "provider_type": "ollama", // Switch here: "ollama" | "openai" | "gemini"
 
-    "embedding": {
+    "embedding_model": {
       "model": "mxbai-embed-large:latest",
       "base_url": "http://localhost:11434",
       "api_key": null
     },
 
-    "llm": {
+    "llm_model": {
       "model": "llama3.1:8b",
       "base_url": "http://localhost:11434",
       "api_key": null
@@ -989,7 +1034,8 @@ The codebase is exceptionally well-structured for this abstraction:
 ```
 
 **To switch from Ollama to OpenAI:**
-1. Change `"type": "ollama"` → `"type": "openai"`
+
+1. Change `"provider_type": "ollama"` → `"provider_type": "openai"`
 2. Update model names
 3. Add `"api_key": "${OPENAI_API_KEY}"`
 4. Remove `base_url`
@@ -1003,16 +1049,19 @@ The codebase is exceptionally well-structured for this abstraction:
 ### Immediate Actions
 
 1. **Install LiteLLM:**
+
    ```bash
    pip install litellm
    ```
 
 2. **Create proof-of-concept:**
+
    - Implement minimal `ai_provider.py`
    - Test with Ollama (verify backward compatibility)
    - Test with OpenAI (verify multi-provider support)
 
 3. **Update PRD:**
+
    - Add AI provider configuration section to pipeline PRD
    - Update MCP server PRD with provider initialization
    - Document embedding dimension compatibility requirements

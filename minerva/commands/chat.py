@@ -130,14 +130,15 @@ def initialize_chat_system(config_path: str) -> tuple:
         return None, None, None
 
     try:
-        provider = AIProvider(config.ai_provider)
+        llm_provider = AIProvider(config.llm_provider)
 
-        availability = provider.check_availability()
+        availability = llm_provider.check_availability()
         if not availability['available']:
             error_msg = availability.get('error', 'Unknown error')
-            logger.error("AI Provider Unavailable")
+            logger.error("LLM Provider Unavailable")
             logger.error("=" * 60)
-            logger.error(f"Provider: {config.ai_provider.provider_type}")
+            logger.error(f"Provider: {config.llm_provider.provider_type}")
+            logger.error(f"Model: {config.llm_provider.llm_model}")
             logger.error(f"Error: {error_msg}")
             logger.error("=" * 60)
             logger.error("\nTroubleshooting:")
@@ -148,13 +149,13 @@ def initialize_chat_system(config_path: str) -> tuple:
             return None, None, None
 
     except (ProviderUnavailableError, AIProviderError) as e:
-        logger.error("AI Provider Error")
+        logger.error("LLM Provider Error")
         logger.error("=" * 60)
         logger.error(str(e))
         logger.error("=" * 60)
         return None, None, None
 
-    return config, provider, collections_count
+    return config, llm_provider, collections_count
 
 
 def run_single_question_mode(config, provider, question: str) -> int:
@@ -213,8 +214,8 @@ def run_interactive_mode(config, provider, collections_count: int, resume_id: st
 
             display_welcome_banner(
                 collections_count,
-                config.ai_provider.provider_type,
-                config.ai_provider.llm_model,
+                config.llm_provider.provider_type,
+                config.llm_provider.llm_model,
                 engine._mcp_available,
                 config.mcp_server_url,
                 config.enable_streaming

@@ -35,7 +35,9 @@
       "Bash(do echo \"✓ $config\")",
       "Bash(/dev/null)",
       "Bash(find:*)",
-      "Bash(OPENAI_API_KEY=sk-test python:*)"
+      "Bash(OPENAI_API_KEY=sk-test python:*)",
+      "Bash(git checkout:*)",
+      "Bash(OPENAI_API_KEY=test-key python3:*)"
     ],
     "deny": [],
     "ask": []

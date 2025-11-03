@@ -36,11 +36,11 @@ Create `chat-config.json` with your AI provider settings:
 {
   "chromadb_path": "/absolute/path/to/chromadb_data",
   "ai_provider": {
-    "type": "ollama",
-    "embedding": {
+    "provider_type": "ollama",
+    "embedding_model": {
       "model": "mxbai-embed-large:latest"
     },
-    "llm": {
+    "llm_model": {
       "model": "llama3.1:8b"
     }
   },
@@ -88,12 +88,12 @@ AI: [Searches and provides relevant information]
 ```json
 {
   "ai_provider": {
-    "type": "ollama",
-    "embedding": {
+    "provider_type": "ollama",
+    "embedding_model": {
       "model": "mxbai-embed-large:latest",
       "base_url": "http://localhost:11434"
     },
-    "llm": {
+    "llm_model": {
       "model": "llama3.1:8b",
       "base_url": "http://localhost:11434"
     }
@@ -108,12 +108,12 @@ AI: [Searches and provides relevant information]
 ```json
 {
   "ai_provider": {
-    "type": "openai",
-    "embedding": {
+    "provider_type": "openai",
+    "embedding_model": {
       "model": "text-embedding-3-small",
       "api_key": "${OPENAI_API_KEY}"
     },
-    "llm": {
+    "llm_model": {
       "model": "gpt-4o-mini",
       "api_key": "${OPENAI_API_KEY}"
     }
@@ -128,12 +128,12 @@ AI: [Searches and provides relevant information]
 ```json
 {
   "ai_provider": {
-    "type": "anthropic",
-    "embedding": {
+    "provider_type": "anthropic",
+    "embedding_model": {
       "model": "voyage-2",
       "api_key": "${ANTHROPIC_API_KEY}"
     },
-    "llm": {
+    "llm_model": {
       "model": "claude-3-5-sonnet-20241022",
       "api_key": "${ANTHROPIC_API_KEY}"
     }
@@ -146,12 +146,12 @@ AI: [Searches and provides relevant information]
 ```json
 {
   "ai_provider": {
-    "type": "gemini",
-    "embedding": {
+    "provider_type": "gemini",
+    "embedding_model": {
       "model": "embedding-001",
       "api_key": "${GEMINI_API_KEY}"
     },
-    "llm": {
+    "llm_model": {
       "model": "gemini-1.5-pro",
       "api_key": "${GEMINI_API_KEY}"
     }
@@ -170,6 +170,7 @@ minerva chat --config chat-config.json
 ```
 
 **Special Commands**:
+
 - `/clear` - Start a new conversation (saves current one)
 - `/help` - Show available commands
 - `/exit` or `exit` or `quit` - Exit the chat
@@ -203,6 +204,7 @@ minerva chat --config chat-config.json --list
 ```
 
 Output:
+
 ```
 Past conversations:
 
@@ -234,6 +236,7 @@ The AI assistant has access to the following tools:
 Lists all available knowledge bases in the system.
 
 **Example**:
+
 ```
 You: What knowledge bases do I have?
 AI: 🔍 Listing available knowledge bases...
@@ -254,6 +257,7 @@ Found 2 knowledge base(s):
 Searches a specific knowledge base using semantic search.
 
 **Parameters**:
+
 - `query`: The search query in natural language
 - `collection_name`: Name of the knowledge base to search
 - `max_results`: Number of results (1-15, default: 3)
@@ -263,6 +267,7 @@ Searches a specific knowledge base using semantic search.
   - `full_note`: Entire note
 
 **Example**:
+
 ```
 You: Search my personal notes for information about Docker containers
 AI: 🔍 Searching 'personal-notes' for: 'Docker containers' (max 3 results)...
@@ -280,13 +285,13 @@ Minerva automatically monitors token usage and manages the context window to pre
 
 ### Model Limits
 
-| Model | Context Limit |
-|-------|---------------|
-| llama3.1:8b | 32,000 tokens |
-| llama2:7b | 4,096 tokens |
-| gpt-4o, gpt-4o-mini | 128,000 tokens |
-| claude-3-5-sonnet | 200,000 tokens |
-| gemini-1.5-pro | 1,000,000 tokens |
+| Model               | Context Limit    |
+| ------------------- | ---------------- |
+| llama3.1:8b         | 32,000 tokens    |
+| llama2:7b           | 4,096 tokens     |
+| gpt-4o, gpt-4o-mini | 128,000 tokens   |
+| claude-3-5-sonnet   | 200,000 tokens   |
+| gemini-1.5-pro      | 1,000,000 tokens |
 
 ### Warning Threshold
 
@@ -311,12 +316,14 @@ Your choice (c/s/n):
 ### Summarization
 
 Choosing to summarize:
+
 1. Sends old messages to the AI for summarization
 2. Replaces middle messages with a concise summary
 3. Keeps system prompt and last 6 messages intact
 4. Frees up context window space
 
 Example:
+
 ```
 🔄 Generating conversation summary...
 ✓ Conversation compressed: 45 -> 12 messages
@@ -327,6 +334,7 @@ Example:
 ### Automatic Saving
 
 Conversations are automatically saved after each message exchange to:
+
 ```
 ~/.minerva/conversations/
   └── 20251030-143022-abc123.json
@@ -357,6 +365,7 @@ Conversations are automatically saved after each message exchange to:
 ### Graceful Exit
 
 Pressing `Ctrl+C` saves the conversation before exiting:
+
 ```
 ^C
 💾 Conversation saved. Goodbye!
@@ -442,6 +451,7 @@ You: Continue where we left off...
 ### Configuration Errors
 
 **Error**: `Configuration file not found`
+
 ```bash
 # Verify file exists
 ls -l chat-config.json
@@ -451,9 +461,10 @@ minerva chat --config /full/path/to/chat-config.json
 ```
 
 **Error**: `chromadb_path must be an absolute path`
+
 ```json
 {
-  "chromadb_path": "/Users/you/chromadb_data"  // ✓ Absolute
+  "chromadb_path": "/Users/you/chromadb_data" // ✓ Absolute
   // "chromadb_path": "./chromadb_data"        // ✗ Relative
 }
 ```
@@ -461,6 +472,7 @@ minerva chat --config /full/path/to/chat-config.json
 ### AI Provider Errors
 
 **Error**: `Connection refused (Ollama)`
+
 ```bash
 # Start Ollama service
 ollama serve
@@ -470,6 +482,7 @@ curl http://localhost:11434/api/tags
 ```
 
 **Error**: `Invalid API key (OpenAI/Anthropic)`
+
 ```bash
 # Set environment variable
 export OPENAI_API_KEY="sk-your-key-here"
@@ -484,6 +497,7 @@ minerva chat --config chat-config.json
 ### ChromaDB Errors
 
 **Error**: `ChromaDB path does not exist`
+
 ```bash
 # Verify ChromaDB directory exists
 ls -la /path/to/chromadb_data
@@ -493,6 +507,7 @@ minerva peek collection_name --chromadb /path/to/chromadb_data
 ```
 
 **Error**: `Collection not found`
+
 ```bash
 # List available collections
 python3 -c "
@@ -505,11 +520,13 @@ print([c.name for c in client.list_collections()])
 ### Performance Issues
 
 **Slow responses**:
+
 - Use local Ollama instead of cloud APIs (faster, no rate limits)
 - Reduce `default_max_results` to 1-2 for faster searches
 - Use `context_mode: "chunk_only"` for minimal context
 
 **Out of memory**:
+
 - Use smaller models (e.g., llama3.1:8b instead of :70b)
 - Enable summarization when warned about context limits
 - Start new conversations periodically
@@ -517,6 +534,7 @@ print([c.name for c in client.list_collections()])
 ### Search Quality Issues
 
 **Poor search results**:
+
 - Verify embeddings model matches indexing model
 - Use more specific queries
 - Try increasing `max_results` to 5-10
@@ -526,6 +544,7 @@ print([c.name for c in client.list_collections()])
   ```
 
 **No results found**:
+
 - Verify collection name is correct (case-sensitive)
 - Check collection is not empty
 - Try broader query terms
@@ -540,12 +559,12 @@ Configuration files support environment variable substitution:
 {
   "chromadb_path": "${HOME}/chromadb_data",
   "ai_provider": {
-    "type": "openai",
-    "embedding": {
+    "provider_type": "openai",
+    "embedding_model": {
       "model": "text-embedding-3-small",
       "api_key": "${OPENAI_API_KEY}"
     },
-    "llm": {
+    "llm_model": {
       "model": "${OPENAI_MODEL:-gpt-4o-mini}"
     }
   }

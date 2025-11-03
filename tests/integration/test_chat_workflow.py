@@ -33,7 +33,8 @@ def mock_config(temp_chromadb, temp_conversations):
 
     return ChatConfig(
         chromadb_path=str(temp_chromadb),
-        ai_provider=ai_provider_config,
+        embedding_provider=ai_provider_config,
+        llm_provider=ai_provider_config,
         conversation_dir=str(temp_conversations),
         enable_streaming=False,
         mcp_server_url='http://localhost:8000',
