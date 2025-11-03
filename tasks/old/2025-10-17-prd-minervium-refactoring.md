@@ -639,7 +639,7 @@ logger.success("✓ Pipeline completed!")
   "chromadb_path": "./chromadb_data",
   "json_file": "./test-data/notes.json",
   "chunk_size": 1200,
-  "forceRecreate": false,
+  "force_recreate": false,
   "skipAiValidation": false,
   "ai_provider": {
     "provider_type": "ollama",

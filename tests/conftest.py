@@ -120,7 +120,7 @@ def sample_index_config(temp_dir: Path, temp_json_file: Path, temp_chromadb_dir:
         "description": "Test collection for unit tests",
         "chromadb_path": str(temp_chromadb_dir),
         "json_file": str(temp_json_file),
-        "forceRecreate": False,
+        "force_recreate": False,
         "skipAiValidation": True,
     }
 

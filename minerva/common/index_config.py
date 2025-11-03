@@ -165,7 +165,25 @@ def _build_collection(block: Dict[str, Any], base_dir: Path, source_path: Path) 
             "Collection description cannot be empty after trimming whitespace\n"
             f"  File: {source_path}"
         )
-    json_file = _resolve_path(block["json_file"], base_dir)
+
+    # Resolve and validate json_file path
+    original_json_path = block["json_file"]
+    json_file = _resolve_path(original_json_path, base_dir)
+
+    if not Path(json_file).exists():
+        raise ConfigError(
+            f"JSON file not found\n\n"
+            f"  Config file: {source_path}\n"
+            f"  Path in config: {original_json_path}\n"
+            f"  Resolved to: {json_file}\n\n"
+            f"  Note: Relative paths are resolved from the config file's directory\n"
+            f"        Config directory: {base_dir}/\n\n"
+            f"  Suggestions:\n"
+            f"    • Check that the path is correct relative to the config file location\n"
+            f"    • Use './' for files in the same directory as the config\n"
+            f"    • Use '../' to go up one directory level\n"
+            f"    • Or use an absolute path: /full/path/to/file.json"
+        )
 
     try:
         chunk_size = int(block.get("chunk_size", 1200))

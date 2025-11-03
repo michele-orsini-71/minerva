@@ -54,7 +54,7 @@ Create a JSON configuration file (e.g., `my-config.json`):
   "description": "Personal notes about software development, project management, and research",
   "chromadb_path": "./chromadb_data",
   "json_file": "./notes.json",
-  "forceRecreate": false,
+  "force_recreate": false,
   "skipAiValidation": false
 }
 ```
@@ -142,10 +142,10 @@ minerva serve --config server-config.json
 
 ### Fields
 
-| Field                 | Type   | Required | Default | Description                                        |
-| --------------------- | ------ | -------- | ------- | -------------------------------------------------- |
-| `chromadb_path`       | string | ✅       | -       | Absolute path to ChromaDB storage directory        |
-| `default_max_results` | integer | ✅      | -       | Default number of search results (recommended: 3-5, max: 15) |
+| Field                 | Type    | Required | Default | Description                                                  |
+| --------------------- | ------- | -------- | ------- | ------------------------------------------------------------ |
+| `chromadb_path`       | string  | ✅       | -       | Absolute path to ChromaDB storage directory                  |
+| `default_max_results` | integer | ✅       | -       | Default number of search results (recommended: 3-5, max: 15) |
 
 ### What the Server Does
 
@@ -614,7 +614,7 @@ cat > config.json << 'EOF'
   "description": "Updated notes",
   "chromadb_path": "./chromadb_data",
   "json_file": "new-notes.json",
-  "forceRecreate": true  // ← Deletes existing collection
+  "force_recreate": true  // ← Deletes existing collection
 }
 EOF
 
@@ -649,7 +649,7 @@ minerva index --config config.json --verbose
 # Edit config.json: "collection_name": "my_notes_v2"
 
 # Option 2: Force recreate
-# Edit config.json: "forceRecreate": true
+# Edit config.json: "force_recreate": true
 
 # Option 3: Delete manually
 python -c "

@@ -217,7 +217,7 @@ project-root/
 {
   "collection_name": "work_notes",
   "description": "Work-related technical notes covering Python, Docker, and cloud infrastructure",
-  "forceRecreate": false,
+  "force_recreate": false,
   "skipAiValidation": false,
   "chromadb_path": "../chromadb_data",
   "json_file": "../test-data/work-notes.json",
@@ -244,7 +244,7 @@ project-root/
 {
   "collection_name": "personal_notes",
   "description": "Personal knowledge base with programming tips and tutorials",
-  "forceRecreate": false,
+  "force_recreate": false,
   "skipAiValidation": false,
   "chromadb_path": "../chromadb_data",
   "json_file": "../test-data/personal-notes.json",
@@ -273,7 +273,7 @@ project-root/
 {
   "collection_name": "research_notes",
   "description": "Academic research papers and scientific notes",
-  "forceRecreate": false,
+  "force_recreate": false,
   "skipAiValidation": false,
   "chromadb_path": "../chromadb_data",
   "json_file": "../test-data/research-notes.json",
@@ -1672,7 +1672,7 @@ cat > configs/example-ollama.json << 'EOF'
 {
   "collection_name": "example_notes",
   "description": "Example collection using Ollama (local)",
-  "forceRecreate": false,
+  "force_recreate": false,
   "skipAiValidation": false,
   "chromadb_path": "../chromadb_data",
   "json_file": "../test-data/example.json",
@@ -1703,7 +1703,7 @@ cat > configs/example-openai.json << 'EOF'
 {
   "collection_name": "example_notes_openai",
   "description": "Example collection using OpenAI",
-  "forceRecreate": false,
+  "force_recreate": false,
   "skipAiValidation": false,
   "chromadb_path": "../chromadb_data",
   "json_file": "../test-data/example.json",

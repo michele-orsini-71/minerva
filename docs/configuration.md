@@ -46,6 +46,62 @@ configs/
 
 You may create additional files alongside these samples. Keep secrets (API keys, absolute paths) out of version control.
 
+### Path Resolution Examples
+
+All paths in config files (`chromadb_path`, `json_file`, `conversation_dir`) are resolved **relative to the config file's directory**.
+
+**Example 1: Config in `configs/index/`**
+```
+project/
+├── chromadb_data/          # Shared database
+├── data/
+│   └── notes.json          # Source data
+└── configs/
+    └── index/
+        └── notes.json      # Config file here
+```
+
+In `configs/index/notes.json`:
+```json
+{
+  "chromadb_path": "../../chromadb_data",    // Go up 2 levels
+  "collection": {
+    "json_file": "../../data/notes.json"     // Go up 2 levels, then into data/
+  }
+}
+```
+
+**Example 2: Config in same directory as data**
+```
+project/
+├── chromadb_data/
+└── my-notes/
+    ├── config.json         # Config file here
+    └── notes.json          # Data file here
+```
+
+In `my-notes/config.json`:
+```json
+{
+  "chromadb_path": "../chromadb_data",       // Go up 1 level
+  "collection": {
+    "json_file": "./notes.json"              // Same directory
+  }
+}
+```
+
+**Example 3: Using absolute paths (no resolution)**
+```json
+{
+  "chromadb_path": "/srv/minerva/chromadb_data",
+  "collection": {
+    "json_file": "/data/notes/extracted.json"
+  }
+}
+```
+
+**Tip:** Use `./` for same directory, `../` to go up one level, or absolute paths for clarity.
+
 ## Index Configuration
 
 Index configs describe a single collection and its embedding provider. Loader: `minerva.common.index_config.load_index_config`.

@@ -348,7 +348,7 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 {
   "collection_name": "personal_notes",
   "description": "Personal knowledge base with programming tips and tutorials",
-  "forceRecreate": false,
+  "force_recreate": false,
   "skipAiValidation": false,
   "chromadb_path": "../chromadb_data",
   "json_file": "../test-data/personal-notes.json",
@@ -374,7 +374,7 @@ This feature introduces an **AI Provider Abstraction Layer** that allows users t
 {
   "collection_name": "work_notes",
   "description": "Work-related technical notes covering Python, Docker, and cloud infrastructure",
-  "forceRecreate": false,
+  "force_recreate": false,
   "skipAiValidation": false,
   "chromadb_path": "../chromadb_data",
   "json_file": "../test-data/work-notes.json",

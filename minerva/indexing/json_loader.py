@@ -14,7 +14,10 @@ def load_json_notes(json_path: str) -> List[Dict[str, Any]]:
         file_path = Path(json_path)
 
         if not file_path.exists():
-            message = f"JSON file not found: {json_path}"
+            message = (
+                f"JSON file not found: {json_path}\n"
+                f"  Please verify the file exists at this location"
+            )
             logger.error(message)
             raise JsonLoaderError(message)
 

@@ -1186,7 +1186,7 @@ minerva-books: (no external dependencies)
   "description": "Personal notes from Bear app",
   "chromadb_path": "./chromadb_data",
   "chunk_size": 1200,
-  "forceRecreate": false,
+  "force_recreate": false,
   "skipAiValidation": false,
   "provider": {
     "provider_type": "ollama",
