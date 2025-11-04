@@ -36,8 +36,8 @@ setup(
         # Vector database and AI providers
         "chromadb>=0.4.0",
         "ollama>=0.1.0",
-        "litellm>=1.0.0",
-        "httpx>=0.26.0",
+        "litellm>=1.79.0",
+        "httpx>=0.28.0",
 
         # Text processing and embeddings
         "numpy>=1.21.0",

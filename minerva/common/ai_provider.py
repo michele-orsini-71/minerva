@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from typing import List, Dict, Any, Optional, Iterable
 
 import httpx
+import litellm
 import numpy as np
 
 from minerva.common.ai_config import AIProviderConfig, APIKeyMissingError, RateLimitConfig
@@ -73,11 +74,8 @@ class RateLimiter:
 
 
 class LMStudioClient:
-    def __init__(self, base_url: Optional[str], api_key: Optional[str]):
-        if not base_url:
-            raise AIProviderError("LM Studio base_url must be provided")
+    def __init__(self, base_url: str):
         self.base_url = base_url.rstrip('/')
-        self.api_key = api_key
 
     def embeddings(self, model: str, texts: List[str]) -> Dict[str, Any]:
         payload = {
@@ -114,10 +112,7 @@ class LMStudioClient:
         return self._request('POST', '/v1/chat/completions', json=payload)
 
     def _headers(self) -> Dict[str, str]:
-        headers = {'Content-Type': 'application/json'}
-        if self.api_key:
-            headers['Authorization'] = f'Bearer {self.api_key}'
-        return headers
+        return {'Content-Type': 'application/json'}
 
     def _request(self, method: str, path: str, **kwargs) -> Dict[str, Any]:
         url = f"{self.base_url}{path}"
@@ -187,20 +182,11 @@ class AIProvider:
         self.base_url = config.base_url
         self.rate_limiter = RateLimiter.from_config(config.rate_limit)
         self.using_lmstudio = self.provider_type == 'lmstudio'
-        self.litellm = None
         self.lmstudio_client = None
 
         if self.using_lmstudio:
-            self.lmstudio_client = LMStudioClient(self.base_url, self.api_key)
+            self.lmstudio_client = LMStudioClient(self.base_url)
         else:
-            try:
-                import litellm
-            except ImportError as error:
-                raise AIProviderError(
-                    "LiteLLM is not installed.\n"
-                    "  Install with: pip install litellm"
-                ) from error
-
             self.litellm = litellm
             self._configure_litellm()
 
@@ -656,7 +642,16 @@ Be concise and direct."""
                 except (KeyError, TypeError):
                     raise AIProviderError("Invalid response from LLM: missing message")
 
-            result = {'role': 'assistant'}
+            # Extract role from message
+            try:
+                role = message.role
+            except (AttributeError, TypeError):
+                try:
+                    role = message['role']
+                except (KeyError, TypeError):
+                    role = 'assistant'  # Fallback to 'assistant' if role is missing
+
+            result = {'role': role}
 
             try:
                 content = message.content

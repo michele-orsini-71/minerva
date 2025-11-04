@@ -2,17 +2,10 @@ import json
 import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock, AsyncMock
-from tasks.old.chat_engine import ChatEngine, ChatEngineError
+from minerva.chat.chat_engine import ChatEngine, ChatEngineError
 from minerva.chat.config import ChatConfig
 from minerva.common.ai_config import AIProviderConfig
 from minerva.common.ai_provider import AIProvider
-
-
-@pytest.fixture
-def temp_chromadb(tmp_path):
-    chromadb_path = tmp_path / 'chromadb_data'
-    chromadb_path.mkdir()
-    return chromadb_path
 
 
 @pytest.fixture
@@ -23,7 +16,7 @@ def temp_conversations(tmp_path):
 
 
 @pytest.fixture
-def mock_config(temp_chromadb, temp_conversations):
+def mock_config(temp_conversations):
     ai_provider_config = AIProviderConfig(
         provider_type='ollama',
         embedding_model='test-embed',
@@ -32,7 +25,6 @@ def mock_config(temp_chromadb, temp_conversations):
     )
 
     return ChatConfig(
-        chromadb_path=str(temp_chromadb),
         llm_provider=ai_provider_config,
         conversation_dir=str(temp_conversations),
         enable_streaming=False,

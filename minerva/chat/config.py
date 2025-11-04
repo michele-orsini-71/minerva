@@ -22,16 +22,11 @@ CHAT_CONFIG_SCHEMA: Dict[str, Any] = {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
     "required": [
-        "chromadb_path",
         "conversation_dir",
         "mcp_server_url",
         "provider"
     ],
     "properties": {
-        "chromadb_path": {
-            "type": "string",
-            "minLength": 1
-        },
         "conversation_dir": {
             "type": "string",
             "minLength": 1
@@ -62,7 +57,6 @@ CHAT_CONFIG_SCHEMA: Dict[str, Any] = {
 class ChatConfig:
     llm_provider: AIProviderConfig
     conversation_dir: str
-    chromadb_path: str
     enable_streaming: bool
     mcp_server_url: str
     max_tool_iterations: int
@@ -129,9 +123,6 @@ def _validate_schema(payload: Dict[str, Any], path: Path) -> None:
 def _build_chat_config(payload: Dict[str, Any], path: Path) -> ChatConfig:
     base_dir = path.parent
 
-    chromadb_path = _resolve_path(payload["chromadb_path"], base_dir)
-    _ensure_absolute_path(chromadb_path, "chromadb_path", path)
-
     conversation_dir_raw = str(payload["conversation_dir"]).strip()
     if not conversation_dir_raw:
         raise ChatConfigError(
@@ -182,7 +173,6 @@ def _build_chat_config(payload: Dict[str, Any], path: Path) -> ChatConfig:
     return ChatConfig(
         llm_provider=llm_provider,
         conversation_dir=conversation_dir,
-        chromadb_path=chromadb_path,
         enable_streaming=enable_streaming,
         mcp_server_url=mcp_server_url,
         max_tool_iterations=max_tool_iterations,
@@ -196,15 +186,6 @@ def _resolve_path(value: Any, base_dir: Path) -> str:
     if not path.is_absolute():
         path = (base_dir / path).resolve()
     return str(path)
-
-
-def _ensure_absolute_path(value: str, field_name: str, source_path: Path) -> None:
-    if not Path(value).is_absolute():
-        raise ChatConfigError(
-            f"Expected absolute path for {field_name}\n"
-            f"  Value: {value}\n"
-            f"  File: {source_path}"
-        )
 
 
 def _ensure_directory(directory: str) -> None:

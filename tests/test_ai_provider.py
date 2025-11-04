@@ -277,25 +277,14 @@ def test_lmstudio_provider_uses_rate_limiter_for_chat():
     assert len(provider.rate_limiter._request_times) == initial_times + 1
 
 
-def test_lmstudio_client_raises_error_when_base_url_is_missing():
-    from minerva.common.exceptions import AIProviderError
-    with pytest.raises(AIProviderError, match='base_url must be provided'):
-        from minerva.common.ai_provider import LMStudioClient
-        LMStudioClient(base_url=None, api_key=None)
-
-
-def test_lmstudio_client_adds_authorization_header_when_api_key_provided():
+def test_lmstudio_client_creates_with_base_url():
+    """Test that LMStudioClient initializes correctly with just base_url."""
     from minerva.common.ai_provider import LMStudioClient
-    client = LMStudioClient(base_url='http://localhost:1234', api_key='test-key')
+    client = LMStudioClient(base_url='http://localhost:1234')
     headers = client._headers()
-    assert 'Authorization' in headers
-    assert headers['Authorization'] == 'Bearer test-key'
-
-
-def test_lmstudio_client_omits_authorization_header_when_no_api_key():
-    from minerva.common.ai_provider import LMStudioClient
-    client = LMStudioClient(base_url='http://localhost:1234', api_key=None)
-    headers = client._headers()
+    # LM Studio doesn't require API key, only Content-Type header
+    assert 'Content-Type' in headers
+    assert headers['Content-Type'] == 'application/json'
     assert 'Authorization' not in headers
 
 

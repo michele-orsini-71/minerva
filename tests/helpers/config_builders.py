@@ -64,13 +64,9 @@ def make_chat_config(
 ) -> tuple[ChatConfig, Path]:
     base_dir.mkdir(parents=True, exist_ok=True)
 
-    chroma_dir = (base_dir / "chromadb").resolve()
-    chroma_dir.mkdir(parents=True, exist_ok=True)
-
     conversation_dir = base_dir / "conversations"
 
     payload: dict[str, Any] = {
-        "chromadb_path": str(chroma_dir),
         "conversation_dir": str(conversation_dir),
         "mcp_server_url": "http://localhost:8000/mcp",
         "enable_streaming": False,

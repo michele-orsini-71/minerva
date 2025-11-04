@@ -5,7 +5,7 @@ from pathlib import Path
 import json
 
 from minerva.chat.mcp_client import MCPClient, MCPToolDefinition, MCPConnectionError, MCPToolExecutionError
-from tasks.old.chat_engine import ChatEngine
+from minerva.chat.chat_engine import ChatEngine
 from minerva.chat.config import ChatConfig
 from minerva.common.ai_provider import AIProvider
 from tests.helpers.config_builders import make_chat_config
@@ -220,7 +220,6 @@ class TestChatEngineWithMCP:
         chat_config_with_streaming = ChatConfig(
             llm_provider=chat_config.llm_provider,
             conversation_dir=chat_config.conversation_dir,
-            chromadb_path=chat_config.chromadb_path,
             enable_streaming=True,
             mcp_server_url=chat_config.mcp_server_url,
             max_tool_iterations=chat_config.max_tool_iterations,
@@ -261,7 +260,6 @@ class TestChatEngineWithMCP:
         config_with_low_max = ChatConfig(
             llm_provider=chat_config.llm_provider,
             conversation_dir=chat_config.conversation_dir,
-            chromadb_path=chat_config.chromadb_path,
             enable_streaming=False,
             mcp_server_url=chat_config.mcp_server_url,
             max_tool_iterations=2,
@@ -283,7 +281,6 @@ class TestChatEngineWithMCP:
         chat_config_streaming = ChatConfig(
             llm_provider=chat_config.llm_provider,
             conversation_dir=chat_config.conversation_dir,
-            chromadb_path=chat_config.chromadb_path,
             enable_streaming=True,
             mcp_server_url=chat_config.mcp_server_url,
             max_tool_iterations=chat_config.max_tool_iterations,
@@ -317,7 +314,6 @@ class TestChatEngineWithMCP:
         chat_config_streaming = ChatConfig(
             llm_provider=chat_config.llm_provider,
             conversation_dir=chat_config.conversation_dir,
-            chromadb_path=chat_config.chromadb_path,
             enable_streaming=True,
             mcp_server_url=chat_config.mcp_server_url,
             max_tool_iterations=chat_config.max_tool_iterations,

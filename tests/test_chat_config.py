@@ -16,7 +16,6 @@ def test_load_chat_config_success(tmp_path: Path):
     assert isinstance(loaded, ChatConfig)
     assert loaded == chat_config
     assert Path(loaded.conversation_dir).exists()
-    assert Path(loaded.chromadb_path).is_absolute()
 
 
 def test_load_chat_config_with_system_prompt(tmp_path: Path):

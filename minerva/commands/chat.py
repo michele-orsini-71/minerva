@@ -5,9 +5,9 @@ import logging
 from minerva.common.logger import get_logger
 from minerva.common.ai_provider import AIProvider, ProviderUnavailableError, AIProviderError
 from minerva.chat.config import ChatConfig, ChatConfigError, load_chat_config_from_file
-from tasks.old.chat_engine import ChatEngine, ChatEngineError
+from minerva.chat.chat_engine import ChatEngine, ChatEngineError
 from minerva.chat.history import list_conversations
-from minerva.server.collection_discovery import list_collections, CollectionDiscoveryError
+from minerva.chat.mcp_client import MCPClient, MCPConnectionError
 
 logger = get_logger(__name__, simple=True, mode="cli")
 
@@ -127,13 +127,26 @@ def initialize_chat_system(config_path: str) -> tuple:
         logger.error("=" * 60)
         return None, None, None
 
+    # Query MCP server for available collections
     try:
-        collections = list_collections(config.chromadb_path)
-        collections_count = len(collections)
-    except CollectionDiscoveryError as e:
-        logger.error("ChromaDB Connection Error")
+        mcp_client = MCPClient(config.mcp_server_url)
+        collections = mcp_client.call_tool_sync("list_knowledge_bases", {})
+        collections_count = len(collections) if isinstance(collections, list) else 0
+        logger.info(f"MCP server connection successful: {collections_count} collections available")
+    except MCPConnectionError as e:
+        logger.error("MCP Server Connection Error")
         logger.error("=" * 60)
         logger.error(str(e))
+        logger.error("=" * 60)
+        logger.error("\nTroubleshooting:")
+        logger.error("  1. Ensure the MCP server is running: minerva serve --config <server-config>")
+        logger.error(f"  2. Check the MCP server URL is correct: {config.mcp_server_url}")
+        logger.error("  3. Verify network connectivity to the MCP server")
+        return None, None, None
+    except Exception as e:
+        logger.error("MCP Server Error")
+        logger.error("=" * 60)
+        logger.error(f"Failed to query MCP server: {e}")
         logger.error("=" * 60)
         return None, None, None
 

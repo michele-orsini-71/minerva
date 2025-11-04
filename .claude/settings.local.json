@@ -40,7 +40,8 @@
       "Bash(OPENAI_API_KEY=test-key python3:*)",
       "Bash(OPENAI_API_KEY=test-key python:*)",
       "Bash(MINERVA_DEBUG=1 minerva chat:*)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "WebFetch(domain:pypi.org)"
     ],
     "deny": [],
     "ask": []

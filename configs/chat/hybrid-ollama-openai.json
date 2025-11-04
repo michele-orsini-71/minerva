@@ -1,5 +1,4 @@
 {
-  "chromadb_path": "../../chromadb_data",
   "conversation_dir": "../../state/chat/conversations",
   "mcp_server_url": "http://127.0.0.1:8337",
   "enable_streaming": true,
