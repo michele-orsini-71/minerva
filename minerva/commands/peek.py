@@ -24,18 +24,67 @@ def is_collection_usable(metadata: Dict[str, Any]) -> tuple[bool, str | None]:
     return True, None
 
 
+def _extract_unique_note_ids(metadatas: List[Dict[str, Any]]) -> set[str]:
+    note_ids: set[str] = set()
+    for meta in metadatas:
+        if not meta:
+            continue
+        note_id = meta.get('noteId') or meta.get('note_id')
+        if note_id:
+            note_ids.add(str(note_id))
+    return note_ids
+
+
+def _compute_note_count(collection, chunk_count: int) -> tuple[int | None, str | None]:
+    if chunk_count == 0:
+        return 0, None
+
+    batch_size = 1000
+    unique_note_ids: set[str] = set()
+    retrieved = 0
+
+    try:
+        while retrieved < chunk_count:
+            limit = min(batch_size, chunk_count - retrieved)
+            results = collection.get(
+                include=["metadatas"],
+                limit=limit,
+                offset=retrieved
+            )
+
+            metadatas = results.get("metadatas") if results else None
+            if not metadatas:
+                break
+
+            unique_note_ids.update(_extract_unique_note_ids(metadatas))
+            retrieved += len(metadatas)
+
+        if not unique_note_ids:
+            return None, None
+
+        return len(unique_note_ids), None
+
+    except Exception as error:
+        return None, str(error)
+
+
 def get_collection_info(collection) -> Dict[str, Any]:
 
     # Get basic collection info
     metadata = collection.metadata or {}
     is_usable, unavailable_reason = is_collection_usable(metadata)
 
+    chunk_count = collection.count()
+    note_count, note_count_error = _compute_note_count(collection, chunk_count)
+
     info = {
         "name": collection.name,
-        "count": collection.count(),
+        "count": chunk_count,
         "metadata": metadata,
         "is_usable": is_usable,
-        "unavailable_reason": unavailable_reason
+        "unavailable_reason": unavailable_reason,
+        "note_count": note_count,
+        "note_count_error": note_count_error,
     }
 
     # Get a few sample chunks (limit to 5 for inspection)
@@ -82,6 +131,12 @@ def format_collection_info_text(info: Dict[str, Any]) -> str:
 
     # Basic stats
     lines.append(f"Total chunks: {info['count']}")
+    if info.get("note_count") is not None:
+        lines.append(f"Total notes: {info['note_count']}")
+    elif info.get("note_count_error"):
+        lines.append(f"Total notes: unavailable (error: {info['note_count_error']})")
+    else:
+        lines.append("Total notes: unavailable (note metadata missing)")
     lines.append("")
 
     # Metadata section
@@ -186,6 +241,12 @@ def format_all_collections_text(collections_data: List[Dict[str, Any]]) -> str:
         status_indicator = " ⚠️ LEGACY" if not info.get("is_usable", True) else ""
         lines.append(f"[{i}] {info['name']}{status_indicator}")
         lines.append(f"    Total chunks: {info['count']}")
+        if info.get("note_count") is not None:
+            lines.append(f"    Total notes: {info['note_count']}")
+        elif info.get("note_count_error"):
+            lines.append(f"    Total notes: unavailable (error)")
+        else:
+            lines.append("    Total notes: unavailable")
 
         # Show unavailable reason for legacy collections
         if not info.get("is_usable", True):

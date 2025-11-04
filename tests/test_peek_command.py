@@ -1,7 +1,7 @@
 import pytest
 from argparse import Namespace
 from pathlib import Path
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import Mock, MagicMock, patch, call
 from typing import Any
 
 from minerva.commands.peek import (
@@ -93,8 +93,9 @@ class TestGetCollectionInfo:
         info = get_collection_info(mock_collection)
 
         # Should call get with limit=5
-        mock_collection.get.assert_called_once_with(limit=5, include=["documents", "metadatas"])
+        assert mock_collection.get.call_args_list[-1] == call(limit=5, include=["documents", "metadatas"])
         assert len(info["samples"]) == 5
+        assert info["note_count"] is None
 
 
 class TestFormatCollectionInfoText:
@@ -428,7 +429,7 @@ class TestIntegrationScenarios:
 
         assert exit_code == 0
         # Should limit samples to 5
-        mock_collection.get.assert_called_once_with(limit=5, include=["documents", "metadatas"])
+        assert mock_collection.get.call_args_list[-1] == call(limit=5, include=["documents", "metadatas"])
 
     @patch('minerva.commands.peek.initialize_chromadb_client')
     def test_peek_collection_with_unicode(self, mock_init_client, temp_chromadb_dir: Path):
