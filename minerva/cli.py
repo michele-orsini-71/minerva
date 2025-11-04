@@ -133,14 +133,11 @@ Examples:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Start HTTP server on default port (8000)
+  # Start HTTP server (host and port specified in config file)
   minerva serve-http --config configs/server/local.json
 
-  # Start on custom host and port
-  minerva serve-http --config configs/server/local.json --host 0.0.0.0 --port 9000
-
-  # Start on localhost only
-  minerva serve-http --config configs/server/local.json --host 127.0.0.1 --port 8000
+  # Use different config for different host/port settings
+  minerva serve-http --config configs/server/production.json
         """
     )
 
@@ -150,22 +147,6 @@ Examples:
         required=True,
         metavar='FILE',
         help='Path to server configuration JSON file'
-    )
-
-    serve_http_parser.add_argument(
-        '--host',
-        type=str,
-        default='localhost',
-        metavar='HOST',
-        help='Host to bind to (default: localhost). Use 0.0.0.0 for all interfaces'
-    )
-
-    serve_http_parser.add_argument(
-        '--port',
-        type=int,
-        default=8000,
-        metavar='PORT',
-        help='Port to bind to (default: 8000)'
     )
 
     # ========================================
@@ -263,9 +244,6 @@ Examples:
 
   # Resume a previous conversation
   minerva chat --config configs/chat/ollama.json --resume 20251030-143022-abc123
-
-  # Start chat with custom system prompt
-  minerva chat --config configs/chat/ollama.json --system "You are a code review assistant"
         """
     )
 
@@ -282,13 +260,6 @@ Examples:
         type=str,
         metavar='QUESTION',
         help='Ask a single question and exit (non-interactive mode)'
-    )
-
-    chat_parser.add_argument(
-        '--system',
-        type=str,
-        metavar='PROMPT',
-        help='Custom system prompt for the AI assistant'
     )
 
     chat_parser.add_argument(

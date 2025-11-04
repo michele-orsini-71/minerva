@@ -109,7 +109,7 @@ Command-specific configuration loaders (`IndexConfig`, `ChatConfig`, `ServerConf
 ```
 
 - `conversation_dir` is created automatically if it does not exist.
-- `mcp_server_url` must include scheme + host; use `http://127.0.0.1:8337/mcp` for local stdio/HTTP bridge.
+- `mcp_server_url` must include scheme + host; use `http://127.0.0.1:8337` for local server (the `/mcp` endpoint is added automatically).
 - `system_prompt_file` can be `null` or a path to a Markdown prompt.
 
 **Key Flags**:

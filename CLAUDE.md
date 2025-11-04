@@ -396,14 +396,13 @@ Location: `configs/chat/<environment>.json`
 {
   "chromadb_path": "../../chromadb_data",
   "conversation_dir": "../../state/chat/conversations",
-  "mcp_server_url": "http://127.0.0.1:8337/mcp",
+  "mcp_server_url": "http://127.0.0.1:8337",
   "enable_streaming": true,
   "max_tool_iterations": 4,
   "system_prompt_file": null,
   "provider": {
     "provider_type": "lmstudio",
     "base_url": "http://localhost:1234/v1",
-    "embedding_model": "qwen2.5-7b-instruct",
     "llm_model": "qwen2.5-14b-instruct",
     "rate_limit": {
       "requests_per_minute": 60,

@@ -29,8 +29,6 @@ from minerva.server.search_tools import (
 )
 from minerva.common.ai_provider import AIProvider
 
-mcp = FastMCP("minerva-mcp-server")
-
 # Global configuration (loaded at startup)
 SERVER_CONFIG: Optional[ServerConfig] = None
 PROVIDER_MAP: Dict[str, AIProvider] = {}
@@ -133,13 +131,37 @@ def initialize_server(server_config: ServerConfig) -> None:
         raise ServerError(f"Failed to discover collections: {error}") from error
 
 
-@mcp.tool(
-    description="Discover all available knowledge bases (collections) in the system. "
-                "Returns collection names, descriptions, and chunk counts to help users choose which knowledge base to search. "
-                "Use this first to see what collections are available before calling search_knowledge_base. "
-                "\n\n"
-                "NOTE: When you later search these collections, you MUST cite sources using the 'noteTitle' field from search results."
-)
+def _register_tools(mcp_instance: FastMCP) -> None:
+    """Register all MCP tools with their descriptions."""
+
+    # Register list_knowledge_bases tool
+    mcp_instance.tool(
+        description="Discover all available knowledge bases (collections) in the system. "
+                    "Returns collection names, descriptions, and chunk counts to help users choose which knowledge base to search. "
+                    "Use this first to see what collections are available before calling search_knowledge_base. "
+                    "\n\n"
+                    "NOTE: When you later search these collections, you MUST cite sources using the 'noteTitle' field from search results."
+    )(list_knowledge_bases)
+
+    # Register search_knowledge_base tool
+    mcp_instance.tool(
+        description="Perform semantic search across indexed knowledge bases (documentation, notes, standards). "
+                    "Use this for conceptual queries like 'what does the documentation say about X?', 'how should I implement Y?', 'what are the standards for Z?'. "
+                    "This searches curated, indexed content and returns ranked results by relevance. "
+                    "More efficient than Grep/Glob for semantic/documentation searches. Not for searching raw source code - use Grep/Glob for exact string matching in source files. "
+                    "\n\n"
+                    "⚠️ CITATION REQUIREMENT - YOU MUST FOLLOW THIS:\n"
+                    "ALWAYS cite the source by including the 'noteTitle' field when presenting information to users. "
+                    "Every single response that uses information from search results MUST include the note title. "
+                    "Format: 'According to [noteTitle], ...' or 'From [noteTitle]: ...' or '[noteTitle] states that ...' "
+                    "Do NOT present information without citing its source. The noteTitle indicates where the information came from. "
+                    "\n\n"
+                    "TOKEN LIMITS: Each result includes surrounding context (~1,500 tokens). "
+                    "Start with max_results=3-5 (default: 5). If you get a token limit error, retry with fewer results. "
+                    "The system will self-regulate through error responses. Max allowed: 15 results."
+    )(search_knowledge_base)
+
+
 def list_knowledge_bases() -> List[Dict[str, Any]]:
     try:
         console_logger.info("Tool invoked: list_knowledge_bases")
@@ -155,22 +177,6 @@ def list_knowledge_bases() -> List[Dict[str, Any]]:
         raise CollectionDiscoveryError(f"Failed to list knowledge bases: {e}")
 
 
-@mcp.tool(
-    description="Perform semantic search across indexed knowledge bases (documentation, notes, standards). "
-                "Use this for conceptual queries like 'what does the documentation say about X?', 'how should I implement Y?', 'what are the standards for Z?'. "
-                "This searches curated, indexed content and returns ranked results by relevance. "
-                "More efficient than Grep/Glob for semantic/documentation searches. Not for searching raw source code - use Grep/Glob for exact string matching in source files. "
-                "\n\n"
-                "⚠️ CITATION REQUIREMENT - YOU MUST FOLLOW THIS:\n"
-                "ALWAYS cite the source by including the 'noteTitle' field when presenting information to users. "
-                "Every single response that uses information from search results MUST include the note title. "
-                "Format: 'According to [noteTitle], ...' or 'From [noteTitle]: ...' or '[noteTitle] states that ...' "
-                "Do NOT present information without citing its source. The noteTitle indicates where the information came from. "
-                "\n\n"
-                "TOKEN LIMITS: Each result includes surrounding context (~1,500 tokens). "
-                "Start with max_results=3-5 (default: 5). If you get a token limit error, retry with fewer results. "
-                "The system will self-regulate through error responses. Max allowed: 15 results."
-)
 def search_knowledge_base(
     query: str,
     collection_name: str,
@@ -236,6 +242,12 @@ def main(config: ServerConfig | str):
     server_config = _ensure_server_config(config)
     initialize_server(server_config)
 
+    # Create FastMCP instance (stdio mode doesn't need host/port)
+    mcp = FastMCP("minerva-mcp-server")
+
+    # Register all tools
+    _register_tools(mcp)
+
     console_logger.info("Starting FastMCP server in stdio mode...")
     console_logger.info("Waiting for MCP protocol requests...\n")
 
@@ -249,11 +261,7 @@ def main(config: ServerConfig | str):
         raise ServerError(f"Server encountered an error: {error}") from error
 
 
-def main_http(
-    config: ServerConfig | str,
-    host: str | None = None,
-    port: int | None = None
-):
+def main_http(config: ServerConfig | str):
     console_logger.info("=" * 60)
     console_logger.info("Multi-Collection MCP Server for Markdown Notes")
     console_logger.info("=" * 60)
@@ -261,14 +269,17 @@ def main_http(
     server_config = _ensure_server_config(config)
     initialize_server(server_config)
 
-    resolved_host = host if host is not None else server_config.host or "localhost"
-    resolved_port = port if port is not None else server_config.port or 8000
+    host = server_config.host or "localhost"
+    port = server_config.port or 8000
 
-    mcp.settings.host = resolved_host
-    mcp.settings.port = resolved_port
+    # Create FastMCP instance with config from file
+    mcp = FastMCP("minerva-mcp-server", host=host, port=port)
 
-    console_logger.info(f"Starting FastMCP server in HTTP mode on http://{resolved_host}:{resolved_port}...")
-    console_logger.info(f"MCP endpoint will be available at: http://{resolved_host}:{resolved_port}/mcp/")
+    # Register all tools
+    _register_tools(mcp)
+
+    console_logger.info(f"Starting FastMCP server in HTTP mode on http://{host}:{port}...")
+    console_logger.info(f"MCP endpoint will be available at: http://{host}:{port}/mcp/")
     console_logger.info("Waiting for HTTP requests...\n")
 
     try:

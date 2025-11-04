@@ -480,13 +480,22 @@ class AIProvider:
         }
 
         try:
-            # Try to generate a test embedding
-            test_text = "Connection test"
-            embedding = self.generate_embedding(test_text)
-
-            # If we got here, the provider is available
-            result['available'] = True
-            result['dimension'] = len(embedding)
+            # If embedding_model is configured, test embeddings
+            # Otherwise test LLM (for chat-only configurations)
+            if self.embedding_model:
+                test_text = "Connection test"
+                embedding = self.generate_embedding(test_text)
+                result['available'] = True
+                result['dimension'] = len(embedding)
+            else:
+                # Test LLM with a minimal completion
+                response = self.chat_completion(
+                    messages=[{"role": "user", "content": "test"}],
+                    temperature=0.0,
+                    stream=False
+                )
+                if response.get('content') is not None:
+                    result['available'] = True
 
         except ProviderUnavailableError as error:
             result['error'] = f"Provider unavailable: {error}"
@@ -850,6 +859,7 @@ Be concise and direct."""
 
             extracted.append({
                 'id': call_id,
+                'type': 'function',
                 'function': {
                     'name': function_name,
                     'arguments': arguments_str

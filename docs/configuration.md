@@ -208,7 +208,7 @@ Chat configs control conversational features and provider selection. Loader: `mi
 | --------------------- | -------------- | -------- | ------------------------------------------------------------------------- |
 | `chromadb_path`       | string         | ✅       | Must resolve to absolute path; reused for local caching and tool routing. |
 | `conversation_dir`    | string         | ✅       | Directory is created if it does not exist. Supports `~` expansion.        |
-| `mcp_server_url`      | string         | ✅       | Must include scheme + host (e.g., `http://127.0.0.1:8337/mcp`).           |
+| `mcp_server_url`      | string         | ✅       | Must include scheme + host (e.g., `http://127.0.0.1:8337`). The `/mcp` endpoint is added automatically. |
 | `enable_streaming`    | boolean        | ❌       | Default `false`. Enables streaming responses in supported providers.      |
 | `max_tool_iterations` | integer        | ❌       | 1–10, defaults to 5.                                                      |
 | `system_prompt_file`  | string or null | ❌       | Optional path to custom system prompt; `null` clears it.                  |
@@ -220,7 +220,7 @@ Chat configs control conversational features and provider selection. Loader: `mi
 {
   "chromadb_path": "../../chromadb_data",
   "conversation_dir": "../../state/chat/conversations",
-  "mcp_server_url": "http://127.0.0.1:8337/mcp",
+  "mcp_server_url": "http://127.0.0.1:8337",
   "enable_streaming": true,
   "max_tool_iterations": 4,
   "system_prompt_file": null,

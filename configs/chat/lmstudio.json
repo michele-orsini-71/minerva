@@ -1,14 +1,13 @@
 {
   "chromadb_path": "../../chromadb_data",
   "conversation_dir": "../../state/chat/conversations",
-  "mcp_server_url": "http://127.0.0.1:8337/mcp",
+  "mcp_server_url": "http://127.0.0.1:8337",
   "enable_streaming": false,
   "max_tool_iterations": 3,
   "system_prompt_file": null,
   "provider": {
     "provider_type": "lmstudio",
     "base_url": "http://localhost:1234",
-    "embedding_model": "nomic-embed-text-v1.5",
-    "llm_model": "Meta-Llama-3-8B-Instruct"
+    "llm_model": "qwen2.5-coder-14b-instruct-mlx"
   }
 }

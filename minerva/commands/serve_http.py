@@ -14,23 +14,21 @@ def run_serve_http(args: Namespace) -> int:
         config_path = str(args.config)
         server_config = load_server_config(config_path)
 
-        host = args.host if args.host else server_config.host or "localhost"
-        port = args.port if args.port else server_config.port or 8000
+        host = server_config.host or "localhost"
+        port = server_config.port or 8000
 
         logger.info(f"Starting HTTP server on {host}:{port}...")
-
-        main_http(server_config, host=host, port=port)
-
+        main_http(server_config)
         return 0
 
     except OSError as e:
         if "Address already in use" in str(e) or "address already in use" in str(e).lower():
             logger.error(
-                f"Error: Port {port} is already in use.\n\n"
+                f"Error: Port is already in use.\n\n"
                 f"Troubleshooting:\n"
-                f"1. Check if another server is running on port {port}\n"
-                f"2. Use a different port with --port <port_number>\n"
-                f"3. Stop any conflicting services using: lsof -ti:{port} | xargs kill\n"
+                f"1. Check if another server is running on the configured port\n"
+                f"2. Change the port in your config file\n"
+                f"3. Stop any conflicting services\n"
             )
             return 1
         else:

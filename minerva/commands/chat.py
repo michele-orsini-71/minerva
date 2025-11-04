@@ -1,14 +1,22 @@
 from argparse import Namespace
 from pathlib import Path
+import logging
 
 from minerva.common.logger import get_logger
 from minerva.common.ai_provider import AIProvider, ProviderUnavailableError, AIProviderError
 from minerva.chat.config import ChatConfig, ChatConfigError, load_chat_config_from_file
-from minerva.chat.chat_engine import ChatEngine, ChatEngineError
+from tasks.old.chat_engine import ChatEngine, ChatEngineError
 from minerva.chat.history import list_conversations
 from minerva.server.collection_discovery import list_collections, CollectionDiscoveryError
 
 logger = get_logger(__name__, simple=True, mode="cli")
+
+# Suppress INFO logs from chat and AI provider modules to keep conversation clean
+logging.getLogger('minerva.chat.chat_engine').setLevel(logging.WARNING)
+logging.getLogger('minerva.chat.history').setLevel(logging.WARNING)
+logging.getLogger('minerva.chat.mcp_client').setLevel(logging.WARNING)
+logging.getLogger('minerva.chat.context_window').setLevel(logging.WARNING)
+logging.getLogger('minerva.common.ai_provider').setLevel(logging.WARNING)
 
 DEFAULT_SYSTEM_PROMPT = """You are a helpful AI assistant with access to a user's personal knowledge bases.
 
@@ -190,10 +198,26 @@ def run_single_question_mode(config, provider, question: str) -> int:
         return 1
 
 
-def run_interactive_mode(config, provider, collections_count: int, resume_id: str = None, custom_system_prompt: str = None) -> int:
+def run_interactive_mode(config, provider, collections_count: int, resume_id: str = None) -> int:
     engine = ChatEngine()
 
-    system_prompt = custom_system_prompt or DEFAULT_SYSTEM_PROMPT
+    # Load system prompt from config file or use default
+    system_prompt = DEFAULT_SYSTEM_PROMPT
+    if config.system_prompt_file:
+        try:
+            prompt_path = Path(config.system_prompt_file)
+            if not prompt_path.is_absolute():
+                # Resolve relative paths against config file location
+                if config.source_path:
+                    prompt_path = config.source_path.parent / prompt_path
+
+            if prompt_path.exists():
+                system_prompt = prompt_path.read_text().strip()
+                logger.info(f"Loaded system prompt from {prompt_path}")
+            else:
+                logger.warning(f"System prompt file not found: {prompt_path}, using default")
+        except Exception as e:
+            logger.warning(f"Failed to load system prompt: {e}, using default")
 
     try:
         if resume_id:
@@ -290,6 +314,5 @@ def run_chat(args: Namespace) -> int:
         return run_single_question_mode(config, provider, args.question)
 
     resume_id = args.resume if hasattr(args, 'resume') and args.resume else None
-    custom_system_prompt = args.system if hasattr(args, 'system') and args.system else None
 
-    return run_interactive_mode(config, provider, collections_count, resume_id, custom_system_prompt)
+    return run_interactive_mode(config, provider, collections_count, resume_id)

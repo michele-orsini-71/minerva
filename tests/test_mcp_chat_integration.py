@@ -5,7 +5,7 @@ from pathlib import Path
 import json
 
 from minerva.chat.mcp_client import MCPClient, MCPToolDefinition, MCPConnectionError, MCPToolExecutionError
-from minerva.chat.chat_engine import ChatEngine
+from tasks.old.chat_engine import ChatEngine
 from minerva.chat.config import ChatConfig
 from minerva.common.ai_provider import AIProvider
 from tests.helpers.config_builders import make_chat_config
@@ -162,6 +162,8 @@ class TestChatEngineWithMCP:
         assert conversation_id is not None
 
     def test_chat_engine_handles_mcp_unavailable(self, chat_config, mock_ai_provider):
+        from minerva.common.exceptions import ChatEngineError
+
         with patch('minerva.chat.mcp_client.FastMCPClient') as MockClient:
             mock_instance = AsyncMock()
             mock_instance.__aenter__.side_effect = Exception("Connection failed")
@@ -169,15 +171,15 @@ class TestChatEngineWithMCP:
 
             engine = ChatEngine()
 
-            conversation_id = engine.initialize_conversation(
-                system_prompt="Test prompt",
-                ai_provider=mock_ai_provider,
-                config=chat_config
-            )
+            with pytest.raises(ChatEngineError) as exc_info:
+                engine.initialize_conversation(
+                    system_prompt="Test prompt",
+                    ai_provider=mock_ai_provider,
+                    config=chat_config
+                )
 
-            assert engine.mcp_client is not None
+            assert "MCP server is unavailable" in str(exc_info.value)
             assert engine._mcp_available is False
-            assert conversation_id is not None
 
     def test_chat_engine_fetches_tool_definitions_from_mcp(self, chat_config, mock_ai_provider, mock_mcp_client):
         engine = ChatEngine()
@@ -195,6 +197,8 @@ class TestChatEngineWithMCP:
         assert tool_defs[0]['function']['name'] == 'list_knowledge_bases'
 
     def test_chat_engine_returns_empty_tools_when_mcp_unavailable(self, chat_config, mock_ai_provider):
+        from minerva.common.exceptions import ChatEngineError
+
         with patch('minerva.chat.mcp_client.FastMCPClient') as MockClient:
             mock_instance = AsyncMock()
             mock_instance.__aenter__.side_effect = Exception("Connection failed")
@@ -202,18 +206,18 @@ class TestChatEngineWithMCP:
 
             engine = ChatEngine()
 
-            engine.initialize_conversation(
-                system_prompt="Test prompt",
-                ai_provider=mock_ai_provider,
-                config=chat_config
-            )
+            # Chat now requires MCP, so initialization should fail
+            with pytest.raises(ChatEngineError) as exc_info:
+                engine.initialize_conversation(
+                    system_prompt="Test prompt",
+                    ai_provider=mock_ai_provider,
+                    config=chat_config
+                )
 
-            tool_defs = engine._get_tool_definitions()
-            assert tool_defs == []
+            assert "MCP server is unavailable" in str(exc_info.value)
 
     def test_streaming_fallback_on_error(self, chat_config, mock_ai_provider, mock_mcp_client):
         chat_config_with_streaming = ChatConfig(
-            embedding_provider=chat_config.embedding_provider,
             llm_provider=chat_config.llm_provider,
             conversation_dir=chat_config.conversation_dir,
             chromadb_path=chat_config.chromadb_path,
@@ -255,7 +259,6 @@ class TestChatEngineWithMCP:
         })
 
         config_with_low_max = ChatConfig(
-            embedding_provider=chat_config.embedding_provider,
             llm_provider=chat_config.llm_provider,
             conversation_dir=chat_config.conversation_dir,
             chromadb_path=chat_config.chromadb_path,
@@ -278,7 +281,6 @@ class TestChatEngineWithMCP:
 
     def test_streaming_successful_with_no_tool_calls(self, chat_config, mock_ai_provider, mock_mcp_client):
         chat_config_streaming = ChatConfig(
-            embedding_provider=chat_config.embedding_provider,
             llm_provider=chat_config.llm_provider,
             conversation_dir=chat_config.conversation_dir,
             chromadb_path=chat_config.chromadb_path,
@@ -313,7 +315,6 @@ class TestChatEngineWithMCP:
 
     def test_streaming_fallback_persists_across_messages(self, chat_config, mock_ai_provider, mock_mcp_client):
         chat_config_streaming = ChatConfig(
-            embedding_provider=chat_config.embedding_provider,
             llm_provider=chat_config.llm_provider,
             conversation_dir=chat_config.conversation_dir,
             chromadb_path=chat_config.chromadb_path,

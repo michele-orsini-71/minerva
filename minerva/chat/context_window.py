@@ -68,7 +68,7 @@ def get_context_limit(model_name: str) -> int:
         if key in model_name.lower():
             return MODEL_CONTEXT_LIMITS[key]
 
-    logger.warning(f"Unknown model '{model_name}', using default context limit of {DEFAULT_CONTEXT_LIMIT}")
+    # Unknown model - use default limit (no warning needed in chat mode)
     return DEFAULT_CONTEXT_LIMIT
 
 

@@ -1,8 +1,8 @@
 import json
 import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-from minerva.chat.chat_engine import ChatEngine, ChatEngineError
+from unittest.mock import Mock, patch, MagicMock, AsyncMock
+from tasks.old.chat_engine import ChatEngine, ChatEngineError
 from minerva.chat.config import ChatConfig
 from minerva.common.ai_config import AIProviderConfig
 from minerva.common.ai_provider import AIProvider
@@ -33,7 +33,6 @@ def mock_config(temp_chromadb, temp_conversations):
 
     return ChatConfig(
         chromadb_path=str(temp_chromadb),
-        embedding_provider=ai_provider_config,
         llm_provider=ai_provider_config,
         conversation_dir=str(temp_conversations),
         enable_streaming=False,
@@ -51,6 +50,40 @@ def mock_provider():
     return provider
 
 
+@pytest.fixture
+def mock_mcp_client():
+    """Mock MCP client that simulates successful connection"""
+    with patch('minerva.chat.mcp_client.FastMCPClient') as MockClient:
+        mock_instance = AsyncMock()
+
+        # Mock tools
+        tool1 = Mock()
+        tool1.name = "list_knowledge_bases"
+        tool1.description = "List knowledge bases"
+        tool1.inputSchema = {}
+
+        tool2 = Mock()
+        tool2.name = "search_knowledge_base"
+        tool2.description = "Search knowledge base"
+        tool2.inputSchema = {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string"},
+                "collection_name": {"type": "string"}
+            }
+        }
+
+        mock_instance.list_tools = AsyncMock(return_value=[tool1, tool2])
+        mock_instance.call_tool = AsyncMock(return_value=Mock(content=[Mock(text='{"result": "ok"}')])
+        )
+
+        MockClient.return_value = mock_instance
+        mock_instance.__aenter__.return_value = mock_instance
+        mock_instance.__aexit__.return_value = None
+
+        yield MockClient
+
+
 def test_chat_engine_initialization():
     engine = ChatEngine()
 
@@ -60,7 +93,7 @@ def test_chat_engine_initialization():
     assert engine.running is False
 
 
-def test_initialize_conversation(mock_config, mock_provider):
+def test_initialize_conversation(mock_config, mock_provider, mock_mcp_client):
     engine = ChatEngine()
 
     conv_id = engine.initialize_conversation(
@@ -76,7 +109,7 @@ def test_initialize_conversation(mock_config, mock_provider):
     assert engine.running is True
 
 
-def test_initialize_conversation_creates_history_file(mock_config, mock_provider):
+def test_initialize_conversation_creates_history_file(mock_config, mock_provider, mock_mcp_client):
     engine = ChatEngine()
 
     conv_id = engine.initialize_conversation(
@@ -104,7 +137,7 @@ def test_send_message_without_initialization(mock_config, mock_provider):
 
 
 @patch.object(ChatEngine, '_get_tool_definitions')
-def test_send_message_simple_response(mock_get_tools, mock_config, mock_provider):
+def test_send_message_simple_response(mock_get_tools, mock_config, mock_provider, mock_mcp_client):
     mock_get_tools.return_value = []
 
     mock_provider.chat_completion.return_value = {
@@ -271,7 +304,7 @@ def test_send_message_with_search_tool(mock_execute_tool, mock_check_connection,
     assert call_args[0][1]['collection_name'] == 'my-notes'
 
 
-def test_resume_conversation(mock_config, mock_provider):
+def test_resume_conversation(mock_config, mock_provider, mock_mcp_client):
     engine1 = ChatEngine()
     conv_id = engine1.initialize_conversation(
         system_prompt='Original prompt',
@@ -307,7 +340,7 @@ def test_get_message_count_before_initialization():
 
 
 @patch.object(ChatEngine, '_get_tool_definitions')
-def test_clear_conversation(mock_get_tools, mock_config, mock_provider):
+def test_clear_conversation(mock_get_tools, mock_config, mock_provider, mock_mcp_client):
     mock_get_tools.return_value = []
     mock_provider.chat_completion.return_value = {
         'content': 'Response',
@@ -333,7 +366,7 @@ def test_clear_conversation(mock_get_tools, mock_config, mock_provider):
 
 
 @patch.object(ChatEngine, '_get_tool_definitions')
-def test_message_history_persistence(mock_get_tools, mock_config, mock_provider):
+def test_message_history_persistence(mock_get_tools, mock_config, mock_provider, mock_mcp_client):
     mock_get_tools.return_value = []
     mock_provider.chat_completion.return_value = {
         'content': 'Test response',
@@ -362,7 +395,7 @@ def test_message_history_persistence(mock_get_tools, mock_config, mock_provider)
 
 
 @patch.object(ChatEngine, '_get_tool_definitions')
-def test_multiple_messages_conversation(mock_get_tools, mock_config, mock_provider):
+def test_multiple_messages_conversation(mock_get_tools, mock_config, mock_provider, mock_mcp_client):
     mock_get_tools.return_value = []
 
     responses = [
@@ -445,7 +478,7 @@ def test_multiple_tool_calls_in_sequence(mock_execute_tool, mock_check_connectio
     assert mock_execute_tool.call_count == 2
 
 
-def test_streaming_mode_disabled(mock_config, mock_provider):
+def test_streaming_mode_disabled(mock_config, mock_provider, mock_mcp_client):
     engine = ChatEngine()
     engine.initialize_conversation(
         system_prompt='Test',
@@ -456,7 +489,7 @@ def test_streaming_mode_disabled(mock_config, mock_provider):
     assert engine.config.enable_streaming is False
 
 
-def test_conversation_metadata_updated(mock_config, mock_provider):
+def test_conversation_metadata_updated(mock_config, mock_provider, mock_mcp_client):
     mock_provider.chat_completion.return_value = {
         'content': 'Response',
         'tool_calls': None

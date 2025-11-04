@@ -37,7 +37,10 @@
       "Bash(find:*)",
       "Bash(OPENAI_API_KEY=sk-test python:*)",
       "Bash(git checkout:*)",
-      "Bash(OPENAI_API_KEY=test-key python3:*)"
+      "Bash(OPENAI_API_KEY=test-key python3:*)",
+      "Bash(OPENAI_API_KEY=test-key python:*)",
+      "Bash(MINERVA_DEBUG=1 minerva chat:*)",
+      "Bash(tee:*)"
     ],
     "deny": [],
     "ask": []

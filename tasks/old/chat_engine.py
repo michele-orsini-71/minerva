@@ -32,6 +32,19 @@ class ChatEngine:
         self._streaming_enabled = True
         self._streaming_fallback_triggered = False
 
+    def connect_mcp_or_fail(self, mcp_server_url: str):
+        self.mcp_client = MCPClient(mcp_server_url)
+        self._mcp_available = self.mcp_client.check_connection_sync()
+        if not self._mcp_available:
+            raise ChatEngineError(
+                f"MCP server is unavailable at {mcp_server_url}\n"
+                f"  Chat requires MCP server (HTTP mode) to access knowledge bases.\n"
+                f"  Please start the MCP server with:\n"
+                f"    minerva serve-http --config configs/server/local.json"
+            )
+
+        logger.info(f"MCP server connected at {mcp_server_url}")
+
     def initialize_conversation(
         self,
         system_prompt: str,
@@ -42,13 +55,7 @@ class ChatEngine:
         self.provider = ai_provider
         self._streaming_enabled = config.enable_streaming
 
-        self.mcp_client = MCPClient(config.mcp_server_url)
-        self._mcp_available = self.mcp_client.check_connection_sync()
-
-        if self._mcp_available:
-            logger.info(f"MCP server connected at {config.mcp_server_url}")
-        else:
-            logger.warning(f"MCP server unavailable at {config.mcp_server_url}, tools will be disabled")
+        self.connect_mcp_or_fail(config.mcp_server_url)
 
         self.history = ConversationHistory(
             conversation_dir=Path(config.conversation_dir),
@@ -229,7 +236,7 @@ class ChatEngine:
                 raise ChatEngineError(error_message) from e
 
         if iteration >= max_iterations:
-            logger.warning(f"Maximum conversation iterations reached ({max_iterations})")
+            # User-facing message already printed below
             print(f"\n⚠️  Maximum tool execution iterations reached ({max_iterations}).")
 
         self._update_conversation_metadata()
@@ -418,13 +425,7 @@ class ChatEngine:
         self.provider = ai_provider
         self._streaming_enabled = config.enable_streaming
 
-        self.mcp_client = MCPClient(config.mcp_server_url)
-        self._mcp_available = self.mcp_client.check_connection_sync()
-
-        if self._mcp_available:
-            logger.info(f"MCP server connected at {config.mcp_server_url}")
-        else:
-            logger.warning(f"MCP server unavailable at {config.mcp_server_url}, tools will be disabled")
+        self.connect_mcp_or_fail(config.mcp_server_url)
 
         self.history = ConversationHistory(
             conversation_dir=Path(config.conversation_dir),

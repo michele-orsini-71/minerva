@@ -408,7 +408,7 @@ minerva chat --config configs/chat/ollama.json [OPTIONS]
 {
   "chromadb_path": "../../chromadb_data",
   "conversation_dir": "../../state/chat/conversations",
-  "mcp_server_url": "http://127.0.0.1:8337/mcp",
+  "mcp_server_url": "http://127.0.0.1:8337",
   "enable_streaming": true,
   "max_tool_iterations": 4,
   "system_prompt_file": null,
@@ -541,7 +541,7 @@ cat > configs/chat/ollama.json << 'EOF'
 {
   "chromadb_path": "../../chromadb_data",
   "conversation_dir": "../../state/chat/conversations",
-  "mcp_server_url": "http://127.0.0.1:8337/mcp",
+  "mcp_server_url": "http://127.0.0.1:8337",
   "enable_streaming": true,
   "max_tool_iterations": 4,
   "system_prompt_file": null,
