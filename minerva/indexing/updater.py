@@ -94,6 +94,43 @@ def detect_config_changes(
     )
 
 
+@dataclass
+class MetadataChanges:
+    has_changes: bool
+    description_changed: bool
+    note_count_changed: bool
+    old_description: Optional[str]
+    new_description: str
+    old_note_count: Optional[int]
+    new_note_count: int
+
+
+def detect_metadata_changes(
+    collection: chromadb.Collection,
+    new_description: str,
+    new_note_count: int
+) -> MetadataChanges:
+    """Detect changes in collection metadata that don't require reindexing."""
+    current_metadata = collection.metadata or {}
+    old_description = current_metadata.get('description')
+    old_note_count = current_metadata.get('note_count')
+
+    description_changed = old_description != new_description
+    note_count_changed = old_note_count != new_note_count
+
+    has_changes = description_changed or note_count_changed
+
+    return MetadataChanges(
+        has_changes=has_changes,
+        description_changed=description_changed,
+        note_count_changed=note_count_changed,
+        old_description=old_description,
+        new_description=new_description,
+        old_note_count=old_note_count,
+        new_note_count=new_note_count
+    )
+
+
 def format_v1_collection_error(collection_name: str, chromadb_path: str) -> str:
     return (
         f"\n"
@@ -205,14 +242,11 @@ class ChangeDetectionResult:
     updated_notes: List[Dict[str, Any]]
     deleted_note_ids: List[str]
     unchanged_note_ids: List[str]
-    description_changed: bool
 
 
 def detect_changes(
     new_notes: List[Dict[str, Any]],
-    existing_state: ExistingState,
-    current_description: Optional[str],
-    new_description: str
+    existing_state: ExistingState
 ) -> ChangeDetectionResult:
     logger.info("   Detecting changes between new and existing notes...")
 
@@ -249,23 +283,17 @@ def detect_changes(
         else:
             unchanged_note_ids.append(note_id)
 
-    description_changed = current_description != new_description
-
     logger.success(
-        f"   ✓ Change detection complete: "
+        f"   ✓ Content changes detected: "
         f"{len(added_notes)} added, {len(updated_notes)} updated, "
         f"{len(deleted_note_ids)} deleted, {len(unchanged_note_ids)} unchanged"
     )
-
-    if description_changed:
-        logger.info(f"   ℹ Description changed")
 
     return ChangeDetectionResult(
         added_notes=added_notes,
         updated_notes=updated_notes,
         deleted_note_ids=list(deleted_note_ids),
-        unchanged_note_ids=unchanged_note_ids,
-        description_changed=description_changed
+        unchanged_note_ids=unchanged_note_ids
     )
 
 
@@ -364,7 +392,40 @@ def add_note_chunks(
     return len(all_new_chunks)
 
 
-def update_collection_timestamp(collection: chromadb.Collection) -> None:
+def log_content_changes(changes: ChangeDetectionResult) -> None:
+    """Log summary of content changes."""
+    total_changes = len(changes.added_notes) + len(changes.updated_notes) + len(changes.deleted_note_ids)
+
+    if total_changes == 0:
+        logger.info("   ℹ No content changes detected")
+    else:
+        logger.success(
+            f"   ✓ Content changes: "
+            f"{len(changes.added_notes)} added, "
+            f"{len(changes.updated_notes)} updated, "
+            f"{len(changes.deleted_note_ids)} deleted, "
+            f"{len(changes.unchanged_note_ids)} unchanged"
+        )
+
+
+def log_metadata_changes(changes: MetadataChanges) -> None:
+    """Log summary of metadata changes."""
+    if not changes.has_changes:
+        logger.info("   ℹ No metadata changes detected")
+        return
+
+    logger.info("   ℹ Metadata changes detected:")
+    if changes.description_changed:
+        logger.info(f"      • Description changed")
+    if changes.note_count_changed:
+        logger.info(f"      • Note count: {changes.old_note_count} → {changes.new_note_count}")
+
+
+def update_collection_metadata(
+    collection: chromadb.Collection,
+    metadata_changes: MetadataChanges
+) -> None:
+    """Update collection metadata based on detected changes."""
     from datetime import datetime, timezone
 
     current_timestamp = datetime.now(timezone.utc).isoformat()
@@ -372,18 +433,63 @@ def update_collection_timestamp(collection: chromadb.Collection) -> None:
     try:
         current_metadata = collection.metadata or {}
         updated_metadata = dict(current_metadata)
+
+        # Remove immutable ChromaDB fields that cannot be modified
+        # hnsw:space is set at collection creation and cannot be changed
+        updated_metadata.pop('hnsw:space', None)
+
         updated_metadata['last_updated'] = current_timestamp
+
+        if metadata_changes.description_changed:
+            updated_metadata['description'] = metadata_changes.new_description
+
+        if metadata_changes.note_count_changed:
+            updated_metadata['note_count'] = metadata_changes.new_note_count
+
+        collection.modify(metadata=updated_metadata)
+
+        logger.info(f"   Updated collection metadata:")
+        logger.info(f"      • Timestamp: {current_timestamp}")
+        if metadata_changes.description_changed:
+            logger.info(f"      • Description updated")
+        if metadata_changes.note_count_changed:
+            logger.info(f"      • Note count: {metadata_changes.old_note_count} → {metadata_changes.new_note_count}")
+    except Exception as error:
+        logger.warning(f"   Failed to update collection metadata: {error}")
+
+
+def update_collection_timestamp(collection: chromadb.Collection, note_count: Optional[int] = None) -> None:
+    from datetime import datetime, timezone
+
+    current_timestamp = datetime.now(timezone.utc).isoformat()
+
+    try:
+        current_metadata = collection.metadata or {}
+        updated_metadata = dict(current_metadata)
+
+        # Remove immutable ChromaDB fields that cannot be modified
+        # hnsw:space is set at collection creation and cannot be changed
+        updated_metadata.pop('hnsw:space', None)
+
+        updated_metadata['last_updated'] = current_timestamp
+
+        # Update note_count if provided
+        if note_count is not None:
+            updated_metadata['note_count'] = note_count
 
         collection.modify(metadata=updated_metadata)
 
         logger.info(f"   Updated collection timestamp: {current_timestamp}")
+        if note_count is not None:
+            logger.info(f"   Updated note count: {note_count}")
     except Exception as error:
         logger.warning(f"   Failed to update collection timestamp: {error}")
 
 
 def update_collection_description(
     collection: chromadb.Collection,
-    new_description: str
+    new_description: str,
+    note_count: Optional[int] = None
 ) -> None:
     from datetime import datetime, timezone
 
@@ -392,13 +498,24 @@ def update_collection_description(
     try:
         current_metadata = collection.metadata or {}
         updated_metadata = dict(current_metadata)
+
+        # Remove immutable ChromaDB fields that cannot be modified
+        # hnsw:space is set at collection creation and cannot be changed
+        updated_metadata.pop('hnsw:space', None)
+
         updated_metadata['description'] = new_description
         updated_metadata['last_updated'] = current_timestamp
+
+        # Update note_count if provided
+        if note_count is not None:
+            updated_metadata['note_count'] = note_count
 
         collection.modify(metadata=updated_metadata)
 
         logger.info(f"   Updated collection description")
         logger.info(f"   Updated collection timestamp: {current_timestamp}")
+        if note_count is not None:
+            logger.info(f"   Updated note count: {note_count}")
     except Exception as error:
         logger.warning(f"   Failed to update collection metadata: {error}")
 
@@ -449,40 +566,55 @@ def run_incremental_update(
 
     existing_state = fetch_existing_state(collection)
 
-    current_metadata = collection.metadata or {}
-    current_description = current_metadata.get('description')
+    # 1. Detect content changes (notes)
+    logger.info("")
+    content_changes = detect_changes(new_notes, existing_state)
 
-    changes = detect_changes(new_notes, existing_state, current_description, new_description)
+    # 2. Detect metadata changes (separate!)
+    metadata_changes = detect_metadata_changes(
+        collection,
+        new_description=new_description,
+        new_note_count=len(new_notes)
+    )
 
-    if changes.deleted_note_ids:
-        delete_note_chunks(collection, changes.deleted_note_ids, existing_state)
-        stats.deleted = len(changes.deleted_note_ids)
+    # 3. Log both types of changes
+    logger.info("")
+    log_content_changes(content_changes)
+    log_metadata_changes(metadata_changes)
+    logger.info("")
 
-    if changes.updated_notes:
+    # 4. Process content changes
+    if content_changes.deleted_note_ids:
+        delete_note_chunks(collection, content_changes.deleted_note_ids, existing_state)
+        stats.deleted = len(content_changes.deleted_note_ids)
+
+    if content_changes.updated_notes:
         update_note_chunks(
             collection,
-            changes.updated_notes,
+            content_changes.updated_notes,
             existing_state,
             provider,
             target_chars,
             overlap_chars
         )
-        stats.updated = len(changes.updated_notes)
+        stats.updated = len(content_changes.updated_notes)
 
-    if changes.added_notes:
+    if content_changes.added_notes:
         add_note_chunks(
             collection,
-            changes.added_notes,
+            content_changes.added_notes,
             provider,
             target_chars,
             overlap_chars
         )
-        stats.added = len(changes.added_notes)
+        stats.added = len(content_changes.added_notes)
 
-    stats.unchanged = len(changes.unchanged_note_ids)
+    stats.unchanged = len(content_changes.unchanged_note_ids)
 
-    if changes.description_changed:
-        update_collection_description(collection, new_description)
+    # 5. Update metadata if changed
+    logger.info("")
+    if metadata_changes.has_changes:
+        update_collection_metadata(collection, metadata_changes)
     else:
         update_collection_timestamp(collection)
 

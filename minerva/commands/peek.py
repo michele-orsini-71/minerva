@@ -24,50 +24,6 @@ def is_collection_usable(metadata: Dict[str, Any]) -> tuple[bool, str | None]:
     return True, None
 
 
-def _extract_unique_note_ids(metadatas: List[Dict[str, Any]]) -> set[str]:
-    note_ids: set[str] = set()
-    for meta in metadatas:
-        if not meta:
-            continue
-        note_id = meta.get('noteId') or meta.get('note_id')
-        if note_id:
-            note_ids.add(str(note_id))
-    return note_ids
-
-
-def _compute_note_count(collection, chunk_count: int) -> tuple[int | None, str | None]:
-    if chunk_count == 0:
-        return 0, None
-
-    batch_size = 1000
-    unique_note_ids: set[str] = set()
-    retrieved = 0
-
-    try:
-        while retrieved < chunk_count:
-            limit = min(batch_size, chunk_count - retrieved)
-            results = collection.get(
-                include=["metadatas"],
-                limit=limit,
-                offset=retrieved
-            )
-
-            metadatas = results.get("metadatas") if results else None
-            if not metadatas:
-                break
-
-            unique_note_ids.update(_extract_unique_note_ids(metadatas))
-            retrieved += len(metadatas)
-
-        if not unique_note_ids:
-            return None, None
-
-        return len(unique_note_ids), None
-
-    except Exception as error:
-        return None, str(error)
-
-
 def get_collection_info(collection) -> Dict[str, Any]:
 
     # Get basic collection info
@@ -75,7 +31,8 @@ def get_collection_info(collection) -> Dict[str, Any]:
     is_usable, unavailable_reason = is_collection_usable(metadata)
 
     chunk_count = collection.count()
-    note_count, note_count_error = _compute_note_count(collection, chunk_count)
+    # Read note_count from metadata (instant retrieval)
+    note_count = metadata.get('note_count')
 
     info = {
         "name": collection.name,
@@ -84,7 +41,6 @@ def get_collection_info(collection) -> Dict[str, Any]:
         "is_usable": is_usable,
         "unavailable_reason": unavailable_reason,
         "note_count": note_count,
-        "note_count_error": note_count_error,
     }
 
     # Get a few sample chunks (limit to 5 for inspection)
@@ -133,10 +89,16 @@ def format_collection_info_text(info: Dict[str, Any]) -> str:
     lines.append(f"Total chunks: {info['count']}")
     if info.get("note_count") is not None:
         lines.append(f"Total notes: {info['note_count']}")
-    elif info.get("note_count_error"):
-        lines.append(f"Total notes: unavailable (error: {info['note_count_error']})")
     else:
-        lines.append("Total notes: unavailable (note metadata missing)")
+        lines.append("Total notes: unavailable")
+
+    # Timestamps
+    metadata = info.get("metadata", {})
+    if "created_at" in metadata:
+        lines.append(f"Created: {metadata['created_at']}")
+    if "last_updated" in metadata:
+        lines.append(f"Last updated: {metadata['last_updated']}")
+
     lines.append("")
 
     # Metadata section
@@ -243,8 +205,6 @@ def format_all_collections_text(collections_data: List[Dict[str, Any]]) -> str:
         lines.append(f"    Total chunks: {info['count']}")
         if info.get("note_count") is not None:
             lines.append(f"    Total notes: {info['note_count']}")
-        elif info.get("note_count_error"):
-            lines.append(f"    Total notes: unavailable (error)")
         else:
             lines.append("    Total notes: unavailable")
 
@@ -254,6 +214,9 @@ def format_all_collections_text(collections_data: List[Dict[str, Any]]) -> str:
 
         if info.get("metadata"):
             meta = info["metadata"]
+            if "last_updated" in meta:
+                lines.append(f"    Last updated: {meta['last_updated']}")
+
             if "description" in meta:
                 desc = meta["description"]
                 # Truncate long descriptions
@@ -298,6 +261,7 @@ def format_all_collections_json(collections_data: List[Dict[str, Any]]) -> str:
         collection_summary = {
             "name": info["name"],
             "count": info["count"],
+            "note_count": info.get("note_count"),
             "is_usable": info.get("is_usable", True),
             "unavailable_reason": info.get("unavailable_reason"),
             "metadata": info.get("metadata", {})
@@ -334,27 +298,32 @@ def run_peek(args: Namespace) -> int:
         logger.info("")
         client = initialize_chromadb_client(chromadb_path)
 
-        existing_collections = [c.name for c in client.list_collections()]
+        collections = client.list_collections()
+        existing_collections_names = [c.name for c in collections]
 
         # If no collection name provided, list all collections
         if collection_name is None:
-            if not existing_collections:
+            if not existing_collections_names:
                 logger.error("No collections found in ChromaDB")
                 logger.error("   Suggestion: Use 'minerva index' to create collections")
                 return 1
 
             # Get basic info for all collections
             collections_data = []
-            for coll in client.list_collections():
+            for coll in collections:
                 metadata = coll.metadata or {}
                 is_usable, unavailable_reason = is_collection_usable(metadata)
+                chunk_count = coll.count()
+                # Read note_count from metadata (instant retrieval)
+                note_count = metadata.get('note_count')
 
                 info = {
                     "name": coll.name,
-                    "count": coll.count(),
+                    "count": chunk_count,
                     "metadata": metadata,
                     "is_usable": is_usable,
-                    "unavailable_reason": unavailable_reason
+                    "unavailable_reason": unavailable_reason,
+                    "note_count": note_count,
                 }
                 collections_data.append(info)
 
@@ -367,11 +336,11 @@ def run_peek(args: Namespace) -> int:
             return 0
 
         # Collection name provided - show detailed info for specific collection
-        if collection_name not in existing_collections:
+        if collection_name not in existing_collections_names:
             logger.error(f"Collection '{collection_name}' not found")
-            if existing_collections:
+            if existing_collections_names:
                 logger.error("Available collections:")
-                for name in existing_collections:
+                for name in existing_collections_names:
                     logger.error(f"  • {name}")
             else:
                 logger.error("No collections found in ChromaDB")

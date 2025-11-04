@@ -89,7 +89,7 @@ def _validate_no_actual_api_keys(value: Any, field_name: str) -> None:
             )
 
 
-def build_collection_metadata(description: str, embedding_metadata: Dict[str, Any], chunk_size: int = 1200) -> Dict[str, Any]:
+def build_collection_metadata(description: str, embedding_metadata: Dict[str, Any], chunk_size: int = 1200, note_count: Optional[int] = None) -> Dict[str, Any]:
     from datetime import datetime, timezone
 
     if not embedding_metadata:
@@ -111,6 +111,10 @@ def build_collection_metadata(description: str, embedding_metadata: Dict[str, An
         "last_updated": current_timestamp,
         "description": description
     }
+
+    # Add note_count if provided (instant retrieval for peek command)
+    if note_count is not None:
+        metadata["note_count"] = note_count
 
     allowed_fields = [
         'embedding_model',
@@ -173,6 +177,7 @@ def create_collection(
     description: str,
     embedding_metadata: Dict[str, Any],
     chunk_size: int = 1200,
+    note_count: Optional[int] = None,
 ) -> chromadb.Collection:
     try:
         if collection_exists(client, collection_name):
@@ -184,7 +189,7 @@ def create_collection(
                 f"       (WARNING: This will permanently delete all existing data!)\n"
             )
 
-        metadata = build_collection_metadata(description, embedding_metadata, chunk_size)
+        metadata = build_collection_metadata(description, embedding_metadata, chunk_size, note_count)
 
         collection = create_new_collection(client, collection_name, metadata)
 
@@ -205,11 +210,12 @@ def recreate_collection(
     description: str,
     embedding_metadata: Dict[str, Any],
     chunk_size: int = 1200,
+    note_count: Optional[int] = None,
 ) -> chromadb.Collection:
     try:
         delete_existing_collection(client, collection_name)
 
-        metadata = build_collection_metadata(description, embedding_metadata, chunk_size)
+        metadata = build_collection_metadata(description, embedding_metadata, chunk_size, note_count)
 
         collection = create_new_collection(client, collection_name, metadata)
 
@@ -232,6 +238,7 @@ def get_or_create_collection(
     force_recreate: bool = False,
     embedding_metadata: Optional[Dict[str, Any]] = None,
     chunk_size: int = 1200,
+    note_count: Optional[int] = None,
 ) -> chromadb.Collection:
     if not embedding_metadata:
         raise StorageError(
@@ -241,9 +248,9 @@ def get_or_create_collection(
         )
 
     if force_recreate:
-        return recreate_collection(client, collection_name, description, embedding_metadata, chunk_size)
+        return recreate_collection(client, collection_name, description, embedding_metadata, chunk_size, note_count)
     else:
-        return create_collection(client, collection_name, description, embedding_metadata, chunk_size)
+        return create_collection(client, collection_name, description, embedding_metadata, chunk_size, note_count)
 
 
 def compute_adjacent_chunk_ids(chunks_with_embeddings: ChunkWithEmbeddingList) -> Dict[str, Dict[str, Optional[str]]]:

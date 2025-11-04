@@ -41,7 +41,8 @@
       "Bash(OPENAI_API_KEY=test-key python:*)",
       "Bash(MINERVA_DEBUG=1 minerva chat:*)",
       "Bash(tee:*)",
-      "WebFetch(domain:pypi.org)"
+      "WebFetch(domain:pypi.org)",
+      "Bash(/Users/michele/my-code/minerva/.venv/bin/minerva index:*)"
     ],
     "deny": [],
     "ask": []

@@ -346,7 +346,8 @@ def run_full_indexing(
                 collection_name=collection.name,
                 description=collection.description,
                 embedding_metadata=embedding_metadata,
-                chunk_size=collection.chunk_size
+                chunk_size=collection.chunk_size,
+                note_count=len(notes)
             )
             logger.success("   ✓ Collection recreated")
         else:
@@ -355,7 +356,8 @@ def run_full_indexing(
                 collection_name=collection.name,
                 description=collection.description,
                 embedding_metadata=embedding_metadata,
-                chunk_size=collection.chunk_size
+                chunk_size=collection.chunk_size,
+                note_count=len(notes)
             )
             logger.success("   ✓ Collection ready")
         logger.info("")
