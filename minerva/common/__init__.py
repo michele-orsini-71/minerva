@@ -18,9 +18,6 @@ from minerva.common.exceptions import (
     StartupValidationError,
     CollectionDiscoveryError,
     ContextRetrievalError,
-    ChatError,
-    ChatEngineError,
-    ChatConfigError,
     APIKeyMissingError,
 )
 
@@ -44,8 +41,5 @@ __all__ = [
     "StartupValidationError",
     "CollectionDiscoveryError",
     "ContextRetrievalError",
-    "ChatError",
-    "ChatEngineError",
-    "ChatConfigError",
     "APIKeyMissingError",
 ]

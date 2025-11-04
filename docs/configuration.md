@@ -3,7 +3,6 @@
 Minerva v3 introduces dedicated configuration files for each command. Instead of managing a monolithic JSON document, you maintain small, focused files:
 
 - `configs/index/` – one file per collection you want to index
-- `configs/chat/` – personal chat settings per environment
 - `configs/server/` – MCP server profiles (local stdio or HTTP deployments)
 
 All loaders share validation helpers, environment-variable substitution, and detailed error messages. This guide documents the schemas, field constraints, and recommended workflows for each file type.
@@ -15,10 +14,6 @@ All loaders share validation helpers, environment-variable substitution, and det
   - [Schema Overview](#schema-overview)
   - [Example: Ollama](#example-ollama)
   - [Example: LM Studio](#example-lm-studio)
-- [Chat Configuration](#chat-configuration)
-  - [Schema Overview](#chat-schema-overview)
-  - [Example: Ollama](#chat-example-ollama)
-  - [Example: OpenAI](#chat-example-openai)
 - [Server Configuration](#server-configuration)
   - [Schema Overview](#server-schema-overview)
   - [Example Profiles](#example-profiles)
@@ -36,9 +31,6 @@ configs/
 ├── index/
 │   ├── bear-notes-ollama.json
 │   └── wikipedia-lmstudio.json
-├── chat/
-│   ├── ollama.json
-│   └── openai.json
 └── server/
     ├── local.json
     └── network.json
@@ -48,7 +40,7 @@ You may create additional files alongside these samples. Keep secrets (API keys,
 
 ### Path Resolution Examples
 
-All paths in config files (`chromadb_path`, `json_file`, `conversation_dir`) are resolved **relative to the config file's directory**.
+All paths in config files (e.g., `chromadb_path`, `json_file`) are resolved **relative to the config file's directory**.
 
 **Example 1: Config in `configs/index/`**
 ```
@@ -184,78 +176,6 @@ Validation failures identify the offending field with a helpful trace (for examp
 }
 ```
 
-## Chat Configuration
-
-Chat configs control conversational features and provider selection. Loader: `minerva.chat.config.load_chat_config_from_file`.
-
-### Chat Schema Overview
-
-```json
-{
-  "chromadb_path": "<string>",
-  "conversation_dir": "<string>",
-  "mcp_server_url": "<string>",
-  "enable_streaming": false,
-  "max_tool_iterations": 5,
-  "system_prompt_file": null,
-  "provider": {
-    /* AI provider payload */
-  }
-}
-```
-
-| Field                 | Type           | Required | Notes                                                                     |
-| --------------------- | -------------- | -------- | ------------------------------------------------------------------------- |
-| `chromadb_path`       | string         | ✅       | Must resolve to absolute path; reused for local caching and tool routing. |
-| `conversation_dir`    | string         | ✅       | Directory is created if it does not exist. Supports `~` expansion.        |
-| `mcp_server_url`      | string         | ✅       | Must include scheme + host (e.g., `http://127.0.0.1:8337`). The `/mcp` endpoint is added automatically. |
-| `enable_streaming`    | boolean        | ❌       | Default `false`. Enables streaming responses in supported providers.      |
-| `max_tool_iterations` | integer        | ❌       | 1–10, defaults to 5.                                                      |
-| `system_prompt_file`  | string or null | ❌       | Optional path to custom system prompt; `null` clears it.                  |
-| `provider`            | object         | ✅       | Embedding/LLM provider for chat completions.                              |
-
-### Example: Ollama
-
-```json
-{
-  "chromadb_path": "../../chromadb_data",
-  "conversation_dir": "../../state/chat/conversations",
-  "mcp_server_url": "http://127.0.0.1:8337",
-  "enable_streaming": true,
-  "max_tool_iterations": 4,
-  "system_prompt_file": null,
-  "provider": {
-    "provider_type": "ollama",
-    "base_url": "http://localhost:11434",
-    "embedding_model": "mxbai-embed-large:latest",
-    "llm_model": "llama3.1:8b"
-  }
-}
-```
-
-### Example: OpenAI
-
-```json
-{
-  "chromadb_path": "../../chromadb_data",
-  "conversation_dir": "../../state/chat/conversations",
-  "mcp_server_url": "https://minerva.example.com/mcp",
-  "enable_streaming": true,
-  "max_tool_iterations": 5,
-  "system_prompt_file": "../../prompts/chat-system.md",
-  "provider": {
-    "provider_type": "openai",
-    "api_key": "${OPENAI_API_KEY}",
-    "embedding_model": {
-      "model": "text-embedding-3-small"
-    },
-    "llm_model": {
-      "model": "gpt-4o-mini"
-    }
-  }
-}
-```
-
 ## Server Configuration
 
 Server configs are lightweight and affect both `minerva serve` (stdio) and `minerva serve-http` (network mode). Loader: `minerva.common.server_config.load_server_config`.
@@ -338,10 +258,9 @@ Use `${NAME}` placeholders anywhere a secret or host-specific value is required:
 2. Run the appropriate loader to validate:
    ```bash
    python -c "from minerva.common.index_config import load_index_config; load_index_config('configs/index/bear-notes-ollama.json')"
-   python -c "from minerva.chat.config import load_chat_config_from_file; load_chat_config_from_file('configs/chat/ollama.json')"
    python -c "from minerva.common.server_config import load_server_config; load_server_config('configs/server/local.json')"
    ```
-3. Execute the target command (`minerva index`, `minerva chat`, `minerva serve`).
+3. Execute the target command (`minerva index`, `minerva serve`).
 
 Validation errors include the offending field path, original value, and suggested fixes.
 
@@ -349,6 +268,6 @@ Validation errors include the offending field path, original value, and suggeste
 
 - Unified configuration files (`minerva/common/config_loader.py`) have been removed in v3.0.0.
 - Create one index config per collection. Re-run `minerva index` for each collection you want to refresh.
-- Chat and server configs no longer read from a shared provider registry; embed the provider definition inline.
+- Server configs no longer read from a shared provider registry; embed the provider definition inline.
 - Delete or archive any previous `configs/*.json` unified files—they are not consumed by the new loaders.
 - Update automation and CI scripts to call the dedicated loaders (see `.github/workflows/ci.yml` for examples).

@@ -69,10 +69,6 @@ class TestCommonModuleImports:
         from minerva.common.server_config import load_server_config
         assert callable(load_server_config)
 
-    def test_import_chat_config_module(self):
-        from minerva.chat.config import load_chat_config_from_file
-        assert callable(load_chat_config_from_file)
-
     def test_import_ai_provider_module(self):
         from minerva.common.ai_provider import AIProvider, AIProviderConfig
         assert AIProvider is not None

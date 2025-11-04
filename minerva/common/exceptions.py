@@ -81,18 +81,6 @@ class ContextRetrievalError(ServerError):
     pass
 
 
-class ChatError(MinervaError):
-    pass
-
-
-class ChatEngineError(ChatError):
-    pass
-
-
-class ChatConfigError(ChatError):
-    pass
-
-
 class APIKeyMissingError(ProviderError):
     pass
 
@@ -117,9 +105,6 @@ EXCEPTION_EXIT_CODES = {
     StartupValidationError: 1,
     CollectionDiscoveryError: 1,
     ContextRetrievalError: 1,
-    ChatError: 1,
-    ChatEngineError: 1,
-    ChatConfigError: 1,
     APIKeyMissingError: 1,
 }
 

@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
-from minerva.chat.config import ChatConfig, load_chat_config_from_file
 from minerva.common.index_config import IndexConfig, load_index_config
 from minerva.common.server_config import ServerConfig, load_server_config
 
@@ -52,43 +51,6 @@ def make_index_config(
     config_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     config = load_index_config(str(config_path))
-    return config, config_path
-
-
-def make_chat_config(
-    base_dir: Path,
-    *,
-    filename: str = "chat-config.json",
-    provider_overrides: Mapping[str, Any] | None = None,
-    overrides: Mapping[str, Any] | None = None,
-) -> tuple[ChatConfig, Path]:
-    base_dir.mkdir(parents=True, exist_ok=True)
-
-    conversation_dir = base_dir / "conversations"
-
-    payload: dict[str, Any] = {
-        "conversation_dir": str(conversation_dir),
-        "mcp_server_url": "http://localhost:8000/mcp",
-        "enable_streaming": False,
-        "max_tool_iterations": 5,
-        "system_prompt_file": None,
-        "provider": {
-            "provider_type": "ollama",
-            "embedding_model": "mxbai-embed-large:latest",
-            "llm_model": "llama3.1:8b",
-            "base_url": "http://localhost:11434",
-        },
-    }
-
-    if overrides:
-        payload.update(overrides)
-    if provider_overrides:
-        payload["provider"].update(provider_overrides)
-
-    config_path = base_dir / filename
-    config_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-
-    config = load_chat_config_from_file(str(config_path))
     return config, config_path
 
 

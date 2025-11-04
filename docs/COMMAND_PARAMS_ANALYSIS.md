@@ -2,7 +2,7 @@
 
 ## Status
 
-Command-specific configuration loaders (`IndexConfig`, `ChatConfig`, `ServerConfig`) are implemented in Minerva v3.0.0. Each command now consumes an independent JSON file with inline AI provider definitions and consistent validation.
+Command-specific configuration loaders (`IndexConfig`, `ServerConfig`) are implemented in Minerva v3.0.0. Each command now consumes an independent JSON file with inline AI provider definitions and consistent validation.
 
 ## Summary Table
 
@@ -11,7 +11,6 @@ Command-specific configuration loaders (`IndexConfig`, `ChatConfig`, `ServerConf
 | `index` | ✅ Yes | ✅ Yes (write) | `configs/index/<name>.json` | Medium (per collection) |
 | `serve` | ❌ No | ✅ Yes (read) | `configs/server/<profile>.json` | Low |
 | `serve-http` | ❌ No | ✅ Yes (read) | `configs/server/<profile>.json` | Low + runtime flags |
-| `chat` | ✅ Yes | ❌ No | `configs/chat/<env>.json` | Medium |
 | `peek` | ❌ No | ✅ Yes (read) | CLI args only | Minimal |
 | `validate` | ❌ No | ❌ No | CLI args only | Minimal |
 
@@ -88,38 +87,6 @@ Command-specific configuration loaders (`IndexConfig`, `ChatConfig`, `ServerConf
 - Runtime overrides via `--host`/`--port` flags take priority over config values.
 - Ideal for Docker or remote deployments.
 
----
-
-## `minerva chat`
-
-**Purpose**: Interactive assistant that can issue MCP tool calls against indexed collections.
-
-**Config schema** (`minerva.chat.config.ChatConfig`):
-
-```json
-{
-  "chromadb_path": "<string>",
-  "conversation_dir": "<string>",
-  "mcp_server_url": "<url>",
-  "enable_streaming": false,
-  "max_tool_iterations": 5,
-  "system_prompt_file": null,
-  "provider": { /* same schema as index provider */ }
-}
-```
-
-- `conversation_dir` is created automatically if it does not exist.
-- `mcp_server_url` must include scheme + host; use `http://127.0.0.1:8337` for local server (the `/mcp` endpoint is added automatically).
-- `system_prompt_file` can be `null` or a path to a Markdown prompt.
-
-**Key Flags**:
-- `--config FILE` – required chat config.
-- `-q/--question` – single question mode.
-- `--system` – override system prompt inline.
-- `--list` / `--resume` – manage saved conversations.
-
----
-
 ## CLI-Only Commands
 
 - `minerva peek` requires `chromadb_path` (positional) and optional `collection_name`/`--format`. No config files.
@@ -129,7 +96,7 @@ Command-specific configuration loaders (`IndexConfig`, `ChatConfig`, `ServerConf
 
 ## Cross-Cutting Notes
 
-- AI provider definitions are inline for both index and chat configs. Shared logic lives in `minerva/common/ai_config.py`.
+- AI provider definitions are inline for index configs. Shared logic lives in `minerva/common/ai_config.py`.
 - Environment variables are supported via `${NAME}` placeholders; missing values raise clear `ConfigError` messages.
 - Config loaders ensure all resolved file system paths are absolute before returning dataclasses.
 - CI loads every sample config during the `validate-configs` step (see `.github/workflows/ci.yml`).
@@ -139,6 +106,6 @@ Command-specific configuration loaders (`IndexConfig`, `ChatConfig`, `ServerConf
 ## Migration Summary
 
 - Unified configs (`configs/*.json`) and `minerva config validate` are deprecated and scheduled for removal.
-- Copy/rename sample configs under `configs/index/`, `configs/chat/`, and `configs/server/` as starting points.
+- Copy/rename sample configs under `configs/index/` and `configs/server/` as starting points.
 - Automate indexing by iterating over the files in `configs/index/` and invoking `minerva index` for each.
-- Update any documentation or scripts that reference the legacy unified configuration to point at the new dataclasses (`IndexConfig`, `ChatConfig`, `ServerConfig`).
+- Update any documentation or scripts that reference the legacy unified configuration to point at the new dataclasses (`IndexConfig`, `ServerConfig`).

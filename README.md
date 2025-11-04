@@ -30,7 +30,7 @@ Minerva solves the problem of **information overload** in personal knowledge man
 🌐 **Multi-Provider AI**: Choose between local (Ollama, LM Studio) or cloud (OpenAI, Anthropic, Gemini) AI providers
 📊 **Transparent Storage**: All data stored locally in ChromaDB with full control
 🔧 **Extensible**: Write custom extractors for any data source in any language
-⚙️ **Command-Specific Configs**: Dedicated JSON files for index, chat, and server workflows
+⚙️ **Command-Specific Configs**: Dedicated JSON files for index and server workflows
 
 ---
 
@@ -98,6 +98,9 @@ Minerva follows a three-stage pipeline architecture:
 5. **Search** 🔎: AI assistants query your knowledge base through natural language
 
 ---
+
+> ⚠️ The legacy `minerva chat` CLI has been retired. Run `minerva serve` and connect a client such as LM Studio or Claude Desktop for conversational access.
+
 
 ## 🚀 Quick Start
 
@@ -386,73 +389,6 @@ minerva serve --config configs/server/local.json
 }
 ```
 
-### `minerva chat`
-
-Interactive AI-powered chat interface that can search and query your knowledge bases.
-
-```bash
-minerva chat --config configs/chat/ollama.json [OPTIONS]
-```
-
-**Options:**
-
-- `--config FILE`: Chat configuration JSON file (required)
-- `-q "QUESTION"`: Single-question mode (ask and exit)
-- `--system "PROMPT"`: Custom system prompt
-- `--list`: List all past conversations
-- `--resume ID`: Resume a previous conversation
-
-**Example config:**
-
-```json
-{
-  "chromadb_path": "../../chromadb_data",
-  "conversation_dir": "../../state/chat/conversations",
-  "mcp_server_url": "http://127.0.0.1:8337",
-  "enable_streaming": true,
-  "max_tool_iterations": 4,
-  "system_prompt_file": null,
-  "provider": {
-    "provider_type": "ollama",
-    "base_url": "http://localhost:11434",
-    "embedding_model": "mxbai-embed-large:latest",
-    "llm_model": "llama3.1:8b"
-  }
-}
-```
-
-**Interactive mode:**
-
-```bash
-minerva chat --config configs/chat/ollama.json
-
-Welcome to Minerva Chat! 🤖
-Connected to 3 knowledge base(s) via Ollama (llama3.1:8b)
-
-Commands: /clear (new conversation) | /help | /exit
-
-You: What knowledge bases are available?
-AI: 🔍 Listing available knowledge bases...
-    I have access to 3 knowledge bases:
-    - personal-notes (1,234 chunks)
-    - python-books (5,678 chunks)
-    ...
-
-You: Search python-books for decorators
-AI: 🔍 Searching 'python-books' for: 'decorators'...
-    [AI provides information based on search results]
-```
-
-**Single-question mode:**
-
-```bash
-minerva chat --config configs/chat/ollama.json -q "Summarize my Python notes"
-```
-
-See the [Chat Guide](docs/CHAT_GUIDE.md) for detailed usage, configuration, and examples.
-
----
-
 ## 🎨 Usage Examples
 
 ### Example 1: Index Bear Notes with Local AI (Ollama)
@@ -533,42 +469,10 @@ minerva index --config configs/index/research-papers.json
 minerva serve --config configs/server/local.json
 ```
 
-### Example 4: Interactive Chat with Your Knowledge Base
-
-```bash
-mkdir -p configs/chat
-cat > configs/chat/ollama.json << 'EOF'
-{
-  "chromadb_path": "../../chromadb_data",
-  "conversation_dir": "../../state/chat/conversations",
-  "mcp_server_url": "http://127.0.0.1:8337",
-  "enable_streaming": true,
-  "max_tool_iterations": 4,
-  "system_prompt_file": null,
-  "provider": {
-    "provider_type": "ollama",
-    "base_url": "http://localhost:11434",
-    "embedding_model": "mxbai-embed-large:latest",
-    "llm_model": "llama3.1:8b"
-  }
-}
-EOF
-
-minerva chat --config configs/chat/ollama.json
-
-# Single-question mode
-minerva chat --config configs/chat/ollama.json -q "Summarize my Docker notes"
-
-# List or resume stored conversations
-minerva chat --config configs/chat/ollama.json --list
-minerva chat --config configs/chat/ollama.json --resume 20251102-153000-bear
-```
-
-### Example 5: Validate Configurations Quickly
+### Example 4: Validate Configurations Quickly
 
 ```bash
 python -c "from minerva.common.index_config import load_index_config; load_index_config('configs/index/bear-notes-ollama.json')"
-python -c "from minerva.chat.config import load_chat_config_from_file; load_chat_config_from_file('configs/chat/ollama.json')"
 python -c "from minerva.common.server_config import load_server_config; load_server_config('configs/server/local.json')"
 ```
 
@@ -631,7 +535,6 @@ pytest --cov=minerva --cov-report=html
 # Run specific test suites
 pytest tests/test_ai_provider.py -v              # Provider tests
 pytest tests/test_index_command.py -v            # Index command and config loader tests
-pytest tests/test_chat_config.py -v              # Chat config loader tests
 ```
 
 ### Validate Configuration
@@ -639,7 +542,6 @@ pytest tests/test_chat_config.py -v              # Chat config loader tests
 ```bash
 # Validate sample configs
 python -c "from minerva.common.index_config import load_index_config; load_index_config('configs/index/bear-notes-ollama.json')"
-python -c "from minerva.chat.config import load_chat_config_from_file; load_chat_config_from_file('configs/chat/ollama.json')"
 python -c "from minerva.common.server_config import load_server_config; load_server_config('configs/server/local.json')"
 ```
 
@@ -655,9 +557,8 @@ The project includes GitHub Actions CI that automatically:
 
 ## 📚 Documentation
 
-- **[Configuration Guide](docs/configuration.md)** - Command-specific configuration reference for index, chat, and server
+- **[Configuration Guide](docs/configuration.md)** - Command-specific configuration reference for index and server
 - **[LM Studio Setup Guide](docs/LMSTUDIO_SETUP.md)** - Installing and configuring LM Studio
-- **[Chat Guide](docs/CHAT_GUIDE.md)** - Interactive chat command usage and examples
 - **[Note Schema](docs/NOTE_SCHEMA.md)** - Complete JSON schema specification
 - **[Extractor Guide](docs/EXTRACTOR_GUIDE.md)** - How to write custom extractors
 - **[Legacy Config Guide](docs/CONFIGURATION_GUIDE.md)** - Archived reference for the pre-v3 unified system

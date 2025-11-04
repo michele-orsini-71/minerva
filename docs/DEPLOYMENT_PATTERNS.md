@@ -87,13 +87,6 @@ In LM Studio:
       }
     ]
   },
-  "chat": {
-    "chat_provider_id": "lmstudio-local",
-    "mcp_server_url": "http://localhost:8000/mcp",
-    "conversation_dir": "~/.minerva/conversations",
-    "enable_streaming": false,
-    "max_tool_iterations": 5
-  },
   "server": {
     "chromadb_path": "${HOME}/minerva/chromadb_data",
     "default_max_results": 5,
@@ -117,13 +110,6 @@ minerva index --config config-lmstudio-desktop.json --verbose
 minerva serve --config config-lmstudio-desktop.json &
 ```
 
-**7. Chat**
-
-```bash
-# Switch to qwen2.5-14b-instruct in LM Studio for better chat quality
-minerva chat --config config-lmstudio-desktop.json
-```
-
 ### Daily Workflow
 
 ```bash
@@ -135,8 +121,7 @@ minerva chat --config config-lmstudio-desktop.json
 # Start services
 minerva serve --config config-lmstudio-desktop.json &
 
-# Use chat throughout the day
-minerva chat --config config-lmstudio-desktop.json
+# Use LM Studio's native chat throughout the day
 
 # Evening: Stop services
 # Close Minerva, stop LM Studio
@@ -223,13 +208,6 @@ ollama pull llama3.1:8b
       }
     ]
   },
-  "chat": {
-    "chat_provider_id": "lmstudio-chat",
-    "mcp_server_url": "http://localhost:8000/mcp",
-    "conversation_dir": "~/.minerva/conversations",
-    "enable_streaming": false,
-    "max_tool_iterations": 5
-  },
   "server": {
     "chromadb_path": "${HOME}/minerva/chromadb_data",
     "default_max_results": 5,
@@ -249,7 +227,7 @@ ollama serve &
 minerva index --config config-hybrid.json --verbose
 ```
 
-**4. Chat with LM Studio (Quality)**
+**4. Use LM Studio for Chat (Quality)**
 
 ```bash
 # Start LM Studio server with qwen2.5-14b-instruct loaded
@@ -257,8 +235,7 @@ minerva index --config config-hybrid.json --verbose
 # Start MCP server
 minerva serve --config config-hybrid.json &
 
-# Chat (uses LM Studio for high-quality responses)
-minerva chat --config config-hybrid.json
+# Chat using LM Studio's interface (high-quality responses)
 ```
 
 ### Why This Works
@@ -344,13 +321,6 @@ echo 'export OPENAI_API_KEY="sk-proj-..."' >> ~/.zshrc
       }
     ]
   },
-  "chat": {
-    "chat_provider_id": "openai-cloud",
-    "mcp_server_url": "http://localhost:8000/mcp",
-    "conversation_dir": "~/.minerva/conversations",
-    "enable_streaming": true,
-    "max_tool_iterations": 5
-  },
   "server": {
     "chromadb_path": "${HOME}/minerva/chromadb_data",
     "default_max_results": 5,
@@ -372,8 +342,7 @@ minerva index --config config-openai.json --verbose
 # Start server
 minerva serve --config config-openai.json &
 
-# Chat (streaming enabled for better UX)
-minerva chat --config config-openai.json
+# Connect your preferred client (e.g., Claude Desktop or LM Studio) to the server
 ```
 
 ## Pattern 4: Server Deployment (Ollama)
@@ -471,13 +440,6 @@ minerva --version
       }
     ]
   },
-  "chat": {
-    "chat_provider_id": "ollama-server",
-    "mcp_server_url": "http://localhost:8000/mcp",
-    "conversation_dir": "/var/minerva/conversations",
-    "enable_streaming": false,
-    "max_tool_iterations": 5
-  },
   "server": {
     "chromadb_path": "/srv/minerva/chromadb_data",
     "default_max_results": 5,
@@ -531,15 +493,7 @@ sudo systemctl status minerva-mcp
 
 **6. Access from Clients**
 
-Clients configure MCP to point to server:
-
-```json
-{
-  "chat": {
-    "mcp_server_url": "http://server.example.com:8000/mcp"
-  }
-}
-```
+Clients configure their preferred MCP-compatible chat application (e.g., Claude Desktop, LM Studio) to point at `http://server.example.com:8000/mcp`.
 
 ### Security Considerations
 
@@ -614,13 +568,7 @@ Each user has local config pointing to shared server:
       "embedding_model": { "model": "mxbai-embed-large:latest" },
       "llm_model": { "model": "llama3.1:8b" }
     }
-  ],
-  "chat": {
-    "chat_provider_id": "ollama-local",
-    "mcp_server_url": "http://minerva-server.company.com:8000/mcp",
-    "conversation_dir": "~/.minerva/conversations",
-    "enable_streaming": false
-  }
+  ]
 }
 ```
 
@@ -628,7 +576,7 @@ Each user has local config pointing to shared server:
 
 ```bash
 # Each user runs locally
-minerva chat --config config-client.json
+# Connect LM Studio or Claude Desktop to shared MCP server
 
 # Conversations stored locally (~/.minerva/conversations)
 # Search queries go to shared server
@@ -712,7 +660,7 @@ minerva chat --config config-client.json
 # Development: Test locally
 minerva index --config config-dev.json --verbose
 minerva serve --config config-dev.json &
-minerva chat --config config-dev.json
+# Connect local client (LM Studio or Claude Desktop)
 
 # Production: Deploy to server
 scp notes.json server:/srv/minerva/data/prod-notes.json
@@ -779,5 +727,4 @@ ssh server "sudo systemctl restart minerva-mcp"
 
 - [Unified Configuration Guide](configuration.md) - Complete config reference
 - [LM Studio Setup Guide](LMSTUDIO_SETUP.md) - LM Studio installation
-- [Chat Guide](CHAT_GUIDE.md) - Chat command usage
 - [Main README](../README.md) - General documentation

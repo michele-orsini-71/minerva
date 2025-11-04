@@ -354,10 +354,9 @@ ollama list
 Minerva uses **command-specific JSON configuration files** stored under `configs/`:
 
 - `configs/index/` – one file per collection you want to index
-- `configs/chat/` – personal chat settings for MCP-assisted conversations
 - `configs/server/` – deployment profiles for the MCP server (stdio or HTTP)
 
-Each file is designed to be self-contained and readable. The schemas below match the runtime loaders in `minerva/common/index_config.py`, `minerva/chat/config.py`, and `minerva/common/server_config.py`.
+Each file is designed to be self-contained and readable. The schemas below match the runtime loaders in `minerva/common/index_config.py` and `minerva/common/server_config.py`.
 
 ### Index Configuration
 
@@ -388,34 +387,6 @@ Location: `configs/index/<collection-name>.json`
 - `provider` reuses the AI provider schema shared across commands (Ollama, LM Studio, OpenAI, Anthropic, Gemini).
 - Environment variables may be referenced with `${NAME}` in any provider credential field; values are resolved at load time.
 
-### Chat Configuration
-
-Location: `configs/chat/<environment>.json`
-
-```json
-{
-  "chromadb_path": "../../chromadb_data",
-  "conversation_dir": "../../state/chat/conversations",
-  "mcp_server_url": "http://127.0.0.1:8337",
-  "enable_streaming": true,
-  "max_tool_iterations": 4,
-  "system_prompt_file": null,
-  "provider": {
-    "provider_type": "lmstudio",
-    "base_url": "http://localhost:1234/v1",
-    "llm_model": "qwen2.5-14b-instruct",
-    "rate_limit": {
-      "requests_per_minute": 60,
-      "concurrency": 1
-    }
-  }
-}
-```
-
-- `conversation_dir` is created automatically if it does not exist.
-- `system_prompt_file` can be set to an absolute or relative path with a custom system prompt; use `null` to disable.
-- The chat provider schema matches the index loader, so you can swap between Ollama, LM Studio, OpenAI, Anthropic, or Gemini by editing a single block.
-
 ### Server Configuration
 
 Location: `configs/server/<profile>.json`
@@ -435,7 +406,7 @@ Location: `configs/server/<profile>.json`
 ### Recommended Workflow
 
 1. Copy a sample config from `configs/**/` and adjust paths and provider settings.
-2. Run `minerva index --config <path>` or `minerva chat --config <path>` to validate and execute.
+2. Run `minerva index --config <path>` or `minerva serve --config <path>` to validate and execute.
 3. Store personal or environment-specific configs outside version control if they contain secrets.
 
 See [docs/configuration.md](docs/configuration.md) for full schema documentation and advanced examples.
@@ -501,7 +472,6 @@ pytest -v
 # Run specific test suites
 pytest tests/test_ai_provider.py -v              # Provider and rate limiting tests
 pytest tests/test_index_command.py -v            # Index command and config loader tests
-pytest tests/test_chat_config.py -v              # Chat config loader tests
 ```
 
 ### Configuration Validation
@@ -509,7 +479,6 @@ pytest tests/test_chat_config.py -v              # Chat config loader tests
 ```bash
 # Validate sample configs
 python -c "from minerva.common.index_config import load_index_config; load_index_config('configs/index/bear-notes-ollama.json')"
-python -c "from minerva.chat.config import load_chat_config_from_file; load_chat_config_from_file('configs/chat/ollama.json')"
 python -c "from minerva.common.server_config import load_server_config; load_server_config('configs/server/local.json')"
 ```
 
@@ -815,7 +784,6 @@ except Exception as e:
 - **README.md**: Project overview and quick start
 - **docs/configuration.md**: Unified configuration guide (recommended)
 - **docs/LMSTUDIO_SETUP.md**: LM Studio installation and setup
-- **docs/CHAT_GUIDE.md**: Interactive chat command guide
 - **docs/NOTE_SCHEMA.md**: Complete schema specification
 - **docs/EXTRACTOR_GUIDE.md**: How to write extractors
 - **extractors/README.md**: Overview of official extractors

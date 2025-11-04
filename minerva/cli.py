@@ -12,7 +12,6 @@ from minerva.commands.serve import run_serve
 from minerva.commands.serve_http import run_serve_http
 from minerva.commands.peek import run_peek
 from minerva.commands.validate import run_validate
-from minerva.commands.chat import run_chat
 
 logger = get_logger(__name__, simple=True, mode="cli")
 
@@ -223,58 +222,6 @@ Examples:
         help='Enable verbose output with validation details'
     )
 
-    # ========================================
-    # CHAT command
-    # ========================================
-    chat_parser = subparsers.add_parser(
-        'chat',
-        help='Interactive chat with AI using your knowledge bases',
-        description='Chat with an AI assistant that can search through your indexed knowledge bases.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Start interactive chat session
-  minerva chat --config configs/chat/ollama.json
-
-  # Ask a single question and exit
-  minerva chat --config configs/chat/ollama.json -q "What are my notes about Python?"
-
-  # List past conversations
-  minerva chat --config configs/chat/ollama.json --list
-
-  # Resume a previous conversation
-  minerva chat --config configs/chat/ollama.json --resume 20251030-143022-abc123
-        """
-    )
-
-    chat_parser.add_argument(
-        '--config',
-        type=Path,
-        required=True,
-        metavar='FILE',
-        help='Path to chat configuration JSON file'
-    )
-
-    chat_parser.add_argument(
-        '-q', '--question',
-        type=str,
-        metavar='QUESTION',
-        help='Ask a single question and exit (non-interactive mode)'
-    )
-
-    chat_parser.add_argument(
-        '--list',
-        action='store_true',
-        help='List all past conversations and exit'
-    )
-
-    chat_parser.add_argument(
-        '--resume',
-        type=str,
-        metavar='CONVERSATION_ID',
-        help='Resume a previous conversation by its ID'
-    )
-
     return parser
 
 
@@ -293,8 +240,6 @@ def main():
             return run_peek(args)
         elif args.command == 'validate':
             return run_validate(args)
-        elif args.command == 'chat':
-            return run_chat(args)
         else:
             parser.print_help()
             return 1

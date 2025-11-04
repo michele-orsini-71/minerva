@@ -218,12 +218,6 @@ Create a configuration file with LM Studio provider:
       }
     ]
   },
-  "chat": {
-    "chat_provider_id": "lmstudio-local",
-    "mcp_server_url": "http://localhost:8000/mcp",
-    "conversation_dir": "~/.minerva/conversations",
-    "enable_streaming": false
-  },
   "server": {
     "chromadb_path": "/absolute/path/to/chromadb_data",
     "default_max_results": 5
@@ -508,7 +502,7 @@ curl http://localhost:1234/v1/models
 ### Optimizing Chat Response Time
 
 1. **Load model before starting chat:**
-   - Pre-load in LM Studio before running `minerva chat`
+   - Pre-load in LM Studio before initiating conversations
 
 2. **Use smaller models for faster responses:**
    - 7B models: 1-3 seconds per response
@@ -649,6 +643,5 @@ git commit -m "feat: update LM Studio config"
 ## See Also
 
 - [Unified Configuration Guide](configuration.md) - Full config schema
-- [Chat Guide](CHAT_GUIDE.md) - Using LM Studio for chat
 - [Main README](../README.md) - General Minerva documentation
 - [LM Studio Official Docs](https://lmstudio.ai/docs) - LM Studio documentation

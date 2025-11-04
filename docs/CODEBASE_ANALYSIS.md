@@ -13,11 +13,7 @@ This reference outlines the per-command configuration flow after removing the le
 - `IndexConfig` combines `chromadb_path`, a single `CollectionConfig`, and an `AIProviderConfig`.
 - `load_index_config(path)` performs JSON parsing, schema validation, absolute path conversion, and semantic checks (chunk size bounds, description trimming, etc.).
 
-### 1.3 Chat Configuration (`minerva/chat/config.py`)
-- `ChatConfig` stores chat runtime settings including provider, conversation directory, and MCP endpoint.
-- `load_chat_config_from_file(path)` ensures the directory structure exists, validates MCP URLs, and enforces iteration limits.
-
-### 1.4 Server Configuration (`minerva/common/server_config.py`)
+### 1.3 Server Configuration (`minerva/common/server_config.py`)
 - `ServerConfig` holds MCP server deployment options: Chroma path, default max results, optional host/port overrides.
 - `load_server_config(path)` shares the same schema-first then semantic-validation approach.
 
@@ -32,15 +28,7 @@ provider = initialize_provider(config.provider)
 - Each config indexes exactly one collection; reruns require separate config files or overrides.
 - Provider configuration is inline, eliminating ID indirection.
 
-### 2.2 Chat (`minerva/commands/chat.py`)
-```
-chat_config = load_chat_config_from_file(args.config)
-provider = initialize_provider(chat_config.ai_provider)
-collections = list_collections(chat_config.chromadb_path)
-```
-- Chat setup no longer depends on index/server settings and can be deployed independently.
-
-### 2.3 Serve (`minerva/commands/serve.py` / `serve_http.py`)
+### 2.2 Serve (`minerva/commands/serve.py` / `serve_http.py`)
 ```
 server_config = load_server_config(args.config)
 validate_server_prerequisites(server_config.chromadb_path)
@@ -51,9 +39,8 @@ provider_map, collections = discover_collections_with_providers(server_config.ch
 
 ## 3. Testing Support
 
-- `tests/helpers/config_builders.py` provides `make_index_config`, `make_chat_config`, and `make_server_config` for writing temporary JSON configs and loading them through real loaders.
-- `tests/test_index_command.py`, `tests/test_chat_config.py`, and `tests/test_error_handling.py` exercise the loaders with success and failure scenarios.
-- Integration tests (e.g., `tests/test_mcp_chat_integration.py`) rely on the new helpers to avoid legacy unified fixtures.
+- `tests/helpers/config_builders.py` provides `make_index_config` and `make_server_config` for writing temporary JSON configs and loading them through real loaders.
+- `tests/test_index_command.py` and `tests/test_error_handling.py` exercise the loaders with success and failure scenarios.
 
 ## 4. Provider Initialization Patterns
 
@@ -63,7 +50,7 @@ provider_map, collections = discover_collections_with_providers(server_config.ch
 
 ## 5. Error Handling Principles
 
-- Loaders raise `ConfigError` (or specialised subclasses like `ChatConfigError`) with actionable multi-line messages.
+- Loaders raise `ConfigError` with actionable multi-line messages.
 - JSON schema validation surfaces field locations; semantic validation adds guidance (expected ranges, remediation steps).
 - CLI commands catch these exceptions, log user-friendly banners, and exit with command-specific status codes.
 
