@@ -15,7 +15,7 @@ def read_long_description() -> str:
 
 setup(
     name="repository-doc-extractor",
-    version="0.1.0",
+    version="1.0.0",
     author="Minerva Contributors",
     description="Standalone CLI for extracting markdown documentation from repository hierarchies",
     long_description=read_long_description(),

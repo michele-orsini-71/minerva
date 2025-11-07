@@ -66,25 +66,15 @@ def extract_repository_docs(
 
 
 def _find_markdown_files(root: Path, exclude_patterns: set[str]) -> List[Path]:
-    """
-    Recursively find all .md files, excluding specified patterns.
-
-    Args:
-        root: Root directory to search
-        exclude_patterns: Set of directory names to exclude
-
-    Returns:
-        Sorted list of Path objects for markdown files
-    """
     md_files = []
 
-    for path in root.rglob("*.md"):
-        # Check if any part of the path matches exclude patterns
-        if any(excluded in path.parts for excluded in exclude_patterns):
-            continue
+    for md_pattern in ["*.md", "*.mdx"]:
+        for path in root.rglob(md_pattern):
+            if any(excluded in path.parts for excluded in exclude_patterns):
+                continue
 
-        if path.is_file():
-            md_files.append(path)
+            if path.is_file():
+                md_files.append(path)
 
     # Sort for consistent ordering
     return sorted(md_files)

@@ -11,7 +11,6 @@ from .parser import RepositoryParseError, extract_repository_docs
 
 
 def _write_output(records: list[dict[str, object]], output: Path | None) -> None:
-    """Write JSON records to file or stdout."""
     payload = json.dumps(records, ensure_ascii=False, indent=2)
     if output:
         output.parent.mkdir(parents=True, exist_ok=True)
@@ -21,7 +20,6 @@ def _write_output(records: list[dict[str, object]], output: Path | None) -> None
 
 
 def main() -> int:
-    """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
         description="Extract markdown documentation from a repository into Minerva-compatible JSON.",
         epilog="Example: repository-doc-extractor /path/to/repo -o notes.json",
