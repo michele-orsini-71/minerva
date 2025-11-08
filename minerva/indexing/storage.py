@@ -54,19 +54,32 @@ def collection_exists(client: chromadb.PersistentClient, collection_name: str) -
     except Exception as error:
         raise StorageError(f"Failed to check if collection '{collection_name}' exists: {error}")
 
+def remove_collection(client: chromadb.PersistentClient, collection_name: str) -> None:
+    if not collection_exists(client, collection_name):
+        raise StorageError(
+            f"Collection '{collection_name}' does not exist\n"
+            f"  Suggestion: Run 'minerva peek {collection_name}' to verify available collections"
+        )
+
+    try:
+        client.delete_collection(collection_name)
+    except Exception as error:
+        raise StorageError(
+            f"Failed to delete collection '{collection_name}': {error}\n"
+            f"  Suggestion: Check ChromaDB permissions"
+        )
+
+
 def delete_existing_collection(client: chromadb.PersistentClient, collection_name: str) -> None:
     exists = collection_exists(client, collection_name)
 
     if exists:
         try:
-            client.delete_collection(collection_name)
+            remove_collection(client, collection_name)
             logger.warning(f"   Deleted existing collection '{collection_name}'")
             logger.warning(f"   WARNING: All existing data in this collection has been permanently deleted!")
-        except Exception as error:
-            raise StorageError(
-                f"Failed to delete existing collection '{collection_name}': {error}\n"
-                f"  Suggestion: Check ChromaDB permissions"
-            )
+        except StorageError:
+            raise
 
 
 def _validate_no_actual_api_keys(value: Any, field_name: str) -> None:

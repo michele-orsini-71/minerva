@@ -370,6 +370,16 @@ minerva peek COLLECTION_NAME --chromadb PATH [--format table|json]
 minerva peek bear_notes --chromadb ./chromadb_data --format table
 ```
 
+### `minerva remove`
+
+Permanently delete a ChromaDB collection. The command prints the full collection summary, then requires two confirmations before deleting anything.
+
+```bash
+minerva remove ./chromadb_data bear_notes
+```
+
+Use this when cleaning up experimental collections or rebuilding test data. Because deletion is irreversible, the command cannot be automated or forced—be prepared to type both `YES` and the collection name to proceed.
+
 ### `minerva serve`
 
 Start the MCP server to expose collections to AI assistants.

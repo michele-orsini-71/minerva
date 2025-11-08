@@ -78,6 +78,7 @@ minerva serve-http --config config.json --port 9000  # Terminal 2
 - ✅ Improved error messages for v1.0 collections
 - ✅ Configuration conflict warnings
 - ✅ CLI entrypoints now translate `MinervaError` subclasses into consistent exit codes
+- ✅ `minerva remove` command for double-confirmed ChromaDB collection deletion with full previews
 
 ### Error Handling Improvements
 

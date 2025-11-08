@@ -11,6 +11,7 @@ from minerva.commands.index import run_index
 from minerva.commands.serve import run_serve
 from minerva.commands.serve_http import run_serve_http
 from minerva.commands.peek import run_peek
+from minerva.commands.remove import run_remove
 from minerva.commands.validate import run_validate
 
 logger = get_logger(__name__, simple=True, mode="cli")
@@ -193,6 +194,35 @@ Examples:
     )
 
     # ========================================
+    # REMOVE command
+    # ========================================
+    remove_parser = subparsers.add_parser(
+        'remove',
+        help='Delete a ChromaDB collection after confirmation',
+        description='Permanently delete a ChromaDB collection. Requires two confirmations.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Delete a collection (interactive confirmations)
+  minerva remove ./chromadb_data bear_notes
+        """
+    )
+
+    remove_parser.add_argument(
+        'chromadb',
+        type=Path,
+        metavar='CHROMADB_PATH',
+        help='Path to ChromaDB data directory'
+    )
+
+    remove_parser.add_argument(
+        'collection_name',
+        type=str,
+        metavar='COLLECTION_NAME',
+        help='Name of the collection to delete'
+    )
+
+    # ========================================
     # VALIDATE command
     # ========================================
     validate_parser = subparsers.add_parser(
@@ -238,6 +268,8 @@ def main():
             return run_serve_http(args)
         elif args.command == 'peek':
             return run_peek(args)
+        elif args.command == 'remove':
+            return run_remove(args)
         elif args.command == 'validate':
             return run_validate(args)
         else:

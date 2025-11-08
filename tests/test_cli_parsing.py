@@ -184,14 +184,16 @@ class TestValidateCommand:
 class TestCommandNames:
     def test_all_valid_commands(self):
         parser = create_parser()
-        commands = ['index', 'serve', 'peek', 'validate']
+        commands = ['index', 'serve', 'peek', 'remove', 'validate']
         for command in commands:
             if command == 'index':
                 args = parser.parse_args([command, '--config', 'config.json'])
             elif command == 'serve':
                 args = parser.parse_args([command, '--config', 'config.json'])
             elif command == 'peek':
-                args = parser.parse_args([command, 'collection_name'])
+                args = parser.parse_args([command, './chromadb_data', 'collection_name'])
+            elif command == 'remove':
+                args = parser.parse_args([command, './chromadb_data', 'collection_name'])
             elif command == 'validate':
                 args = parser.parse_args([command, 'file.json'])
             assert args.command == command
@@ -211,6 +213,11 @@ class TestPathTypes:
     def test_chromadb_paths_converted_to_path_objects(self):
         parser = create_parser()
         args = parser.parse_args(['peek', '/data', 'test'])
+        assert isinstance(args.chromadb, Path)
+
+    def test_remove_chromadb_paths_converted_to_path_objects(self):
+        parser = create_parser()
+        args = parser.parse_args(['remove', '/data', 'test'])
         assert isinstance(args.chromadb, Path)
 
     def test_json_file_paths_converted_to_path_objects(self):
@@ -322,3 +329,26 @@ class TestHelpText:
         with pytest.raises(SystemExit) as exc_info:
             parser.parse_args(['validate', '--help'])
         assert exc_info.value.code == 0
+
+    def test_remove_help_exits_cleanly(self):
+        parser = create_parser()
+        with pytest.raises(SystemExit) as exc_info:
+            parser.parse_args(['remove', '--help'])
+        assert exc_info.value.code == 0
+class TestRemoveCommand:
+    def test_remove_command_requires_arguments(self):
+        parser = create_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(['remove'])
+
+    def test_remove_command_requires_collection_name(self):
+        parser = create_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(['remove', './chromadb_data'])
+
+    def test_remove_command_with_required_arguments(self):
+        parser = create_parser()
+        args = parser.parse_args(['remove', './chromadb_data', 'bear_notes'])
+        assert args.command == 'remove'
+        assert args.chromadb == Path('./chromadb_data')
+        assert args.collection_name == 'bear_notes'
