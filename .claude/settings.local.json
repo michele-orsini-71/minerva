@@ -42,7 +42,9 @@
       "Bash(MINERVA_DEBUG=1 minerva chat:*)",
       "Bash(tee:*)",
       "WebFetch(domain:pypi.org)",
-      "Bash(/Users/michele/my-code/minerva/.venv/bin/minerva index:*)"
+      "Bash(/Users/michele/my-code/minerva/.venv/bin/minerva index:*)",
+      "Bash(envchain openai minerva index:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []

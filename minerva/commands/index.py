@@ -170,7 +170,8 @@ def initialize_and_validate_provider(
 def check_collection_early(
     chromadb_path: str,
     collection: CollectionConfig,
-    provider: AIProvider
+    provider: AIProvider,
+    dry_run: bool = False
 ) -> tuple[bool, str]:
     logger.info("Checking ChromaDB collection status...")
 
@@ -198,7 +199,10 @@ def check_collection_early(
 
         if is_v1_collection(collection_obj):
             error_msg = format_v1_collection_error(collection.name, chromadb_path)
-            logger.error(error_msg)
+            if dry_run:
+                logger.warning(error_msg)
+                logger.info("")
+                return True, "recreate"
             raise IncrementalUpdateError(error_msg)
 
         config_change = detect_config_changes(
@@ -210,7 +214,10 @@ def check_collection_early(
 
         if config_change.has_changes:
             error_msg = format_config_change_error(collection.name, config_change)
-            logger.error(error_msg)
+            if dry_run:
+                logger.warning(error_msg)
+                logger.info("")
+                return True, "recreate"
             raise IncrementalUpdateError(error_msg)
 
         logger.success(f"   ✓ Collection '{collection.name}' exists (v2.0)")
@@ -241,7 +248,8 @@ def run_dry_run(
     _, mode = check_collection_early(
         chromadb_path,
         collection,
-        provider
+        provider,
+        dry_run=True
     )
 
     logger.info("Creating semantic chunks (validation only)...")
@@ -441,7 +449,8 @@ def run_index(args: Namespace) -> int:
             _, mode = check_collection_early(
                 index_config.chromadb_path,
                 collection,
-                provider
+                provider,
+                dry_run=False
             )
 
             if mode == "incremental":

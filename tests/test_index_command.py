@@ -232,6 +232,7 @@ class TestRunDryRun:
             index_config.chromadb_path,
             index_config.collection,
             mock_provider,
+            dry_run=True
         )
 
 
