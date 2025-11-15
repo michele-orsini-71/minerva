@@ -21,9 +21,13 @@
 - `extractors/github-webhook-orchestrator/tests/test_config.py` - Comprehensive unit tests for configuration loading (22 test cases)
 - `extractors/github-webhook-orchestrator/github_webhook_orchestrator/reindex.py` - Reindex workflow orchestration with markdown detection and subprocess execution
 - `extractors/github-webhook-orchestrator/tests/test_reindex.py` - Comprehensive unit tests for markdown detection logic (23 test cases)
+- `extractors/github-webhook-orchestrator/github_webhook_orchestrator/server.py` - FastAPI webhook receiver with signature validation, event processing, and reindex triggering
+- `extractors/github-webhook-orchestrator/github_webhook_orchestrator/cli.py` - CLI entry point for webhook-orchestrator command with argument parsing
+
+### Modified Files
+- `extractors/github-webhook-orchestrator/setup.py` - Updated console_scripts entry point to use cli module
 
 ### Files to Create
-- `extractors/github-webhook-orchestrator/github_webhook_orchestrator/server.py` - FastAPI webhook receiver
 - `extractors/github-webhook-orchestrator/test_webhook_payload.json` - Sample GitHub webhook payload for testing
 
 ### Test Data
@@ -84,25 +88,25 @@
     - [x] 4.13 Implement error handling: log failures, return appropriate exit codes
     - [x] 4.14 Write unit tests in `tests/test_reindex.py` for markdown detection logic
 
-- [ ] 5.0 Implement FastAPI Webhook Server
-    - [ ] 5.1 Create `server.py` module
-    - [ ] 5.2 Initialize FastAPI app
-    - [ ] 5.3 Implement `POST /webhook` endpoint
-    - [ ] 5.4 Extract raw request body for signature validation
-    - [ ] 5.5 Extract `X-Hub-Signature-256` header from request
-    - [ ] 5.6 Call `validate_signature()` with body, header, and config secret
-    - [ ] 5.7 Return 403 Forbidden if signature validation fails
-    - [ ] 5.8 Parse webhook payload JSON
-    - [ ] 5.9 Check event type (only process `push` events, ignore others)
-    - [ ] 5.10 Extract repository name from payload
-    - [ ] 5.11 Find matching repository config by name
-    - [ ] 5.12 Call `detect_markdown_changes()` with commits from payload
-    - [ ] 5.13 If no markdown changes, return 200 OK with message "no markdown changes"
-    - [ ] 5.14 If markdown changes detected, call `execute_reindex()` with repository config
-    - [ ] 5.15 Return 200 OK if reindex succeeds, 500 Internal Server Error if reindex fails
-    - [ ] 5.16 Log all webhook events (timestamp, repo, event type, outcome) to configured log file
-    - [ ] 5.17 Implement `GET /health` endpoint for health checks (returns 200 OK)
-    - [ ] 5.18 Create `main()` function to load config and run uvicorn server on port 8338
+- [x] 5.0 Implement FastAPI Webhook Server
+    - [x] 5.1 Create `server.py` module
+    - [x] 5.2 Initialize FastAPI app
+    - [x] 5.3 Implement `POST /webhook` endpoint
+    - [x] 5.4 Extract raw request body for signature validation
+    - [x] 5.5 Extract `X-Hub-Signature-256` header from request
+    - [x] 5.6 Call `validate_signature()` with body, header, and config secret
+    - [x] 5.7 Return 403 Forbidden if signature validation fails
+    - [x] 5.8 Parse webhook payload JSON
+    - [x] 5.9 Check event type (only process `push` events, ignore others)
+    - [x] 5.10 Extract repository name from payload
+    - [x] 5.11 Find matching repository config by name
+    - [x] 5.12 Call `detect_markdown_changes()` with commits from payload
+    - [x] 5.13 If no markdown changes, return 200 OK with message "no markdown changes"
+    - [x] 5.14 If markdown changes detected, call `execute_reindex()` with repository config
+    - [x] 5.15 Return 200 OK if reindex succeeds, 500 Internal Server Error if reindex fails
+    - [x] 5.16 Log all webhook events (timestamp, repo, event type, outcome) to configured log file
+    - [x] 5.17 Implement `GET /health` endpoint for health checks (returns 200 OK)
+    - [x] 5.18 Create `main()` function to load config and run uvicorn server on port 8338
 
 - [ ] 6.0 Create Test Repository and Configuration
     - [ ] 6.1 Create `~/test-webhook-repo/` directory

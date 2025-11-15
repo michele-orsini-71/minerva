@@ -36,7 +36,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "webhook-orchestrator=github_webhook_orchestrator.server:main",
+            "webhook-orchestrator=github_webhook_orchestrator.cli:main",
         ]
     },
     classifiers=[

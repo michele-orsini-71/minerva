@@ -48,7 +48,8 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git reset:*)",
-      "Bash(git check-ignore:*)"
+      "Bash(git check-ignore:*)",
+      "Bash(webhook-orchestrator:*)"
     ],
     "deny": [],
     "ask": []
