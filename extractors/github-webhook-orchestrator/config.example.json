@@ -1,5 +1,6 @@
 {
   "webhook_secret": "${WEBHOOK_SECRET}",
+  "github_token": "${GITHUB_TOKEN}",
   "log_file": "~/.minerva/logs/webhook-orchestrator.log",
   "repositories": [
     {

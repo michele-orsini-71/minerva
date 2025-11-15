@@ -17,6 +17,7 @@ class RepositoryConfig:
 @dataclass
 class WebhookConfig:
     webhook_secret: str
+    github_token: str
     repositories: list[RepositoryConfig]
     log_file: str
 
@@ -49,7 +50,7 @@ def resolve_env_vars_recursive(obj):
 
 
 def validate_config(config_data: dict, config_path: str) -> None:
-    required_fields = ['webhook_secret', 'repositories', 'log_file']
+    required_fields = ['webhook_secret', 'github_token', 'repositories', 'log_file']
     for field in required_fields:
         if field not in config_data:
             raise ValueError(f"Missing required field: {field}")
@@ -135,6 +136,7 @@ def load_config(config_path: str) -> WebhookConfig:
 
     return WebhookConfig(
         webhook_secret=config_data['webhook_secret'],
+        github_token=config_data['github_token'],
         repositories=repositories,
         log_file=str(log_file_path.resolve())
     )

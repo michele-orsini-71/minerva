@@ -19,14 +19,12 @@
 - `extractors/github-webhook-orchestrator/github_webhook_orchestrator/config.py` - Configuration loading with dataclasses, env var resolution, and validation
 - `extractors/github-webhook-orchestrator/config.example.json` - Example configuration file with documentation
 - `extractors/github-webhook-orchestrator/tests/test_config.py` - Comprehensive unit tests for configuration loading (22 test cases)
+- `extractors/github-webhook-orchestrator/github_webhook_orchestrator/reindex.py` - Reindex workflow orchestration with markdown detection and subprocess execution
+- `extractors/github-webhook-orchestrator/tests/test_reindex.py` - Comprehensive unit tests for markdown detection logic (23 test cases)
 
 ### Files to Create
 - `extractors/github-webhook-orchestrator/github_webhook_orchestrator/server.py` - FastAPI webhook receiver
-- `extractors/github-webhook-orchestrator/github_webhook_orchestrator/reindex.py` - Reindex workflow orchestration
-
-### Test Files to Create
 - `extractors/github-webhook-orchestrator/test_webhook_payload.json` - Sample GitHub webhook payload for testing
-- `extractors/github-webhook-orchestrator/tests/test_reindex.py` - Unit tests for reindex workflow
 
 ### Test Data
 - `~/test-webhook-repo/` - Test repository with markdown files
@@ -70,21 +68,21 @@
     - [x] 3.8 Create `config.example.json` with well-documented example configuration
     - [x] 3.9 Write unit tests in `tests/test_config.py` for config loading and validation
 
-- [ ] 4.0 Implement Reindex Workflow Orchestration
-    - [ ] 4.1 Create `reindex.py` module
-    - [ ] 4.2 Implement `detect_markdown_changes(commits: list) -> bool` function
-    - [ ] 4.3 Parse commit list from webhook payload, extract added/modified/removed files
-    - [ ] 4.4 Check if any files end with `.md` or `.mdx`
-    - [ ] 4.5 Return True if markdown files changed, False otherwise
-    - [ ] 4.6 Implement `execute_reindex(repo_config: RepositoryConfig) -> bool` function
-    - [ ] 4.7 Execute `git pull origin main` in repository's local_path (using subprocess)
-    - [ ] 4.8 Execute `repository-doc-extractor <local_path> -o <output_json>` (using subprocess)
-    - [ ] 4.9 Execute `minerva validate <output_json>` (using subprocess)
-    - [ ] 4.10 Execute `minerva index --config <index_config>` with OPENAI_API_KEY from envchain (using subprocess)
-    - [ ] 4.11 Capture stdout/stderr from each command for logging
-    - [ ] 4.12 Return True if all commands succeed (exit code 0), False otherwise
-    - [ ] 4.13 Implement error handling: log failures, return appropriate exit codes
-    - [ ] 4.14 Write unit tests in `tests/test_reindex.py` for markdown detection logic
+- [x] 4.0 Implement Reindex Workflow Orchestration
+    - [x] 4.1 Create `reindex.py` module
+    - [x] 4.2 Implement `detect_markdown_changes(commits: list) -> bool` function
+    - [x] 4.3 Parse commit list from webhook payload, extract added/modified/removed files
+    - [x] 4.4 Check if any files end with `.md` or `.mdx`
+    - [x] 4.5 Return True if markdown files changed, False otherwise
+    - [x] 4.6 Implement `execute_reindex(repo_config: RepositoryConfig) -> bool` function
+    - [x] 4.7 Execute `git pull origin main` in repository's local_path (using subprocess)
+    - [x] 4.8 Execute `repository-doc-extractor <local_path> -o <output_json>` (using subprocess)
+    - [x] 4.9 Execute `minerva validate <output_json>` (using subprocess)
+    - [x] 4.10 Execute `minerva index --config <index_config>` with OPENAI_API_KEY from envchain (using subprocess)
+    - [x] 4.11 Capture stdout/stderr from each command for logging
+    - [x] 4.12 Return True if all commands succeed (exit code 0), False otherwise
+    - [x] 4.13 Implement error handling: log failures, return appropriate exit codes
+    - [x] 4.14 Write unit tests in `tests/test_reindex.py` for markdown detection logic
 
 - [ ] 5.0 Implement FastAPI Webhook Server
     - [ ] 5.1 Create `server.py` module

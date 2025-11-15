@@ -70,6 +70,7 @@ def test_resolve_env_vars_recursive_list():
 def test_validate_config_missing_required_field():
     config_data = {
         'webhook_secret': 'secret',
+        'github_token': 'token',
         'repositories': []
     }
     with pytest.raises(ValueError, match="Missing required field: log_file"):
@@ -79,6 +80,7 @@ def test_validate_config_missing_required_field():
 def test_validate_config_repositories_not_list():
     config_data = {
         'webhook_secret': 'secret',
+        'github_token': 'token',
         'repositories': 'not_a_list',
         'log_file': '/tmp/log.txt'
     }
@@ -89,6 +91,7 @@ def test_validate_config_repositories_not_list():
 def test_validate_config_empty_repositories():
     config_data = {
         'webhook_secret': 'secret',
+        'github_token': 'token',
         'repositories': [],
         'log_file': '/tmp/log.txt'
     }
@@ -103,6 +106,7 @@ def test_validate_config_repository_missing_field(tmp_path):
 
     config_data = {
         'webhook_secret': 'secret',
+        'github_token': 'token',
         'repositories': [
             {
                 'name': 'test',
@@ -120,6 +124,7 @@ def test_validate_config_local_path_not_exists(tmp_path):
 
     config_data = {
         'webhook_secret': 'secret',
+        'github_token': 'token',
         'repositories': [
             {
                 'name': 'test',
@@ -142,6 +147,7 @@ def test_validate_config_local_path_not_directory(tmp_path):
 
     config_data = {
         'webhook_secret': 'secret',
+        'github_token': 'token',
         'repositories': [
             {
                 'name': 'test',
@@ -164,6 +170,7 @@ def test_validate_config_index_config_not_exists(tmp_path):
 
     config_data = {
         'webhook_secret': 'secret',
+        'github_token': 'token',
         'repositories': [
             {
                 'name': 'test',
@@ -188,6 +195,7 @@ def test_validate_config_index_config_not_file(tmp_path):
 
     config_data = {
         'webhook_secret': 'secret',
+        'github_token': 'token',
         'repositories': [
             {
                 'name': 'test',
@@ -212,6 +220,7 @@ def test_validate_config_success(tmp_path):
 
     config_data = {
         'webhook_secret': 'secret',
+        'github_token': 'token',
         'repositories': [
             {
                 'name': 'test',
@@ -241,6 +250,7 @@ def test_load_config_not_a_file(tmp_path):
 
 def test_load_config_success(tmp_path):
     os.environ['TEST_WEBHOOK_SECRET'] = 'my_secret'
+    os.environ['TEST_GITHUB_TOKEN'] = 'my_token'
 
     test_repo = tmp_path / "test_repo"
     test_repo.mkdir()
@@ -249,6 +259,7 @@ def test_load_config_success(tmp_path):
 
     config_data = {
         'webhook_secret': '${TEST_WEBHOOK_SECRET}',
+        'github_token': '${TEST_GITHUB_TOKEN}',
         'repositories': [
             {
                 'name': 'test_repo',
@@ -267,6 +278,7 @@ def test_load_config_success(tmp_path):
     config = load_config(str(test_config))
 
     assert config.webhook_secret == 'my_secret'
+    assert config.github_token == 'my_token'
     assert len(config.repositories) == 1
     assert config.repositories[0].name == 'test_repo'
     assert config.repositories[0].github_url == 'https://github.com/test/test'
@@ -278,10 +290,12 @@ def test_load_config_success(tmp_path):
     assert (tmp_path / 'logs').exists()
 
     del os.environ['TEST_WEBHOOK_SECRET']
+    del os.environ['TEST_GITHUB_TOKEN']
 
 
 def test_load_config_with_relative_paths(tmp_path):
     os.environ['TEST_SECRET'] = 'secret'
+    os.environ['TEST_TOKEN'] = 'token'
 
     config_dir = tmp_path / "configs"
     config_dir.mkdir()
@@ -298,6 +312,7 @@ def test_load_config_with_relative_paths(tmp_path):
 
     config_data = {
         'webhook_secret': '${TEST_SECRET}',
+        'github_token': '${TEST_TOKEN}',
         'repositories': [
             {
                 'name': 'test',
@@ -319,10 +334,12 @@ def test_load_config_with_relative_paths(tmp_path):
     assert config.repositories[0].index_config == str(test_index.resolve())
 
     del os.environ['TEST_SECRET']
+    del os.environ['TEST_TOKEN']
 
 
 def test_load_config_creates_log_directory(tmp_path):
     os.environ['TEST_SECRET'] = 'secret'
+    os.environ['TEST_TOKEN'] = 'token'
 
     test_repo = tmp_path / "test_repo"
     test_repo.mkdir()
@@ -333,6 +350,7 @@ def test_load_config_creates_log_directory(tmp_path):
 
     config_data = {
         'webhook_secret': '${TEST_SECRET}',
+        'github_token': '${TEST_TOKEN}',
         'repositories': [
             {
                 'name': 'test',
@@ -354,6 +372,7 @@ def test_load_config_creates_log_directory(tmp_path):
     assert config.log_file == str((log_dir / 'webhook.log').resolve())
 
     del os.environ['TEST_SECRET']
+    del os.environ['TEST_TOKEN']
 
 
 def test_repository_config_dataclass():
@@ -383,11 +402,13 @@ def test_webhook_config_dataclass():
 
     config = WebhookConfig(
         webhook_secret='secret',
+        github_token='token',
         repositories=[repo],
         log_file='/path/to/log.txt'
     )
 
     assert config.webhook_secret == 'secret'
+    assert config.github_token == 'token'
     assert len(config.repositories) == 1
     assert config.repositories[0].name == 'test'
     assert config.log_file == '/path/to/log.txt'
