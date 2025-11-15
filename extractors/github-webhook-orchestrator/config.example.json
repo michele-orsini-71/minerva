@@ -1,0 +1,20 @@
+{
+  "webhook_secret": "${WEBHOOK_SECRET}",
+  "log_file": "~/.minerva/logs/webhook-orchestrator.log",
+  "repositories": [
+    {
+      "name": "my-knowledge-repo",
+      "github_url": "https://github.com/username/my-knowledge-repo",
+      "local_path": "~/repositories/my-knowledge-repo",
+      "collection": "knowledge_base",
+      "index_config": "~/.minerva/configs/my-knowledge-repo.json"
+    },
+    {
+      "name": "documentation-site",
+      "github_url": "https://github.com/username/documentation-site",
+      "local_path": "~/repositories/documentation-site",
+      "collection": "docs",
+      "index_config": "~/.minerva/configs/documentation-site.json"
+    }
+  ]
+}

@@ -16,16 +16,16 @@
 - `extractors/github-webhook-orchestrator/github_webhook_orchestrator/github_auth.py` - HMAC-SHA256 signature validation with constant-time comparison
 - `extractors/github-webhook-orchestrator/tests/__init__.py` - Test package initialization
 - `extractors/github-webhook-orchestrator/tests/test_github_auth.py` - Comprehensive unit tests for signature validation (11 test cases)
+- `extractors/github-webhook-orchestrator/github_webhook_orchestrator/config.py` - Configuration loading with dataclasses, env var resolution, and validation
+- `extractors/github-webhook-orchestrator/config.example.json` - Example configuration file with documentation
+- `extractors/github-webhook-orchestrator/tests/test_config.py` - Comprehensive unit tests for configuration loading (22 test cases)
 
 ### Files to Create
 - `extractors/github-webhook-orchestrator/github_webhook_orchestrator/server.py` - FastAPI webhook receiver
 - `extractors/github-webhook-orchestrator/github_webhook_orchestrator/reindex.py` - Reindex workflow orchestration
-- `extractors/github-webhook-orchestrator/github_webhook_orchestrator/config.py` - Configuration loading and validation
-- `extractors/github-webhook-orchestrator/config.example.json` - Example configuration file
 
 ### Test Files to Create
 - `extractors/github-webhook-orchestrator/test_webhook_payload.json` - Sample GitHub webhook payload for testing
-- `extractors/github-webhook-orchestrator/tests/test_config.py` - Unit tests for configuration loading
 - `extractors/github-webhook-orchestrator/tests/test_reindex.py` - Unit tests for reindex workflow
 
 ### Test Data
@@ -59,16 +59,16 @@
     - [x] 2.6 Handle edge cases: missing signature, invalid format, empty secret
     - [x] 2.7 Write unit tests in `tests/test_github_auth.py` covering valid/invalid signatures
 
-- [ ] 3.0 Implement Configuration Management
-    - [ ] 3.1 Create `config.py` module
-    - [ ] 3.2 Define `WebhookConfig` dataclass with fields: webhook_secret, repositories (list), log_file
-    - [ ] 3.3 Define `RepositoryConfig` dataclass with fields: name, github_url, local_path, collection, index_config
-    - [ ] 3.4 Implement `load_config(config_path: str) -> WebhookConfig` function
-    - [ ] 3.5 Parse JSON configuration file
-    - [ ] 3.6 Resolve environment variable substitutions (e.g., `${WEBHOOK_SECRET}`)
-    - [ ] 3.7 Validate configuration (required fields present, paths exist)
-    - [ ] 3.8 Create `config.example.json` with well-documented example configuration
-    - [ ] 3.9 Write unit tests in `tests/test_config.py` for config loading and validation
+- [x] 3.0 Implement Configuration Management
+    - [x] 3.1 Create `config.py` module
+    - [x] 3.2 Define `WebhookConfig` dataclass with fields: webhook_secret, repositories (list), log_file
+    - [x] 3.3 Define `RepositoryConfig` dataclass with fields: name, github_url, local_path, collection, index_config
+    - [x] 3.4 Implement `load_config(config_path: str) -> WebhookConfig` function
+    - [x] 3.5 Parse JSON configuration file
+    - [x] 3.6 Resolve environment variable substitutions (e.g., `${WEBHOOK_SECRET}`)
+    - [x] 3.7 Validate configuration (required fields present, paths exist)
+    - [x] 3.8 Create `config.example.json` with well-documented example configuration
+    - [x] 3.9 Write unit tests in `tests/test_config.py` for config loading and validation
 
 - [ ] 4.0 Implement Reindex Workflow Orchestration
     - [ ] 4.1 Create `reindex.py` module
