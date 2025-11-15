@@ -44,7 +44,10 @@
       "WebFetch(domain:pypi.org)",
       "Bash(/Users/michele/my-code/minerva/.venv/bin/minerva index:*)",
       "Bash(envchain openai minerva index:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": []
