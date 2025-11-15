@@ -6,8 +6,10 @@ from minerva.indexing.updater import (
     ExistingState,
     ConfigChange,
     ChangeDetectionResult,
+    MetadataChanges,
     is_v1_collection,
     detect_config_changes,
+    detect_metadata_changes,
     format_v1_collection_error,
     format_config_change_error,
     fetch_existing_state,
@@ -377,7 +379,7 @@ class TestDetectChanges:
             noteId_to_hash={}
         )
 
-        result = detect_changes(new_notes, existing_state, 'desc', 'desc')
+        result = detect_changes(new_notes, existing_state)
 
         assert len(result.added_notes) == 1
         assert result.added_notes[0]['title'] == 'New Note'
@@ -391,7 +393,7 @@ class TestDetectChanges:
             noteId_to_hash={'note1': 'hash1'}
         )
 
-        result = detect_changes(new_notes, existing_state, 'desc', 'desc')
+        result = detect_changes(new_notes, existing_state)
 
         assert len(result.added_notes) == 0
         assert len(result.updated_notes) == 0
@@ -415,7 +417,7 @@ class TestDetectChanges:
             noteId_to_hash={note_id: content_hash}
         )
 
-        result = detect_changes(new_notes, existing_state, 'desc', 'desc')
+        result = detect_changes(new_notes, existing_state)
 
         assert len(result.added_notes) == 0
         assert len(result.updated_notes) == 0
@@ -437,7 +439,7 @@ class TestDetectChanges:
             noteId_to_hash={note_id: 'old_hash_different'}
         )
 
-        result = detect_changes(new_notes, existing_state, 'desc', 'desc')
+        result = detect_changes(new_notes, existing_state)
 
         assert len(result.added_notes) == 0
         assert len(result.updated_notes) == 1
@@ -459,19 +461,27 @@ class TestDetectChanges:
             noteId_to_hash={}
         )
 
-        result = detect_changes(new_notes, existing_state, 'desc', 'desc')
+        result = detect_changes(new_notes, existing_state)
 
         assert len(result.updated_notes) == 1 or len(result.added_notes) == 1
 
     def test_detects_description_change(self):
-        result = detect_changes([], ExistingState({}, {}), 'old desc', 'new desc')
+        collection = Mock()
+        collection.metadata = {'description': 'old desc', 'note_count': 10}
+
+        result = detect_metadata_changes(collection, 'new desc', 10)
 
         assert result.description_changed is True
+        assert result.has_changes is True
 
     def test_detects_no_description_change(self):
-        result = detect_changes([], ExistingState({}, {}), 'same desc', 'same desc')
+        collection = Mock()
+        collection.metadata = {'description': 'same desc', 'note_count': 10}
+
+        result = detect_metadata_changes(collection, 'same desc', 10)
 
         assert result.description_changed is False
+        assert result.has_changes is False
 
 
 class TestDeleteNoteChunks:
