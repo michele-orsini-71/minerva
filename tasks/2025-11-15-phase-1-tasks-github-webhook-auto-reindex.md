@@ -123,19 +123,19 @@
     - [x] 6.10 Set collection name to `test_repo_docs`
     - [x] 6.11 Set json_file to `~/.minerva/extracted/test-webhook-repo.json`
 
-- [ ] 7.0 Manual Testing - Local Workflow (Before Automation)
-  - [ ] 7.1 Start Minerva MCP server in Terminal 1: `envchain openai minerva serve --config <config>`
-  - [ ] 7.2 Verify MCP server is running (check logs or health endpoint)
-  - [ ] 7.3 In Terminal 2, manually extract test repository
-  - [ ] 7.4 Run: `repository-doc-extractor ~/test-webhook-repo -o ~/.minerva/extracted/test-webhook-repo.json -v`
-  - [ ] 7.5 Verify extraction succeeded (check JSON file exists and is valid)
-  - [ ] 7.6 Run: `envchain openai minerva validate ~/.minerva/extracted/test-webhook-repo.json`
-  - [ ] 7.7 Verify validation succeeded
-  - [ ] 7.8 Run: `envchain openai minerva index --config ~/.minerva/configs/test-webhook-repo.json --verbose`
-  - [ ] 7.9 Verify indexing succeeded (check logs for success message)
-  - [ ] 7.10 In Claude Desktop, search for content from test repository
-  - [ ] 7.11 Verify search results include content from test repository
-  - [ ] 7.12 Verify Minerva MCP server stayed running during entire workflow (no downtime)
+- [x] 7.0 Manual Testing - Local Workflow (Before Automation)
+  - [x] 7.1 Start Minerva MCP server in Terminal 1: `envchain openai minerva serve --config <config>`
+  - [x] 7.2 Verify MCP server is running (check logs or health endpoint)
+  - [x] 7.3 In Terminal 2, manually extract test repository
+  - [x] 7.4 Run: `repository-doc-extractor ~/test-webhook-repo -o ~/.minerva/extracted/test-webhook-repo.json -v`
+  - [x] 7.5 Verify extraction succeeded (check JSON file exists and is valid)
+  - [x] 7.6 Run: `envchain openai minerva validate ~/.minerva/extracted/test-webhook-repo.json`
+  - [x] 7.7 Verify validation succeeded
+  - [x] 7.8 Run: `envchain openai minerva index --config ~/.minerva/configs/test-webhook-repo.json --verbose`
+  - [x] 7.9 Verify indexing succeeded (check logs for success message)
+  - [x] 7.10 In Claude Desktop, search for content from test repository
+  - [x] 7.11 Verify search results include content from test repository
+  - [x] 7.12 Verify Minerva MCP server stayed running during entire workflow (no downtime)
 
 - [ ] 8.0 Manual Testing - Webhook Orchestrator (Local, No GitHub)
     - [ ] 8.1 Create webhook orchestrator config: `extractors/github-webhook-orchestrator/config.json`
