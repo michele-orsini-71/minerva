@@ -615,4 +615,7 @@ Minerva builds upon these excellent open-source projects:
 
 ---
 
-**Happy knowledge managing! 🧠✨**
+## About the Name
+
+Minerva is named after the Roman goddess of wisdom, knowledge, and strategic warfare—fitting for a system that helps manage and retrieve knowledge.
+This project is dedicated to the memory of my mother, Nadia Minerva (Sept 30th, 1947 - Oct 17th, 2025).
