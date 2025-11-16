@@ -1,44 +1,40 @@
 # Minerva
 
-**A unified RAG system for personal knowledge management**
+A unified RAG system for personal knowledge management
 
 Minerva is a powerful tool that transforms your markdown notes, articles, and documents into an intelligent, searchable knowledge base. It extracts content from various sources, indexes them with AI-powered embeddings, and makes them accessible through semantic search via the Model Context Protocol (MCP).
 
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/status-beta-yellow.svg)](https://github.com/yourusername/minerva)
-
 ---
 
-## 🎯 What is Minerva?
+## What is Minerva?
 
 Minerva solves the problem of **information overload** in personal knowledge management. If you have:
 
-- 📝 Hundreds of notes scattered across different apps (Bear, Notion, Obsidian)
-- 📚 Markdown books and documentation you want to reference
-- 🔬 Research articles and Wikipedia dumps you need to search
-- 🤖 A need to give AI assistants access to your personal knowledge
+- Hundreds of notes scattered across different apps (Bear, Notion, Obsidian)
+- Markdown books and documentation you want to reference
+- Research articles and Wikipedia dumps you need to search
+- A need to give AI assistants access to your personal knowledge
 
 ...then Minerva is for you.
 
 ### Key Features
 
-✨ **Multi-Source Support**: Extract notes from Bear, Zim articles, markdown books, or any source via custom extractors
-🔍 **Semantic Search**: Find relevant information by meaning, not just keywords
-🤖 **MCP Integration**: Works seamlessly with Claude Desktop and other MCP-compatible AI tools via Model Context Protocol
-📝 **Automatic Citations**: AI assistants automatically cite source notes when presenting information
-🌐 **Multi-Provider AI**: Choose between local (Ollama, LM Studio) or cloud (OpenAI, Anthropic, Gemini) AI providers
-📊 **Transparent Storage**: All data stored locally in ChromaDB with full control
-🔧 **Extensible**: Write custom extractors for any data source in any language
-⚙️ **Command-Specific Configs**: Dedicated JSON files for index and server workflows
+- **Multi-Source Support**: Extract notes from Bear, Zim articles, markdown books, or any source via custom extractors
+- **Semantic Search**: Find relevant information by meaning, not just keywords
+- **MCP Integration**: Works seamlessly with Claude Desktop and other MCP-compatible AI tools via Model Context Protocol
+- **Automatic Citations**: AI assistants automatically cite source notes when presenting information
+- **Multi-Provider AI**: Choose between local (Ollama, LM Studio) or cloud (OpenAI, Anthropic, Gemini) AI providers
+- **Transparent Storage**: All data stored locally in ChromaDB with full control
+- **Extensible**: Write custom extractors for any data source in any language
+-️ **Command-Specific Configs**: Dedicated JSON files for index and server workflows
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 Minerva follows a three-stage pipeline architecture:
 
-```
+```txt
 ┌─────────────────┐
 │   DATA SOURCES  │
 │   (Bear, Zim,   │
@@ -91,18 +87,15 @@ Minerva follows a three-stage pipeline architecture:
 
 ### How It Works
 
-1. **Extract** 📤: Extractors convert your notes into a standardized JSON format
-2. **Validate** ✅: Minerva validates the JSON against a strict schema
-3. **Index** 🗂️: Notes are chunked, embedded, and stored in ChromaDB with metadata
-4. **Serve** 🚀: MCP server exposes semantic search to AI assistants
-5. **Search** 🔎: AI assistants query your knowledge base through natural language
+1. Extract: Extractors convert your notes into a standardized JSON format
+2. Validate: Minerva validates the JSON against a strict schema
+3. Index️: Notes are chunked, embedded, and stored in ChromaDB with metadata
+4. Serve: MCP server exposes semantic search to AI assistants
+5. Search: AI assistants query your knowledge base through natural language
 
 ---
 
-> ⚠️ The legacy `minerva chat` CLI has been retired. Run `minerva serve` and connect a client such as LM Studio or Claude Desktop for conversational access.
-
-
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -133,10 +126,10 @@ minerva --help
 
 **Why pipx?**
 
-- ✅ Clean: Each tool gets its own isolated environment
-- ✅ Simple: One command to install, one command to uninstall
-- ✅ Automatic: No PATH configuration needed
-- ✅ Safe: No conflicts between different Python projects
+- Clean: Each tool gets its own isolated environment
+- Simple: One command to install, one command to uninstall
+- Automatic: No PATH configuration needed
+- Safe: No conflicts between different Python projects
 
 #### Method 2: pip + alias
 
@@ -180,7 +173,7 @@ echo "alias minerva=\"$(pwd)/.venv/bin/minerva\"" >> ~/.zshrc
 function minerva { & "C:\path\to\project\.venv\Scripts\minerva.exe" $args }
 ```
 
-#### ⚠️ You Don't Need to Activate the Virtual Environment!
+#### You Don't Need to Activate the Virtual Environment!
 
 **Important concept:** Once Minerva is installed using either method above, you do **NOT** need to activate any virtual environment to use it. The `minerva` command will be available in any terminal session.
 
@@ -261,7 +254,7 @@ minerva serve --config configs/server/local.json
 
 ---
 
-## 📖 Core Concepts
+## Core Concepts
 
 ### The Note Schema
 
@@ -308,7 +301,7 @@ ChromaDB organizes data into **collections**. Each collection:
 
 ---
 
-## 🛠️ Commands
+## Commands
 
 ### `minerva index`
 
@@ -399,7 +392,7 @@ minerva serve --config configs/server/local.json
 }
 ```
 
-## 🎨 Usage Examples
+## Usage Examples
 
 ### Example 1: Index Bear Notes with Local AI (Ollama)
 
@@ -488,7 +481,7 @@ python -c "from minerva.common.server_config import load_server_config; load_ser
 
 ---
 
-## 🧩 Extending Minerva
+## Extending Minerva
 
 ### Writing Custom Extractors
 
@@ -531,7 +524,7 @@ See the [Extractor Guide](docs/EXTRACTOR_GUIDE.md) for detailed tutorials.
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ### Running Tests
 
@@ -558,6 +551,7 @@ python -c "from minerva.common.server_config import load_server_config; load_ser
 ### Continuous Integration
 
 The project includes GitHub Actions CI that automatically:
+
 - Runs all tests with coverage
 - Validates sample configurations
 - Lints code with black, isort, and flake8
@@ -565,7 +559,7 @@ The project includes GitHub Actions CI that automatically:
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 - **[Configuration Guide](docs/configuration.md)** - Command-specific configuration reference for index and server
 - **[LM Studio Setup Guide](docs/LMSTUDIO_SETUP.md)** - Installing and configuring LM Studio
@@ -578,25 +572,25 @@ The project includes GitHub Actions CI that automatically:
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Here are some ways you can help:
 
-- 🐛 Report bugs and request features via [GitHub Issues](https://github.com/yourusername/minerva/issues)
-- 📝 Write extractors for new data sources
-- 📚 Improve documentation
-- 🧪 Add tests and improve code coverage
-- 💡 Share your use cases and workflows
+- Report bugs and request features via [GitHub Issues](https://github.com/yourusername/minerva/issues)
+- Write extractors for new data sources
+- Improve documentation
+- Add tests and improve code coverage
+- Share your use cases and workflows
 
 ---
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 Minerva builds upon these excellent open-source projects:
 
@@ -607,11 +601,11 @@ Minerva builds upon these excellent open-source projects:
 
 ---
 
-## 📮 Support
+## Support
 
-- 📖 Check the [documentation](docs/)
-- 🐛 Report issues on [GitHub](https://github.com/yourusername/minerva/issues)
-- 💬 Join discussions in [GitHub Discussions](https://github.com/yourusername/minerva/discussions)
+- Check the [documentation](docs/)
+- Report issues on [GitHub](https://github.com/yourusername/minerva/issues)
+- Join discussions in [GitHub Discussions](https://github.com/yourusername/minerva/discussions)
 
 ---
 
