@@ -16,18 +16,19 @@ def run_query(args: Namespace) -> int:
     collection_name = args.collection if hasattr(args, 'collection') and args.collection else None
     max_results = args.max_results if hasattr(args, 'max_results') and args.max_results else 5
     output_format = args.format if hasattr(args, 'format') and args.format else 'text'
+    verbose = args.verbose if hasattr(args, 'verbose') and args.verbose else False
 
     try:
         client = initialize_chromadb_client(str(chromadb_path))
 
         if collection_name:
             results = _query_single_collection(
-                client, chromadb_path, collection_name, query_text, max_results
+                client, chromadb_path, collection_name, query_text, max_results, verbose
             )
             _print_results(results, collection_name, output_format)
         else:
             all_results = _query_all_collections(
-                client, chromadb_path, query_text, max_results
+                client, chromadb_path, query_text, max_results, verbose
             )
             _print_all_results(all_results, output_format)
 
@@ -47,7 +48,7 @@ def run_query(args: Namespace) -> int:
         return 1
 
 
-def _query_single_collection(client, chromadb_path, collection_name, query_text, max_results):
+def _query_single_collection(client, chromadb_path, collection_name, query_text, max_results, verbose):
     provider_map, all_collections = discover_collections_with_providers(str(chromadb_path))
 
     available_collections = [c for c in all_collections if c['available']]
@@ -74,13 +75,14 @@ def _query_single_collection(client, chromadb_path, collection_name, query_text,
         chromadb_path=str(chromadb_path),
         provider=provider,
         context_mode="enhanced",
-        max_results=max_results
+        max_results=max_results,
+        verbose=verbose
     )
 
     return results
 
 
-def _query_all_collections(client, chromadb_path, query_text, max_results):
+def _query_all_collections(client, chromadb_path, query_text, max_results, verbose):
     provider_map, all_collections = discover_collections_with_providers(str(chromadb_path))
 
     available_collections = [c for c in all_collections if c['available']]
@@ -104,7 +106,8 @@ def _query_all_collections(client, chromadb_path, query_text, max_results):
                 chromadb_path=str(chromadb_path),
                 provider=provider,
                 context_mode="enhanced",
-                max_results=max_results
+                max_results=max_results,
+                verbose=verbose
             )
 
             all_results[collection_name] = results

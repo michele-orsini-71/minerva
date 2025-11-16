@@ -13,6 +13,58 @@ class RepositoryParseError(ValueError):
     pass
 
 
+def scan_directories_with_markdown(
+    root_path: str,
+    exclude_patterns: List[str] | None = None
+) -> List[str]:
+    """
+    Scan directory tree and return all unique directory names containing markdown files.
+
+    Args:
+        root_path: Root directory to start walking from
+        exclude_patterns: Optional list of patterns to exclude (e.g., ['node_modules', '.git'])
+
+    Returns:
+        Sorted list of unique directory names (not paths) that contain .md or .mdx files
+
+    Raises:
+        FileNotFoundError: If root_path doesn't exist
+        RepositoryParseError: If root_path is not a directory
+    """
+    root = Path(root_path)
+
+    if not root.exists():
+        raise FileNotFoundError(f"Directory not found: {root_path}")
+
+    if not root.is_dir():
+        raise RepositoryParseError(f"Path is not a directory: {root_path}")
+
+    # Default exclude patterns
+    if exclude_patterns is None:
+        exclude_patterns = []
+
+    # Always exclude common non-documentation directories
+    default_excludes = {'.git', 'node_modules', '__pycache__', '.venv', 'venv', '.pytest_cache'}
+    exclude_set = set(exclude_patterns) | default_excludes
+
+    md_files = _find_markdown_files(root, exclude_set)
+
+    # Extract unique directory names
+    dir_names = set()
+    for md_file in md_files:
+        # Get all parent directories from root to file
+        try:
+            relative = md_file.relative_to(root)
+            # Add each directory name in the path
+            for part in relative.parts[:-1]:  # Exclude the filename itself
+                dir_names.add(part)
+        except ValueError:
+            # Skip files not under root
+            continue
+
+    return sorted(dir_names)
+
+
 def extract_repository_docs(
     root_path: str,
     exclude_patterns: List[str] | None = None

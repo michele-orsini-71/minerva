@@ -68,7 +68,8 @@ def search_knowledge_base(
     chromadb_path: str,
     provider: AIProvider,
     context_mode: str = "enhanced",
-    max_results: int = 5
+    max_results: int = 5,
+    verbose: bool = False
 ) -> List[Dict[str, Any]]:
     if not query or not query.strip():
         raise SearchError("Query cannot be empty")
@@ -97,10 +98,12 @@ def search_knowledge_base(
 
         expected_dimension = collection_metadata.get('embedding_dimension')
 
-        console_logger.info("  → Generating query embedding...")
+        if verbose:
+            console_logger.info("  → Generating query embedding...")
         try:
             query_embedding = provider.generate_embedding(query)
-            console_logger.info(f"  ✓ Embedding generated (dimension: {len(query_embedding)})")
+            if verbose:
+                console_logger.info(f"  ✓ Embedding generated (dimension: {len(query_embedding)})")
         except ProviderUnavailableError as error:
             raise SearchError(
                 f"AI provider unavailable: {error}\n"
@@ -118,7 +121,8 @@ def search_knowledge_base(
                 f"Collection model: {collection_metadata.get('embedding_model')}"
             )
 
-        console_logger.info(f"  → Querying ChromaDB (max_results: {max_results})...")
+        if verbose:
+            console_logger.info(f"  → Querying ChromaDB (max_results: {max_results})...")
         results = collection.query(
             query_embeddings=[query_embedding],
             n_results=max_results,
@@ -127,7 +131,8 @@ def search_knowledge_base(
 
         # Log how many results were found
         num_results = len(results['ids'][0]) if results and results['ids'] else 0
-        console_logger.info(f"  ✓ ChromaDB query completed ({num_results} results found)")
+        if verbose:
+            console_logger.info(f"  ✓ ChromaDB query completed ({num_results} results found)")
 
         formatted_results = []
 
@@ -146,13 +151,15 @@ def search_knowledge_base(
                 }
                 formatted_results.append(result)
 
-        console_logger.info(f"  → Applying context mode: {context_mode}...")
-        enhanced_results = apply_context_mode(collection, formatted_results, context_mode)
-        console_logger.info(f"  ✓ Context retrieval completed")
+        if verbose:
+            console_logger.info(f"  → Applying context mode: {context_mode}...")
+        enhanced_results = apply_context_mode(collection, formatted_results, context_mode, verbose)
+        if verbose:
+            console_logger.info(f"  ✓ Context retrieval completed")
 
         # Estimate token count for monitoring/debugging
         estimated_tokens = estimate_token_count(enhanced_results)
-        if estimated_tokens > 0:
+        if verbose and estimated_tokens > 0:
             console_logger.info(f"  ℹ Estimated response size: ~{estimated_tokens:,} tokens")
             if estimated_tokens > 25000:
                 console_logger.warning(

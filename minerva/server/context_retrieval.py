@@ -78,7 +78,8 @@ def get_enhanced_content(
 
 def batch_get_enhanced_content_with_ids(
     collection: chromadb.Collection,
-    results: List[Dict[str, Any]]
+    results: List[Dict[str, Any]],
+    verbose: bool = False
 ) -> List[Dict[str, Any]]:
     if not results:
         return results
@@ -94,12 +95,13 @@ def batch_get_enhanced_content_with_ids(
             if not matched_chunk_id:
                 # If we don't have chunk ID in result, we'll need to fall back
                 console_logger.warning("Result missing chunkId field. Falling back to metadata query.")
-                return batch_get_enhanced_content(collection, results)
+                return batch_get_enhanced_content(collection, results, verbose)
 
             ids_to_fetch.add(matched_chunk_id)
             result_map[matched_chunk_id] = result
 
-        console_logger.info(f"  → Fetching {len(ids_to_fetch)} matched chunks...")
+        if verbose:
+            console_logger.info(f"  → Fetching {len(ids_to_fetch)} matched chunks...")
         matched_chunks = collection.get(
             ids=list(ids_to_fetch),
             include=["documents", "metadatas"]
@@ -128,17 +130,20 @@ def batch_get_enhanced_content_with_ids(
 
         # If no adjacent IDs found in any chunk, fall back to metadata query
         if len(all_ids_to_fetch) == len(ids_to_fetch):
-            console_logger.info("  → No adjacent_chunk_ids found in metadata. Falling back to metadata query.")
-            return batch_get_enhanced_content(collection, results)
+            if verbose:
+                console_logger.info("  → No adjacent_chunk_ids found in metadata. Falling back to metadata query.")
+            return batch_get_enhanced_content(collection, results, verbose)
 
-        console_logger.info(f"  → Fetching {len(all_ids_to_fetch)} chunks (matched + adjacent)...")
+        if verbose:
+            console_logger.info(f"  → Fetching {len(all_ids_to_fetch)} chunks (matched + adjacent)...")
         all_chunks = collection.get(
             ids=list(all_ids_to_fetch),
             include=["documents", "metadatas"]
         )
 
         query_time = time.time() - start_time
-        console_logger.info(f"  → ID-based query completed in {query_time*1000:.1f}ms ({len(results)} results)")
+        if verbose:
+            console_logger.info(f"  → ID-based query completed in {query_time*1000:.1f}ms ({len(results)} results)")
 
         if not all_chunks or not all_chunks['ids']:
             console_logger.warning("Failed to fetch chunks by ID. Falling back to chunk_only mode.")
@@ -211,7 +216,8 @@ def batch_get_enhanced_content_with_ids(
             enhanced_results.append(result)
 
         total_time = time.time() - start_time
-        console_logger.info(f"  → Total ID-based processing: {total_time*1000:.1f}ms")
+        if verbose:
+            console_logger.info(f"  → Total ID-based processing: {total_time*1000:.1f}ms")
 
         if total_time > 2.0:
             console_logger.warning(f"ID-based context retrieval took {total_time:.2f}s - performance may need optimization")
@@ -221,12 +227,13 @@ def batch_get_enhanced_content_with_ids(
     except Exception as error:
         # Fallback to metadata-based batch processing
         console_logger.warning(f"ID-based enhanced context retrieval failed: {error}. Falling back to metadata query.")
-        return batch_get_enhanced_content(collection, results)
+        return batch_get_enhanced_content(collection, results, verbose)
 
 
 def batch_get_enhanced_content(
     collection: chromadb.Collection,
-    results: List[Dict[str, Any]]
+    results: List[Dict[str, Any]],
+    verbose: bool = False
 ) -> List[Dict[str, Any]]:
     if not results:
         return results
@@ -266,7 +273,8 @@ def batch_get_enhanced_content(
         )
 
         query_time = time.time() - start_time
-        console_logger.info(f"  → Batch query completed in {query_time*1000:.1f}ms ({len(results)} results)")
+        if verbose:
+            console_logger.info(f"  → Batch query completed in {query_time*1000:.1f}ms ({len(results)} results)")
 
         if not all_chunks_results or not all_chunks_results['ids']:
             # Fallback to chunk_only for all results
@@ -290,7 +298,8 @@ def batch_get_enhanced_content(
                     }
 
         group_time = time.time() - group_start
-        console_logger.info(f"  → Grouped {len(chunks_map)} chunks in {group_time*1000:.1f}ms")
+        if verbose:
+            console_logger.info(f"  → Grouped {len(chunks_map)} chunks in {group_time*1000:.1f}ms")
 
         distribute_start = time.time()
         enhanced_results = []
@@ -331,10 +340,12 @@ def batch_get_enhanced_content(
             enhanced_results.append(result)
 
         distribute_time = time.time() - distribute_start
-        console_logger.info(f"  → Distributed chunks in {distribute_time*1000:.1f}ms")
+        if verbose:
+            console_logger.info(f"  → Distributed chunks in {distribute_time*1000:.1f}ms")
 
         total_time = time.time() - start_time
-        console_logger.info(f"  → Total batch processing: {total_time*1000:.1f}ms")
+        if verbose:
+            console_logger.info(f"  → Total batch processing: {total_time*1000:.1f}ms")
 
         if total_time > 2.0:
             console_logger.warning(f"Batch context retrieval took {total_time:.2f}s - performance may need optimization")
@@ -397,7 +408,8 @@ def get_full_note_content(
 def apply_context_mode(
     collection: chromadb.Collection,
     results: List[Dict[str, Any]],
-    context_mode: str
+    context_mode: str,
+    verbose: bool = False
 ) -> List[Dict[str, Any]]:
 
     if not results:
@@ -406,7 +418,7 @@ def apply_context_mode(
     # Use optimized ID-based batch processing for enhanced mode
     if context_mode == "enhanced":
         # Try Strategy 4 (ID-based) first - it will auto-fallback to Strategy 1 if needed
-        return batch_get_enhanced_content_with_ids(collection, results)
+        return batch_get_enhanced_content_with_ids(collection, results, verbose)
 
     # For other modes, process individually
     enhanced_results = []

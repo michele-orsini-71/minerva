@@ -313,6 +313,12 @@ Examples:
         help='Output format (default: text)'
     )
 
+    query_parser.add_argument(
+        '--verbose',
+        action='store_true',
+        help='Show detailed search progress logs'
+    )
+
     return parser
 
 

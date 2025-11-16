@@ -7,7 +7,7 @@ import json
 import sys
 from pathlib import Path
 
-from .parser import RepositoryParseError, extract_repository_docs
+from .parser import RepositoryParseError, extract_repository_docs, scan_directories_with_markdown
 
 
 def _write_output(records: list[dict[str, object]], output: Path | None) -> None:
@@ -48,6 +48,12 @@ def main() -> int:
         help="Exclude directories matching pattern (can be used multiple times). "
              "Note: .git, node_modules, __pycache__, .venv are always excluded.",
     )
+    parser.add_argument(
+        "--scan-only",
+        action="store_true",
+        help="Scan and report directory names containing markdown files without extracting content. "
+             "Useful for discovering which directories to exclude.",
+    )
 
     args = parser.parse_args()
     directory_path = Path(args.directory)
@@ -58,10 +64,35 @@ def main() -> int:
             print(f"Excluding patterns: {', '.join(args.exclude_patterns)}", file=sys.stderr)
 
     try:
-        records = extract_repository_docs(
-            str(directory_path),
-            exclude_patterns=args.exclude_patterns
-        )
+        if args.scan_only:
+            # Scan mode: report directory names only
+            dir_names = scan_directories_with_markdown(
+                str(directory_path),
+                exclude_patterns=args.exclude_patterns
+            )
+
+            # Output to stdout or file
+            if args.output:
+                args.output.parent.mkdir(parents=True, exist_ok=True)
+                args.output.write_text('\n'.join(dir_names) + '\n', encoding='utf-8')
+            else:
+                for dir_name in dir_names:
+                    print(dir_name)
+
+            if args.verbose:
+                print(f"✓ Found {len(dir_names)} unique directory name(s) containing markdown files", file=sys.stderr)
+        else:
+            # Normal extraction mode
+            records = extract_repository_docs(
+                str(directory_path),
+                exclude_patterns=args.exclude_patterns
+            )
+
+            _write_output(records, args.output)
+
+            if args.verbose:
+                print(f"✓ Exported {len(records)} markdown file(s)", file=sys.stderr)
+
     except FileNotFoundError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
@@ -71,11 +102,6 @@ def main() -> int:
     except Exception as exc:  # noqa: BLE001
         print(f"Unexpected error: {exc}", file=sys.stderr)
         return 1
-
-    _write_output(records, args.output)
-
-    if args.verbose:
-        print(f"✓ Exported {len(records)} markdown file(s)", file=sys.stderr)
 
     return 0
 
