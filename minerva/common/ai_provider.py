@@ -22,6 +22,16 @@ def l2_normalize(vectors: np.ndarray) -> np.ndarray:
     return vectors / norms
 
 
+@contextmanager
+def _suppress_litellm_debug():
+    old_value = litellm.suppress_debug_info
+    litellm.suppress_debug_info = True
+    try:
+        yield
+    finally:
+        litellm.suppress_debug_info = old_value
+
+
 class RateLimiter:
     def __init__(self, requests_per_minute: Optional[int], concurrency: Optional[int]):
         self.requests_per_minute = requests_per_minute
@@ -465,30 +475,31 @@ class AIProvider:
             'error': None
         }
 
-        try:
-            # If embedding_model is configured, test embeddings
-            # Otherwise test LLM (for chat-only configurations)
-            if self.embedding_model:
-                test_text = "Connection test"
-                embedding = self.generate_embedding(test_text)
-                result['available'] = True
-                result['dimension'] = len(embedding)
-            else:
-                # Test LLM with a minimal completion
-                response = self.chat_completion(
-                    messages=[{"role": "user", "content": "test"}],
-                    temperature=0.0,
-                    stream=False
-                )
-                if response.get('content') is not None:
+        with _suppress_litellm_debug():
+            try:
+                # If embedding_model is configured, test embeddings
+                # Otherwise test LLM (for chat-only configurations)
+                if self.embedding_model:
+                    test_text = "Connection test"
+                    embedding = self.generate_embedding(test_text)
                     result['available'] = True
+                    result['dimension'] = len(embedding)
+                else:
+                    # Test LLM with a minimal completion
+                    response = self.chat_completion(
+                        messages=[{"role": "user", "content": "test"}],
+                        temperature=0.0,
+                        stream=False
+                    )
+                    if response.get('content') is not None:
+                        result['available'] = True
 
-        except ProviderUnavailableError as error:
-            result['error'] = f"Provider unavailable: {error}"
-        except APIKeyMissingError as error:
-            result['error'] = f"API key missing: {error}"
-        except Exception as error:
-            result['error'] = f"Unexpected error: {error}"
+            except ProviderUnavailableError as error:
+                result['error'] = f"Provider unavailable: {error}"
+            except APIKeyMissingError as error:
+                result['error'] = f"API key missing: {error}"
+            except Exception as error:
+                result['error'] = f"Unexpected error: {error}"
 
         return result
 

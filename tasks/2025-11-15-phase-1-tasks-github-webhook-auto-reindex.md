@@ -31,9 +31,11 @@
 - `extractors/github-webhook-orchestrator/test_webhook_payload.json` - Sample GitHub webhook payload for testing
 
 ### Test Data
-- `~/test-webhook-repo/` - Test repository with markdown files
-- `~/.minerva/configs/test-webhook-repo.json` - Index configuration for test repository
-- `~/.minerva/extracted/test-webhook-repo.json` - Extracted notes from test repository
+- `~/test-webhook-repo/` - Test repository with markdown files (git initialized)
+- `~/test-webhook-repo/README.md` - Test repository overview and testing workflow documentation
+- `~/test-webhook-repo/docs/getting-started.md` - Comprehensive guide to webhook orchestrator architecture and testing
+- `~/.minerva/configs/test-webhook-repo.json` - Index configuration for test repository (OpenAI provider)
+- `~/.minerva/extracted/test-webhook-repo.json` - Extracted notes from test repository (to be created by extractor)
 
 ### Notes
 - Unit tests will be written for core logic (signature validation, config parsing, markdown detection)
@@ -108,32 +110,32 @@
     - [x] 5.17 Implement `GET /health` endpoint for health checks (returns 200 OK)
     - [x] 5.18 Create `main()` function to load config and run uvicorn server on port 8338
 
-- [ ] 6.0 Create Test Repository and Configuration
-    - [ ] 6.1 Create `~/test-webhook-repo/` directory
-    - [ ] 6.2 Initialize git repository: `git init`
-    - [ ] 6.3 Create `README.md` with initial content
-    - [ ] 6.4 Create `docs/` directory
-    - [ ] 6.5 Create `docs/getting-started.md` with sample content
-    - [ ] 6.6 Commit initial files: `git add . && git commit -m "Initial commit"`
-    - [ ] 6.7 Create `~/.minerva/configs/test-webhook-repo.json` index configuration
-    - [ ] 6.8 Set provider to OpenAI with `${OPENAI_API_KEY}` from envchain
-    - [ ] 6.9 Set chromadb_path to `~/.minerva/chromadb`
-    - [ ] 6.10 Set collection name to `test_repo_docs`
-    - [ ] 6.11 Set json_file to `~/.minerva/extracted/test-webhook-repo.json`
+- [x] 6.0 Create Test Repository and Configuration
+    - [x] 6.1 Create `~/test-webhook-repo/` directory
+    - [x] 6.2 Initialize git repository: `git init`
+    - [x] 6.3 Create `README.md` with initial content
+    - [x] 6.4 Create `docs/` directory
+    - [x] 6.5 Create `docs/getting-started.md` with sample content
+    - [x] 6.6 Commit initial files: `git add . && git commit -m "Initial commit"`
+    - [x] 6.7 Create `~/.minerva/configs/test-webhook-repo.json` index configuration
+    - [x] 6.8 Set provider to OpenAI with `${OPENAI_API_KEY}` from envchain
+    - [x] 6.9 Set chromadb_path to `~/.minerva/chromadb`
+    - [x] 6.10 Set collection name to `test_repo_docs`
+    - [x] 6.11 Set json_file to `~/.minerva/extracted/test-webhook-repo.json`
 
 - [ ] 7.0 Manual Testing - Local Workflow (Before Automation)
-    - [ ] 7.1 Start Minerva MCP server in Terminal 1: `envchain openai minerva serve --config <config>`
-    - [ ] 7.2 Verify MCP server is running (check logs or health endpoint)
-    - [ ] 7.3 In Terminal 2, manually extract test repository
-    - [ ] 7.4 Run: `repository-doc-extractor ~/test-webhook-repo -o ~/.minerva/extracted/test-webhook-repo.json -v`
-    - [ ] 7.5 Verify extraction succeeded (check JSON file exists and is valid)
-    - [ ] 7.6 Run: `envchain openai minerva validate ~/.minerva/extracted/test-webhook-repo.json`
-    - [ ] 7.7 Verify validation succeeded
-    - [ ] 7.8 Run: `envchain openai minerva index --config ~/.minerva/configs/test-webhook-repo.json --verbose`
-    - [ ] 7.9 Verify indexing succeeded (check logs for success message)
-    - [ ] 7.10 In Claude Desktop, search for content from test repository
-    - [ ] 7.11 Verify search results include content from test repository
-    - [ ] 7.12 Verify Minerva MCP server stayed running during entire workflow (no downtime)
+  - [ ] 7.1 Start Minerva MCP server in Terminal 1: `envchain openai minerva serve --config <config>`
+  - [ ] 7.2 Verify MCP server is running (check logs or health endpoint)
+  - [ ] 7.3 In Terminal 2, manually extract test repository
+  - [ ] 7.4 Run: `repository-doc-extractor ~/test-webhook-repo -o ~/.minerva/extracted/test-webhook-repo.json -v`
+  - [ ] 7.5 Verify extraction succeeded (check JSON file exists and is valid)
+  - [ ] 7.6 Run: `envchain openai minerva validate ~/.minerva/extracted/test-webhook-repo.json`
+  - [ ] 7.7 Verify validation succeeded
+  - [ ] 7.8 Run: `envchain openai minerva index --config ~/.minerva/configs/test-webhook-repo.json --verbose`
+  - [ ] 7.9 Verify indexing succeeded (check logs for success message)
+  - [ ] 7.10 In Claude Desktop, search for content from test repository
+  - [ ] 7.11 Verify search results include content from test repository
+  - [ ] 7.12 Verify Minerva MCP server stayed running during entire workflow (no downtime)
 
 - [ ] 8.0 Manual Testing - Webhook Orchestrator (Local, No GitHub)
     - [ ] 8.1 Create webhook orchestrator config: `extractors/github-webhook-orchestrator/config.json`
