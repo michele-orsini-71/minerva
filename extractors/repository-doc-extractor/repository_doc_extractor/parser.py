@@ -18,14 +18,14 @@ def scan_directories_with_markdown(
     exclude_patterns: List[str] | None = None
 ) -> List[str]:
     """
-    Scan directory tree and return all unique directory names containing markdown files.
+    Scan directory tree and return all unique directory paths containing markdown files.
 
     Args:
         root_path: Root directory to start walking from
         exclude_patterns: Optional list of patterns to exclude (e.g., ['node_modules', '.git'])
 
     Returns:
-        Sorted list of unique directory names (not paths) that contain .md or .mdx files
+        Sorted list of unique relative directory paths that contain .md or .mdx files
 
     Raises:
         FileNotFoundError: If root_path doesn't exist
@@ -49,20 +49,24 @@ def scan_directories_with_markdown(
 
     md_files = _find_markdown_files(root, exclude_set)
 
-    # Extract unique directory names
-    dir_names = set()
+    # Extract unique directory paths
+    dir_paths = set()
     for md_file in md_files:
-        # Get all parent directories from root to file
+        # Get parent directory of the markdown file
+        parent_dir = md_file.parent
         try:
-            relative = md_file.relative_to(root)
-            # Add each directory name in the path
-            for part in relative.parts[:-1]:  # Exclude the filename itself
-                dir_names.add(part)
+            # Get relative path from root
+            if parent_dir == root:
+                # File is in root directory
+                relative_path = "."
+            else:
+                relative_path = str(parent_dir.relative_to(root))
+            dir_paths.add(relative_path)
         except ValueError:
             # Skip files not under root
             continue
 
-    return sorted(dir_names)
+    return sorted(dir_paths)
 
 
 def extract_repository_docs(

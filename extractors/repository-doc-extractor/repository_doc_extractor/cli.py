@@ -80,7 +80,7 @@ def main() -> int:
                     print(dir_name)
 
             if args.verbose:
-                print(f"✓ Found {len(dir_names)} unique directory name(s) containing markdown files", file=sys.stderr)
+                print(f"✓ Found {len(dir_names)} unique directory path(s) containing markdown files", file=sys.stderr)
         else:
             # Normal extraction mode
             records = extract_repository_docs(
