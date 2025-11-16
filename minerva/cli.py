@@ -13,6 +13,7 @@ from minerva.commands.serve_http import run_serve_http
 from minerva.commands.peek import run_peek
 from minerva.commands.remove import run_remove
 from minerva.commands.validate import run_validate
+from minerva.commands.query import run_query
 
 logger = get_logger(__name__, simple=True, mode="cli")
 
@@ -252,6 +253,66 @@ Examples:
         help='Enable verbose output with validation details'
     )
 
+    # ========================================
+    # QUERY command
+    # ========================================
+    query_parser = subparsers.add_parser(
+        'query',
+        help='Query ChromaDB collections with semantic search',
+        description='Perform semantic search queries on indexed collections.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Query a specific collection
+  minerva query ~/.minerva/chromadb --collection my_docs "How does authentication work?"
+
+  # Query all collections
+  minerva query ~/.minerva/chromadb "How does authentication work?"
+
+  # Limit results
+  minerva query ~/.minerva/chromadb --collection my_docs --max-results 10 "API design"
+
+  # JSON output for scripting
+  minerva query ~/.minerva/chromadb --collection my_docs --format json "API design"
+        """
+    )
+
+    query_parser.add_argument(
+        'chromadb_path',
+        type=Path,
+        metavar='CHROMADB_PATH',
+        help='Path to ChromaDB data directory'
+    )
+
+    query_parser.add_argument(
+        'query',
+        type=str,
+        metavar='QUERY',
+        help='Search query text'
+    )
+
+    query_parser.add_argument(
+        '--collection',
+        type=str,
+        metavar='NAME',
+        help='Collection name to search (if omitted, searches all collections)'
+    )
+
+    query_parser.add_argument(
+        '--max-results',
+        type=int,
+        default=5,
+        metavar='N',
+        help='Maximum number of results to return (default: 5)'
+    )
+
+    query_parser.add_argument(
+        '--format',
+        choices=['text', 'json'],
+        default='text',
+        help='Output format (default: text)'
+    )
+
     return parser
 
 
@@ -272,6 +333,8 @@ def main():
             return run_remove(args)
         elif args.command == 'validate':
             return run_validate(args)
+        elif args.command == 'query':
+            return run_query(args)
         else:
             parser.print_help()
             return 1
