@@ -236,9 +236,7 @@ EOF
 cat > configs/server/local.json << 'EOF'
 {
   "chromadb_path": "../../chromadb_data",
-  "default_max_results": 5,
-  "host": "127.0.0.1",
-  "port": 8337
+  "default_max_results": 6
 }
 EOF
 
@@ -246,9 +244,12 @@ EOF
 minerva index --config configs/index/bear-notes-ollama.json --verbose
 
 # 5. Peek at the indexed data
-minerva peek my_notes --chromadb ./chromadb_data
+minerva peek bear_notes --chromadb ./chromadb_data
 
-# 6. Start the MCP server (for Claude Desktop integration)
+# 6. Query the collection directly (optional)
+minerva query ./chromadb_data "search term" --collection bear_notes --max-results 5
+
+# 7. Start the MCP server (for Claude Desktop integration)
 minerva serve --config configs/server/local.json
 ```
 
@@ -258,35 +259,41 @@ minerva serve --config configs/server/local.json
 
 ### The Note Schema
 
-All data sources must be converted to a standardized JSON schema:
+All data sources must be converted to a standardized JSON array:
 
 ```json
-{
-  "notes": [
-    {
-      "id": "unique-note-id",
-      "title": "Note Title",
-      "content": "The full markdown content...",
-      "metadata": {
-        "source": "bear",
-        "created": "2025-10-20T10:00:00Z",
-        "modified": "2025-10-20T12:00:00Z",
-        "tags": ["tag1", "tag2"]
-      }
-    }
-  ]
-}
+[
+  {
+    "title": "Note Title",
+    "markdown": "The full markdown content...",
+    "size": 1234,
+    "modificationDate": "2025-10-20T12:00:00Z",
+    "creationDate": "2025-10-20T10:00:00Z",
+    "tags": ["optional", "custom", "fields"]
+  }
+]
 ```
+
+**Required fields:**
+- `title` (string, non-empty)
+- `markdown` (string, can be empty)
+- `size` (integer, UTF-8 byte length)
+- `modificationDate` (string, ISO 8601 format)
+
+**Optional fields:**
+- `creationDate` (string, ISO 8601 format)
+- Any custom fields for metadata
 
 See [docs/NOTE_SCHEMA.md](docs/NOTE_SCHEMA.md) for complete specification.
 
 ### Extractors
 
-Extractors are independent packages that convert specific data sources into the standardized JSON schema. Minerva includes three official extractors:
+Extractors are independent packages that convert specific data sources into the standardized JSON schema. Minerva includes four official extractors:
 
 - **bear-notes-extractor**: Extracts notes from Bear app backups (.bear2bk files)
 - **zim-extractor**: Extracts articles from Zim Wikipedia dumps
 - **markdown-books-extractor**: Converts markdown books into searchable notes
+- **repository-doc-extractor**: Extracts markdown documentation from code repositories
 
 You can write custom extractors in any language. See [docs/EXTRACTOR_GUIDE.md](docs/EXTRACTOR_GUIDE.md).
 
@@ -373,9 +380,42 @@ minerva remove ./chromadb_data bear_notes
 
 Use this when cleaning up experimental collections or rebuilding test data. Because deletion is irreversible, the command cannot be automated or forced—be prepared to type both `YES` and the collection name to proceed.
 
+### `minerva query`
+
+Query ChromaDB collections directly with semantic search.
+
+```bash
+minerva query CHROMADB_PATH "search query" [--collection NAME] [--max-results N] [--format text|json] [--verbose]
+```
+
+**Options:**
+
+- `CHROMADB_PATH`: Path to ChromaDB directory (required)
+- `"search query"`: Text to search for (required)
+- `--collection NAME`: Query specific collection (optional, searches all if omitted)
+- `--max-results N`: Number of results to return (default: 5)
+- `--format text|json`: Output format (default: text)
+- `--verbose`: Show detailed search progress logs
+
+**Examples:**
+
+```bash
+# Query specific collection
+minerva query ~/.minerva/chromadb "How does authentication work?" --collection my_docs
+
+# Query all collections
+minerva query ~/.minerva/chromadb "API design patterns" --max-results 10
+
+# JSON output for scripting
+minerva query ~/.minerva/chromadb "error handling" --format json
+
+# Verbose mode for debugging
+minerva query ~/.minerva/chromadb "database schema" --collection my_docs --verbose
+```
+
 ### `minerva serve`
 
-Start the MCP server to expose collections to AI assistants.
+Start the MCP server in stdio mode to expose collections to AI assistants (for Claude Desktop).
 
 ```bash
 minerva serve --config configs/server/local.json
@@ -386,11 +426,30 @@ minerva serve --config configs/server/local.json
 ```json
 {
   "chromadb_path": "../../chromadb_data",
-  "default_max_results": 5,
-  "host": "127.0.0.1",
+  "default_max_results": 6
+}
+```
+
+### `minerva serve-http`
+
+Start the MCP server in HTTP mode for network access (for team deployments).
+
+```bash
+minerva serve-http --config configs/server/remote.json
+```
+
+**Example config:**
+
+```json
+{
+  "chromadb_path": "/data/chromadb",
+  "default_max_results": 6,
+  "host": "0.0.0.0",
   "port": 8337
 }
 ```
+
+**Note:** For local Claude Desktop use, use `minerva serve` (stdio mode). The HTTP mode is for remote deployments or custom integrations.
 
 ## Usage Examples
 
@@ -495,17 +554,16 @@ from datetime import datetime
 def extract_my_source(input_path):
     notes = []
     # ... extract your data ...
+    content = "Markdown content here"
     notes.append({
-        "id": "unique-id",
         "title": "Note Title",
-        "content": "Markdown content here",
-        "metadata": {
-            "source": "my_source",
-            "created": datetime.utcnow().isoformat() + "Z",
-            "modified": datetime.utcnow().isoformat() + "Z"
-        }
+        "markdown": content,
+        "size": len(content.encode('utf-8')),
+        "modificationDate": datetime.utcnow().isoformat().replace('+00:00', 'Z'),
+        "creationDate": datetime.utcnow().isoformat().replace('+00:00', 'Z'),
+        "source": "my_source"  # Custom field (optional)
     })
-    return {"notes": notes}
+    return notes  # Return array, not dict with "notes" key
 
 # Output to stdout or file
 notes_data = extract_my_source("input.txt")
