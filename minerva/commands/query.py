@@ -74,7 +74,7 @@ def _query_single_collection(client, chromadb_path, collection_name, query_text,
         collection_name=collection_name,
         chromadb_path=str(chromadb_path),
         provider=provider,
-        context_mode="enhanced",
+        context_mode="chunk_only",
         max_results=max_results,
         verbose=verbose
     )
@@ -105,7 +105,7 @@ def _query_all_collections(client, chromadb_path, query_text, max_results, verbo
                 collection_name=collection_name,
                 chromadb_path=str(chromadb_path),
                 provider=provider,
-                context_mode="enhanced",
+                context_mode="chunk_only",
                 max_results=max_results,
                 verbose=verbose
             )

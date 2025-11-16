@@ -50,7 +50,10 @@
       "Bash(git reset:*)",
       "Bash(git check-ignore:*)",
       "Bash(webhook-orchestrator:*)",
-      "Bash(git init:*)"
+      "Bash(git init:*)",
+      "Bash(tree:*)",
+      "Bash(envchain openai minerva query:*)",
+      "Bash(repository-doc-extractor:*)"
     ],
     "deny": [],
     "ask": []
