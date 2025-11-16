@@ -1,0 +1,19 @@
+{
+  "_comment": "Example index configuration using Ollama (local) embeddings",
+  "_comment2": "Copy this file and customize the paths and collection details",
+  "chromadb_path": "/path/to/chromadb_data",
+  "collection": {
+    "name": "my_repository_docs",
+    "description": "Documentation from my-repository. Contains technical specs, design docs, and implementation notes. Best for questions about architecture, features, and code implementation.",
+    "json_file": "/path/to/extracted/my-repository.json",
+    "chunk_size": 1200,
+    "force_recreate": false,
+    "skip_ai_validation": false
+  },
+  "provider": {
+    "provider_type": "ollama",
+    "base_url": "http://localhost:11434",
+    "embedding_model": "mxbai-embed-large:latest",
+    "llm_model": "llama3.1:8b"
+  }
+}

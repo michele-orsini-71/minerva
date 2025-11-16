@@ -1,0 +1,4 @@
+{
+  "chromadb_path": "../../chromadb_data",
+  "default_max_results": 6
+}
