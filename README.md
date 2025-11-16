@@ -561,14 +561,14 @@ The project includes GitHub Actions CI that automatically:
 
 ## Documentation
 
-- **[Configuration Guide](docs/configuration.md)** - Command-specific configuration reference for index and server
-- **[LM Studio Setup Guide](docs/LMSTUDIO_SETUP.md)** - Installing and configuring LM Studio
-- **[Note Schema](docs/NOTE_SCHEMA.md)** - Complete JSON schema specification
-- **[Extractor Guide](docs/EXTRACTOR_GUIDE.md)** - How to write custom extractors
-- **[Legacy Config Guide](docs/CONFIGURATION_GUIDE.md)** - Archived reference for the pre-v3 unified system
-- **[Release Notes v2.0](docs/RELEASE_NOTES_v2.0.md)** - What's new in version 2.0
-- **[Upgrade Guide v2.0](docs/UPGRADE_v2.0.md)** - How to upgrade from v1.x
-- **[CLAUDE.md](CLAUDE.md)** - Developer guide for working with this codebase
+- [Configuration Guide](docs/configuration.md) - Command-specific configuration reference for index and server
+- [LM Studio Setup Guide](docs/LMSTUDIO_SETUP.md) - Installing and configuring LM Studio
+- [Note Schema](docs/NOTE_SCHEMA.md) - Complete JSON schema specification
+- [Extractor Guide](docs/EXTRACTOR_GUIDE.md) - How to write custom extractors
+- [Legacy Config Guide](docs/CONFIGURATION_GUIDE.md) - Archived reference for the pre-v3 unified system
+- [Release Notes v2.0](docs/RELEASE_NOTES_v2.0.md) - What's new in version 2.0
+- [Upgrade Guide v2.0](docs/UPGRADE_v2.0.md) - How to upgrade from v1.x
+- [CLAUDE.md](CLAUDE.md) - Developer guide for working with this codebase
 
 ---
 
