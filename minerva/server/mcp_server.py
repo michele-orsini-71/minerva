@@ -86,9 +86,12 @@ def initialize_server(server_config: ServerConfig) -> None:
         console_logger.info("Collection Discovery Results")
         console_logger.info(f"{'='*60}")
 
-        for collection in all_collections:
+        for i, collection in enumerate(all_collections):
+            if i > 0:
+                console_logger.info("")
+
             status = "✓ AVAILABLE" if collection['available'] else "✗ UNAVAILABLE"
-            console_logger.info(f"\n{status}: {collection['name']}")
+            console_logger.info(f"{status}: {collection['name']}")
             console_logger.info(f"  Description: {collection['description']}")
             console_logger.info(f"  Chunks: {collection['chunk_count']}")
 
