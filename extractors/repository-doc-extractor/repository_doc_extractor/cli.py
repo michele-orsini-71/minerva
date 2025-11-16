@@ -65,22 +65,22 @@ def main() -> int:
 
     try:
         if args.scan_only:
-            # Scan mode: report directory names only
+            # Scan mode: report directory paths to console only
+            # IMPORTANT: -o flag is ignored to prevent accidentally overwriting extraction files
+            if args.output:
+                print("Warning: --scan-only ignores -o flag. Output will be written to console.", file=sys.stderr)
+
             dir_names = scan_directories_with_markdown(
                 str(directory_path),
                 exclude_patterns=args.exclude_patterns
             )
 
-            # Output to stdout or file
-            if args.output:
-                args.output.parent.mkdir(parents=True, exist_ok=True)
-                args.output.write_text('\n'.join(dir_names) + '\n', encoding='utf-8')
-            else:
-                for dir_name in dir_names:
-                    print(dir_name)
+            # Always output to stdout
+            for dir_name in dir_names:
+                print(dir_name)
 
             if args.verbose:
-                print(f"✓ Found {len(dir_names)} unique directory path(s) containing markdown files", file=sys.stderr)
+                print(f"✓ Found {len(dir_names)} unique directory path(s)", file=sys.stderr)
         else:
             # Normal extraction mode
             records = extract_repository_docs(
