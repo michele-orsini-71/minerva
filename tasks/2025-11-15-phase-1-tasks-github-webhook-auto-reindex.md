@@ -137,7 +137,7 @@
   - [x] 7.11 Verify search results include content from test repository
   - [x] 7.12 Verify Minerva MCP server stayed running during entire workflow (no downtime)
 
-- [ ] 8.0 Manual Testing - Webhook Orchestrator (Local, No GitHub)
+- [x] 8.0 Manual Testing - Webhook Orchestrator (Local, No GitHub)
     - [x] 8.1 Create webhook orchestrator config: `extractors/github-webhook-orchestrator/config.json`
     - [x] 8.2 Set webhook_secret to a test value (or use `${WEBHOOK_SECRET}` from envchain)
     - [x] 8.3 Add test repository to repositories list
