@@ -138,27 +138,27 @@
   - [x] 7.12 Verify Minerva MCP server stayed running during entire workflow (no downtime)
 
 - [ ] 8.0 Manual Testing - Webhook Orchestrator (Local, No GitHub)
-    - [ ] 8.1 Create webhook orchestrator config: `extractors/github-webhook-orchestrator/config.json`
-    - [ ] 8.2 Set webhook_secret to a test value (or use `${WEBHOOK_SECRET}` from envchain)
-    - [ ] 8.3 Add test repository to repositories list
-    - [ ] 8.4 Set log_file to `~/.minerva/logs/webhook-orchestrator.log`
-    - [ ] 8.5 Create test webhook payload: `test_webhook_payload.json`
-    - [ ] 8.6 Use real GitHub webhook payload format (search GitHub webhook docs)
-    - [ ] 8.7 Include test repository name in payload
-    - [ ] 8.8 Include commits with markdown file changes (added/modified)
-    - [ ] 8.9 Start Minerva MCP server in Terminal 1
-    - [ ] 8.10 Start webhook orchestrator in Terminal 2: `envchain openai webhook-orchestrator --config config.json`
-    - [ ] 8.11 Verify orchestrator starts successfully on port 8338
-    - [ ] 8.12 In Terminal 3, compute HMAC-SHA256 signature for test payload
-    - [ ] 8.13 Send webhook with curl: `curl -X POST http://localhost:8338/webhook -H "Content-Type: application/json" -H "X-Hub-Signature-256: sha256=<signature>" -d @test_webhook_payload.json`
-    - [ ] 8.14 Verify webhook orchestrator logs show: received webhook, validated signature, detected markdown changes
-    - [ ] 8.15 Verify orchestrator triggered: git pull, extract, validate, index
-    - [ ] 8.16 Verify Minerva MCP server stayed running (concurrent operation works)
-    - [ ] 8.17 Make a change to test repository markdown file
-    - [ ] 8.18 Commit change: `git commit -am "Test webhook trigger"`
-    - [ ] 8.19 Send webhook again with updated payload
-    - [ ] 8.20 Verify updated content is searchable in Claude Desktop within 5 minutes
-    - [ ] 8.21 Check orchestrator logs for any errors or warnings
+    - [x] 8.1 Create webhook orchestrator config: `extractors/github-webhook-orchestrator/config.json`
+    - [x] 8.2 Set webhook_secret to a test value (or use `${WEBHOOK_SECRET}` from envchain)
+    - [x] 8.3 Add test repository to repositories list
+    - [x] 8.4 Set log_file to `~/.minerva/logs/webhook-orchestrator.log`
+    - [x] 8.5 Create test webhook payload: `test_webhook_payload.json`
+    - [x] 8.6 Use real GitHub webhook payload format (search GitHub webhook docs)
+    - [x] 8.7 Include test repository name in payload
+    - [x] 8.8 Include commits with markdown file changes (added/modified)
+    - [x] 8.9 Start Minerva MCP server in Terminal 1
+    - [c] 8.10 Start webhook orchestrator in Terminal 2: `envchain openai webhook-orchestrator --config config.json`
+    - [x] 8.11 Verify orchestrator starts successfully on port 8338
+    - [x] 8.12 In Terminal 3, compute HMAC-SHA256 signature for test payload
+    - [x] 8.13 Send webhook with curl: `curl -X POST http://localhost:8338/webhook -H "Content-Type: application/json" -H "X-Hub-Signature-256: sha256=<signature>" -d @test_webhook_payload.json`
+    - [x] 8.14 Verify webhook orchestrator logs show: received webhook, validated signature, detected markdown changes
+    - [x] 8.15 Verify orchestrator triggered: git pull, extract, validate, index
+    - [x] 8.16 Verify Minerva MCP server stayed running (concurrent operation works)
+    - [x] 8.17 Make a change to test repository markdown file
+    - [x] 8.18 Commit change: `git commit -am "Test webhook trigger"`
+    - [x] 8.19 Send webhook again with updated payload
+    - [x] 8.20 Verify updated content is searchable in Claude Desktop within 5 minutes
+    - [x] 8.21 Check orchestrator logs for any errors or warnings
 
 - [ ] 9.0 Manual Testing - Real GitHub Webhook (Optional, Requires ngrok)
     - [ ] 9.1 Install ngrok: `brew install ngrok` (if not already installed)

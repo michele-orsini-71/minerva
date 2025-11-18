@@ -53,7 +53,8 @@
       "Bash(git init:*)",
       "Bash(tree:*)",
       "Bash(envchain openai minerva query:*)",
-      "Bash(repository-doc-extractor:*)"
+      "Bash(repository-doc-extractor:*)",
+      "Bash(envchain openai printenv:*)"
     ],
     "deny": [],
     "ask": []

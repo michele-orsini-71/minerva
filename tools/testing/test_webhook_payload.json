@@ -1,0 +1,104 @@
+{
+  "ref": "refs/heads/main",
+  "before": "abc123def456",
+  "after": "def456ghi789",
+  "repository": {
+    "id": 123456789,
+    "name": "unknown-repo",
+    "full_name": "balsamiq/b4",
+    "private": true,
+    "owner": {
+      "name": "balsamiq",
+      "email": "info@balsamiq.com"
+    },
+    "html_url": "https://github.com/balsamiq/b4",
+    "description": "Balsamiq Wireframes application",
+    "fork": false,
+    "url": "https://api.github.com/repos/balsamiq/b4",
+    "created_at": 1699564800,
+    "updated_at": 1731830400,
+    "pushed_at": 1731830400,
+    "size": 50000,
+    "stargazers_count": 10,
+    "watchers_count": 5,
+    "language": "JavaScript",
+    "has_issues": true,
+    "has_projects": true,
+    "has_downloads": true,
+    "has_wiki": false,
+    "has_pages": false,
+    "forks_count": 0,
+    "archived": false,
+    "disabled": false,
+    "open_issues_count": 15,
+    "license": null,
+    "topics": ["wireframes", "design", "mockups"],
+    "default_branch": "main"
+  },
+  "pusher": {
+    "name": "balsamiq-developer",
+    "email": "dev@balsamiq.com"
+  },
+  "sender": {
+    "login": "balsamiq-developer",
+    "id": 987654321,
+    "type": "User"
+  },
+  "created": false,
+  "deleted": false,
+  "forced": false,
+  "base_ref": null,
+  "compare": "https://github.com/balsamiq/b4/compare/abc123def456...def456ghi789",
+  "commits": [
+    {
+      "id": "def456ghi789",
+      "tree_id": "tree123abc",
+      "distinct": true,
+      "message": "Update documentation",
+      "timestamp": "2025-11-17T10:30:00Z",
+      "url": "https://github.com/balsamiq/b4/commit/def456ghi789",
+      "author": {
+        "name": "Balsamiq Developer",
+        "email": "dev@balsamiq.com",
+        "username": "balsamiq-developer"
+      },
+      "committer": {
+        "name": "Balsamiq Developer",
+        "email": "dev@balsamiq.com",
+        "username": "balsamiq-developer"
+      },
+      "added": [
+        "setup.py"
+      ],
+      "removed": [],
+      "modified": [
+        "js/core/background-jobs/install.ts"
+      ]
+    }
+  ],
+  "head_commit": {
+    "id": "def456ghi789",
+    "tree_id": "tree123abc",
+    "distinct": true,
+    "message": "Update documentation",
+    "timestamp": "2025-11-17T10:30:00Z",
+    "url": "https://github.com/balsamiq/b4/commit/def456ghi789",
+    "author": {
+      "name": "Balsamiq Developer",
+      "email": "dev@balsamiq.com",
+      "username": "balsamiq-developer"
+    },
+    "committer": {
+      "name": "Balsamiq Developer",
+      "email": "dev@balsamiq.com",
+      "username": "balsamiq-developer"
+    },
+    "added": [
+      "src/main.py"
+    ],
+    "removed": [],
+    "modified": [
+      "setup.py"
+    ]
+  }
+}

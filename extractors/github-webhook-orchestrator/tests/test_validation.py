@@ -170,7 +170,6 @@ class TestValidateRequiredEnvVars:
             name="test",
             github_url="https://github.com/test/repo",
             local_path=str(tmp_path),
-            collection="test",
             index_config=str(index_config)
         )
 
@@ -196,7 +195,6 @@ class TestValidateRequiredEnvVars:
             name="test",
             github_url="https://github.com/test/repo",
             local_path=str(tmp_path),
-            collection="test",
             index_config=str(index_config)
         )
 
@@ -220,7 +218,6 @@ class TestValidateRequiredEnvVars:
             name="test",
             github_url="https://github.com/test/repo",
             local_path=str(tmp_path),
-            collection="test",
             index_config=str(index_config)
         )
 
@@ -246,7 +243,6 @@ class TestValidateRequiredEnvVars:
             name="test",
             github_url="https://github.com/test/repo",
             local_path=str(tmp_path),
-            collection="test",
             index_config=str(index_config)
         )
 
@@ -272,7 +268,6 @@ class TestValidateRequiredEnvVars:
             name="test",
             github_url="https://github.com/test/repo",
             local_path=str(tmp_path),
-            collection="test",
             index_config=str(index_config)
         )
 
@@ -301,7 +296,6 @@ class TestValidateRequiredEnvVars:
             name="test",
             github_url="https://github.com/test/repo",
             local_path=str(tmp_path),
-            collection="test",
             index_config=str(index_config)
         )
 
@@ -327,7 +321,6 @@ class TestValidatePrerequisites:
             name="test",
             github_url="https://github.com/test/repo",
             local_path=str(tmp_path),
-            collection="test",
             index_config=str(index_config)
         )
 
@@ -353,7 +346,6 @@ class TestValidatePrerequisites:
             name="test",
             github_url="https://github.com/test/repo",
             local_path=str(tmp_path),
-            collection="test",
             index_config=str(index_config)
         )
 
@@ -380,7 +372,6 @@ class TestValidatePrerequisites:
             name="test",
             github_url="https://github.com/test/repo",
             local_path=str(tmp_path),
-            collection="test",
             index_config=str(index_config)
         )
 

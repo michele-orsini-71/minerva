@@ -10,8 +10,8 @@ class RepositoryConfig:
     name: str
     github_url: str
     local_path: str
-    collection: str
     index_config: str
+    branch: str = "main"  # Default to 'main' for backwards compatibility
 
 
 @dataclass
@@ -64,7 +64,7 @@ def validate_config(config_data: dict, config_path: str) -> None:
     config_dir = Path(config_path).parent.resolve()
 
     for i, repo in enumerate(config_data['repositories']):
-        repo_required = ['name', 'github_url', 'local_path', 'collection', 'index_config']
+        repo_required = ['name', 'github_url', 'local_path', 'index_config']
         for field in repo_required:
             if field not in repo:
                 raise ValueError(f"Repository {i}: missing required field '{field}'")
@@ -124,8 +124,8 @@ def load_config(config_path: str) -> WebhookConfig:
             name=repo['name'],
             github_url=repo['github_url'],
             local_path=str(local_path),
-            collection=repo['collection'],
-            index_config=str(index_config)
+            index_config=str(index_config),
+            branch=repo.get('branch', 'main')  # Optional field, defaults to 'main'
         ))
 
     log_file_path = Path(config_data['log_file']).expanduser()

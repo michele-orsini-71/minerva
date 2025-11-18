@@ -130,7 +130,6 @@ def test_validate_config_local_path_not_exists(tmp_path):
                 'name': 'test',
                 'github_url': 'https://github.com/test/test',
                 'local_path': '/nonexistent/path',
-                'collection': 'test_collection',
                 'index_config': '/tmp/config.json'
             }
         ],
@@ -153,7 +152,6 @@ def test_validate_config_local_path_not_directory(tmp_path):
                 'name': 'test',
                 'github_url': 'https://github.com/test/test',
                 'local_path': str(test_file),
-                'collection': 'test_collection',
                 'index_config': '/tmp/config.json'
             }
         ],
@@ -176,7 +174,6 @@ def test_validate_config_index_config_not_exists(tmp_path):
                 'name': 'test',
                 'github_url': 'https://github.com/test/test',
                 'local_path': str(test_repo),
-                'collection': 'test_collection',
                 'index_config': '/nonexistent/config.json'
             }
         ],
@@ -201,7 +198,6 @@ def test_validate_config_index_config_not_file(tmp_path):
                 'name': 'test',
                 'github_url': 'https://github.com/test/test',
                 'local_path': str(test_repo),
-                'collection': 'test_collection',
                 'index_config': str(test_index_dir)
             }
         ],
@@ -226,7 +222,6 @@ def test_validate_config_success(tmp_path):
                 'name': 'test',
                 'github_url': 'https://github.com/test/test',
                 'local_path': str(test_repo),
-                'collection': 'test_collection',
                 'index_config': str(test_index)
             }
         ],
@@ -265,7 +260,6 @@ def test_load_config_success(tmp_path):
                 'name': 'test_repo',
                 'github_url': 'https://github.com/test/test',
                 'local_path': str(test_repo),
-                'collection': 'test_collection',
                 'index_config': str(test_index)
             }
         ],
@@ -283,7 +277,6 @@ def test_load_config_success(tmp_path):
     assert config.repositories[0].name == 'test_repo'
     assert config.repositories[0].github_url == 'https://github.com/test/test'
     assert config.repositories[0].local_path == str(test_repo.resolve())
-    assert config.repositories[0].collection == 'test_collection'
     assert config.repositories[0].index_config == str(test_index.resolve())
     assert config.log_file == str((tmp_path / 'logs' / 'webhook.log').resolve())
 
@@ -318,7 +311,6 @@ def test_load_config_with_relative_paths(tmp_path):
                 'name': 'test',
                 'github_url': 'https://github.com/test/test',
                 'local_path': '../repos/test_repo',
-                'collection': 'test',
                 'index_config': '../indices/index.json'
             }
         ],
@@ -356,7 +348,6 @@ def test_load_config_creates_log_directory(tmp_path):
                 'name': 'test',
                 'github_url': 'https://github.com/test/test',
                 'local_path': str(test_repo),
-                'collection': 'test',
                 'index_config': str(test_index)
             }
         ],
@@ -380,15 +371,14 @@ def test_repository_config_dataclass():
         name='test',
         github_url='https://github.com/test/test',
         local_path='/path/to/repo',
-        collection='test_collection',
         index_config='/path/to/config.json'
     )
 
     assert repo.name == 'test'
     assert repo.github_url == 'https://github.com/test/test'
     assert repo.local_path == '/path/to/repo'
-    assert repo.collection == 'test_collection'
     assert repo.index_config == '/path/to/config.json'
+    assert repo.branch == 'main'  # Default value
 
 
 def test_webhook_config_dataclass():
@@ -396,8 +386,8 @@ def test_webhook_config_dataclass():
         name='test',
         github_url='https://github.com/test/test',
         local_path='/path/to/repo',
-        collection='test_collection',
-        index_config='/path/to/config.json'
+        index_config='/path/to/config.json',
+        branch='master'
     )
 
     config = WebhookConfig(
