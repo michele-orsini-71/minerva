@@ -12,20 +12,23 @@
 - `extractors/github-webhook-orchestrator/github_webhook_orchestrator/__init__.py` - Package initialization with version and author metadata
 - `extractors/github-webhook-orchestrator/setup.py` - Package setup following repository-doc-extractor pattern
 - `extractors/github-webhook-orchestrator/requirements.txt` - Dependencies (FastAPI, uvicorn, requests)
-- `extractors/github-webhook-orchestrator/README.md` - Comprehensive usage documentation and examples
+- `extractors/github-webhook-orchestrator/README.md` - Comprehensive documentation with installation, configuration, testing, and troubleshooting
 - `extractors/github-webhook-orchestrator/github_webhook_orchestrator/github_auth.py` - HMAC-SHA256 signature validation with constant-time comparison
+- `extractors/github-webhook-orchestrator/github_webhook_orchestrator/config.py` - Configuration loading with dataclasses, env var resolution, and validation
+- `extractors/github-webhook-orchestrator/github_webhook_orchestrator/reindex.py` - Reindex workflow orchestration with markdown detection and subprocess execution
+- `extractors/github-webhook-orchestrator/github_webhook_orchestrator/server.py` - FastAPI webhook receiver with signature validation, event processing, URL-encoded payload support, and reindex triggering
+- `extractors/github-webhook-orchestrator/github_webhook_orchestrator/cli.py` - CLI entry point for webhook-orchestrator command with argument parsing
+- `extractors/github-webhook-orchestrator/github_webhook_orchestrator/validation.py` - Startup validation for required tools and environment variables
+- `extractors/github-webhook-orchestrator/config.example.json` - Example configuration file with documentation
 - `extractors/github-webhook-orchestrator/tests/__init__.py` - Test package initialization
 - `extractors/github-webhook-orchestrator/tests/test_github_auth.py` - Comprehensive unit tests for signature validation (11 test cases)
-- `extractors/github-webhook-orchestrator/github_webhook_orchestrator/config.py` - Configuration loading with dataclasses, env var resolution, and validation
-- `extractors/github-webhook-orchestrator/config.example.json` - Example configuration file with documentation
 - `extractors/github-webhook-orchestrator/tests/test_config.py` - Comprehensive unit tests for configuration loading (22 test cases)
-- `extractors/github-webhook-orchestrator/github_webhook_orchestrator/reindex.py` - Reindex workflow orchestration with markdown detection and subprocess execution
 - `extractors/github-webhook-orchestrator/tests/test_reindex.py` - Comprehensive unit tests for markdown detection logic (23 test cases)
-- `extractors/github-webhook-orchestrator/github_webhook_orchestrator/server.py` - FastAPI webhook receiver with signature validation, event processing, and reindex triggering
-- `extractors/github-webhook-orchestrator/github_webhook_orchestrator/cli.py` - CLI entry point for webhook-orchestrator command with argument parsing
+- `extractors/github-webhook-orchestrator/tests/test_validation.py` - Comprehensive unit tests for validation logic (25 test cases)
 
 ### Modified Files
-- `extractors/github-webhook-orchestrator/setup.py` - Updated console_scripts entry point to use cli module
+- `extractors/github-webhook-orchestrator/README.md` - Updated with environment variables, envchain examples, ngrok testing, and comprehensive troubleshooting
+- `extractors/github-webhook-orchestrator/github_webhook_orchestrator/server.py` - Added URL-encoded payload support and enhanced error logging
 
 ### Files to Create
 - `extractors/github-webhook-orchestrator/test_webhook_payload.json` - Sample GitHub webhook payload for testing
