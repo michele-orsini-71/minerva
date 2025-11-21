@@ -160,7 +160,7 @@
     - [x] 8.20 Verify updated content is searchable in Claude Desktop within 5 minutes
     - [x] 8.21 Check orchestrator logs for any errors or warnings
 
-- [ ] 9.0 Manual Testing - Real GitHub Webhook (Optional, Requires ngrok)
+- [x] 9.0 Manual Testing - Real GitHub Webhook (Optional, Requires ngrok)
     - [x] 9.1 Install ngrok: `brew install ngrok` (if not already installed)
     - [x] 9.2 Start ngrok tunnel: `ngrok http 8338`
     - [x] 9.3 Copy ngrok HTTPS URL (e.g., `https://abc123.ngrok.io`)
@@ -180,7 +180,7 @@
     - [x] 9.17 Verify updated content is searchable in Claude Desktop
     - [x] 9.18 Delete webhook from GitHub when testing complete
 
-- [ ] 10.0 Documentation and Cleanup
+- [x] 10.0 Documentation and Cleanup
     - [x] 10.1 Update `extractors/github-webhook-orchestrator/README.md` with:
         - Installation instructions
         - Configuration guide
@@ -191,8 +191,8 @@
     - [x] 10.4 Document manual testing procedures performed
     - [x] 10.5 Create troubleshooting guide for common errors
     - [x] 10.6 Add section on testing signature validation (how to compute HMAC-SHA256)
-    - [ ] 10.7 Commit all code to git repository
-    - [ ] 10.8 Tag as `phase-1-complete`
+    - [x] 10.7 Commit all code to git repository
+    - [x] 10.8 Tag as `phase-1-complete`
 
 ---
 
