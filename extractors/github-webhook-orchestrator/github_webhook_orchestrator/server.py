@@ -58,6 +58,7 @@ async def webhook_handler(request: Request):
     body = await request.body()
     signature_header = request.headers.get('X-Hub-Signature-256', '')
 
+    # Validate signature on the raw body (before any decoding)
     if not validate_signature(body, signature_header, config.webhook_secret):
         logger.warning("Invalid signature received")
         return JSONResponse(
@@ -65,10 +66,18 @@ async def webhook_handler(request: Request):
             status_code=status.HTTP_403_FORBIDDEN
         )
 
+    # Handle URL-encoded payload (GitHub form-encoded webhooks)
+    payload_body = body
+    if body.startswith(b'payload='):
+        from urllib.parse import unquote_plus
+        # Extract and decode the payload parameter
+        payload_body = unquote_plus(body.decode('utf-8')[8:]).encode('utf-8')
+
     try:
-        payload = json.loads(body)
-    except json.JSONDecodeError:
-        logger.error("Invalid JSON payload")
+        payload = json.loads(payload_body)
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON payload: {e}")
+        logger.error(f"Received body (first 500 chars): {body[:500].decode('utf-8', errors='replace')}")
         return JSONResponse(
             content={"error": "Invalid JSON payload"},
             status_code=status.HTTP_400_BAD_REQUEST

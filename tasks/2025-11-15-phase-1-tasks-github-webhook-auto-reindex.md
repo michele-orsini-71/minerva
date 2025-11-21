@@ -161,24 +161,24 @@
     - [x] 8.21 Check orchestrator logs for any errors or warnings
 
 - [ ] 9.0 Manual Testing - Real GitHub Webhook (Optional, Requires ngrok)
-    - [ ] 9.1 Install ngrok: `brew install ngrok` (if not already installed)
-    - [ ] 9.2 Start ngrok tunnel: `ngrok http 8338`
-    - [ ] 9.3 Copy ngrok HTTPS URL (e.g., `https://abc123.ngrok.io`)
-    - [ ] 9.4 In GitHub repository settings, add webhook
-    - [ ] 9.5 Set Payload URL to `<ngrok-url>/webhook`
-    - [ ] 9.6 Set Content type to `application/json`
-    - [ ] 9.7 Set Secret to value from webhook orchestrator config
-    - [ ] 9.8 Select "Just the push event"
-    - [ ] 9.9 Click "Add webhook"
-    - [ ] 9.10 Ensure webhook orchestrator and Minerva MCP server are running
-    - [ ] 9.11 Make a change to markdown file in test repository
-    - [ ] 9.12 Commit and push: `git commit -am "Test real webhook" && git push origin main`
-    - [ ] 9.13 In GitHub webhook settings, check "Recent Deliveries"
-    - [ ] 9.14 Verify webhook was delivered successfully (green checkmark)
-    - [ ] 9.15 Check orchestrator logs for webhook receipt and processing
-    - [ ] 9.16 Verify reindex was triggered and completed successfully
-    - [ ] 9.17 Verify updated content is searchable in Claude Desktop
-    - [ ] 9.18 Delete webhook from GitHub when testing complete
+    - [x] 9.1 Install ngrok: `brew install ngrok` (if not already installed)
+    - [x] 9.2 Start ngrok tunnel: `ngrok http 8338`
+    - [x] 9.3 Copy ngrok HTTPS URL (e.g., `https://abc123.ngrok.io`)
+    - [x] 9.4 In GitHub repository settings, add webhook
+    - [x] 9.5 Set Payload URL to `<ngrok-url>/webhook`
+    - [x] 9.6 Set Content type to `application/json`
+    - [x] 9.7 Set Secret to value from webhook orchestrator config
+    - [x] 9.8 Select "Just the push event"
+    - [x] 9.9 Click "Add webhook"
+    - [z] 9.10 Ensure webhook orchestrator and Minerva MCP server are running
+    - [x] 9.11 Make a change to markdown file in test repository
+    - [x] 9.12 Commit and push: `git commit -am "Test real webhook" && git push origin main`
+    - [x] 9.13 In GitHub webhook settings, check "Recent Deliveries"
+    - [x] 9.14 Verify webhook was delivered successfully (green checkmark)
+    - [x] 9.15 Check orchestrator logs for webhook receipt and processing
+    - [x] 9.16 Verify reindex was triggered and completed successfully
+    - [x] 9.17 Verify updated content is searchable in Claude Desktop
+    - [x] 9.18 Delete webhook from GitHub when testing complete
 
 - [ ] 10.0 Documentation and Cleanup
     - [ ] 10.1 Update `extractors/github-webhook-orchestrator/README.md` with:
