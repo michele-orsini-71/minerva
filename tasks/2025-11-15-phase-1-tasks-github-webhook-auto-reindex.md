@@ -181,16 +181,16 @@
     - [x] 9.18 Delete webhook from GitHub when testing complete
 
 - [ ] 10.0 Documentation and Cleanup
-    - [ ] 10.1 Update `extractors/github-webhook-orchestrator/README.md` with:
+    - [x] 10.1 Update `extractors/github-webhook-orchestrator/README.md` with:
         - Installation instructions
         - Configuration guide
         - Usage examples (local testing, ngrok testing)
         - Troubleshooting section
-    - [ ] 10.2 Document environment variables needed (OPENAI_API_KEY, WEBHOOK_SECRET, GITHUB_TOKEN)
-    - [ ] 10.3 Add example of using envchain for secret management
-    - [ ] 10.4 Document manual testing procedures performed
-    - [ ] 10.5 Create troubleshooting guide for common errors
-    - [ ] 10.6 Add section on testing signature validation (how to compute HMAC-SHA256)
+    - [x] 10.2 Document environment variables needed (OPENAI_API_KEY, WEBHOOK_SECRET, GITHUB_TOKEN)
+    - [x] 10.3 Add example of using envchain for secret management
+    - [x] 10.4 Document manual testing procedures performed
+    - [x] 10.5 Create troubleshooting guide for common errors
+    - [x] 10.6 Add section on testing signature validation (how to compute HMAC-SHA256)
     - [ ] 10.7 Commit all code to git repository
     - [ ] 10.8 Tag as `phase-1-complete`
 
