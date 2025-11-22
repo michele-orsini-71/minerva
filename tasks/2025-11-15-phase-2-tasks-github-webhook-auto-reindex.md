@@ -11,6 +11,7 @@
 
 ### Created Files
 - `deployment/Dockerfile` - Docker image for Minerva + webhook orchestrator with Python 3.13-slim, git, curl, health checks
+- `deployment/entrypoint.sh` - Container startup script with signal handling, health checks, and graceful shutdown
 
 ### New Files to Create
 - `deployment/docker-compose.yml` - Service orchestration (NO Caddy in Phase 2)
@@ -52,14 +53,14 @@
     - [x] 1.10 Expose ports 8337 (MCP) and 8338 (webhook)
     - [x] 1.11 Set working directory to `/app/minerva`
 
-- [ ] 2.0 Create Container Entrypoint Script
-    - [ ] 2.1 Create `deployment/entrypoint.sh`
-    - [ ] 2.2 Make script executable: `chmod +x deployment/entrypoint.sh`
-    - [ ] 2.3 Start Minerva MCP server in background: `minerva serve --config /data/config/server.json &`
-    - [ ] 2.4 Wait for MCP server to start (check health endpoint or wait 5 seconds)
-    - [ ] 2.5 Start webhook orchestrator in foreground: `webhook-orchestrator --config /data/config/webhook.json`
-    - [ ] 2.6 Add signal handling to gracefully shutdown both processes on SIGTERM
-    - [ ] 2.7 Log startup messages to stdout for docker logs visibility
+- [x] 2.0 Create Container Entrypoint Script
+    - [x] 2.1 Create `deployment/entrypoint.sh`
+    - [x] 2.2 Make script executable: `chmod +x deployment/entrypoint.sh`
+    - [x] 2.3 Start Minerva MCP server in background: `minerva serve --config /data/config/server.json &`
+    - [x] 2.4 Wait for MCP server to start (check health endpoint or wait 5 seconds)
+    - [x] 2.5 Start webhook orchestrator in foreground: `webhook-orchestrator --config /data/config/webhook.json`
+    - [x] 2.6 Add signal handling to gracefully shutdown both processes on SIGTERM
+    - [x] 2.7 Log startup messages to stdout for docker logs visibility
 
 - [ ] 3.0 Create Docker Compose Configuration
     - [ ] 3.1 Create `deployment/docker-compose.yml`
