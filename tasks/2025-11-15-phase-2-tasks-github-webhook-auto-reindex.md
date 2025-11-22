@@ -12,9 +12,9 @@
 ### Created Files
 - `deployment/Dockerfile` - Docker image for Minerva + webhook orchestrator with Python 3.13-slim, git, curl, health checks
 - `deployment/entrypoint.sh` - Container startup script with signal handling, health checks, and graceful shutdown
+- `deployment/docker-compose.yml` - Service orchestration with minerva service, named volumes, environment variables, and port mappings
 
 ### New Files to Create
-- `deployment/docker-compose.yml` - Service orchestration (NO Caddy in Phase 2)
 - `deployment/.dockerignore` - Exclude unnecessary files from Docker build
 - `deployment/configs/server.json` - Minerva MCP server configuration for Docker
 - `deployment/configs/webhook.json` - Webhook orchestrator configuration for Docker
@@ -62,19 +62,19 @@
     - [x] 2.6 Add signal handling to gracefully shutdown both processes on SIGTERM
     - [x] 2.7 Log startup messages to stdout for docker logs visibility
 
-- [ ] 3.0 Create Docker Compose Configuration
-    - [ ] 3.1 Create `deployment/docker-compose.yml`
-    - [ ] 3.2 Define single service: `minerva` (combined MCP server + webhook orchestrator)
-    - [ ] 3.3 Build context: parent directory (`..`), dockerfile: `deployment/Dockerfile`
-    - [ ] 3.4 Map environment variables: OPENAI_API_KEY, MINERVA_API_KEY, WEBHOOK_SECRET, GITHUB_TOKEN
-    - [ ] 3.5 Create named volumes: chromadb-data, repos-data, extracted-data
-    - [ ] 3.6 Mount volume `chromadb-data:/data/chromadb`
-    - [ ] 3.7 Mount volume `repos-data:/data/repos`
-    - [ ] 3.8 Mount volume `extracted-data:/data/extracted`
-    - [ ] 3.9 Mount `./configs:/data/config:ro` (read-only config files from host)
-    - [ ] 3.10 Expose ports: `8337:8337` and `8338:8338`
-    - [ ] 3.11 Set restart policy: `unless-stopped`
-    - [ ] 3.12 Set entrypoint: `/app/minerva/deployment/entrypoint.sh`
+- [x] 3.0 Create Docker Compose Configuration
+    - [x] 3.1 Create `deployment/docker-compose.yml`
+    - [x] 3.2 Define single service: `minerva` (combined MCP server + webhook orchestrator)
+    - [x] 3.3 Build context: parent directory (`..`), dockerfile: `deployment/Dockerfile`
+    - [x] 3.4 Map environment variables: OPENAI_API_KEY, MINERVA_API_KEY, WEBHOOK_SECRET, GITHUB_TOKEN
+    - [x] 3.5 Create named volumes: chromadb-data, repos-data, extracted-data
+    - [x] 3.6 Mount volume `chromadb-data:/data/chromadb`
+    - [x] 3.7 Mount volume `repos-data:/data/repos`
+    - [x] 3.8 Mount volume `extracted-data:/data/extracted`
+    - [x] 3.9 Mount `./configs:/data/config:ro` (read-only config files from host)
+    - [x] 3.10 Expose ports: `8337:8337` and `8338:8338`
+    - [x] 3.11 Set restart policy: `unless-stopped`
+    - [x] 3.12 Set entrypoint: `/app/minerva/deployment/entrypoint.sh`
 
 - [ ] 4.0 Create Docker Configuration Files
     - [ ] 4.1 Create `deployment/configs/server.json` for MCP server

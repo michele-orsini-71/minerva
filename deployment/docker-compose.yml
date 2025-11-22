@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  minerva:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MINERVA_API_KEY=${MINERVA_API_KEY}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    volumes:
+      - chromadb-data:/data/chromadb
+      - repos-data:/data/repos
+      - extracted-data:/data/extracted
+      - ./configs:/data/config:ro
+    ports:
+      - "8337:8337"
+      - "8338:8338"
+    restart: unless-stopped
+    entrypoint: /app/minerva/deployment/entrypoint.sh
+
+volumes:
+  chromadb-data:
+  repos-data:
+  extracted-data:
