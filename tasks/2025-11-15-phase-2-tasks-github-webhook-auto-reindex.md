@@ -16,9 +16,9 @@
 - `deployment/configs/server.json` - Minerva MCP server configuration with chromadb path, host 0.0.0.0, port 8337, and default_max_results 5
 - `deployment/configs/webhook.json` - Webhook orchestrator configuration with secret, test repository, and log file path
 - `deployment/configs/index-test-repo.json` - Index configuration for test repository using OpenAI embeddings and test_repo_docs collection
+- `deployment/.dockerignore` - Excludes git, cache, test data, virtual environments, IDE files, and documentation from Docker build
 
 ### New Files to Create
-- `deployment/.dockerignore` - Exclude unnecessary files from Docker build
 - `deployment/README.md` - Docker deployment documentation
 
 ### Modified Files
@@ -95,15 +95,15 @@
     - [x] 4.17 Set json_file to `/data/extracted/test-repo.json`
     - [x] 4.18 Set provider to OpenAI with `${OPENAI_API_KEY}`
 
-- [ ] 5.0 Create .dockerignore File
-    - [ ] 5.1 Create `deployment/.dockerignore`
-    - [ ] 5.2 Exclude `.git/` directory
-    - [ ] 5.3 Exclude `chromadb_data/` directory
-    - [ ] 5.4 Exclude `test-data/` directory
-    - [ ] 5.5 Exclude `__pycache__/` and `*.pyc` files
-    - [ ] 5.6 Exclude `.env` files
-    - [ ] 5.7 Exclude `*.md` documentation files (keep in source, not needed in image)
-    - [ ] 5.8 Keep only necessary files for runtime
+- [x] 5.0 Create .dockerignore File
+    - [x] 5.1 Create `deployment/.dockerignore`
+    - [x] 5.2 Exclude `.git/` directory
+    - [x] 5.3 Exclude `chromadb_data/` directory
+    - [x] 5.4 Exclude `test-data/` directory
+    - [x] 5.5 Exclude `__pycache__/` and `*.pyc` files
+    - [x] 5.6 Exclude `.env` files
+    - [x] 5.7 Exclude `*.md` documentation files (keep in source, not needed in image)
+    - [x] 5.8 Keep only necessary files for runtime
 
 - [ ] 6.0 Build and Test Docker Image
     - [ ] 6.1 Navigate to deployment directory: `cd deployment`
