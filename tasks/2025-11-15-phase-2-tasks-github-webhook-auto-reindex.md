@@ -9,8 +9,10 @@
 
 ## Relevant Files
 
+### Created Files
+- `deployment/Dockerfile` - Docker image for Minerva + webhook orchestrator with Python 3.13-slim, git, curl, health checks
+
 ### New Files to Create
-- `deployment/Dockerfile` - Multi-stage Docker image for Minerva + webhook orchestrator
 - `deployment/docker-compose.yml` - Service orchestration (NO Caddy in Phase 2)
 - `deployment/.dockerignore` - Exclude unnecessary files from Docker build
 - `deployment/configs/server.json` - Minerva MCP server configuration for Docker
@@ -37,18 +39,18 @@
 
 ## Tasks
 
-- [ ] 1.0 Create Dockerfile for Minerva + Webhook Orchestrator
-    - [ ] 1.1 Create `deployment/Dockerfile`
-    - [ ] 1.2 Use `python:3.13-slim` as base image
-    - [ ] 1.3 Install system dependencies: git (for git pull in reindex workflow)
-    - [ ] 1.4 Copy Minerva source code to `/app/minerva`
-    - [ ] 1.5 Install Minerva in editable mode: `pip install -e /app/minerva`
-    - [ ] 1.6 Install repository-doc-extractor: `pip install -e /app/minerva/extractors/repository-doc-extractor`
-    - [ ] 1.7 Install github-webhook-orchestrator: `pip install -e /app/minerva/extractors/github-webhook-orchestrator`
-    - [ ] 1.8 Create data directories: `/data/chromadb`, `/data/repos`, `/data/extracted`, `/data/config`, `/data/logs`
-    - [ ] 1.9 Add HEALTHCHECK instruction for `/health` endpoint on port 8337
-    - [ ] 1.10 Expose ports 8337 (MCP) and 8338 (webhook)
-    - [ ] 1.11 Set working directory to `/app/minerva`
+- [x] 1.0 Create Dockerfile for Minerva + Webhook Orchestrator
+    - [x] 1.1 Create `deployment/Dockerfile`
+    - [x] 1.2 Use `python:3.13-slim` as base image
+    - [x] 1.3 Install system dependencies: git (for git pull in reindex workflow)
+    - [x] 1.4 Copy Minerva source code to `/app/minerva`
+    - [x] 1.5 Install Minerva in editable mode: `pip install -e /app/minerva`
+    - [x] 1.6 Install repository-doc-extractor: `pip install -e /app/minerva/extractors/repository-doc-extractor`
+    - [x] 1.7 Install github-webhook-orchestrator: `pip install -e /app/minerva/extractors/github-webhook-orchestrator`
+    - [x] 1.8 Create data directories: `/data/chromadb`, `/data/repos`, `/data/extracted`, `/data/config`, `/data/logs`
+    - [x] 1.9 Add HEALTHCHECK instruction for `/health` endpoint on port 8337
+    - [x] 1.10 Expose ports 8337 (MCP) and 8338 (webhook)
+    - [x] 1.11 Set working directory to `/app/minerva`
 
 - [ ] 2.0 Create Container Entrypoint Script
     - [ ] 2.1 Create `deployment/entrypoint.sh`
