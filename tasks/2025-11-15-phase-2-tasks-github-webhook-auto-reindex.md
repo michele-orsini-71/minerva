@@ -13,13 +13,12 @@
 - `deployment/Dockerfile` - Docker image for Minerva + webhook orchestrator with Python 3.13-slim, git, curl, health checks
 - `deployment/entrypoint.sh` - Container startup script with signal handling, health checks, and graceful shutdown
 - `deployment/docker-compose.yml` - Service orchestration with minerva service, named volumes, environment variables, and port mappings
+- `deployment/configs/server.json` - Minerva MCP server configuration with chromadb path, host 0.0.0.0, port 8337, and default_max_results 5
+- `deployment/configs/webhook.json` - Webhook orchestrator configuration with secret, test repository, and log file path
+- `deployment/configs/index-test-repo.json` - Index configuration for test repository using OpenAI embeddings and test_repo_docs collection
 
 ### New Files to Create
 - `deployment/.dockerignore` - Exclude unnecessary files from Docker build
-- `deployment/configs/server.json` - Minerva MCP server configuration for Docker
-- `deployment/configs/webhook.json` - Webhook orchestrator configuration for Docker
-- `deployment/configs/index-test-repo.json` - Example index configuration for Docker
-- `deployment/entrypoint.sh` - Container startup script (runs both MCP server and webhook orchestrator)
 - `deployment/README.md` - Docker deployment documentation
 
 ### Modified Files
@@ -76,25 +75,25 @@
     - [x] 3.11 Set restart policy: `unless-stopped`
     - [x] 3.12 Set entrypoint: `/app/minerva/deployment/entrypoint.sh`
 
-- [ ] 4.0 Create Docker Configuration Files
-    - [ ] 4.1 Create `deployment/configs/server.json` for MCP server
-    - [ ] 4.2 Set chromadb_path to `/data/chromadb`
-    - [ ] 4.3 Set host to `0.0.0.0` (listen on all interfaces in container)
-    - [ ] 4.4 Set port to `8337`
-    - [ ] 4.5 Set api_key to `${MINERVA_API_KEY}` (resolved from environment)
-    - [ ] 4.6 Set require_auth to `false` for Phase 2 (localhost testing only)
-    - [ ] 4.7 Set default_max_results to `5`
-    - [ ] 4.8 Create `deployment/configs/webhook.json` for webhook orchestrator
-    - [ ] 4.9 Set webhook_secret to `${WEBHOOK_SECRET}`
-    - [ ] 4.10 Add test repository to repositories list
-    - [ ] 4.11 Set local_path to `/data/repos/test-repo`
-    - [ ] 4.12 Set index_config to `/data/config/index-test-repo.json`
-    - [ ] 4.13 Set log_file to `/data/logs/webhook-orchestrator.log`
-    - [ ] 4.14 Create `deployment/configs/index-test-repo.json`
-    - [ ] 4.15 Set chromadb_path to `/data/chromadb`
-    - [ ] 4.16 Set collection name to `test_repo_docs`
-    - [ ] 4.17 Set json_file to `/data/extracted/test-repo.json`
-    - [ ] 4.18 Set provider to OpenAI with `${OPENAI_API_KEY}`
+- [x] 4.0 Create Docker Configuration Files
+    - [x] 4.1 Create `deployment/configs/server.json` for MCP server
+    - [x] 4.2 Set chromadb_path to `/data/chromadb`
+    - [x] 4.3 Set host to `0.0.0.0` (listen on all interfaces in container)
+    - [x] 4.4 Set port to `8337`
+    - [x] 4.5 Set api_key to `${MINERVA_API_KEY}` (resolved from environment)
+    - [x] 4.6 Set require_auth to `false` for Phase 2 (localhost testing only)
+    - [x] 4.7 Set default_max_results to `5`
+    - [x] 4.8 Create `deployment/configs/webhook.json` for webhook orchestrator
+    - [x] 4.9 Set webhook_secret to `${WEBHOOK_SECRET}`
+    - [x] 4.10 Add test repository to repositories list
+    - [x] 4.11 Set local_path to `/data/repos/test-repo`
+    - [x] 4.12 Set index_config to `/data/config/index-test-repo.json`
+    - [x] 4.13 Set log_file to `/data/logs/webhook-orchestrator.log`
+    - [x] 4.14 Create `deployment/configs/index-test-repo.json`
+    - [x] 4.15 Set chromadb_path to `/data/chromadb`
+    - [x] 4.16 Set collection name to `test_repo_docs`
+    - [x] 4.17 Set json_file to `/data/extracted/test-repo.json`
+    - [x] 4.18 Set provider to OpenAI with `${OPENAI_API_KEY}`
 
 - [ ] 5.0 Create .dockerignore File
     - [ ] 5.1 Create `deployment/.dockerignore`

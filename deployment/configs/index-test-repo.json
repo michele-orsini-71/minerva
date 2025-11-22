@@ -1,0 +1,17 @@
+{
+  "chromadb_path": "/data/chromadb",
+  "collection": {
+    "name": "test_repo_docs",
+    "description": "Test repository documentation for Docker deployment testing",
+    "json_file": "/data/extracted/test-repo.json",
+    "chunk_size": 1200,
+    "force_recreate": false,
+    "skip_ai_validation": false
+  },
+  "provider": {
+    "provider_type": "openai",
+    "api_key": "${OPENAI_API_KEY}",
+    "embedding_model": "text-embedding-3-small",
+    "llm_model": "gpt-4o-mini"
+  }
+}

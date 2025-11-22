@@ -1,0 +1,14 @@
+{
+  "webhook_secret": "${WEBHOOK_SECRET}",
+  "github_token": "${GITHUB_TOKEN}",
+  "log_file": "/data/logs/webhook-orchestrator.log",
+  "repositories": [
+    {
+      "name": "test-repo",
+      "github_url": "https://github.com/user/test-repo",
+      "local_path": "/data/repos/test-repo",
+      "index_config": "/data/config/index-test-repo.json",
+      "branch": "main"
+    }
+  ]
+}
