@@ -54,7 +54,12 @@
       "Bash(tree:*)",
       "Bash(envchain openai minerva query:*)",
       "Bash(repository-doc-extractor:*)",
-      "Bash(envchain openai printenv:*)"
+      "Bash(envchain openai printenv:*)",
+      "Bash(docker-compose build:*)",
+      "Bash(open:*)",
+      "Bash(docker info:*)",
+      "Bash(docker history:*)",
+      "Bash(docker run:*)"
     ],
     "deny": [],
     "ask": []

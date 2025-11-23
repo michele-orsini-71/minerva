@@ -105,13 +105,13 @@
     - [x] 5.7 Exclude `*.md` documentation files (keep in source, not needed in image)
     - [x] 5.8 Keep only necessary files for runtime
 
-- [ ] 6.0 Build and Test Docker Image
-    - [ ] 6.1 Navigate to deployment directory: `cd deployment`
-    - [ ] 6.2 Build Docker image: `docker-compose build`
-    - [ ] 6.3 Verify image builds successfully (no errors)
-    - [ ] 6.4 Check image size (should be reasonable, not multi-GB)
-    - [ ] 6.5 Inspect image layers: `docker history <image-id>`
-    - [ ] 6.6 Verify all dependencies installed correctly
+- [x] 6.0 Build and Test Docker Image
+    - [x] 6.1 Navigate to deployment directory: `cd deployment`
+    - [x] 6.2 Build Docker image: `docker-compose build`
+    - [x] 6.3 Verify image builds successfully (no errors)
+    - [x] 6.4 Check image size (should be reasonable, not multi-GB)
+    - [x] 6.5 Inspect image layers: `docker history <image-id>`
+    - [x] 6.6 Verify all dependencies installed correctly
 
 - [ ] 7.0 Start Docker Services with envchain
     - [ ] 7.1 Ensure secrets are in envchain: OPENAI_API_KEY, WEBHOOK_SECRET
