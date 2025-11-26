@@ -265,6 +265,9 @@ def main(config: ServerConfig | str):
 
 
 def main_http(config: ServerConfig | str):
+    from starlette.responses import JSONResponse
+    from starlette.requests import Request
+
     console_logger.info("=" * 60)
     console_logger.info("Multi-Collection MCP Server for Markdown Notes")
     console_logger.info("=" * 60)
@@ -281,8 +284,21 @@ def main_http(config: ServerConfig | str):
     # Register all tools
     _register_tools(mcp)
 
+    # Add health check endpoint using FastMCP's custom_route method
+    async def health_check(request: Request):
+        """Health check endpoint for Docker and monitoring systems."""
+        return JSONResponse({
+            "status": "healthy",
+            "collections": len(AVAILABLE_COLLECTIONS),
+            "service": "minerva-mcp-server"
+        })
+
+    # Register the health check route (manually call the decorator as a function)
+    mcp.custom_route("/health", methods=["GET"], name="health_check")(health_check)
+
     console_logger.info(f"Starting FastMCP server in HTTP mode on http://{host}:{port}...")
     console_logger.info(f"MCP endpoint will be available at: http://{host}:{port}/mcp/")
+    console_logger.info(f"Health check endpoint: http://{host}:{port}/health")
     console_logger.info("Waiting for HTTP requests...\n")
 
     try:
