@@ -72,7 +72,10 @@
       "Bash(envchain openai envchain minerva docker-compose -f deployment/docker-compose.yml up -d)",
       "Bash(for i in 1 2 3 4 5 6)",
       "Bash(do)",
-      "Bash(docker logs:*)"
+      "Bash(docker logs:*)",
+      "Bash(docker exec:*)",
+      "Bash(/Users/michele/my-code/minerva/.venv/bin/python:*)",
+      "Bash(docker-compose down:*)"
     ],
     "deny": [],
     "ask": []

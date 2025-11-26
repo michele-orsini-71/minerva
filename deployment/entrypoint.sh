@@ -17,94 +17,65 @@ cleanup() {
 
 trap cleanup SIGTERM SIGINT
 
-echo "Checking database initialization..."
-# Use minerva peek to list collections, count the results
-COLLECTION_COUNT=$(minerva peek /data/chromadb --format json 2>/dev/null | python3 -c "
-import json
-import sys
-try:
-    data = json.load(sys.stdin)
-    print(len(data.get('collections', [])))
-except:
-    print('0')
-")
+echo "Ensuring repository is indexed and up-to-date..."
+echo "(This catches any changes that occurred while the container was down)"
 
-echo "Found $COLLECTION_COUNT collection(s) in ChromaDB"
-
-if [ "$COLLECTION_COUNT" -eq "0" ]; then
-    echo "ChromaDB is empty - running initial indexing..."
-
-    REPO_NAME=$(python3 -c "
+REPO_NAME=$(python3 -c "
 import json
 with open('/data/config/webhook.json') as f:
     config = json.load(f)
     print(config['repositories'][0]['name'])
 ")
 
-    REPO_URL=$(python3 -c "
+REPO_URL=$(python3 -c "
 import json
 with open('/data/config/webhook.json') as f:
     config = json.load(f)
     print(config['repositories'][0]['github_url'])
 ")
 
-    REPO_BRANCH=$(python3 -c "
+REPO_BRANCH=$(python3 -c "
 import json
 with open('/data/config/webhook.json') as f:
     config = json.load(f)
     print(config['repositories'][0].get('branch', 'main'))
 ")
 
-    INDEX_CONFIG=$(python3 -c "
+INDEX_CONFIG=$(python3 -c "
 import json
 with open('/data/config/webhook.json') as f:
     config = json.load(f)
     print(config['repositories'][0]['index_config'])
 ")
 
-    LOCAL_PATH="/data/repos/${REPO_NAME}"
-    EXTRACT_PATH="/data/extracted/${REPO_NAME}.json"
+LOCAL_PATH="/data/repos/${REPO_NAME}"
+EXTRACT_PATH="/data/extracted/${REPO_NAME}.json"
 
-    echo "  Repository: $REPO_NAME"
-    echo "  URL: $REPO_URL"
-    echo "  Branch: $REPO_BRANCH"
+echo "  Repository: $REPO_NAME"
+echo "  URL: $REPO_URL"
+echo "  Branch: $REPO_BRANCH"
 
-    echo "[1/4] Cloning repository..."
-    if [ -d "$LOCAL_PATH" ]; then
-        echo "  Repository already exists, pulling latest changes..."
-        cd "$LOCAL_PATH"
-        git pull origin "$REPO_BRANCH"
-    else
-        echo "  Cloning fresh copy..."
-        git clone --branch "$REPO_BRANCH" "$REPO_URL" "$LOCAL_PATH"
-    fi
-
-    echo "[2/4] Extracting documentation..."
-    repository-doc-extractor "$LOCAL_PATH" -o "$EXTRACT_PATH"
-
-    echo "[3/4] Validating extracted data..."
-    minerva validate "$EXTRACT_PATH"
-
-    echo "[4/4] Indexing into ChromaDB..."
-    minerva index --config "$INDEX_CONFIG"
-
-    echo "✓ Initial indexing complete"
-
-    # Verify collection was created and is accessible
-    COLLECTION_COUNT_AFTER=$(minerva peek /data/chromadb --format json 2>/dev/null | python3 -c "
-import json
-import sys
-try:
-    data = json.load(sys.stdin)
-    print(len(data.get('collections', [])))
-except:
-    print('0')
-")
-
-    echo "✓ ChromaDB now has $COLLECTION_COUNT_AFTER collection(s)"
+echo "[1/4] Syncing repository..."
+if [ -d "$LOCAL_PATH" ]; then
+    echo "  Repository exists, pulling latest changes..."
+    cd "$LOCAL_PATH"
+    git pull origin "$REPO_BRANCH"
 else
-    echo "✓ ChromaDB already initialized, skipping initial indexing"
+    echo "  Cloning repository..."
+    git clone --branch "$REPO_BRANCH" "$REPO_URL" "$LOCAL_PATH"
 fi
+
+echo "[2/4] Extracting documentation..."
+repository-doc-extractor "$LOCAL_PATH" -o "$EXTRACT_PATH"
+
+echo "[3/4] Validating extracted data..."
+minerva validate "$EXTRACT_PATH"
+
+echo "[4/4] Indexing into ChromaDB..."
+echo "  (Will create collection if needed, or incrementally update if exists)"
+minerva index --config "$INDEX_CONFIG"
+
+echo "✓ Repository indexing complete"
 
 echo "Starting Minerva MCP server (HTTP mode)..."
 minerva serve-http --config /data/config/server.json &
