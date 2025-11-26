@@ -294,8 +294,11 @@ def run_peek(args: Namespace) -> int:
             logger.error(f"   Found: {db_path.absolute()}")
             return 1
 
-        logger.info(f"Connecting to ChromaDB at: {chromadb_path}")
-        logger.info("")
+        # Only show connection message for non-JSON formats (JSON should be clean for parsing)
+        if output_format != "json":
+            logger.info(f"Connecting to ChromaDB at: {chromadb_path}")
+            logger.info("")
+
         client = initialize_chromadb_client(chromadb_path)
 
         collections = client.list_collections()
