@@ -59,7 +59,20 @@
       "Bash(open:*)",
       "Bash(docker info:*)",
       "Bash(docker history:*)",
-      "Bash(docker run:*)"
+      "Bash(docker run:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker inspect:*)",
+      "Bash(for i in {1..30})",
+      "Bash(do if docker info)",
+      "Bash(then echo 'Docker is running!' docker info)",
+      "Bash(for i in 1 2 3 4 5 6 7 8 9 10)",
+      "Bash(do docker info)",
+      "Bash(break)",
+      "Bash(envchain openai envchain minerva docker-compose up -d)",
+      "Bash(envchain openai envchain minerva docker-compose -f deployment/docker-compose.yml up -d)",
+      "Bash(for i in 1 2 3 4 5 6)",
+      "Bash(do)",
+      "Bash(docker logs:*)"
     ],
     "deny": [],
     "ask": []
