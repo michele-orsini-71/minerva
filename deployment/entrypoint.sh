@@ -9,9 +9,6 @@ cleanup() {
     if [ ! -z "$MCP_PID" ]; then
         kill -TERM "$MCP_PID" 2>/dev/null || true
     fi
-    if [ ! -z "$WEBHOOK_PID" ]; then
-        kill -TERM "$WEBHOOK_PID" 2>/dev/null || true
-    fi
     exit 0
 }
 
@@ -96,13 +93,7 @@ for i in {1..10}; do
     sleep 1
 done
 
-echo "Starting webhook orchestrator..."
-webhook-orchestrator --config /data/config/webhook.json &
-WEBHOOK_PID=$!
-echo "Webhook orchestrator started with PID $WEBHOOK_PID"
-
 echo "All services started successfully"
 echo "MCP server: http://localhost:8337"
-echo "Webhook orchestrator: http://localhost:8338"
 
 wait
