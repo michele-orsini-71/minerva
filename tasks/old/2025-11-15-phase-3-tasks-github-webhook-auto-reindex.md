@@ -1,5 +1,7 @@
 # Phase 3 Tasks: GitHub Webhook Auto-Reindex (Mac as Remote Server)
 
+**ABORTED**
+
 **PRD:** `/tasks/2025-11-15-prd-github-webhook-auto-reindex.md`
 **Phase:** Phase 3 - Your Mac as Remote Server (Learn Reverse Proxy & HTTPS)
 **Goal:** Expose Docker stack to network, add Caddy reverse proxy, enable HTTPS

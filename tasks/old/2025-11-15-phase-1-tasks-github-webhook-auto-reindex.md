@@ -1,5 +1,7 @@
 # Phase 1 Tasks: GitHub Webhook Auto-Reindex (Local Development)
 
+**ABORTED**
+
 **PRD:** `/tasks/2025-11-15-prd-github-webhook-auto-reindex.md`
 **Phase:** Phase 1 - Local Development & Testing (No Docker, No Network)
 **Goal:** Build and validate webhook orchestrator locally on Mac

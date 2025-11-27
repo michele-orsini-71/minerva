@@ -75,7 +75,12 @@
       "Bash(docker logs:*)",
       "Bash(docker exec:*)",
       "Bash(/Users/michele/my-code/minerva/.venv/bin/python:*)",
-      "Bash(docker-compose down:*)"
+      "Bash(docker-compose down:*)",
+      "Bash(npx:*)",
+      "Bash(envchain minerva printenv:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(docker-compose logs:*)",
+      "Bash(ngrok http:*)"
     ],
     "deny": [],
     "ask": []

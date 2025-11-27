@@ -1,44 +1,19 @@
-# Agent Operations Guide
+# Repository Guidelines
 
-## Overview
-- Multi-source knowledge ingestion stack for Bear backups, ZIM archives, and markdown notes.
-- Primary flow: extract → normalize JSON → chunk & embed via `minerva` → inspect/search with Chroma + MCP.
-- Entire pipeline runs locally: Ollama supplies embeddings and validations; ChromaDB persists vectors under `chromadb_data/`.
+## Project Structure & Module Organization
+The `minerva/` package is the core RAG pipeline, exposing CLI commands such as `index`, `serve`, `validate`, and `peek`. Extractor CLIs live under `extractors/` (`bear-notes-extractor`, `zim-extractor`, `markdown-books-extractor`) with fixtures under `test-data/`. Scripts and docs reside in `tools/`, `tasks/`, and `docs/`, while repo-wide tests sit in `tests/`. Keep `chromadb_data/` local and untracked, and store deployment configs under `configs/` or `deployment/`.
 
-## Key Directories
-- `minerva/` – Core RAG pipeline package with CLI commands (`index`, `serve`, `validate`, `peek`), LangChain chunking, embedding, and storage modules.
-- `extractors/bear-notes-extractor/` – CLI + library that converts `.bear2bk` backups to normalized JSON; fixtures live in `test-data/`.
-- `extractors/zim-extractor/` – CLI (`zim-extractor`) for pulling markdown and catalogs from ZIM archives.
-- `extractors/markdown-books-extractor/` – CLI for extracting markdown books into note format.
-- `chroma-peek/` – Streamlit inspector pointed at local Chroma collections (keep `chromadb_data/` untracked).
-- `prompts/`, `tasks/`, and `tools/` – Shared prompts, planning docs, automation/scripts (e.g., `tools/find_dead_code.py`).
+## Build, Test, and Development Commands
+Activate the virtualenv (`source .venv/bin/activate`) before installing dependencies. Run `pip install -e .` for the core pipeline and `pip install -e extractors/...` for each extractor. Workflows: `minerva validate notes.json --verbose` to check extractor output, `minerva index --config path/to/config.json --verbose` (append `--dry-run` for validation-only), and `minerva peek COLLECTION --chromadb ./chromadb_data` to inspect embeddings. Execute `pytest` at the repo root or target `pytest extractors/zim-extractor/tests`, and finish with `black .`, `flake8`, and `mypy`.
 
-## Environment & Installation
-- Activate the shared virtualenv: `source .venv/bin/activate` (Python 3.13 expected).
-- Editable installs after activation: `pip install -e .` for minerva core, then `pip install -e extractors/bear-notes-extractor -e extractors/zim-extractor -e extractors/markdown-books-extractor` for extractors.
-- Ollama must be running (`ollama serve`) with `mxbai-embed-large:latest`; pull `llama3.1:8b` when enabling AI validation.
-- Point configs at the absolute `chromadb_data/` path; keep the directory out of version control.
+## Coding Style & Naming Conventions
+Follow Black-formatted Python with 4-space indentation, type hints for public APIs, and docstrings aligned with runtime behavior. Prefer snake_case for modules, functions, and variables; use UpperCamelCase only for classes and dataclasses. CLI entry points should mirror the Python module name (e.g., `bear-extractor` ↔ `bear_extractor`). Keep configuration JSON/YAML filenames lowercase with hyphens (e.g., `server-config.json`).
 
-## Core Workflows
-- **Bear extraction**: `bear-extractor "Bear Notes.bear2bk" -o notes.json` or use `python -m bear_extractor.cli`.
-- **ZIM extraction**: `zim-extractor archive.zim -o articles.json --limit 1000` or use `python -m zim_extractor.cli`.
-- **Validation**: `minerva validate notes.json --verbose` to check schema compliance.
-- **RAG pipeline**: Create config JSON, then run `minerva index --config config.json --verbose` (`--dry-run` for validation-only run).
-- **Data inspection**: `minerva peek COLLECTION_NAME --chromadb ./chromadb_data --format table` or launch `streamlit run chroma-peek/main.py -- --chromadb-path ./chromadb_data`.
-- **MCP server**: `minerva serve --config server-config.json` validates connectivity and exposes tools to Claude Desktop (update Claude config with the absolute path).
+## Testing Guidelines
+Write focused `pytest` tests that sit alongside the relevant module (`tests/` for core, extractor-specific `tests/` directories otherwise). Name test files `test_<feature>.py` and lean on deterministic fixtures in `test-data/`. Before opening a PR, run `pytest`, `black .`, `flake8`, and any extractor suite touched by your change. Note Ollama or Chroma manual validation steps in the PR.
 
-## Testing & Quality
-- Run `pytest` from the repo root; package-specific suites live under each module’s `tests/` directory.
-- Enforce formatting and linting: `black .`, `flake8`, `mypy` (where types are declared).
-- Lean on deterministic fixtures in `test-data/`; document manual steps when tests rely on Ollama or Chroma instances.
-- Keep docstrings, type hints, and READMEs in sync with behavior; record new dependencies in package `setup.py` files.
+## Commit & Pull Request Guidelines
+Commits should be short, imperative statements (`fix chroma peek output`, `add indexing health endpoint`) and grouped logically by feature. Reference related issues or tasks in the body when applicable. Pull requests must include purpose summary, testing evidence (commands + results), configuration or data prerequisites, and screenshots/log snippets when altering CLI UX. Keep `chromadb_data/` and proprietary archives out of git, and rebase rather than merge when synchronizing long-lived work.
 
-## Data & Security
-- Do not commit Bear backups, ZIM archives, or generated Chroma databases (`chromadb_data/` stays local and untracked).
-- Redact personal content from fixtures and examples before sharing.
-- Note any manual validation or external service requirements in PR descriptions.
-
-## Agent Notes
-- Review active plans under `tasks/` before large refactors or feature work.
-- Align LLM prompt changes with `prompts/` so downstream tools stay consistent.
-- If unexpected files change during your run, pause and ask for direction before reverting.
+## Security & Configuration Tips
+Never commit Bear backups, ZIM archives, or generated Chroma databases. Store secrets and absolute paths (e.g., Ollama sockets, `chromadb_data/`) outside version control and reference them via environment variables or local config files. When enabling AI validation or MCP serving, confirm `ollama serve` is running with `mxbai-embed-large:latest` pulled, and record any manual steps in `docs/` so other contributors can reproduce them.

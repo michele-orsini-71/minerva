@@ -1,5 +1,7 @@
 # Phase 2 Tasks: GitHub Webhook Auto-Reindex (Docker Local)
 
+**ABORTED**
+
 **PRD:** `/tasks/2025-11-15-prd-github-webhook-auto-reindex.md`
 **Phase:** Phase 2 - Dockerize Locally (Docker on Mac, No Network Exposure)
 **Goal:** Package everything in Docker, test locally before server deployment
@@ -114,35 +116,35 @@
     - [x] 6.6 Verify all dependencies installed correctly
 
 - [ ] 7.0 Start Docker Services with envchain
-    - [ ] 7.1 Ensure secrets are in envchain: OPENAI_API_KEY, WEBHOOK_SECRET
-    - [ ] 7.2 Generate MINERVA_API_KEY: `openssl rand -hex 32`
-    - [ ] 7.3 Store MINERVA_API_KEY in envchain
-    - [ ] 7.4 Start services with envchain: `envchain openai envchain minerva docker-compose up`
-    - [ ] 7.5 Verify both services start successfully (check logs)
-    - [ ] 7.6 Verify MCP server logs: "Server running on port 8337"
-    - [ ] 7.7 Verify webhook orchestrator logs: "Server running on port 8338"
-    - [ ] 7.8 Check for any startup errors in logs
+    - [x] 7.1 Ensure secrets are in envchain: OPENAI_API_KEY, WEBHOOK_SECRET
+    - [x] 7.2 Generate MINERVA_API_KEY: `openssl rand -hex 32`
+    - [x] 7.3 Store MINERVA_API_KEY in envchain
+    - [x] 7.4 Start services with envchain: `envchain openai envchain minerva docker-compose up`
+    - [x] 7.5 Verify both services start successfully (check logs)
+    - [x] 7.6 Verify MCP server logs: "Server running on port 8337"
+    - [x] 7.7 Verify webhook orchestrator logs: "Server running on port 8338"
+    - [x] 7.8 Check for any startup errors in logs
 
-- [ ] 8.0 Test MCP Server from Host
-    - [ ] 8.1 Test health endpoint: `curl http://localhost:8337/health`
-    - [ ] 8.2 Verify response: 200 OK
+- [x] 8.0 Test MCP Server from Host
+    - [x] 8.1 Test health endpoint: `curl http://localhost:8337/health`
+    - [x] 8.2 Verify response: 200 OK
     - [ ] 8.3 Update Claude Desktop config to use HTTP MCP server
     - [ ] 8.4 Set URL to `http://localhost:8337/mcp/`
-    - [ ] 8.5 Set Authorization header with Bearer token (MINERVA_API_KEY)
+    - [x] 8.5 Set Authorization header with Bearer token (MINERVA_API_KEY)
     - [ ] 8.6 Restart Claude Desktop
     - [ ] 8.7 Test search query in Claude Desktop
     - [ ] 8.8 Verify search works (may return no results if no collections indexed yet)
 
-- [ ] 9.0 Test Webhook Orchestrator from Host
-    - [ ] 9.1 Test health endpoint: `curl http://localhost:8338/health`
-    - [ ] 9.2 Verify response: 200 OK
-    - [ ] 9.3 Copy test webhook payload to deployment directory
-    - [ ] 9.4 Compute HMAC-SHA256 signature for payload using WEBHOOK_SECRET
-    - [ ] 9.5 Send test webhook: `curl -X POST http://localhost:8338/webhook -H "Content-Type: application/json" -H "X-Hub-Signature-256: sha256=<signature>" -d @test-webhook-payload.json`
-    - [ ] 9.6 Verify response: 200 OK or appropriate error message
-    - [ ] 9.7 Check webhook orchestrator logs: `docker-compose logs minerva | grep webhook`
-    - [ ] 9.8 Verify signature validation occurred
-    - [ ] 9.9 If markdown changes in payload, verify reindex was attempted
+- [x] 9.0 Test Webhook Orchestrator from Host
+    - [x] 9.1 Test health endpoint: `curl http://localhost:8338/health`
+    - [x] 9.2 Verify response: 200 OK
+    - [x] 9.3 Copy test webhook payload to deployment directory
+    - [x] 9.4 Compute HMAC-SHA256 signature for payload using WEBHOOK_SECRET
+    - [x] 9.5 Send test webhook: `curl -X POST http://localhost:8338/webhook -H "Content-Type: application/json" -H "X-Hub-Signature-256: sha256=<signature>" -d @test-webhook-payload.json`
+    - [x] 9.6 Verify response: 200 OK or appropriate error message
+    - [x] 9.7 Check webhook orchestrator logs: `docker-compose logs minerva | grep webhook`
+    - [x] 9.8 Verify signature validation occurred
+    - [x] 9.9 If markdown changes in payload, verify reindex was attempted
 
 - [ ] 10.0 Test Full Workflow in Docker
     - [ ] 10.1 Clone test repository into Docker volume: `docker exec deployment_minerva_1 git clone <test-repo-url> /data/repos/test-repo`
