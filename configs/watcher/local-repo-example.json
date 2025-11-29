@@ -1,0 +1,36 @@
+{
+  "$schema": "../../tools/minerva-watcher/watcher-config.schema.json",
+  "workspacePath": "/path/to/your/local/repository",
+  "composeDirectory": "../../deployment",
+  "composeCommand": ["docker", "compose"],
+  "serviceName": "minerva",
+  "extractorCommand": [
+    "repository-doc-extractor",
+    "/workspace",
+    "-o",
+    "/data/extracted/local-repo.json"
+  ],
+  "validateCommand": [
+    "minerva",
+    "validate",
+    "/data/extracted/local-repo.json"
+  ],
+  "indexCommand": [
+    "minerva",
+    "index",
+    "--config",
+    "/data/config/index/local-repo.json"
+  ],
+  "debounceMs": 2000,
+  "includeExtensions": [".md", ".mdx"],
+  "ignoreGlobs": [
+    "**/.git/**",
+    "**/node_modules/**",
+    "**/.venv/**",
+    "**/__pycache__/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/*.min.js"
+  ],
+  "logChangedFiles": true
+}

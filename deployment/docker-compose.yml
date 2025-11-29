@@ -9,10 +9,20 @@ services:
       - WEBHOOK_SECRET=${WEBHOOK_SECRET}
       - GITHUB_TOKEN=${GITHUB_TOKEN}
     volumes:
+      # Persistent data volumes
       - chromadb-data:/data/chromadb
       - repos-data:/data/repos
       - extracted-data:/data/extracted
+
+      # Configuration (read-only)
       - ./configs:/data/config:ro
+
+      # Host workspace mount (optional, for local development with watcher)
+      # Uncomment and adjust the path to mount a local repository into the container.
+      # This allows the watcher to trigger indexing of files on your host machine.
+      # Example: Mount your local repo at /workspace inside the container
+      # - /path/to/your/local/repo:/workspace:ro
+
     ports:
       - "8337:8337"
       - "8338:8338"
