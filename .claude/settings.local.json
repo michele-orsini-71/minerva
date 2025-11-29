@@ -81,7 +81,8 @@
       "Bash(docker-compose ps:*)",
       "Bash(docker-compose logs:*)",
       "Bash(ngrok http:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(xargs file:*)"
     ],
     "deny": [],
     "ask": []
