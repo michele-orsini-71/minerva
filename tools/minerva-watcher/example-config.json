@@ -1,0 +1,18 @@
+{
+  "workspacePath": "./test-workspace",
+  "composeDirectory": "../../deployment",
+  "composeCommand": ["docker", "compose"],
+  "serviceName": "minerva",
+  "extractorCommand": ["repository-doc-extractor"],
+  "validateCommand": ["minerva", "validate", "normalized-notes.json"],
+  "indexCommand": ["minerva", "index", "--config", "configs/index/test-collection.json"],
+  "debounceMs": 10000,
+  "includeExtensions": [".md", ".mdx"],
+  "ignoreGlobs": [
+    "**/.git/**",
+    "**/node_modules/**",
+    "**/.venv/**",
+    "**/__pycache__/**"
+  ],
+  "logChangedFiles": true
+}

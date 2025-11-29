@@ -30,6 +30,8 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+node_modules/
+tools/minerva-watcher/dist/
 
 # PyInstaller
 *.manifest

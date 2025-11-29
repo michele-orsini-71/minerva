@@ -80,7 +80,8 @@
       "Bash(envchain minerva printenv:*)",
       "Bash(docker-compose ps:*)",
       "Bash(docker-compose logs:*)",
-      "Bash(ngrok http:*)"
+      "Bash(ngrok http:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []
