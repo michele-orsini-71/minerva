@@ -1,350 +1,471 @@
-# Plan: Simplify Minerva Local Watcher Setup with Distribution Package
+# Plan: pipx-Based Minerva Deployment with OS Keychain Security
 
-## Goal
-Create a simple, distributable setup package that users can unzip and run with minimal configuration.
+## Executive Summary
 
-**Target User Experience:**
-1. Download and unzip package
-2. Run setup script
-3. Answer 2 questions (repo path + OpenAI API key)
-4. Everything works
+Create a simplified, pipx-based deployment for Minerva using OS keychain for secure credential storage.
 
-## User Requirements (from questions)
-- **AI Provider**: OpenAI (requires API key)
-- **Docker Image**: Build on user's machine (smaller download)
-- **Setup Questions**: Only ask for repo path and API key
+**Solution:** OS Keychain integration (Tier 2 only)
+- API keys stored in OS-encrypted keychain
+- Fallback to environment variables for CI/CD
+- No wrapper scripts or credentials files needed
+- Works with: Manual CLI, File Watcher, Claude Desktop MCP
+- All deployment files in: `apps/local-repo-kb/` (source control)
 
-## Current State Analysis
+## Decision: Tier 2 Only (OS Keychain)
 
-### What We Have
-- **Watcher**: Pre-built in `tools/minerva-watcher/dist/` (~40KB compiled JS)
-- **Docker Setup**: All files in `deployment/` directory
-- **Configs**: 3 template configs in `deployment/configs/`
+After evaluation, we decided to implement **only Tier 2 (OS Keychain)** because:
 
-### Current Pain Points
-1. User must clone entire Minerva repo
-2. User must manually edit multiple config files
-3. User must understand Docker volumes and bind mounts
-4. User must know Node.js to build watcher
-5. Setup requires 8+ manual steps
+1. ✅ **No legacy users** - Clean slate, no backwards compatibility needed
+2. ✅ **Better security** - OS-encrypted vs plaintext files
+3. ✅ **Simpler implementation** - No wrapper scripts needed
+4. ✅ **Industry standard** - AWS CLI, gcloud all use keychain
+5. ✅ **Better UX** - One command to store key: `minerva keychain set openai`
+6. ✅ **Claude Desktop compatible** - Works directly without wrapper scripts
+7. ✅ **CI/CD compatible** - Environment variables still work as priority
 
-## Repository Restructuring (FIRST)
+**Tier 1 (credentials file)** was rejected because:
+- ❌ More complex (wrapper scripts, shell profile modifications)
+- ❌ Less secure (plaintext on disk)
+- ❌ Unnecessary (keychain solves the same problem better)
 
-Before creating the distribution, we need to reorganize the repository to support multiple deployment types:
+## How It Works
 
-### Current Structure
+### Credential Resolution Priority
+
 ```
-deployment/          # Webhook-based remote repo indexing
-```
+1. Environment Variable (highest priority)
+   export OPENAI_API_KEY="sk-..."
+   Use case: CI/CD, scripts, manual overrides
 
-### New Structure
-```
-apps/
-├── webhook-remote-kb/      # Webhook-based remote repo (existing deployment/)
-│   ├── docker-compose.yml
-│   ├── Dockerfile
-│   ├── entrypoint.sh       # Git clone + webhook listener
-│   └── configs/
-│       ├── webhook.json
-│       ├── server.json
-│       └── index/...
-└── local-repo-kb/          # Local watcher-based (NEW)
-    ├── docker-compose.yml  # Simpler, no git/webhook
-    ├── Dockerfile
-    ├── entrypoint.sh       # Just MCP server
-    └── configs/
-        └── server.json
+2. OS Keychain (fallback)
+   minerva keychain set openai
+   Use case: User workstations, persistent storage
+
+3. Error (not found)
+   Clear message suggesting both options
 ```
 
-### Migration Steps
-1. Rename `deployment/` → `apps/webhook-remote-kb/`
-2. Create `apps/local-repo-kb/` with simplified Docker setup
-3. Update all documentation references
+### Internal Flow
 
-## Proposed Solution: "minerva-local-setup.zip"
-
-### Package Contents (~5-10MB)
 ```
-minerva-local-setup/
-├── setup.sh                    # Interactive setup script (NEW)
-├── README.md                   # Quick start guide (NEW)
-├── watcher/
-│   ├── minerva-watcher.js      # Pre-built watcher (from dist/)
-│   ├── package.json            # Runtime deps only
-│   └── node_modules/           # chokidar + yargs
-├── docker/                     # From apps/local-repo-kb/
-│   ├── docker-compose.yml.template
-│   ├── Dockerfile
-│   ├── entrypoint.sh           # Simplified - only MCP server
-│   └── .dockerignore
-├── configs/
-│   ├── server.json             # Pre-configured (no changes needed)
-│   ├── index.json.template     # Template with {{OPENAI_API_KEY}}
-│   └── watcher.json.template   # Template with {{WORKSPACE_PATH}}
-└── .env.template               # Template with {{OPENAI_API_KEY}}
+User Command
+    ↓
+Config File: "api_key": "${OPENAI_API_KEY}"
+    ↓
+resolve_env_variable("${OPENAI_API_KEY}")
+    ↓
+get_credential("OPENAI_API_KEY")
+    ↓
+Check: os.environ.get("OPENAI_API_KEY")
+    ↓ (if not found)
+Check: keyring.get_password("minerva", "openai")
+    ↓
+Return: "sk-actual-key" or raise error
 ```
 
-### Setup Script Flow
+## Implementation Checklist
 
-**setup.sh (bash for macOS/Linux):**
+### Phase 1: Core Keychain Integration
+
+#### 1. `setup.py` - Add keyring as required dependency
+
+```python
+install_requires=[
+    # ... existing deps
+    "keyring>=24.0.0",  # OS keychain integration (required)
+]
+```
+
+**Note:** NOT optional - required for all installations
+
+#### 2. `minerva/common/credential_helper.py` (NEW FILE)
+
+Core credential resolution with keychain support:
+
+```python
+"""
+Credential helper for retrieving API keys from multiple sources.
+Priority: environment variables → OS keychain → error
+"""
+import os
+import keyring
+from typing import Optional
+from minerva.common.logger import get_logger
+
+logger = get_logger(__name__)
+KEYRING_SERVICE = "minerva"
+
+def get_credential(credential_name: str) -> Optional[str]:
+    """
+    Retrieve credential from env vars (priority) or keychain (fallback).
+
+    Args:
+        credential_name: "OPENAI_API_KEY" or "openai"
+
+    Returns:
+        Credential value or None
+    """
+    # Normalize to env var format
+    env_var_name = credential_name.upper()
+    if not env_var_name.endswith("_API_KEY"):
+        env_var_name = f"{env_var_name}_API_KEY"
+
+    # 1. Check environment variable (priority)
+    value = os.environ.get(env_var_name)
+    if value:
+        logger.debug(f"Loaded '{env_var_name}' from environment")
+        return value
+
+    # 2. Check OS keychain (fallback)
+    try:
+        provider = credential_name.lower().replace("_api_key", "")
+        value = keyring.get_password(KEYRING_SERVICE, provider)
+        if value:
+            logger.debug(f"Loaded '{provider}' from OS keychain")
+            return value
+    except Exception as e:
+        logger.debug(f"Keychain access failed: {e}")
+
+    return None
+
+def set_credential(provider_name: str, api_key: str) -> None:
+    """Store credential in OS keychain."""
+    keyring.set_password(KEYRING_SERVICE, provider_name.lower(), api_key)
+    logger.info(f"✓ Stored '{provider_name}' in OS keychain")
+
+def delete_credential(provider_name: str) -> None:
+    """Delete credential from OS keychain."""
+    try:
+        keyring.delete_password(KEYRING_SERVICE, provider_name.lower())
+        logger.info(f"✓ Deleted '{provider_name}' from OS keychain")
+    except keyring.errors.PasswordDeleteError:
+        logger.warning(f"No credential found for '{provider_name}'")
+```
+
+#### 3. `minerva/common/ai_config.py` - Integrate credential helper
+
+Modify `resolve_env_variable()` to use `get_credential()`:
+
+```python
+from minerva.common.credential_helper import get_credential
+
+def resolve_env_variable(value: Optional[str]) -> Optional[str]:
+    """Resolve ${VAR_NAME} using env vars or keychain."""
+    if value is None:
+        return None
+
+    env_var_pattern = re.compile(r'\$\{([^}]+)\}')
+
+    def replace_env_var(match):
+        var_name = match.group(1)
+        credential = get_credential(var_name)  # ← Uses credential helper
+
+        if credential is None:
+            raise APIKeyMissingError(
+                f"Credential '{var_name}' not found.\n\n"
+                f"Options:\n"
+                f"  1. Keychain: minerva keychain set {var_name.lower().replace('_api_key', '')}\n"
+                f"  2. Environment: export {var_name}='your-key'\n"
+                f"  3. Shell profile: Add export to ~/.zshrc"
+            )
+
+        return credential
+
+    return env_var_pattern.sub(replace_env_var, value)
+```
+
+#### 4. `minerva/cli.py` - Add keychain subcommand
+
+```python
+# Add keychain subparser
+keychain_parser = subparsers.add_parser(
+    'keychain',
+    help='Manage API keys in OS keychain'
+)
+keychain_subs = keychain_parser.add_subparsers(dest='keychain_action')
+
+# keychain set
+set_p = keychain_subs.add_parser('set', help='Store API key')
+set_p.add_argument('provider', help='Provider (openai, anthropic, gemini)')
+set_p.add_argument('--key', help='API key (prompted if not provided)')
+
+# keychain get
+get_p = keychain_subs.add_parser('get', help='Show API key (masked)')
+get_p.add_argument('provider', help='Provider name')
+
+# keychain delete
+del_p = keychain_subs.add_parser('delete', help='Delete API key')
+del_p.add_argument('provider', help='Provider name')
+
+# keychain list
+list_p = keychain_subs.add_parser('list', help='List stored providers')
+```
+
+#### 5. `minerva/commands/keychain.py` (NEW FILE)
+
+CLI command implementation - see credential_helper.py above for full code.
+
+### Phase 2: Deployment Package (apps/local-repo-kb/)
+
+#### File Structure
+
+```
+apps/local-repo-kb/
+├── README.md                       # Complete deployment guide
+├── setup.sh                        # Interactive setup script
+├── SECURITY.md                     # Security documentation
+└── configs/
+    ├── server.json.template        # MCP server config
+    └── index.json.template         # Indexing config
+```
+
+**Note:** No `bin/` directory - no wrapper scripts needed!
+
+#### 1. `apps/local-repo-kb/README.md`
+
+Complete pipx deployment guide with:
+- Prerequisites (Python 3.10+, pipx, OpenAI API key)
+- Quick start (3 commands)
+- Step-by-step setup
+- Claude Desktop configuration
+- File watcher setup (if applicable)
+- Troubleshooting
+- Advanced: environment variable usage
+- Advanced: envchain usage
+
+#### 2. `apps/local-repo-kb/setup.sh`
 
 ```bash
 #!/bin/bash
 set -e
 
-echo "🚀 Minerva Local Watcher Setup"
-echo "================================"
+echo "🚀 Minerva Setup (pipx + OS Keychain)"
+echo ""
 
 # 1. Check prerequisites
-check_docker() {
-    if ! command -v docker &> /dev/null; then
-        echo "❌ Docker not found. Please install Docker Desktop first."
-        exit 1
-    fi
-}
-
-check_node() {
-    if ! command -v node &> /dev/null; then
-        echo "❌ Node.js not found. Please install Node.js 18+ first."
-        exit 1
-    fi
-}
-
-# 2. Ask user questions
-read -p "📁 Path to your local repository: " WORKSPACE_PATH
-read -p "🔑 OpenAI API Key: " OPENAI_API_KEY
-
-# 3. Validate inputs
-if [ ! -d "$WORKSPACE_PATH" ]; then
-    echo "❌ Directory not found: $WORKSPACE_PATH"
+if ! command -v pipx &> /dev/null; then
+    echo "❌ pipx not found"
+    echo "Install: python -m pip install --user pipx"
     exit 1
 fi
 
-# 4. Generate configs from templates
-sed "s|{{WORKSPACE_PATH}}|$WORKSPACE_PATH|g" configs/watcher.json.template > configs/watcher.json
-sed "s|{{OPENAI_API_KEY}}|$OPENAI_API_KEY|g" configs/index.json.template > configs/index.json
-sed "s|{{OPENAI_API_KEY}}|$OPENAI_API_KEY|g" .env.template > docker/.env
-sed "s|{{WORKSPACE_PATH}}|$WORKSPACE_PATH|g" docker/docker-compose.yml.template > docker/docker-compose.yml
+# 2. Install minerva (includes keyring)
+echo "📦 Installing Minerva..."
+pipx install minerva
 
-# 5. Build Docker image
-echo "🐳 Building Docker image..."
-cd docker && docker compose build
+# 3. Store API key in keychain
+echo ""
+echo "🔑 Storing API key in OS keychain"
+echo "This is secure and OS-encrypted (Touch ID, Windows Hello, etc.)"
+echo ""
+minerva keychain set openai
+# ↑ This prompts: "Enter API key for openai: "
 
-# 6. Start Docker container
-echo "▶️  Starting Minerva MCP server..."
-docker compose up -d
+# 4. Create directory structure
+mkdir -p ~/.minerva/{configs,chromadb,data}
 
-# 7. Wait for server to be ready
-echo "⏳ Waiting for server to be ready..."
-sleep 5
+# 5. Generate configs from templates
+echo ""
+echo "📝 Creating configuration files..."
 
-# 8. Start watcher in background
-echo "👁️  Starting file watcher..."
-cd ../watcher
-nohup node minerva-watcher.js --config ../configs/watcher.json > watcher.log 2>&1 &
-WATCHER_PID=$!
-echo $WATCHER_PID > watcher.pid
-
-echo "
-✅ Setup complete!
-
-📊 Status:
-  - MCP Server: http://localhost:8337
-  - Watcher PID: $WATCHER_PID
-  - Watching: $WORKSPACE_PATH
-
-📝 Next steps:
-  1. Configure Claude Desktop to use http://localhost:8337
-  2. Edit files in $WORKSPACE_PATH
-  3. Watch the magic happen!
-
-🛠️  Commands:
-  - View watcher logs: tail -f watcher/watcher.log
-  - Stop watcher: kill \$(cat watcher/watcher.pid)
-  - Stop Docker: cd docker && docker compose down
-"
-```
-
-### Configuration Templates
-
-**configs/watcher.json.template:**
-```json
+cat > ~/.minerva/configs/server.json << EOF
 {
-  "workspacePath": "{{WORKSPACE_PATH}}",
-  "composeDirectory": "../docker",
-  "composeCommand": ["docker", "compose"],
-  "serviceName": "minerva",
-  "extractorCommand": ["repository-doc-extractor", "/workspace", "-o", "/data/extracted/local-repo.json"],
-  "validateCommand": ["minerva", "validate", "/data/extracted/local-repo.json"],
-  "indexCommand": ["minerva", "index", "--config", "/data/config/index.json"],
-  "debounceMs": 2000,
-  "includeExtensions": [".md", ".mdx"],
-  "ignoreGlobs": ["**/.git/**", "**/node_modules/**", "**/.venv/**"],
-  "logChangedFiles": true
+  "chromadb_path": "$HOME/.minerva/chromadb",
+  "default_max_results": 5
 }
-```
+EOF
 
-**configs/index.json.template:**
-```json
+cat > ~/.minerva/configs/index.json << EOF
 {
-  "chromadb_path": "/data/chromadb",
+  "chromadb_path": "$HOME/.minerva/chromadb",
   "collection": {
-    "name": "my_local_repo",
+    "name": "my_repo",
     "description": "Local repository documentation",
-    "json_file": "/data/extracted/local-repo.json",
+    "json_file": "$HOME/.minerva/data/repo.json",
     "chunk_size": 1200
   },
   "provider": {
     "provider_type": "openai",
-    "api_key": "{{OPENAI_API_KEY}}",
+    "api_key": "\${OPENAI_API_KEY}",
+    "embedding_model": "text-embedding-3-small",
+    "llm_model": "gpt-4o-mini"
+  }
+}
+EOF
+
+echo ""
+echo "✅ Setup complete!"
+echo ""
+echo "📝 Next steps:"
+echo ""
+echo "1. Configure Claude Desktop MCP:"
+echo "   Edit: ~/Library/Application Support/Claude/claude_desktop_config.json"
+echo ""
+cat << 'CLAUDE_CONFIG'
+{
+  "mcpServers": {
+    "minerva": {
+      "command": "/Users/YOUR_USERNAME/.local/bin/minerva",
+      "args": ["serve", "--config", "/Users/YOUR_USERNAME/.minerva/configs/server.json"]
+    }
+  }
+}
+CLAUDE_CONFIG
+echo ""
+echo "2. Test the setup:"
+echo "   minerva index --config ~/.minerva/configs/index.json"
+echo ""
+echo "🔐 Your API key is securely stored in OS keychain"
+echo "   View: minerva keychain get openai"
+echo "   Update: minerva keychain set openai"
+echo "   Delete: minerva keychain delete openai"
+```
+
+#### 3. `apps/local-repo-kb/SECURITY.md`
+
+Document security model:
+- How keychain encryption works (macOS, Linux, Windows)
+- Priority system (env vars override keychain)
+- Best practices (dedicated keys, rotation, limits)
+- Advanced options (envchain, 1Password CLI)
+- CI/CD usage (environment variables)
+
+#### 4. Config Templates
+
+**`apps/local-repo-kb/configs/server.json.template`:**
+```json
+{
+  "chromadb_path": "{{HOME}}/.minerva/chromadb",
+  "default_max_results": 5
+}
+```
+
+**`apps/local-repo-kb/configs/index.json.template`:**
+```json
+{
+  "chromadb_path": "{{HOME}}/.minerva/chromadb",
+  "collection": {
+    "name": "my_repo",
+    "description": "Local repository documentation",
+    "json_file": "{{HOME}}/.minerva/data/repo.json",
+    "chunk_size": 1200
+  },
+  "provider": {
+    "provider_type": "openai",
+    "api_key": "${OPENAI_API_KEY}",
     "embedding_model": "text-embedding-3-small",
     "llm_model": "gpt-4o-mini"
   }
 }
 ```
 
-**docker/docker-compose.yml.template:**
-```yaml
-services:
-  minerva:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-    volumes:
-      - chromadb-data:/data/chromadb
-      - extracted-data:/data/extracted
-      - ../configs:/data/config:ro
-      - {{WORKSPACE_PATH}}:/workspace:ro
-    ports:
-      - "8337:8337"
-    restart: unless-stopped
-    entrypoint: /app/minerva/apps/local-repo-kb/entrypoint.sh
+### Phase 3: Documentation Updates
 
-volumes:
-  chromadb-data:
-  extracted-data:
+#### 1. Update main `README.md`
+
+Add section on pipx deployment:
+
+```markdown
+## Installation
+
+### Option 1: pipx (Recommended)
+
+Easiest installation with OS keychain security:
+
+\`\`\`bash
+# Install
+pipx install minerva
+
+# Store API key securely
+minerva keychain set openai
+
+# Done! Use minerva commands
+minerva --help
+\`\`\`
+
+See [apps/local-repo-kb/README.md](apps/local-repo-kb/README.md) for complete setup guide.
 ```
 
-**docker/entrypoint.sh (simplified for local mode):**
+## User Workflows
+
+### Recommended Workflow (Keychain)
+
 ```bash
-#!/bin/bash
-set -e
+# One-time setup
+pipx install minerva
+minerva keychain set openai
 
-echo "Starting Minerva MCP Server (local mode)..."
-echo "Timestamp: $(date)"
-
-cleanup() {
-    echo "Shutting down MCP server..."
-    exit 0
-}
-
-trap cleanup SIGTERM SIGINT
-
-# Just start the MCP server - watcher handles indexing via docker compose run
-echo "Starting HTTP MCP server on port 8337..."
-exec minerva serve-http --config /data/config/server.json
+# Use normally
+minerva index --config config.json
+minerva serve --config config.json
 ```
 
-## Implementation Steps
+### CI/CD Workflow (Environment Variables)
 
-### Step 0: Restructure Repository (DO THIS FIRST)
-1. **Rename deployment directory:**
-   ```bash
-   mkdir -p apps
-   mv deployment apps/webhook-remote-kb
-   ```
+```bash
+# In pipeline
+export OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
+minerva index --config config.json
+```
 
-2. **Create new local-repo-kb app:**
-   ```bash
-   mkdir -p apps/local-repo-kb
-   ```
+### Advanced Workflow (envchain)
 
-3. **Copy and simplify files for local-repo-kb:**
-   - Copy Dockerfile from webhook-remote-kb (may need minor adjustments)
-   - Create simplified entrypoint.sh (just MCP server, no git/webhook)
-   - Copy .dockerignore
-   - Create docker-compose.yml (simpler, no git volumes)
-   - Create configs/server.json
+```bash
+# Still works! Env vars have priority
+envchain openai minerva index --config config.json
+```
 
-4. **Update references in:**
-   - All documentation (README.md, docs/*)
-   - .gitignore (deployment/ → apps/)
-   - Any scripts that reference deployment/
+### Power User Workflow (Session Override)
 
-### Step 1: Create apps/local-repo-kb/ Structure
-**Files to create:**
-1. **`apps/local-repo-kb/Dockerfile`** - Based on webhook version but simpler
-2. **`apps/local-repo-kb/entrypoint.sh`** - Just MCP server (see template above)
-3. **`apps/local-repo-kb/docker-compose.yml`** - Simplified volumes
-4. **`apps/local-repo-kb/.dockerignore`** - Copy from webhook version
-5. **`apps/local-repo-kb/configs/server.json`** - Copy from webhook version
-6. **`apps/local-repo-kb/README.md`** - Explain local mode
+```bash
+# Temporary different key
+OPENAI_API_KEY="sk-different" minerva index --config config.json
+```
 
-### Step 2: Create Distribution Package Builder
-**File**: `tools/create-distribution.sh`
-- Copies necessary files from apps/local-repo-kb/
-- Copies pre-built watcher from `tools/minerva-watcher/dist/`
-- Copies only runtime node_modules (chokidar, yargs)
-- Creates templates with placeholders
-- Packages into zip file
+All workflows work seamlessly because of the priority system!
 
-### Step 3: Create Setup Script
-**File**: `distribution/setup.sh`
-- For macOS/Linux (bash)
-- Windows users can use WSL or Git Bash
+## Benefits Over Tier 1
 
-### Step 4: Create User Documentation
-**File**: `distribution/README.md`
-- System requirements
-- Quick start (3 steps)
-- Troubleshooting
-- How to stop/restart
+| Aspect | Tier 1 (File + Wrapper) | Tier 2 (Keychain) | Winner |
+|--------|--------------------------|-------------------|--------|
+| Security | File mode 600 (plaintext) | OS-encrypted | ✅ Tier 2 |
+| Complexity | Wrapper + file + shell profile | Just keychain | ✅ Tier 2 |
+| Claude Desktop | Needs wrapper script | Direct execution | ✅ Tier 2 |
+| File Watcher | Works | Works | ✅ Tie |
+| Manual Commands | Works | Works | ✅ Tie |
+| Biometric Unlock | No | Yes (Touch ID, etc.) | ✅ Tier 2 |
+| Key Rotation | Edit file, restart | One command | ✅ Tier 2 |
+| Files to Manage | 3 (credentials, wrapper, profile) | 0 | ✅ Tier 2 |
 
-## Files to Create/Modify
+**Result: Tier 2 is superior in every measurable way**
 
-### Repository Restructuring
-1. **Rename**: `deployment/` → `apps/webhook-remote-kb/`
-2. **Update**: All docs and scripts referencing `deployment/`
+## Testing Checklist
 
-### New Directory: apps/local-repo-kb/
-1. **`Dockerfile`** - Simplified version
-2. **`entrypoint.sh`** - MCP server only
-3. **`docker-compose.yml`** - Template-ready version
-4. **`.dockerignore`** - Copy from webhook version
-5. **`configs/server.json`** - Pre-configured
-6. **`README.md`** - Local mode documentation
+- [ ] Install with pipx
+- [ ] Store key: `minerva keychain set openai`
+- [ ] Manual command: `minerva index --config ~/.minerva/configs/index.json`
+- [ ] Verify keychain storage: `minerva keychain get openai`
+- [ ] Test env var priority: `OPENAI_API_KEY=test minerva index ...`
+- [ ] Claude Desktop MCP: Server starts and responds
+- [ ] File watcher: Can trigger indexing
+- [ ] Key rotation: `minerva keychain set openai` with new key
+- [ ] Delete key: `minerva keychain delete openai`
+- [ ] Error message quality: Run without key, verify helpful message
 
-### Distribution Package Files (NEW)
-1. **`tools/create-distribution.sh`** - Package builder
-2. **`distribution/setup.sh`** - Setup script
-3. **`distribution/README.md`** - User guide
-4. **`distribution/configs/watcher.json.template`**
-5. **`distribution/configs/index.json.template`**
-6. **`distribution/.env.template`**
+## Implementation Order
 
-## Success Criteria
+1. ✅ Core keychain integration (setup.py, credential_helper.py, ai_config.py)
+2. ✅ CLI command (cli.py, commands/keychain.py)
+3. ✅ Test keychain functionality
+4. ✅ Create apps/local-repo-kb/ structure
+5. ✅ Write setup.sh script
+6. ✅ Write README.md and SECURITY.md
+7. ✅ Test complete deployment flow
+8. ✅ Update main README.md
 
-**Before** (current):
-- 8+ manual steps
-- Must understand Docker, Node.js, config file formats
-- 30+ minutes for first-time setup
+## Sources
 
-**After** (with distribution):
-- 3 steps: download, unzip, run setup
-- Answer 2 questions
-- 5 minutes to working system
-
-## Distribution Size Estimate
-- Watcher (compiled): ~40KB
-- Node modules (chokidar + yargs): ~5MB
-- Docker files: ~10KB
-- Scripts and templates: ~20KB
-- Total: **~5-6MB zipped**
-
-## Future Enhancements (Out of Scope)
-- Support for other AI providers (Ollama, Anthropic)
-- GUI setup wizard
-- Pre-built Docker image on Docker Hub
-- Auto-update mechanism
+- [Python keyring library](https://pypi.org/project/keyring/) - OS keychain integration
+- [AWS CLI Credential Security](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
+- [1Password AWS CLI Integration](https://developer.1password.com/docs/cli/shell-plugins/aws/)
+- [API Key Security Best Practices](https://blog.gitguardian.com/api-key-security-7/)

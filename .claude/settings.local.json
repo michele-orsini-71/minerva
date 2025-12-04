@@ -82,7 +82,8 @@
       "Bash(docker-compose logs:*)",
       "Bash(ngrok http:*)",
       "Bash(npm run build:*)",
-      "Bash(xargs file:*)"
+      "Bash(xargs file:*)",
+      "Bash(xargs -I {} bash -c \"echo ''''=== {} ==='''' && head -30 {}\")"
     ],
     "deny": [],
     "ask": []

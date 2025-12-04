@@ -103,9 +103,53 @@ Minerva follows a three-stage pipeline architecture:
 - For local AI: [Ollama](https://ollama.ai) with `mxbai-embed-large` model, or [LM Studio](https://lmstudio.ai)
 - For cloud AI: API keys for OpenAI, Anthropic Claude, or Google Gemini
 
+### Choose Your Deployment
+
+Minerva supports multiple deployment scenarios depending on your needs:
+
+#### 🎯 Option A: Personal Local Knowledge Base (Easiest)
+
+**Use case:** Index your code repositories for use with Claude Desktop
+**Guide:** See [`apps/local-repo-kb/README.md`](apps/local-repo-kb/README.md)
+
+This automated setup wizard:
+- Installs Minerva via pipx
+- Configures AI provider (OpenAI, Gemini, Ollama, LM Studio)
+- Stores API keys securely in OS keychain
+- Indexes a repository and generates optimized descriptions
+- Sets up Claude Desktop MCP integration
+
+```bash
+./apps/local-repo-kb/setup.py
+```
+
+#### 🔧 Option B: Custom Setup (Full Control)
+
+**Use case:** Custom indexing pipelines, multiple collections, advanced configuration
+**Guide:** Continue reading this README for manual installation and configuration
+
+Install Minerva as a library and configure everything yourself:
+- Choose your own directory structure
+- Manage credentials your way (env vars, keychain, envchain, etc.)
+- Create custom indexing workflows
+- Deploy as HTTP server for team access
+
+#### 🏢 Option C: Server Deployment (Team/Enterprise)
+
+**Use case:** Centralized knowledge base accessible by multiple users
+**Guide:** See deployment documentation (coming soon)
+
+Deploy Minerva as a service:
+- HTTP MCP server with network access
+- Centralized ChromaDB instance
+- Shared collections across team
+- Docker/container deployment
+
+---
+
 ### Installation
 
-Minerva can be installed in two ways. Both methods make the `minerva` command globally available in your terminal without needing to activate any virtual environment.
+Both installation methods make the `minerva` command globally available without needing to activate any virtual environment.
 
 #### Method 1: pipx (Recommended)
 
