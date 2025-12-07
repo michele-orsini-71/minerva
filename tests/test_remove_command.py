@@ -34,6 +34,10 @@ class TestRunRemove:
         )
         stack.enter_context(patch.object(remove_cmd, 'format_collection_info_text', return_value='info text'))
 
+        # Mock ChromaDBLock to avoid filesystem operations
+        mock_lock = MagicMock()
+        stack.enter_context(patch.object(remove_cmd, 'ChromaDBLock', return_value=mock_lock))
+
         return stack, mock_client, mock_remove, mock_validate, mock_init
 
     def test_run_remove_successful_flow(self):
