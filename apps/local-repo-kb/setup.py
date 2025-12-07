@@ -7,10 +7,11 @@ Interactive setup for personal local knowledge base deployment
 import os
 import sys
 import json
+import signal
 import subprocess
 import shutil
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple, List
 
 
 def main():
@@ -30,13 +31,21 @@ def main():
     # Select AI provider
     provider_config = select_ai_provider()
 
-    # Store API key if needed
+    # Validate AI provider is available (for local providers)
+    if not validate_ai_provider(provider_config):
+        sys.exit(1)
+
+    # Store API key if needed (and validate for cloud providers)
     if provider_config.get('needs_api_key'):
         if not store_api_key(provider_config):
+            sys.exit(1)
+        # Validate cloud provider after API key is stored
+        if not validate_cloud_provider(provider_config):
             sys.exit(1)
 
     # Select repository to index
     repo_path = select_repository()
+    warn_if_repo_already_indexed(repo_path)
 
     # Generate collection name
     collection_name = generate_collection_name(repo_path)
@@ -62,6 +71,9 @@ def main():
         repo_path=repo_path,
         provider_config=provider_config
     )
+
+    # Install watcher
+    install_watcher()
 
     # Show completion summary
     show_completion_summary(
@@ -195,6 +207,118 @@ def check_and_install_minerva(minerva_repo: Path) -> bool:
             return False
 
 
+def validate_cloud_provider(provider_config: Dict[str, Any]) -> bool:
+    """Validate cloud provider by making a test API call."""
+    print()
+    print("🔍 Validating API key...")
+    print()
+
+    # Import minerva modules
+    minerva_repo = get_minerva_repo_path()
+    if str(minerva_repo) not in sys.path:
+        sys.path.insert(0, str(minerva_repo))
+
+    try:
+        from minerva.common.ai_config import AIProviderConfig
+        from minerva.common.ai_provider import AIProvider
+    except ImportError as e:
+        print(f"❌ Failed to import minerva modules: {e}")
+        return False
+
+    # Build provider config
+    config_dict = {
+        "provider_type": provider_config['provider_type'],
+        "embedding_model": provider_config['embedding_model'],
+        "llm_model": provider_config['llm_model'],
+        "api_key": f"${{{provider_config['env_var_name']}}}"
+    }
+
+    try:
+        config = AIProviderConfig(**config_dict)
+        provider = AIProvider(config)
+
+        # Test with a simple chat completion
+        print(f"Testing {provider_config['provider_name']} connection...")
+        messages = [{"role": "user", "content": "Say 'OK' if you can read this."}]
+        response = provider.chat_completion(messages=messages, temperature=0, max_tokens=10)
+
+        if response and response.get('content'):
+            print(f"✓ {provider_config['provider_name']} API key is valid and working")
+            print()
+            return True
+        else:
+            print(f"❌ {provider_config['provider_name']} returned an unexpected response")
+            print()
+            return False
+
+    except Exception as e:
+        print(f"❌ Failed to connect to {provider_config['provider_name']}: {e}")
+        print()
+        print("Possible issues:")
+        print("  • API key is invalid or expired")
+        print("  • No internet connection")
+        print("  • API service is down")
+        print("  • Rate limit exceeded")
+        print()
+
+        retry = input("Try again with a different API key? [y/N]: ").strip().lower()
+        if retry in ['y', 'yes']:
+            if store_api_key(provider_config):
+                return validate_cloud_provider(provider_config)
+
+        print()
+        print("⚠️  Continuing without validation. Setup may fail later.")
+        print()
+        return True
+
+
+def validate_ai_provider(provider_config: Dict[str, Any]) -> bool:
+    """Validate that AI provider is available and working."""
+    print()
+    print("🔍 Validating AI provider availability...")
+    print()
+
+    if provider_config['needs_api_key']:
+        # For cloud providers, we'll validate after API key is stored
+        print(f"ℹ️  {provider_config['provider_name']} validation will happen after API key setup")
+        return True
+
+    # For local providers, check if they're running
+    import urllib.request
+    import urllib.error
+
+    base_url = provider_config['base_url']
+
+    if provider_config['provider_type'] == 'ollama':
+        check_url = f"{base_url}/api/tags"
+        service_name = "Ollama"
+        start_command = "ollama serve"
+    else:  # lmstudio
+        check_url = f"{base_url}/models"
+        service_name = "LM Studio"
+        start_command = "Start LM Studio and load your models"
+
+    try:
+        urllib.request.urlopen(check_url, timeout=3)
+        print(f"✓ {service_name} is running and accessible")
+        print()
+        return True
+    except urllib.error.URLError:
+        print(f"❌ Cannot connect to {service_name} at {base_url}")
+        print()
+        print(f"Please start {service_name} before continuing:")
+        print(f"  {start_command}")
+        print()
+        retry = input("Retry connection? [y/N]: ").strip().lower()
+        if retry in ['y', 'yes']:
+            return validate_ai_provider(provider_config)
+
+        print()
+        print("⚠️  Continuing without validation. Setup may fail later.")
+        print()
+        return True
+
+
 def select_ai_provider() -> Dict[str, Any]:
     """Interactive AI provider selection."""
     print("🤖 AI Provider Selection")
@@ -230,7 +354,7 @@ def select_ai_provider() -> Dict[str, Any]:
             'provider_type': 'openai',
             'provider_name': 'OpenAI',
             'env_var_name': 'OPENAI_API_KEY',
-            'keychain_name': 'openai',
+            'keychain_name': 'OPENAI_API_KEY',
             'needs_api_key': True,
             'embedding_model': 'text-embedding-3-small',
             'llm_model': 'gpt-4o-mini'
@@ -240,7 +364,7 @@ def select_ai_provider() -> Dict[str, Any]:
             'provider_type': 'gemini',
             'provider_name': 'Google Gemini',
             'env_var_name': 'GEMINI_API_KEY',
-            'keychain_name': 'gemini',
+            'keychain_name': 'GEMINI_API_KEY',
             'needs_api_key': True,
             'embedding_model': 'text-embedding-004',
             'llm_model': 'gemini-1.5-flash'
@@ -358,6 +482,40 @@ def select_repository() -> Path:
         return repo_path
 
 
+def warn_if_repo_already_indexed(repo_path: Path) -> None:
+    app_dir = Path.home() / '.minerva' / 'apps' / 'local-repo-kb'
+    if not app_dir.exists():
+        return
+
+    existing_collections: List[str] = []
+    for watcher_file in app_dir.glob('*-watcher.json'):
+        try:
+            config = json.loads(watcher_file.read_text())
+        except Exception:
+            continue
+
+        stored_path = config.get('repository_path')
+        if not stored_path:
+            continue
+
+        try:
+            if Path(stored_path).expanduser().resolve() == repo_path:
+                name = watcher_file.name.replace('-watcher.json', '')
+                existing_collections.append(name)
+        except Exception:
+            continue
+
+    if not existing_collections:
+        return
+
+    unique_names = sorted(set(existing_collections))
+    print("⚠️  This repository already has indexed collections:")
+    for name in unique_names:
+        print(f"   • {name}")
+    print("   (Creating another collection is allowed, but may duplicate data.)")
+    print()
+
+
 def generate_collection_name(repo_path: Path) -> str:
     """Generate and validate collection name."""
     print("📚 Collection Name")
@@ -409,9 +567,207 @@ def generate_collection_name(repo_path: Path) -> str:
             print()
             continue
 
-        print(f"✓ Collection: {collection_name}")
+        if confirm_collection_name(collection_name):
+            print(f"✓ Collection: {collection_name}")
+            print()
+            return collection_name
+
+        print("Let's pick a different collection name.")
         print()
-        return collection_name
+
+
+def confirm_collection_name(collection_name: str) -> bool:
+    """Ensure collection name won't silently overwrite existing embeddings."""
+
+    if not collection_exists_in_chromadb(collection_name):
+        return True
+
+    print("⚠️  A collection with this name already exists in ChromaDB.")
+    print("   Reusing the name without cleanup can cause embedding mismatches.")
+    print()
+    print("Options:")
+    print("  1. Enter a different collection name")
+    print("  2. Delete the existing collection and recreate it")
+    print("     (Stops any watcher, removes configs/extracted data, and wipes embeddings)")
+    print()
+
+    while True:
+        choice = input("Choice [1-2]: ").strip().lower()
+
+        if choice in ('', '1', 'n', 'no'):
+            return False
+
+        if choice in ('2', 'y', 'yes'):
+            delete_collection_artifacts(collection_name)
+            print()
+            print("ℹ️  Collection data cleared. The wizard will recreate everything.")
+            print("   Remember to restart local-repo-watcher after setup if you were using it.")
+            print()
+            return True
+
+        print("❌ Invalid choice. Enter 1 to choose another name or 2 to recreate the collection.")
+
+
+def get_collection_paths(collection_name: str) -> Dict[str, Path]:
+    app_dir = Path.home() / '.minerva' / 'apps' / 'local-repo-kb'
+    return {
+        'index_config': app_dir / f'{collection_name}-index.json',
+        'watcher_config': app_dir / f'{collection_name}-watcher.json',
+        'extracted_json': app_dir / f'{collection_name}-extracted.json'
+    }
+
+
+def delete_collection_artifacts(collection_name: str) -> None:
+    paths = get_collection_paths(collection_name)
+
+    print()
+    print(f"🧹 Removing existing data for '{collection_name}'...")
+    removed_any = False
+
+    stop_local_repo_watcher(paths['watcher_config'])
+
+    for label, path in (
+        ('index config', paths['index_config']),
+        ('watcher config', paths['watcher_config']),
+        ('extracted data', paths['extracted_json'])
+    ):
+        if path.exists():
+            path.unlink()
+            print(f"  • Deleted {label}: {path}")
+            removed_any = True
+
+    if remove_chromadb_collection(collection_name):
+        removed_any = True
+
+    if removed_any:
+        print("✓ Previous collection artifacts removed.")
+    else:
+        print("ℹ️  No existing files or embeddings needed deletion.")
+
+
+def get_chromadb_path() -> Path:
+    return Path.home() / '.minerva' / 'chromadb'
+
+
+def list_chromadb_collections() -> List[str]:
+    chroma_path = get_chromadb_path()
+
+    if not chroma_path.exists():
+        return []
+
+    try:
+        result = subprocess.run(
+            ['minerva', 'peek', str(chroma_path), '--format', 'json'],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+    except FileNotFoundError:
+        print("❌ 'minerva' command not found. Ensure pipx installed it correctly.")
+        return []
+
+    if result.returncode != 0:
+        return []
+
+    output = result.stdout.strip()
+    if not output:
+        return []
+
+    try:
+        data = json.loads(output)
+    except json.JSONDecodeError:
+        return []
+
+    return [col.get('name') for col in data.get('collections', []) if col.get('name')]
+
+
+def collection_exists_in_chromadb(collection_name: str) -> bool:
+    return collection_name in list_chromadb_collections()
+
+
+def remove_chromadb_collection(collection_name: str) -> bool:
+    chroma_path = get_chromadb_path()
+
+    if not chroma_path.exists():
+        return False
+
+    collections = list_chromadb_collections()
+    if collection_name not in collections:
+        return False
+
+    print(f"  • Deleting Chroma collection: {collection_name}")
+    try:
+        confirmation_input = f"YES\n{collection_name}\n"
+        subprocess.run(
+            ['minerva', 'remove', str(chroma_path), collection_name],
+            input=confirmation_input,
+            text=True,
+            check=True
+        )
+        print("    (Embeddings will be rebuilt during indexing.)")
+        return True
+    except subprocess.CalledProcessError as error:
+        print(f"⚠️  Could not remove Chroma collection '{collection_name}': {error}")
+        print("   You may need to run 'minerva remove' manually.")
+        return False
+    except FileNotFoundError:
+        print("❌ 'minerva' command not found while attempting removal.")
+        return False
+
+
+def stop_local_repo_watcher(config_path: Path) -> None:
+    processes = find_local_repo_watcher_processes(config_path)
+    if not processes:
+        return
+
+    print("  • Stopping local-repo-watcher instances for this collection...")
+    for pid, command in processes:
+        try:
+            os.kill(pid, signal.SIGTERM)
+            print(f"    - Terminated watcher PID {pid}")
+        except ProcessLookupError:
+            print(f"    - Watcher PID {pid} already stopped")
+        except PermissionError:
+            print(f"    - Permission denied stopping watcher PID {pid}: {command}")
+
+
+def find_local_repo_watcher_processes(config_path: Path) -> List[Tuple[int, str]]:
+    search_term = str(config_path)
+    commands = []
+
+    try:
+        result = subprocess.run(
+            ['ps', '-ax', '-o', 'pid=,command='],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return []
+
+    for line in result.stdout.splitlines():
+        normalized = line.strip()
+        if not normalized:
+            continue
+
+        if 'local-repo-watcher' not in normalized and 'local_repo_watcher' not in normalized:
+            continue
+
+        if search_term not in normalized:
+            continue
+
+        parts = normalized.split(None, 1)
+        if not parts:
+            continue
+
+        try:
+            pid = int(parts[0])
+        except ValueError:
+            continue
+
+        commands.append((pid, normalized))
+
+    return commands
 
 
 def generate_description(
@@ -650,11 +1006,60 @@ def create_configs(
     print(f"✓ Created: {index_config_path}")
     print()
 
+    # Watcher config (collection-specific)
+    watcher_config_path = app_dir / f'{collection_name}-watcher.json'
+    watcher_config = {
+        "repository_path": str(repo_path),
+        "collection_name": collection_name,
+        "extracted_json_path": str(extracted_json_path),
+        "index_config_path": str(index_config_path),
+        "debounce_seconds": 60.0,
+        "include_extensions": [
+            ".md", ".mdx", ".markdown", ".rst", ".txt"
+        ],
+        "ignore_patterns": [
+            ".git", "node_modules", ".venv", "__pycache__",
+            ".pytest_cache", "dist", "build", ".tox"
+        ]
+    }
+    watcher_config_path.write_text(json.dumps(watcher_config, indent=2))
+    print(f"✓ Created: {watcher_config_path}")
+    print()
+
     # Store paths for later use
     provider_config['_server_config'] = server_config_path
     provider_config['_index_config'] = index_config_path
     provider_config['_extracted_json'] = extracted_json_path
     provider_config['_chromadb_path'] = chromadb_path
+    provider_config['_watcher_config'] = watcher_config_path
+
+
+def install_watcher() -> bool:
+    """Install local-repo-watcher if not already installed."""
+    if shutil.which('local-repo-watcher'):
+        print("ℹ️  local-repo-watcher already installed")
+        return True
+
+    print("📦 Installing local-repo-watcher...")
+    print()
+
+    watcher_path = get_minerva_repo_path() / 'tools' / 'local-repo-watcher'
+
+    try:
+        subprocess.run(
+            ['pipx', 'install', str(watcher_path)],
+            check=True
+        )
+        print("✓ local-repo-watcher installed")
+        print()
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Failed to install local-repo-watcher: {e}")
+        print()
+        print("You can try manually:")
+        print(f"  pipx install {watcher_path}")
+        print()
+        return False
 
 
 def extract_and_index(
@@ -748,10 +1153,11 @@ def show_completion_summary(
 
     print("📝 Files Created")
     print("-" * 60)
-    print(f"  Server config: {provider_config['_server_config']}")
-    print(f"  Index config:  {provider_config['_index_config']}")
-    print(f"  Extracted:     {provider_config['_extracted_json']}")
-    print(f"  ChromaDB:      {provider_config['_chromadb_path']}")
+    print(f"  Server config:  {provider_config['_server_config']}")
+    print(f"  Index config:   {provider_config['_index_config']}")
+    print(f"  Watcher config: {provider_config['_watcher_config']}")
+    print(f"  Extracted:      {provider_config['_extracted_json']}")
+    print(f"  ChromaDB:       {provider_config['_chromadb_path']}")
     print()
 
     print("🔧 Next Steps")
@@ -791,6 +1197,25 @@ def show_completion_summary(
     print()
     print(f'   Example:')
     print(f'   "Search the {collection_name} collection for API documentation"')
+    print()
+
+    print("5. (Recommended) Start the file watcher:")
+    print()
+    print("   The watcher automatically re-indexes your repository when files change.")
+    print()
+    print("   To run it now (in a new terminal):")
+    print()
+    watcher_path = shutil.which('local-repo-watcher') or '~/.local/bin/local-repo-watcher'
+    print(f'   {watcher_path} --config {provider_config["_watcher_config"]}')
+    print()
+    print("   The watcher will:")
+    print("   • Run an initial indexing on startup (to ensure sync)")
+    print("   • Watch for file changes in your repository")
+    print("   • Automatically extract and re-index when files change")
+    print("   • Batch changes with 2-second debouncing")
+    print()
+    print("   To run as a background service, see:")
+    print("   tools/local-repo-watcher/README.md")
     print()
 
     if provider_config['needs_api_key']:

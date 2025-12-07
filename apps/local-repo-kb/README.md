@@ -78,7 +78,7 @@ Your OpenAI API key will be stored securely in OS keychain
   • Linux: Secret Service (encrypted)
   • Windows: Credential Manager (encrypted)
 
-The key will be stored as: 'openai'
+The key will be stored as: 'OPENAI_API_KEY'
 Config files will reference: ${OPENAI_API_KEY}
 ```
 
@@ -109,6 +109,7 @@ Collection name (my-project):
 - Default: sanitized repository folder name
 - Used to identify this knowledge base
 - Must be unique (alphanumeric, hyphens, underscores only)
+- If a name already exists, setup prompts you to rename or rebuild the old collection
 
 ### 6. AI-Generated Description
 
@@ -157,7 +158,7 @@ Collection name (my-project):
 📊 Configuration Summary
 ------------------------
   Provider:    OpenAI
-  API Key:     Stored in keychain as 'openai'
+  API Key:     Stored in keychain as 'OPENAI_API_KEY'
   Embedding:   text-embedding-3-small
   LLM:         gpt-4o-mini
   Collection:  my-project
@@ -165,10 +166,11 @@ Collection name (my-project):
 
 📝 Files Created
 ----------------
-  Server config: ~/.minerva/apps/local-repo-kb/server.json
-  Index config:  ~/.minerva/apps/local-repo-kb/my-project-index.json
-  Extracted:     ~/.minerva/apps/local-repo-kb/my-project-extracted.json
-  ChromaDB:      ~/.minerva/chromadb
+  Server config:  ~/.minerva/apps/local-repo-kb/server.json
+  Index config:   ~/.minerva/apps/local-repo-kb/my-project-index.json
+  Watcher config: ~/.minerva/apps/local-repo-kb/my-project-watcher.json
+  Extracted:      ~/.minerva/apps/local-repo-kb/my-project-extracted.json
+  ChromaDB:       ~/.minerva/chromadb
 ```
 
 ## Configuring Claude Desktop
@@ -256,29 +258,29 @@ The wizard stores API keys in OS keychain. You can manage them using `minerva ke
 ### View Stored Key (Masked)
 
 ```bash
-minerva keychain get openai
-# Output: Stored credential for 'openai': sk-proj-...abc (masked)
+minerva keychain get OPENAI_API_KEY
+# Output: Stored credential for 'OPENAI_API_KEY': sk-proj-...abc (masked)
 ```
 
 ### Update Key
 
 ```bash
-minerva keychain set openai
-# Prompts: Enter API key for openai:
+minerva keychain set OPENAI_API_KEY
+# Prompts: Enter API key for OPENAI_API_KEY:
 ```
 
 ### Delete Key
 
 ```bash
-minerva keychain delete openai
-# Output: ✓ Deleted 'openai' from OS keychain
+minerva keychain delete OPENAI_API_KEY
+# Output: ✓ Deleted 'OPENAI_API_KEY' from OS keychain
 ```
 
 ### List All Stored Providers
 
 ```bash
 minerva keychain list
-# Output: Stored providers: openai, gemini
+# Output: Stored providers: OPENAI_API_KEY, GEMINI_API_KEY
 ```
 
 ## Adding More Repositories
@@ -317,7 +319,7 @@ cd minerva
 **Solution:** Re-run keychain storage:
 
 ```bash
-minerva keychain set openai
+minerva keychain set OPENAI_API_KEY
 ```
 
 Then retry indexing:
@@ -468,7 +470,7 @@ pipx uninstall minerva
 rm -rf ~/.minerva
 
 # 3. Remove API keys from keychain
-minerva keychain delete openai  # Run before uninstalling if you want to clean up keychain
+minerva keychain delete OPENAI_API_KEY  # Run before uninstalling if you want to clean up keychain
 ```
 
 ## Getting Help
@@ -477,11 +479,115 @@ minerva keychain delete openai  # Run before uninstalling if you want to clean u
 - **Documentation:** [Main README](../../README.md)
 - **Security:** [SECURITY.md](SECURITY.md)
 
+## Using the File Watcher
+
+The setup wizard installs `local-repo-watcher`, a tool that automatically re-indexes your repository when files change.
+
+### Starting the Watcher
+
+```bash
+# Run in a terminal
+local-repo-watcher --config ~/.minerva/apps/local-repo-kb/my-project-watcher.json
+
+# With verbose logging
+local-repo-watcher --config ~/.minerva/apps/local-repo-kb/my-project-watcher.json --verbose
+```
+
+The watcher will:
+- **Run initial indexing** on startup (ensures index is synced with repository)
+- **Watch for file changes** in your repository
+- **Automatically extract and re-index** when files change
+- **Batch rapid changes** with 2-second debouncing
+
+### Running as a Background Service
+
+For automatic startup when you log in:
+
+#### macOS (launchd)
+
+Create `~/Library/LaunchAgents/com.minerva.watcher.my-project.plist`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.minerva.watcher.my-project</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/you/.local/bin/local-repo-watcher</string>
+        <string>--config</string>
+        <string>/Users/you/.minerva/apps/local-repo-kb/my-project-watcher.json</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/Users/you/.minerva/logs/watcher-my-project.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/you/.minerva/logs/watcher-my-project-error.log</string>
+</dict>
+</plist>
+```
+
+Then:
+
+```bash
+# Create logs directory
+mkdir -p ~/.minerva/logs
+
+# Load the service
+launchctl load ~/Library/LaunchAgents/com.minerva.watcher.my-project.plist
+
+# Check status
+launchctl list | grep minerva
+
+# View logs
+tail -f ~/.minerva/logs/watcher-my-project.log
+```
+
+#### Linux (systemd)
+
+Create `~/.config/systemd/user/local-repo-watcher@.service`:
+
+```ini
+[Unit]
+Description=Local Repository Watcher for %i
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/local-repo-watcher --config %h/.minerva/apps/local-repo-kb/%i-watcher.json
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target
+```
+
+Then:
+
+```bash
+# Enable and start
+systemctl --user enable local-repo-watcher@my-project
+systemctl --user start local-repo-watcher@my-project
+
+# Check status
+systemctl --user status local-repo-watcher@my-project
+
+# View logs
+journalctl --user -u local-repo-watcher@my-project -f
+```
+
+For more details, see [tools/local-repo-watcher/README.md](../../tools/local-repo-watcher/README.md).
+
 ## Next Steps
 
 After setup:
 
 1. **Test searching** in Claude Desktop
-2. **Index more repositories** (run wizard again)
-3. **Explore manual configuration** (see main README for advanced usage)
-4. **Set up file watchers** (auto-reindex on code changes)
+2. **Start the file watcher** (recommended for keeping index up-to-date)
+3. **Index more repositories** (run wizard again)
+4. **Explore manual configuration** (see main README for advanced usage)

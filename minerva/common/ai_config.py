@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Mapping, Optional
 
 from minerva.common.exceptions import APIKeyMissingError, ConfigError
+from minerva.common.credential_helper import get_credential
 
 
 @dataclass(frozen=True)
@@ -27,17 +28,18 @@ def resolve_env_variable(value: Optional[str]) -> Optional[str]:
 
     def replace_env_var(match):
         var_name = match.group(1)
-        env_value = os.environ.get(var_name)
+        credential = get_credential(var_name)
 
-        if env_value is None:
+        if credential is None:
             raise APIKeyMissingError(
-                f"Environment variable '{var_name}' is not set.\n"
-                f"  Required for: {value}\n"
-                f"  Suggestion: Set the environment variable before running:\n"
-                f"    export {var_name}='your-api-key-here'"
+                f"Credential '{var_name}' not found.\n\n"
+                f"Options:\n"
+                f"  1. Keychain: minerva keychain set {var_name}\n"
+                f"  2. Environment: export {var_name}='your-key'\n"
+                f"  3. Shell profile: Add export to ~/.zshrc"
             )
 
-        return env_value
+        return credential
 
     resolved = env_var_pattern.sub(replace_env_var, value)
     return resolved

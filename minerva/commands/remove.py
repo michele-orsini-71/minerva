@@ -10,6 +10,7 @@ from minerva.indexing.storage import (
     StorageError,
     initialize_chromadb_client,
     remove_collection,
+    ChromaDBLock,
 )
 from minerva.commands.peek import (
     format_collection_info_text,
@@ -98,7 +99,9 @@ def run_remove(args: Namespace) -> int:
         _require_yes_confirmation(collection_name, resolved_path)
         _require_collection_name_confirmation(collection_name)
 
-        remove_collection(client, collection_name)
+        # Acquire lock for the deletion operation
+        with ChromaDBLock(str(resolved_path)):
+            remove_collection(client, collection_name)
 
         logger.success(f"✓ Collection '{collection_name}' deleted")
         logger.info("You can recreate it with 'minerva index --config <config-file>'.")

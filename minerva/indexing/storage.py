@@ -1,5 +1,7 @@
 import os
 import re
+import fcntl
+import time
 from typing import List, Dict, Any, Optional, Callable
 from pathlib import Path
 
@@ -22,6 +24,50 @@ from minerva.common.models import ChunkWithEmbedding, ChunkWithEmbeddingList
 # Configuration constants
 DEFAULT_BATCH_SIZE = 64
 HNSW_SPACE = "cosine"  # Distance metric for HNSW index
+LOCK_TIMEOUT = 30  # Maximum seconds to wait for lock
+LOCK_RETRY_INTERVAL = 0.5  # Seconds between lock attempts
+
+
+class ChromaDBLock:
+    """File-based lock for ChromaDB operations to prevent concurrent access."""
+
+    def __init__(self, db_path: str):
+        self.db_path = os.path.abspath(os.path.expanduser(db_path))
+        self.lock_file_path = os.path.join(self.db_path, '.minerva.lock')
+        self.lock_file = None
+
+    def __enter__(self):
+        Path(self.db_path).mkdir(parents=True, exist_ok=True)
+        self.lock_file = open(self.lock_file_path, 'w')
+
+        start_time = time.time()
+        first_wait = True
+        while True:
+            try:
+                fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                return self
+            except (IOError, OSError):
+                elapsed = time.time() - start_time
+                if elapsed >= LOCK_TIMEOUT:
+                    raise StorageError(
+                        f"Could not acquire ChromaDB lock after {LOCK_TIMEOUT} seconds.\n"
+                        f"  Another Minerva process is using the database at: {self.db_path}\n"
+                        f"  Please wait for it to complete or check for stuck processes."
+                    )
+
+                if first_wait or int(elapsed) % 5 == 0:
+                    logger.info(f"Waiting for ChromaDB lock (another process is active)...")
+                    first_wait = False
+
+                time.sleep(LOCK_RETRY_INTERVAL)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.lock_file:
+            try:
+                fcntl.flock(self.lock_file.fileno(), fcntl.LOCK_UN)
+                self.lock_file.close()
+            except Exception:
+                pass
 
 
 def initialize_chromadb_client(db_path: str) -> chromadb.PersistentClient:

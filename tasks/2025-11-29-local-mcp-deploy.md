@@ -19,7 +19,7 @@ After evaluation, we decided to implement **only Tier 2 (OS Keychain)** because:
 2. ✅ **Better security** - OS-encrypted vs plaintext files
 3. ✅ **Simpler implementation** - No wrapper scripts needed
 4. ✅ **Industry standard** - AWS CLI, gcloud all use keychain
-5. ✅ **Better UX** - One command to store key: `minerva keychain set openai`
+5. ✅ **Better UX** - One command to store key: `minerva keychain set OPENAI_API_KEY`
 6. ✅ **Claude Desktop compatible** - Works directly without wrapper scripts
 7. ✅ **CI/CD compatible** - Environment variables still work as priority
 
@@ -38,7 +38,7 @@ After evaluation, we decided to implement **only Tier 2 (OS Keychain)** because:
    Use case: CI/CD, scripts, manual overrides
 
 2. OS Keychain (fallback)
-   minerva keychain set openai
+   minerva keychain set OPENAI_API_KEY
    Use case: User workstations, persistent storage
 
 3. Error (not found)
@@ -58,7 +58,7 @@ get_credential("OPENAI_API_KEY")
     ↓
 Check: os.environ.get("OPENAI_API_KEY")
     ↓ (if not found)
-Check: keyring.get_password("minerva", "openai")
+Check: keyring.get_password("minerva", "OPENAI_API_KEY")
     ↓
 Return: "sk-actual-key" or raise error
 ```
@@ -100,28 +100,22 @@ def get_credential(credential_name: str) -> Optional[str]:
     Retrieve credential from env vars (priority) or keychain (fallback).
 
     Args:
-        credential_name: "OPENAI_API_KEY" or "openai"
+        credential_name: "OPENAI_API_KEY"
 
     Returns:
         Credential value or None
     """
-    # Normalize to env var format
-    env_var_name = credential_name.upper()
-    if not env_var_name.endswith("_API_KEY"):
-        env_var_name = f"{env_var_name}_API_KEY"
-
     # 1. Check environment variable (priority)
-    value = os.environ.get(env_var_name)
+    value = os.environ.get(credential_name)
     if value:
         logger.debug(f"Loaded '{env_var_name}' from environment")
         return value
 
     # 2. Check OS keychain (fallback)
     try:
-        provider = credential_name.lower().replace("_api_key", "")
-        value = keyring.get_password(KEYRING_SERVICE, provider)
+        value = keyring.get_password(KEYRING_SERVICE, credential_name)
         if value:
-            logger.debug(f"Loaded '{provider}' from OS keychain")
+            logger.debug(f"Loaded '{credential_name}' from OS keychain")
             return value
     except Exception as e:
         logger.debug(f"Keychain access failed: {e}")
@@ -164,7 +158,7 @@ def resolve_env_variable(value: Optional[str]) -> Optional[str]:
             raise APIKeyMissingError(
                 f"Credential '{var_name}' not found.\n\n"
                 f"Options:\n"
-                f"  1. Keychain: minerva keychain set {var_name.lower().replace('_api_key', '')}\n"
+                f"  1. Keychain: minerva keychain set {var_name}\n"
                 f"  2. Environment: export {var_name}='your-key'\n"
                 f"  3. Shell profile: Add export to ~/.zshrc"
             )
@@ -186,7 +180,7 @@ keychain_subs = keychain_parser.add_subparsers(dest='keychain_action')
 
 # keychain set
 set_p = keychain_subs.add_parser('set', help='Store API key')
-set_p.add_argument('provider', help='Provider (openai, anthropic, gemini)')
+set_p.add_argument('provider', help='Credential name (e.g., OPENAI_API_KEY)')
 set_p.add_argument('--key', help='API key (prompted if not provided)')
 
 # keychain get
@@ -258,8 +252,8 @@ echo ""
 echo "🔑 Storing API key in OS keychain"
 echo "This is secure and OS-encrypted (Touch ID, Windows Hello, etc.)"
 echo ""
-minerva keychain set openai
-# ↑ This prompts: "Enter API key for openai: "
+minerva keychain set OPENAI_API_KEY
+# ↑ This prompts: "Enter API key for OPENAI_API_KEY: "
 
 # 4. Create directory structure
 mkdir -p ~/.minerva/{configs,chromadb,data}
@@ -316,9 +310,9 @@ echo "2. Test the setup:"
 echo "   minerva index --config ~/.minerva/configs/index.json"
 echo ""
 echo "🔐 Your API key is securely stored in OS keychain"
-echo "   View: minerva keychain get openai"
-echo "   Update: minerva keychain set openai"
-echo "   Delete: minerva keychain delete openai"
+echo "   View: minerva keychain get OPENAI_API_KEY"
+echo "   Update: minerva keychain set OPENAI_API_KEY"
+echo "   Delete: minerva keychain delete OPENAI_API_KEY"
 ```
 
 #### 3. `apps/local-repo-kb/SECURITY.md`
@@ -377,7 +371,7 @@ Easiest installation with OS keychain security:
 pipx install minerva
 
 # Store API key securely
-minerva keychain set openai
+minerva keychain set OPENAI_API_KEY
 
 # Done! Use minerva commands
 minerva --help
@@ -393,7 +387,7 @@ See [apps/local-repo-kb/README.md](apps/local-repo-kb/README.md) for complete se
 ```bash
 # One-time setup
 pipx install minerva
-minerva keychain set openai
+minerva keychain set OPENAI_API_KEY
 
 # Use normally
 minerva index --config config.json
@@ -442,14 +436,14 @@ All workflows work seamlessly because of the priority system!
 ## Testing Checklist
 
 - [ ] Install with pipx
-- [ ] Store key: `minerva keychain set openai`
+- [ ] Store key: `minerva keychain set OPENAI_API_KEY`
 - [ ] Manual command: `minerva index --config ~/.minerva/configs/index.json`
-- [ ] Verify keychain storage: `minerva keychain get openai`
+- [ ] Verify keychain storage: `minerva keychain get OPENAI_API_KEY`
 - [ ] Test env var priority: `OPENAI_API_KEY=test minerva index ...`
 - [ ] Claude Desktop MCP: Server starts and responds
 - [ ] File watcher: Can trigger indexing
-- [ ] Key rotation: `minerva keychain set openai` with new key
-- [ ] Delete key: `minerva keychain delete openai`
+- [ ] Key rotation: `minerva keychain set OPENAI_API_KEY` with new key
+- [ ] Delete key: `minerva keychain delete OPENAI_API_KEY`
 - [ ] Error message quality: Run without key, verify helpful message
 
 ## Implementation Order

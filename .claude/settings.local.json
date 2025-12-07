@@ -83,7 +83,19 @@
       "Bash(ngrok http:*)",
       "Bash(npm run build:*)",
       "Bash(xargs file:*)",
-      "Bash(xargs -I {} bash -c \"echo ''''=== {} ==='''' && head -30 {}\")"
+      "Bash(xargs -I {} bash -c \"echo ''''=== {} ==='''' && head -30 {}\")",
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(pkill:*)",
+      "Bash(pipx uninstall:*)",
+      "Bash(pipx install:*)",
+      "Bash(pipx list:*)",
+      "Bash(/Users/michele/.local/bin/minerva:*)",
+      "Bash(~/.local/pipx/venvs/minerva/bin/pip show:*)",
+      "Bash(~/.local/pipx/venvs/minerva/bin/python -c \"import chromadb; print(chromadb.__version__)\")",
+      "Bash(~/.local/pipx/venvs/minerva/bin/python -m pip:*)",
+      "Bash(~/.local/pipx/venvs/local-repo-watcher/bin/python -m pip show local-repo-watcher)",
+      "Bash(~/.local/pipx/venvs/repository-doc-extractor/bin/python:*)"
     ],
     "deny": [],
     "ask": []

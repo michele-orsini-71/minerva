@@ -1,0 +1,25 @@
+{
+  "repository_path": "/Users/you/code/your-project",
+  "collection_name": "test-collection",
+  "extracted_json_path": "/tmp/test-extracted.json",
+  "index_config_path": "/tmp/test-index-config.json",
+  "debounce_seconds": 60.0,
+  "include_extensions": [
+    ".md",
+    ".mdx",
+    ".markdown",
+    ".rst",
+    ".txt"
+  ],
+  "ignore_patterns": [
+    ".git",
+    "node_modules",
+    ".venv",
+    "__pycache__",
+    ".pytest_cache",
+    "dist",
+    "build",
+    ".tox",
+    ".egg-info"
+  ]
+}

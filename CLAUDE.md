@@ -2,6 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+
 ## Project Overview
 
 **Minerva** is a unified RAG (Retrieval-Augmented Generation) system for personal knowledge management. It provides tools for extracting notes from various sources, indexing them with AI-powered embeddings, and serving them through an MCP server for semantic search via Claude Desktop.

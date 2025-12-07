@@ -14,6 +14,7 @@ from minerva.commands.peek import run_peek
 from minerva.commands.remove import run_remove
 from minerva.commands.validate import run_validate
 from minerva.commands.query import run_query
+from minerva.commands.keychain import run_keychain
 
 logger = get_logger(__name__, simple=True, mode="cli")
 
@@ -319,6 +320,87 @@ Examples:
         help='Show detailed search progress logs'
     )
 
+    # ========================================
+    # KEYCHAIN command
+    # ========================================
+    keychain_parser = subparsers.add_parser(
+        'keychain',
+        help='Manage API keys in OS keychain',
+        description='Store and retrieve API keys securely in the OS keychain.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Store an API key (prompts securely)
+  minerva keychain set OPENAI_API_KEY
+
+  # Store an API key with explicit value
+  minerva keychain set OPENAI_API_KEY --key sk-...
+
+  # Retrieve an API key (masked)
+  minerva keychain get OPENAI_API_KEY
+
+  # Delete an API key
+  minerva keychain delete OPENAI_API_KEY
+
+  # List all stored providers
+  minerva keychain list
+        """
+    )
+
+    keychain_subparsers = keychain_parser.add_subparsers(
+        dest='keychain_action',
+        required=True,
+        help='Keychain action to perform'
+    )
+
+    # keychain set
+    set_parser = keychain_subparsers.add_parser(
+        'set',
+        help='Store API key in keychain',
+        description='Store an API key securely in the OS keychain.'
+    )
+    set_parser.add_argument(
+        'provider',
+        type=str,
+        help='Provider name (e.g., openai, gemini, anthropic)'
+    )
+    set_parser.add_argument(
+        '--key',
+        type=str,
+        help='API key value (if not provided, will prompt securely)'
+    )
+
+    # keychain get
+    get_parser = keychain_subparsers.add_parser(
+        'get',
+        help='Retrieve API key from keychain',
+        description='Retrieve and display API key from keychain (masked).'
+    )
+    get_parser.add_argument(
+        'provider',
+        type=str,
+        help='Provider name (e.g., openai, gemini, anthropic)'
+    )
+
+    # keychain delete
+    delete_parser = keychain_subparsers.add_parser(
+        'delete',
+        help='Delete API key from keychain',
+        description='Remove an API key from the OS keychain.'
+    )
+    delete_parser.add_argument(
+        'provider',
+        type=str,
+        help='Provider name (e.g., openai, gemini, anthropic)'
+    )
+
+    # keychain list
+    list_parser = keychain_subparsers.add_parser(
+        'list',
+        help='List stored providers',
+        description='List all providers with credentials stored in keychain.'
+    )
+
     return parser
 
 
@@ -341,6 +423,8 @@ def main():
             return run_validate(args)
         elif args.command == 'query':
             return run_query(args)
+        elif args.command == 'keychain':
+            return run_keychain(args)
         else:
             parser.print_help()
             return 1

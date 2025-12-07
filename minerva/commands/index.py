@@ -18,6 +18,7 @@ from minerva.indexing.storage import (
     recreate_collection,
     insert_chunks,
     StorageError,
+    ChromaDBLock,
 )
 from minerva.indexing.updater import (
     run_incremental_update,
@@ -444,31 +445,33 @@ def run_index(args: Namespace) -> int:
         if args.dry_run:
             run_dry_run(index_config, notes, args.verbose)
         else:
-            provider = initialize_and_validate_provider(index_config, args.verbose)
+            # Acquire lock for the entire indexing operation
+            with ChromaDBLock(index_config.chromadb_path):
+                provider = initialize_and_validate_provider(index_config, args.verbose)
 
-            _, mode = check_collection_early(
-                index_config.chromadb_path,
-                collection,
-                provider,
-                dry_run=False
-            )
+                _, mode = check_collection_early(
+                    index_config.chromadb_path,
+                    collection,
+                    provider,
+                    dry_run=False
+                )
 
-            if mode == "incremental":
-                run_incremental_indexing(
-                    index_config,
-                    notes,
-                    args.verbose,
-                    start_time,
-                    provider
-                )
-            else:
-                run_full_indexing(
-                    index_config,
-                    notes,
-                    args.verbose,
-                    start_time,
-                    provider
-                )
+                if mode == "incremental":
+                    run_incremental_indexing(
+                        index_config,
+                        notes,
+                        args.verbose,
+                        start_time,
+                        provider
+                    )
+                else:
+                    run_full_indexing(
+                        index_config,
+                        notes,
+                        args.verbose,
+                        start_time,
+                        provider
+                    )
 
         return 0
 

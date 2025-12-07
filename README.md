@@ -174,6 +174,7 @@ minerva --help
 - Simple: One command to install, one command to uninstall
 - Automatic: No PATH configuration needed
 - Safe: No conflicts between different Python projects
+- Secure: Built-in OS keychain support for API keys
 
 #### Method 2: pip + alias
 
@@ -245,6 +246,89 @@ minerva validate --help
 ```
 
 If you see command output without errors, installation was successful! 🎉
+
+### API Key Management
+
+Minerva provides secure API key storage using your operating system's encrypted keychain. This is the recommended method for managing cloud provider credentials.
+
+#### Store API Keys Securely
+
+For cloud AI providers (OpenAI, Gemini, Anthropic), store your API key once in the OS keychain:
+
+```bash
+# Store OpenAI API key (prompts securely)
+minerva keychain set OPENAI_API_KEY
+
+# Store Gemini API key
+minerva keychain set GEMINI_API_KEY
+
+# Store Anthropic API key
+minerva keychain set ANTHROPIC_API_KEY
+```
+
+Your API keys are encrypted and stored in:
+- **macOS**: Keychain Access (AES-256, Touch ID/Face ID support)
+- **Linux**: GNOME Keyring / KWallet (Secret Service)
+- **Windows**: Credential Manager (DPAPI, Windows Hello support)
+
+#### Manage Stored Keys
+
+```bash
+# List stored providers
+minerva keychain list
+
+# View a key (masked for security)
+minerva keychain get OPENAI_API_KEY
+# Output: API key for 'OPENAI_API_KEY': sk-ab...xyz
+
+# Update a key
+minerva keychain set OPENAI_API_KEY
+
+# Delete a key
+minerva keychain delete OPENAI_API_KEY
+```
+
+#### Using Keys in Configuration
+
+Reference stored keys in your config files:
+
+```json
+{
+  "provider": {
+    "provider_type": "openai",
+    "api_key": "${OPENAI_API_KEY}",
+    "embedding_model": "text-embedding-3-small",
+    "llm_model": "gpt-4o-mini"
+  }
+}
+```
+
+Minerva resolves `${OPENAI_API_KEY}` by checking:
+1. Environment variable `OPENAI_API_KEY` (highest priority)
+2. OS keychain entry for `OPENAI_API_KEY` (fallback)
+3. Error if not found (with helpful suggestions)
+
+#### Alternative: Environment Variables
+
+For CI/CD pipelines or temporary overrides, use environment variables:
+
+```bash
+# Set for current session
+export OPENAI_API_KEY="sk-your-key-here"
+
+# Or inline for single command
+OPENAI_API_KEY="sk-..." minerva index --config config.json
+```
+
+#### Security Best Practices
+
+- **Use keychain for workstations**: Secure, persistent, encrypted
+- **Use environment variables for CI/CD**: No keychain available in pipelines
+- **Rotate keys regularly**: Update with `minerva keychain set <provider>`
+- **Set rate limits**: Prevent abuse with config-based rate limiting
+- **Dedicated keys**: Use separate keys for dev/prod environments
+
+See [`apps/local-repo-kb/SECURITY.md`](apps/local-repo-kb/SECURITY.md) for comprehensive security guidance.
 
 ### Basic Workflow
 

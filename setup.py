@@ -53,6 +53,9 @@ setup(
 
         # JSON schema validation
         "jsonschema>=4.0.0",
+
+        # OS keychain integration
+        "keyring>=24.0.0",
     ],
     extras_require={
         "dev": [
