@@ -1036,30 +1036,44 @@ def create_configs(
 
 def install_watcher() -> bool:
     """Install local-repo-watcher if not already installed."""
-    if shutil.which('local-repo-watcher'):
-        print("ℹ️  local-repo-watcher already installed")
+    watcher_bin = shutil.which('local-repo-watcher')
+    manager_bin = shutil.which('minerva-local-watcher')
+
+    if watcher_bin and manager_bin:
+        print("ℹ️  local-repo-watcher tools already installed")
         return True
 
-    print("📦 Installing local-repo-watcher...")
+    print("📦 Installing watcher tools...")
     print()
 
-    watcher_path = get_minerva_repo_path() / 'tools' / 'local-repo-watcher'
+    repo_root = get_minerva_repo_path()
+    packages = [
+        repo_root / 'tools' / 'local-repo-watcher',
+        repo_root / 'tools' / 'local-repo-watcher-manager',
+    ]
 
-    try:
-        subprocess.run(
-            ['pipx', 'install', str(watcher_path)],
-            check=True
-        )
-        print("✓ local-repo-watcher installed")
+    success = True
+    for package_path in packages:
+        if not package_path.exists():
+            continue
+
+        try:
+            subprocess.run(['pipx', 'install', str(package_path)], check=True)
+            print(f"✓ Installed: {package_path.name}")
+        except subprocess.CalledProcessError as error:
+            print(f"❌ Failed to install {package_path.name}: {error}")
+            success = False
+
+    if not success:
         print()
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Failed to install local-repo-watcher: {e}")
+        print("You can try installing manually with pipx:")
+        for package_path in packages:
+            print(f"  pipx install {package_path}")
         print()
-        print("You can try manually:")
-        print(f"  pipx install {watcher_path}")
+    else:
         print()
-        return False
+
+    return success
 
 
 def extract_and_index(
@@ -1205,8 +1219,8 @@ def show_completion_summary(
     print()
     print("   To run it now (in a new terminal):")
     print()
-    watcher_path = shutil.which('local-repo-watcher') or '~/.local/bin/local-repo-watcher'
-    print(f'   {watcher_path} --config {provider_config["_watcher_config"]}')
+    watcher_launcher = shutil.which('minerva-local-watcher') or 'minerva-local-watcher'
+    print(f'   {watcher_launcher} --collection {collection_name}')
     print()
     print("   The watcher will:")
     print("   • Run an initial indexing on startup (to ensure sync)")

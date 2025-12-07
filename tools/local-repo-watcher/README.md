@@ -24,7 +24,10 @@ pip install -e /path/to/minerva/tools/local-repo-watcher
 ## Usage
 
 ```bash
-# Basic usage
+# Basic usage (use the launcher CLI)
+minerva-local-watcher --collection my-project
+
+# Direct invocation (if you prefer to run the watcher binary yourself)
 local-repo-watcher --config ~/.minerva/apps/local-repo-kb/my-project-watcher.json
 
 # With verbose logging
