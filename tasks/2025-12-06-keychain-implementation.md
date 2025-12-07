@@ -109,9 +109,9 @@ Implement Phase 1 (Core Keychain Integration) from the pipx-based deployment pla
   - [ ] ~~Test apps/local-repo-kb/setup.py works end-to-end with Gemini~~ not necessary
 
 - [ ] **10. Run full test suite**
-  - [ ] Run `pytest` to ensure no regressions
-  - [ ] Fix any failing tests
-  - [ ] Add new tests if needed for credential_helper module
+  - [x] Run `pytest` to ensure no regressions
+  - [x] Fix any failing tests
+  - [x] Add new tests if needed for credential_helper module
 
 ## Relevant Files
 
