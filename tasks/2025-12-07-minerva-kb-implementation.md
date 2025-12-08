@@ -25,27 +25,27 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Test CLI skeleton with --help flag
 
 ### Phase 1: Core Infrastructure
-- [ ] Implement configuration management
-  - [ ] Create src/minerva_kb/constants.py with paths (~/.minerva/apps/minerva-kb/, ~/.minerva/chromadb/)
-  - [ ] Add provider key name constants (OPENAI_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY)
-  - [ ] Add provider display names mapping
-  - [ ] Add default model configurations for each provider
-  - [ ] Create src/minerva_kb/utils/config_loader.py
-  - [ ] Implement load_index_config(collection_name) function
-  - [ ] Implement load_watcher_config(collection_name) function
-  - [ ] Implement save_index_config(collection_name, config) function
-  - [ ] Implement save_watcher_config(collection_name, config) function
-  - [ ] Add config file validation (JSON schema checking)
-- [ ] Implement collection naming (FR-7)
-  - [ ] Create src/minerva_kb/utils/collection_naming.py
-  - [ ] Implement sanitize_collection_name(repo_path) function
-  - [ ] Convert to lowercase
-  - [ ] Replace spaces and underscores with hyphens
-  - [ ] Remove non-alphanumeric characters (keep only [a-z0-9-])
-  - [ ] Collapse multiple consecutive hyphens
-  - [ ] Trim leading/trailing hyphens
-  - [ ] Validate length (3-512 chars per ChromaDB requirement)
-  - [ ] Write unit tests for edge cases (spaces, underscores, special chars)
+- [x] Implement configuration management
+  - [x] Create src/minerva_kb/constants.py with paths (~/.minerva/apps/minerva-kb/, ~/.minerva/chromadb/)
+  - [x] Add provider key name constants (OPENAI_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY)
+  - [x] Add provider display names mapping
+  - [x] Add default model configurations for each provider
+  - [x] Create src/minerva_kb/utils/config_loader.py
+  - [x] Implement load_index_config(collection_name) function
+  - [x] Implement load_watcher_config(collection_name) function
+  - [x] Implement save_index_config(collection_name, config) function
+  - [x] Implement save_watcher_config(collection_name, config) function
+  - [x] Add config file validation (JSON schema checking)
+- [x] Implement collection naming (FR-7)
+  - [x] Create src/minerva_kb/utils/collection_naming.py
+  - [x] Implement sanitize_collection_name(repo_path) function
+  - [x] Convert to lowercase
+  - [x] Replace spaces and underscores with hyphens
+  - [x] Remove non-alphanumeric characters (keep only [a-z0-9-])
+  - [x] Collapse multiple consecutive hyphens
+  - [x] Trim leading/trailing hyphens
+  - [x] Validate length (3-512 chars per ChromaDB requirement)
+  - [x] Write unit tests for edge cases (spaces, underscores, special chars)
 - [ ] Implement provider management (FR-8)
   - [ ] Create src/minerva_kb/utils/provider_selection.py
   - [ ] Implement interactive_select_provider() function
@@ -714,7 +714,7 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/__init__.py - Package initialization with version
 - /Users/michele/my-code/minerva/tools/minerva-kb/tests/__init__.py - Test package marker
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/cli.py - Main CLI entry point with argparse and subcommands
-- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/constants.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/constants.py - Shared filesystem path definitions
 
 ### Command Implementations
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/add.py
@@ -725,16 +725,17 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/remove.py
 
 ### Utility Modules
-- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/collection_naming.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/__init__.py - Utility package marker
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/collection_naming.py - Collection name sanitization rules
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/provider_selection.py
-- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/config_loader.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/config_loader.py - Config load/save helpers with schema validation
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/process_manager.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/chromadb_query.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/config_helpers.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/display.py
 
 ### Test Files
-- /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_collection_naming.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_collection_naming.py - Unit tests covering sanitize_collection_name edge cases
 - /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_provider_selection.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_config_loader.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_process_manager.py
