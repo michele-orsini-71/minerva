@@ -11,19 +11,7 @@ Guidelines for managing task lists in markdown files to track progress on comple
     - **First**: Run the full test suite (`pytest`, `npm test`, `bin/rails test`, etc.)
     - **Only if all tests pass**: Stage changes (`git add .`)
     - **Clean up**: Remove any temporary files and temporary code before committing
-    - **Commit**: Use a descriptive commit message that:
-        - Uses conventional commit format (`feat:`, `fix:`, `refactor:`, etc.)
-        - Summarizes what was accomplished in the parent task
-        - Lists key changes and additions
-        - References the task number and PRD context
-        - **Formats the message as a single-line command using `-m` flags**, e.g.:
-
-            ```
-            git commit -m "feat: add payment validation logic" -m "- Validates card type and expiry" -m "- Adds unit tests for edge cases" -m "Related to T123 in PRD"
-            ```
-    4. Once all the subtasks are marked completed and changes have been committed, mark the **parent task** as completed.
-
-- Stop after each sub‑task and wait for the user's go‑ahead.
+    - **Stop** wait for the user's go‑ahead.
 
 ## Task List Maintenance
 
@@ -46,4 +34,9 @@ When working with task lists, the AI must:
 3. Add newly discovered tasks.
 4. Keep "Relevant Files" accurate and up to date.
 5. Before starting work, check which sub‑task is next.
-6. After implementing a sub‑task, update the file and then pause for user approval.
+6. After implementing a task, update the file and then pause for user approval.
+
+### When coding
+
+- ALWAYS use Uncle Bob directives from Clean Code and Clean Architecture
+- DO NOT add docstrings, each function should have a name that clearly states what it does
