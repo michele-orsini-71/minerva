@@ -7,22 +7,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Minerva** is a unified RAG (Retrieval-Augmented Generation) system for personal knowledge management. It provides tools for extracting notes from various sources, indexing them with AI-powered embeddings, and serving them through an MCP server for semantic search via Claude Desktop.
 
+**minerva-kb** is a unified orchestrator tool that manages the complete lifecycle of repository-based knowledge base collections. It simplifies adding, listing, updating, watching, and removing collections through simple CLI commands.
+
 ## Quick Reference
 
 ### Installation
 
 ```bash
-# Install Minerva from project root
+# Install Minerva core from project root
 pip install -e .
 
 # Verify installation
 minerva --version
 minerva --help
 
+# Install minerva-kb (repository knowledge base orchestrator)
+pipx install tools/minerva-kb
+
+# Verify minerva-kb installation
+minerva-kb --help
+
 # Install extractors (optional, as needed)
 cd extractors/bear-notes-extractor && pip install -e .
 cd extractors/zim-extractor && pip install -e .
 cd extractors/markdown-books-extractor && pip install -e .
+
+# Install repository extractor and watcher (for minerva-kb)
+pipx install extractors/repository-doc-extractor
+pipx install tools/local-repo-watcher
 ```
 
 ### Core Commands
@@ -39,6 +51,28 @@ minerva peek COLLECTION_NAME --chromadb PATH [--format table|json]
 
 # Start MCP server
 minerva serve --config configs/server/local.json
+```
+
+### minerva-kb Commands (Repository Knowledge Bases)
+
+```bash
+# Add repository collection (creates and indexes)
+minerva-kb add /path/to/repository
+
+# List all managed collections
+minerva-kb list [--format table|json]
+
+# Check detailed status of a collection
+minerva-kb status <collection-name>
+
+# Manually re-index a collection
+minerva-kb sync <collection-name>
+
+# Start file watcher for auto-updates
+minerva-kb watch <collection-name>
+
+# Remove collection and all data
+minerva-kb remove <collection-name>
 ```
 
 ### Extractor Commands
@@ -112,15 +146,37 @@ extractors/                    # Independent extractor packages
 │   │   ├── cli.py
 │   │   └── parser.py
 │   └── setup.py
-└── markdown-books-extractor/
-    ├── markdown_books_extractor/
+├── markdown-books-extractor/
+│   ├── markdown_books_extractor/
+│   │   ├── cli.py
+│   │   └── parser.py
+│   └── setup.py
+└── repository-doc-extractor/
+    ├── repository_doc_extractor/
     │   ├── cli.py
     │   └── parser.py
     └── setup.py
 
+tools/                         # Orchestrator and utility tools
+├── minerva-kb/               # Repository knowledge base orchestrator
+│   ├── src/minerva_kb/
+│   │   ├── cli.py
+│   │   ├── commands/         # Command implementations
+│   │   └── utils/            # Utility modules
+│   ├── tests/
+│   └── README.md
+└── local-repo-watcher/       # File watcher for repositories
+    ├── local_repo_watcher/
+    │   ├── cli.py
+    │   └── watcher.py
+    └── setup.py
+
 docs/                          # Documentation
 ├── NOTE_SCHEMA.md            # Schema specification
-└── EXTRACTOR_GUIDE.md        # Extractor development
+├── EXTRACTOR_GUIDE.md        # Extractor development
+├── MINERVA_KB_GUIDE.md       # Complete minerva-kb guide
+├── MINERVA_KB_EXAMPLES.md    # Example workflows
+└── MIGRATE_TO_MINERVA_KB.md  # Migration guide
 
 chromadb_data/                 # ChromaDB storage (persistent)
 test-data/                     # Test files and sample data
@@ -128,7 +184,46 @@ test-data/                     # Test files and sample data
 
 ## Development Workflows
 
-### Complete Workflow: Extract → Index → Serve
+### Repository Knowledge Base Workflow (Recommended)
+
+**For repository-based collections, use minerva-kb instead of manual extraction/indexing:**
+
+```bash
+# 1. Add repository collection (handles extraction and indexing automatically)
+minerva-kb add ~/code/my-project
+
+# Follow interactive prompts:
+# - Select AI provider (OpenAI, Gemini, Ollama, LM Studio)
+# - Choose models (or use defaults)
+# - Collection is created and indexed automatically
+
+# 2. Start file watcher for automatic updates
+minerva-kb watch my-project
+
+# 3. Check status anytime
+minerva-kb status my-project
+
+# 4. List all collections
+minerva-kb list
+
+# 5. Add more repositories (fast, <2 minutes each)
+minerva-kb add ~/code/another-project
+minerva-kb add ~/docs/notes
+
+# 6. MCP server config is auto-created
+# Start server with: minerva serve --config ~/.minerva/apps/minerva-kb/server.json
+```
+
+**Benefits of minerva-kb:**
+- Time to second collection: <2 minutes (vs 15+ minutes manually)
+- No manual config editing required
+- Built-in provider selection and validation
+- Automatic watcher setup
+- Multi-collection management
+
+**See also:** [MINERVA_KB_GUIDE.md](docs/MINERVA_KB_GUIDE.md) for comprehensive guide.
+
+### Complete Workflow: Extract → Index → Serve (Manual)
 
 ```bash
 # 1. Extract notes from Bear

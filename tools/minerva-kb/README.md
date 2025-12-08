@@ -79,6 +79,45 @@ Create a new collection or update an existing collection's AI provider.
 - If new: prompts for provider, extracts, and indexes
 - If exists: prompts to change provider (re-indexes if yes)
 
+**Example output:**
+
+```
+$ minerva-kb add ~/code/my-project
+
+Collection name: my-project
+
+✓ Found README.md
+✓ Generated description: A Python library for data processing and analysis
+
+Select AI provider:
+1. OpenAI (cloud, requires API key)
+2. Google Gemini (cloud, requires API key)
+3. Ollama (local, free)
+4. LM Studio (local, free)
+
+Enter choice [1-4]: 1
+
+✓ API key found in keychain (OPENAI_API_KEY)
+✓ API key validated
+
+Use default models?
+  Embedding: text-embedding-3-small
+  LLM: gpt-4o-mini
+[Y/n]: y
+
+✓ Extracting repository documentation...
+  Processed 42 files
+
+✓ Indexing collection...
+  Created 127 chunks
+
+✓ Collection 'my-project' created successfully!
+
+Next steps:
+  - Start watcher: minerva-kb watch my-project
+  - Check status: minerva-kb status my-project
+```
+
 ### `minerva-kb list [--format table|json]`
 
 Display all managed collections with status information.
@@ -94,6 +133,74 @@ Display all managed collections with status information.
 - Watcher status (running/stopped with PID)
 - Last indexed timestamp
 
+**Example output (table format):**
+
+```
+$ minerva-kb list
+
+Collections (3):
+
+my-project
+  Repository: /Users/michele/code/my-project
+  Provider: openai (gpt-4o-mini + text-embedding-3-small)
+  Chunks: 1,247
+  Watcher: ✓ Running (PID 12345)
+  Last indexed: 2025-12-08 14:32:15
+
+docs-collection
+  Repository: /Users/michele/documents/notes
+  Provider: ollama (llama3.1:8b + mxbai-embed-large:latest)
+  Chunks: 523
+  Watcher: ⚠ Not running
+  Last indexed: 2025-12-07 09:15:42
+
+legacy-kb
+  Repository: /Users/michele/old-project
+  Provider: gemini (gemini-1.5-flash + text-embedding-004)
+  Chunks: 2,891
+  Watcher: ✓ Running (PID 12378)
+  Last indexed: 2025-12-08 11:20:33
+```
+
+**Example output (JSON format):**
+
+```
+$ minerva-kb list --format json
+
+[
+  {
+    "name": "my-project",
+    "repository_path": "/Users/michele/code/my-project",
+    "provider": {
+      "type": "openai",
+      "embedding_model": "text-embedding-3-small",
+      "llm_model": "gpt-4o-mini"
+    },
+    "chunks": 1247,
+    "watcher": {
+      "running": true,
+      "pid": 12345
+    },
+    "last_indexed": "2025-12-08T14:32:15Z"
+  },
+  {
+    "name": "docs-collection",
+    "repository_path": "/Users/michele/documents/notes",
+    "provider": {
+      "type": "ollama",
+      "embedding_model": "mxbai-embed-large:latest",
+      "llm_model": "llama3.1:8b"
+    },
+    "chunks": 523,
+    "watcher": {
+      "running": false,
+      "pid": null
+    },
+    "last_indexed": "2025-12-07T09:15:42Z"
+  }
+]
+```
+
 ### `minerva-kb status <collection-name>`
 
 Display detailed status for a specific collection.
@@ -106,11 +213,58 @@ Display detailed status for a specific collection.
 - Watcher status and configuration
 - Last modification timestamp
 
+**Example output:**
+
+```
+$ minerva-kb status my-project
+
+Collection: my-project
+Repository: /Users/michele/code/my-project
+
+AI Provider:
+  Type: openai
+  Embedding model: text-embedding-3-small
+  LLM model: gpt-4o-mini
+  API key: ✓ Stored in keychain (OPENAI_API_KEY)
+
+ChromaDB:
+  Status: ✓ Collection exists
+  Chunks: 1,247
+  Last modified: 2025-12-08 14:32:15
+
+Configuration Files:
+  Index config: ~/.minerva/apps/minerva-kb/my-project-index.json
+  Watcher config: ~/.minerva/apps/minerva-kb/my-project-watcher.json
+  Extracted data: ~/.minerva/apps/minerva-kb/my-project-extracted.json (2.3 MB)
+
+Watcher:
+  Status: ✓ Running (PID 12345)
+  Watch patterns: .md, .mdx, .markdown, .rst, .txt
+  Ignore patterns: .git, node_modules, .venv, __pycache__
+  Debounce: 60 seconds
+```
+
 ### `minerva-kb sync <collection-name>`
 
 Manually trigger re-indexing for a collection.
 
 **Use case:** After bulk changes to repository outside of watcher's scope.
+
+**Example output:**
+
+```
+$ minerva-kb sync my-project
+
+Syncing collection 'my-project'...
+
+✓ Extracting repository documentation...
+  Processed 45 files (3 new, 2 modified, 1 deleted)
+
+✓ Indexing collection...
+  Updated 137 chunks (127 existing, 8 new, 2 removed)
+
+✓ Collection 'my-project' synced successfully!
+```
 
 ### `minerva-kb watch [<collection-name>]`
 
@@ -120,6 +274,26 @@ Start file watcher for a collection.
 - If collection name provided: starts watcher for that collection
 - If no name: interactive selection menu
 - Runs in foreground (Ctrl+C to stop)
+
+**Example output:**
+
+```
+$ minerva-kb watch my-project
+
+▶️ Starting watcher for 'my-project'... Press Ctrl+C to stop.
+
+Watching: /Users/michele/code/my-project
+Patterns: .md, .mdx, .markdown, .rst, .txt
+Debounce: 60 seconds
+
+[2025-12-08 14:45:23] Watcher started (PID 12456)
+[2025-12-08 14:47:15] Change detected: docs/api.md
+[2025-12-08 14:48:15] Re-indexing collection...
+[2025-12-08 14:48:32] ✓ Re-indexed (128 chunks)
+
+^C
+[2025-12-08 14:50:01] Watcher stopped
+```
 
 ### `minerva-kb remove <collection-name>`
 
@@ -131,6 +305,38 @@ Delete collection and all associated data.
 - Extracted repository data
 
 **Note:** Repository files are NOT affected.
+
+**Example output:**
+
+```
+$ minerva-kb remove my-project
+
+Collection: my-project
+Repository: /Users/michele/code/my-project
+Provider: openai (gpt-4o-mini + text-embedding-3-small)
+Chunks: 1,247
+
+⚠️ WARNING: This will delete:
+  - ChromaDB collection and all embeddings
+  - Configuration files (~/.minerva/apps/minerva-kb/)
+  - Extracted data (~/.minerva/apps/minerva-kb/my-project-extracted.json)
+
+Your repository files will NOT be affected.
+
+Type YES to confirm deletion: YES
+
+✓ Stopping watcher (PID 12345)...
+✓ Deleting configuration files...
+  - my-project-index.json
+  - my-project-watcher.json
+  - my-project-extracted.json
+✓ Deleting ChromaDB collection...
+
+✓ Collection 'my-project' removed successfully!
+
+Note: API keys remain in keychain
+To remove: minerva keychain delete OPENAI_API_KEY
+```
 
 ## Configuration
 
@@ -210,6 +416,74 @@ ollama serve
 # LM Studio
 # Start LM Studio application
 ```
+
+## FAQ
+
+### How do I change the AI provider for a collection?
+
+Run `minerva-kb add <repo-path>` again. The tool will detect the existing collection and prompt you to change the provider. This will trigger a full re-indexing with the new provider's embeddings.
+
+### How do I rename a collection?
+
+Collection names are derived from repository folder names and cannot be renamed directly. To rename:
+
+1. Remove the old collection: `minerva-kb remove <old-name>`
+2. Rename your repository folder
+3. Add it again: `minerva-kb add <repo-path>`
+
+### Where are my configs and data stored?
+
+All minerva-kb data is stored in `~/.minerva/`:
+
+- Configuration files: `~/.minerva/apps/minerva-kb/`
+- ChromaDB data: `~/.minerva/chromadb/`
+- API keys: OS keychain (via `minerva keychain`)
+
+### How do I backup my collections?
+
+To backup:
+
+```bash
+# Backup ChromaDB
+tar -czf chromadb-backup.tar.gz ~/.minerva/chromadb/
+
+# Backup configs
+tar -czf configs-backup.tar.gz ~/.minerva/apps/minerva-kb/
+```
+
+To restore, extract both archives back to their original locations.
+
+### Can I use different providers for different collections?
+
+Yes! Each collection has its own provider configuration. You can mix and match:
+
+- Collection A: OpenAI (cloud)
+- Collection B: Ollama (local)
+- Collection C: Gemini (cloud)
+
+### What happens if I delete my repository folder?
+
+The collection will still exist in ChromaDB with all indexed data. However:
+
+- The watcher will fail (repository path doesn't exist)
+- You cannot sync the collection (no source files)
+- You can still search the collection via MCP
+
+To clean up, run: `minerva-kb remove <collection-name>`
+
+### How do I stop all watchers?
+
+```bash
+# List all collections with watcher status
+minerva-kb list
+
+# Kill each running watcher by PID
+kill <PID1> <PID2> <PID3>
+```
+
+### Can I index non-repository folders?
+
+Yes! The tool works with any directory containing documentation files (.md, .mdx, .rst, .txt). It doesn't require Git.
 
 ## Examples
 

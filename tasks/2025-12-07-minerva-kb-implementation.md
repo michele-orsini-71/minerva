@@ -541,55 +541,55 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Test API rate limiting errors (for cloud providers)
 
 ### Phase 12: Documentation
-- [ ] Write README.md for tools/minerva-kb
-  - [ ] Add overview section (what is minerva-kb)
-  - [ ] Add installation section (pipx install)
-  - [ ] Add prerequisites section (minerva, extractors, watcher)
-  - [ ] Add quick start section (first collection workflow)
-  - [ ] Add command reference with examples
-  - [ ] add: with example output
-  - [ ] list: with example output (table and JSON)
-  - [ ] status: with example output
-  - [ ] sync: with example output
-  - [ ] watch: with example output
-  - [ ] remove: with example output
-  - [ ] Add troubleshooting section
-  - [ ] Common errors and solutions
-  - [ ] API key issues
-  - [ ] Ollama/LM Studio connection issues
-  - [ ] Collection conflicts
-  - [ ] Add FAQ section
-  - [ ] How to change provider?
-  - [ ] How to rename collection?
-  - [ ] Where are configs stored?
-  - [ ] How to backup collections?
-- [ ] Create comprehensive guide in docs/
-  - [ ] Create docs/MINERVA_KB_GUIDE.md
-  - [ ] Add introduction section (problem, solution, benefits)
-  - [ ] Add concepts section (collections, providers, watchers, configs)
-  - [ ] Add workflows section (add first, add second, change provider)
-  - [ ] Add configuration section (file structure, paths, schemas)
-  - [ ] Add provider guide (OpenAI, Gemini, Ollama, LM Studio setup)
-  - [ ] Add troubleshooting section (detailed error scenarios)
-  - [ ] Add advanced topics (multiple collections, backup/restore)
-  - [ ] Add migration section (from old setup wizard)
-- [ ] Update main Minerva documentation
-  - [ ] Update CLAUDE.md to mention minerva-kb
-  - [ ] Add minerva-kb to Quick Reference section
-  - [ ] Update installation instructions to include minerva-kb
-  - [ ] Update workflows to use minerva-kb instead of setup wizard
-  - [ ] Add link to MINERVA_KB_GUIDE.md
-- [ ] Create example workflows document
-  - [ ] Create docs/MINERVA_KB_EXAMPLES.md
-  - [ ] Copy all example workflows from PRD Appendix A
-  - [ ] Add example outputs for all commands
-  - [ ] Add screenshots (optional, for visual learners)
-- [ ] Create migration guide from setup wizard
-  - [ ] Create docs/MIGRATE_TO_MINERVA_KB.md
-  - [ ] Document differences between old and new approach
-  - [ ] Explain how to adopt existing collections (if any)
-  - [ ] Provide step-by-step migration instructions
-  - [ ] Note: for Phase 1, no users exist, so this is mostly for reference
+- [x] Write README.md for tools/minerva-kb
+  - [x] Add overview section (what is minerva-kb)
+  - [x] Add installation section (pipx install)
+  - [x] Add prerequisites section (minerva, extractors, watcher)
+  - [x] Add quick start section (first collection workflow)
+  - [x] Add command reference with examples
+  - [x] add: with example output
+  - [x] list: with example output (table and JSON)
+  - [x] status: with example output
+  - [x] sync: with example output
+  - [x] watch: with example output
+  - [x] remove: with example output
+  - [x] Add troubleshooting section
+  - [x] Common errors and solutions
+  - [x] API key issues
+  - [x] Ollama/LM Studio connection issues
+  - [x] Collection conflicts
+  - [x] Add FAQ section
+  - [x] How to change provider?
+  - [x] How to rename collection?
+  - [x] Where are configs stored?
+  - [x] How to backup collections?
+- [x] Create comprehensive guide in docs/
+  - [x] Create docs/MINERVA_KB_GUIDE.md
+  - [x] Add introduction section (problem, solution, benefits)
+  - [x] Add concepts section (collections, providers, watchers, configs)
+  - [x] Add workflows section (add first, add second, change provider)
+  - [x] Add configuration section (file structure, paths, schemas)
+  - [x] Add provider guide (OpenAI, Gemini, Ollama, LM Studio setup)
+  - [x] Add troubleshooting section (detailed error scenarios)
+  - [x] Add advanced topics (multiple collections, backup/restore)
+  - [x] Add migration section (from old setup wizard)
+- [x] Update main Minerva documentation
+  - [x] Update CLAUDE.md to mention minerva-kb
+  - [x] Add minerva-kb to Quick Reference section
+  - [x] Update installation instructions to include minerva-kb
+  - [x] Update workflows to use minerva-kb instead of setup wizard
+  - [x] Add link to MINERVA_KB_GUIDE.md
+- [x] Create example workflows document
+  - [x] Create docs/MINERVA_KB_EXAMPLES.md
+  - [x] Copy all example workflows from PRD Appendix A
+  - [x] Add example outputs for all commands
+  - [x] Add screenshots (optional, for visual learners)
+- [x] Create migration guide from setup wizard
+  - [x] Create docs/MIGRATE_TO_MINERVA_KB.md
+  - [x] Document differences between old and new approach
+  - [x] Explain how to adopt existing collections (if any)
+  - [x] Provide step-by-step migration instructions
+  - [x] Note: for Phase 1, no users exist, so this is mostly for reference
 
 ### Phase 13: Setup Wizard Update (FR-14)
 - [ ] Slim down apps/local-repo-kb/setup.py
