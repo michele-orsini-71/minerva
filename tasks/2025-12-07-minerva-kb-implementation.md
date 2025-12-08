@@ -80,28 +80,28 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Check if collection already exists (watcher config exists)
   - [x] If exists: enter provider update flow (FR-9)
   - [x] If not: enter new collection flow (FR-1)
-- [ ] Implement description generation
-  - [ ] Check for README.md in repository root
-  - [ ] If README exists: read content
-  - [ ] Call AI provider to generate optimized description
-  - [ ] Use prompt: "Generate a 1-2 sentence description optimized for RAG search..."
-  - [ ] Display generated description to user
-  - [ ] If no README: prompt user for manual description
-  - [ ] Call AI to optimize user-provided description
-  - [ ] Return final description string
-- [ ] Implement provider selection workflow
-  - [ ] Call interactive_select_provider() from utils
-  - [ ] Handle cloud providers (OpenAI, Gemini)
-  - [ ] Check if API key exists via check_api_key_exists()
-  - [ ] If missing: call prompt_for_api_key()
-  - [ ] If exists: call validate_api_key()
-  - [ ] If validation fails: prompt to re-enter
-  - [ ] Handle local providers (Ollama, LM Studio)
-  - [ ] Call validate_local_provider()
-  - [ ] If not running: display instructions and retry prompt
-  - [ ] Prompt for embedding and LLM models
-  - [ ] Call prompt_for_models() to get custom models or use defaults
-  - [ ] Display final provider configuration
+- [x] Implement description generation
+  - [x] Check for README.md in repository root
+  - [x] If README exists: read content
+  - [x] Call AI provider to generate optimized description
+  - [x] Use prompt: "Generate a 1-2 sentence description optimized for RAG search..."
+  - [x] Display generated description to user
+  - [x] If no README: prompt user for manual description
+  - [x] Call AI to optimize user-provided description
+  - [x] Return final description string
+- [x] Implement provider selection workflow
+  - [x] Call interactive_select_provider() from utils
+  - [x] Handle cloud providers (OpenAI, Gemini)
+  - [x] Check if API key exists via check_api_key_exists()
+  - [x] If missing: call prompt_for_api_key()
+  - [x] If exists: call validate_api_key()
+  - [x] If validation fails: prompt to re-enter
+  - [x] Handle local providers (Ollama, LM Studio)
+  - [x] Call validate_local_provider()
+  - [x] If not running: display instructions and retry prompt
+  - [x] Prompt for embedding and LLM models
+  - [x] Call prompt_for_models() to get custom models or use defaults
+  - [x] Display final provider configuration
 - [ ] Implement extraction and indexing
   - [ ] Generate index config JSON with all required fields
   - [ ] chromadb_path: ~/.minerva/chromadb/
@@ -730,6 +730,7 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/collection_naming.py - Collection name sanitization rules
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/provider_selection.py - Interactive provider selection, API key helpers, and validation utilities
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/config_loader.py - Config load/save helpers with schema validation
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/description_generator.py - Generates optimized descriptions from README content or manual input via provider APIs
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/process_manager.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/chromadb_query.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/config_helpers.py

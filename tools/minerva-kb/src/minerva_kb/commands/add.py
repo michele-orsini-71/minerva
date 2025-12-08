@@ -1,7 +1,9 @@
 from pathlib import Path
 
-from minerva_kb.constants import MINERVA_KB_APP_DIR
+from minerva_kb.constants import MINERVA_KB_APP_DIR, PROVIDER_DISPLAY_NAMES
 from minerva_kb.utils.collection_naming import sanitize_collection_name
+from minerva_kb.utils.description_generator import generate_description
+from minerva_kb.utils.provider_selection import interactive_select_provider
 
 
 def run_add(repo_path: str) -> int:
@@ -54,10 +56,26 @@ def _run_provider_update_flow(collection_name: str, repository: Path, watcher_pa
 
 
 def _run_new_collection_flow(collection_name: str, repository: Path) -> int:
+    provider_config = interactive_select_provider()
+    _display_provider_summary(provider_config)
+    generate_description(repository, collection_name, provider_config)
     _display_warning(
         f"New collection flow for '{collection_name}' at '{repository}' is not implemented yet."
     )
     return 2
+
+
+def _display_provider_summary(provider_config: dict[str, str]) -> None:
+    provider_type = provider_config.get("provider_type", "unknown")
+    provider_name = PROVIDER_DISPLAY_NAMES.get(provider_type, provider_type)
+    embedding = provider_config.get("embedding_model", "unknown")
+    llm_model = provider_config.get("llm_model", "unknown")
+    print()
+    print("✓ AI provider configured")
+    print(f"  • Provider:  {provider_name}")
+    print(f"  • Embedding: {embedding}")
+    print(f"  • LLM:       {llm_model}")
+    print()
 
 
 def _display_error(message: str) -> None:
