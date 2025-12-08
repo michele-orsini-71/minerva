@@ -12,6 +12,7 @@ from minerva_kb.constants import (
     PROVIDER_DISPLAY_NAMES,
 )
 from minerva_kb.utils.collection_naming import sanitize_collection_name
+from minerva_kb.utils.config_helpers import ensure_server_config
 from minerva_kb.utils.config_loader import (
     load_index_config,
     load_watcher_config,
@@ -19,7 +20,7 @@ from minerva_kb.utils.config_loader import (
     save_watcher_config,
 )
 from minerva_kb.utils.description_generator import generate_description
-from minerva_kb.utils.display import display_error, display_warning
+from minerva_kb.utils.display import display_error, display_success, display_warning
 from minerva_kb.utils.provider_selection import interactive_select_provider
 from minerva_kb.utils.process_manager import find_watcher_pid, stop_watcher
 
@@ -155,6 +156,7 @@ def _run_new_collection_flow(collection_name: str, repository: Path) -> int:
     provider_config = interactive_select_provider()
     _display_provider_summary(provider_config)
     description = generate_description(repository, collection_name, provider_config)
+    _ensure_server_config()
     config_paths = _create_collection_configs(collection_name, description, repository, provider_config)
     if not _run_repository_extractor(repository, config_paths["extracted_json"]):
         return 3
@@ -428,3 +430,9 @@ def _extract_error_line(stdout: str | None, stderr: str | None) -> str:
     if data:
         return data.splitlines()[-1]
     return "see logs for details"
+
+
+def _ensure_server_config() -> None:
+    _, created = ensure_server_config()
+    if created:
+        display_success("Created server config with defaults")

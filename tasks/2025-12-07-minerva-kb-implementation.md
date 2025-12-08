@@ -435,15 +435,15 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Graceful handling of Ctrl+C (exit code 130, cleanup state)
 
 ### Phase 10: Server Config Management
-- [ ] Implement server config auto-creation (Open Question 9.2, Option A)
-  - [ ] Check if ~/.minerva/apps/minerva-kb/server.json exists on first add
-  - [ ] If missing: create with defaults
-  - [ ] chromadb_path: ~/.minerva/chromadb/
-  - [ ] default_max_results: 5
-  - [ ] host: 127.0.0.1
-  - [ ] port: 8337
-  - [ ] Set file permissions to 0600
-  - [ ] Display: "✓ Created server config with defaults"
+- [x] Implement server config auto-creation (Open Question 9.2, Option A)
+  - [x] Check if ~/.minerva/apps/minerva-kb/server.json exists on first add
+  - [x] If missing: create with defaults
+  - [x] chromadb_path: ~/.minerva/chromadb/
+  - [x] default_max_results: 5
+  - [x] host: 127.0.0.1
+  - [x] port: 8337
+  - [x] Set file permissions to 0600
+  - [x] Display: "✓ Created server config with defaults"
 
 ### Phase 11: Testing
 - [ ] Write unit tests for collection naming
