@@ -315,69 +315,69 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Exit code 0 on success, 130 on Ctrl+C during operation
 
 ### Phase 8: Utility Functions
-- [ ] Implement process management utilities
-  - [ ] Create src/minerva_kb/utils/process_manager.py
-  - [ ] Implement find_watcher_pid(config_path) function (from PRD section 7.5)
-  - [ ] Run ps aux command via subprocess
-  - [ ] Parse output to find local-repo-watcher process
-  - [ ] Match config path in command line
-  - [ ] Extract PID from second column
-  - [ ] Return PID as int or None if not found
-  - [ ] Implement stop_watcher(pid) function
-  - [ ] Send SIGTERM to process via os.kill()
-  - [ ] Wait up to 5 seconds for graceful shutdown
-  - [ ] Check if process still exists
-  - [ ] If still running: send SIGKILL
-  - [ ] Return True on success, False on failure
-- [ ] Implement ChromaDB query utilities
-  - [ ] Create src/minerva_kb/utils/chromadb_query.py
-  - [ ] Implement get_chromadb_client(chromadb_path) function
-  - [ ] Create chromadb.PersistentClient with path
-  - [ ] Handle connection errors
-  - [ ] Return client instance
-  - [ ] Implement list_all_collections(client) function
-  - [ ] Call client.list_collections()
-  - [ ] Return list of collection names
-  - [ ] Implement collection_exists(client, collection_name) function
-  - [ ] Try to get collection via client.get_collection()
-  - [ ] Return True if exists, False if not found
-  - [ ] Implement get_collection_metadata(client, collection_name) function
-  - [ ] Get collection instance
-  - [ ] Get chunk count via collection.count()
-  - [ ] Get metadata dict via collection.metadata
-  - [ ] Return dict with count and metadata
-- [ ] Implement config file helpers
-  - [ ] Create src/minerva_kb/utils/config_helpers.py
-  - [ ] Implement ensure_config_dir() function
-  - [ ] Check if ~/.minerva/apps/minerva-kb/ exists
-  - [ ] Create directory if missing (with parents)
-  - [ ] Set permissions to 0700 (user-only access)
-  - [ ] Implement get_config_paths(collection_name) function
-  - [ ] Return dict with all config paths
-  - [ ] index_config, watcher_config, extracted_json, server_config
-  - [ ] Implement config_files_exist(collection_name) function
-  - [ ] Check if index config exists
-  - [ ] Check if watcher config exists
-  - [ ] Return tuple: (index_exists, watcher_exists)
-  - [ ] Implement delete_config_files(collection_name) function
-  - [ ] Delete index config, watcher config, extracted JSON
-  - [ ] Handle file not found errors gracefully
-  - [ ] Return list of deleted files
-- [ ] Implement display/formatting utilities
-  - [ ] Create src/minerva_kb/utils/display.py
-  - [ ] Implement format_file_size(bytes) function
-  - [ ] Convert bytes to KB, MB, GB with appropriate unit
-  - [ ] Implement format_timestamp(datetime) function
-  - [ ] Format as YYYY-MM-DD HH:MM:SS
-  - [ ] Implement format_chunk_count(count) function
-  - [ ] Add thousands separator (e.g., 1,234)
-  - [ ] Implement display_section_header(title) function
-  - [ ] Print formatted section header with decoration
-  - [ ] Implement display_error(message) function
-  - [ ] Print error with ❌ prefix
-  - [ ] Implement display_success(message) function
-  - [ ] Print success with ✓ prefix
-  - [ ] Implement display_warning(message) function
+- [x] Implement process management utilities
+  - [x] Create src/minerva_kb/utils/process_manager.py
+  - [x] Implement find_watcher_pid(config_path) function (from PRD section 7.5)
+  - [x] Run ps aux command via subprocess
+  - [x] Parse output to find local-repo-watcher process
+  - [x] Match config path in command line
+  - [x] Extract PID from second column
+  - [x] Return PID as int or None if not found
+  - [x] Implement stop_watcher(pid) function
+  - [x] Send SIGTERM to process via os.kill()
+  - [x] Wait up to 5 seconds for graceful shutdown
+  - [x] Check if process still exists
+  - [x] If still running: send SIGKILL
+  - [x] Return True on success, False on failure
+- [x] Implement ChromaDB query utilities
+  - [x] Create src/minerva_kb/utils/chromadb_query.py
+  - [x] Implement get_chromadb_client(chromadb_path) function
+  - [x] Create chromadb.PersistentClient with path
+  - [x] Handle connection errors
+  - [x] Return client instance
+  - [x] Implement list_all_collections(client) function
+  - [x] Call client.list_collections()
+  - [x] Return list of collection names
+  - [x] Implement collection_exists(client, collection_name) function
+  - [x] Try to get collection via client.get_collection()
+  - [x] Return True if exists, False if not found
+  - [x] Implement get_collection_metadata(client, collection_name) function
+  - [x] Get collection instance
+  - [x] Get chunk count via collection.count()
+  - [x] Get metadata dict via collection.metadata
+  - [x] Return dict with count and metadata
+- [x] Implement config file helpers
+  - [x] Create src/minerva_kb/utils/config_helpers.py
+  - [x] Implement ensure_config_dir() function
+  - [x] Check if ~/.minerva/apps/minerva-kb/ exists
+  - [x] Create directory if missing (with parents)
+  - [x] Set permissions to 0700 (user-only access)
+  - [x] Implement get_config_paths(collection_name) function
+  - [x] Return dict with all config paths
+  - [x] index_config, watcher_config, extracted_json, server_config
+  - [x] Implement config_files_exist(collection_name) function
+  - [x] Check if index config exists
+  - [x] Check if watcher config exists
+  - [x] Return tuple: (index_exists, watcher_exists)
+  - [x] Implement delete_config_files(collection_name) function
+  - [x] Delete index config, watcher config, extracted JSON
+  - [x] Handle file not found errors gracefully
+  - [x] Return list of deleted files
+- [x] Implement display/formatting utilities
+  - [x] Create src/minerva_kb/utils/display.py
+  - [x] Implement format_file_size(bytes) function
+  - [x] Convert bytes to KB, MB, GB with appropriate unit
+  - [x] Implement format_timestamp(datetime) function
+  - [x] Format as YYYY-MM-DD HH:MM:SS
+  - [x] Implement format_chunk_count(count) function
+  - [x] Add thousands separator (e.g., 1,234)
+  - [x] Implement display_section_header(title) function
+  - [x] Print formatted section header with decoration
+  - [x] Implement display_error(message) function
+  - [x] Print error with ❌ prefix
+  - [x] Implement display_success(message) function
+  - [x] Print success with ✓ prefix
+  - [x] Implement display_warning(message) function
   - [ ] Print warning with ⚠️ prefix
 
 ### Phase 9: Error Handling & Edge Cases
@@ -736,6 +736,9 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/config_loader.py - Config load/save helpers with schema validation
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/description_generator.py - Generates optimized descriptions from README content or manual input via provider APIs
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/process_manager.py - Finds watcher processes and stops them safely during provider updates/removals
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/chromadb_query.py - Helper functions to connect to ChromaDB and inspect collections
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/config_helpers.py - Ensures config directory and provides path/deletion helpers
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/display.py - Shared formatting and message helpers for CLI output
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/chromadb_query.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/config_helpers.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/display.py
