@@ -1,0 +1,808 @@
+# minerva-kb Implementation Tasks
+
+**PRD:** tasks/2025-12-07-prd-minerva-kb.md
+**Started:** 2025-12-08
+**Status:** Not Started
+
+## Overview
+
+minerva-kb is a standalone orchestrator tool that manages the complete lifecycle of repository-based knowledge base collections. It replaces the monolithic setup wizard (1,277 lines) with a composable CLI that delegates to existing Minerva tools (minerva, repository-doc-extractor, local-repo-watcher) via subprocess calls. Users can add, list, update, watch, and remove collections through simple commands, enabling multi-collection workflows and reducing time-to-second-collection from 15+ minutes to <2 minutes.
+
+## Implementation Phases
+
+### Phase 0: Project Setup
+- [ ] Create tools/minerva-kb package structure
+  - [ ] Create pyproject.toml with dependencies and entry points
+  - [ ] Create src/minerva_kb/ directory structure
+  - [ ] Create src/minerva_kb/__init__.py
+  - [ ] Create README.md with quickstart guide
+  - [ ] Create tests/ directory
+- [ ] Set up entry point and CLI skeleton
+  - [ ] Create src/minerva_kb/cli.py with argparse setup
+  - [ ] Add main() function with subparser framework
+  - [ ] Add subcommands: add, list, status, sync, watch, remove
+  - [ ] Wire up entry point in pyproject.toml: minerva-kb=minerva_kb.cli:main
+  - [ ] Test CLI skeleton with --help flag
+
+### Phase 1: Core Infrastructure
+- [ ] Implement configuration management
+  - [ ] Create src/minerva_kb/constants.py with paths (~/.minerva/apps/minerva-kb/, ~/.minerva/chromadb/)
+  - [ ] Add provider key name constants (OPENAI_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY)
+  - [ ] Add provider display names mapping
+  - [ ] Add default model configurations for each provider
+  - [ ] Create src/minerva_kb/utils/config_loader.py
+  - [ ] Implement load_index_config(collection_name) function
+  - [ ] Implement load_watcher_config(collection_name) function
+  - [ ] Implement save_index_config(collection_name, config) function
+  - [ ] Implement save_watcher_config(collection_name, config) function
+  - [ ] Add config file validation (JSON schema checking)
+- [ ] Implement collection naming (FR-7)
+  - [ ] Create src/minerva_kb/utils/collection_naming.py
+  - [ ] Implement sanitize_collection_name(repo_path) function
+  - [ ] Convert to lowercase
+  - [ ] Replace spaces and underscores with hyphens
+  - [ ] Remove non-alphanumeric characters (keep only [a-z0-9-])
+  - [ ] Collapse multiple consecutive hyphens
+  - [ ] Trim leading/trailing hyphens
+  - [ ] Validate length (3-512 chars per ChromaDB requirement)
+  - [ ] Write unit tests for edge cases (spaces, underscores, special chars)
+- [ ] Implement provider management (FR-8)
+  - [ ] Create src/minerva_kb/utils/provider_selection.py
+  - [ ] Implement interactive_select_provider() function
+  - [ ] Display 4-option menu (OpenAI, Gemini, Ollama, LM Studio)
+  - [ ] Show default models for each provider
+  - [ ] Get user choice (1-4)
+  - [ ] Implement check_api_key_exists(provider_type) function
+  - [ ] Call minerva keychain get <KEY_NAME> via subprocess
+  - [ ] Return True if key exists, False otherwise
+  - [ ] Implement prompt_for_api_key(provider_type) function
+  - [ ] Prompt user for API key
+  - [ ] Call minerva keychain set <KEY_NAME> via subprocess
+  - [ ] Implement validate_api_key(provider_type) function
+  - [ ] Make test API call to validate key works
+  - [ ] Handle validation errors with retry prompt
+  - [ ] Implement validate_local_provider(provider_type) function
+  - [ ] Check Ollama at http://localhost:11434/api/tags
+  - [ ] Check LM Studio at http://localhost:1234/v1/models
+  - [ ] Display error with instructions if not running
+  - [ ] Implement prompt_for_models(provider_type) function
+  - [ ] Show default models with option to customize
+  - [ ] Prompt for embedding model and LLM model
+  - [ ] Return provider config dict
+
+### Phase 2: Add Command (FR-1, FR-9, FR-10)
+- [ ] Implement basic add flow
+  - [ ] Create src/minerva_kb/commands/add.py
+  - [ ] Implement run_add(repo_path) function
+  - [ ] Validate repository path exists and is directory
+  - [ ] Resolve to absolute path
+  - [ ] Derive collection name via sanitize_collection_name()
+  - [ ] Check if collection already exists (watcher config exists)
+  - [ ] If exists: enter provider update flow (FR-9)
+  - [ ] If not: enter new collection flow (FR-1)
+- [ ] Implement description generation
+  - [ ] Check for README.md in repository root
+  - [ ] If README exists: read content
+  - [ ] Call AI provider to generate optimized description
+  - [ ] Use prompt: "Generate a 1-2 sentence description optimized for RAG search..."
+  - [ ] Display generated description to user
+  - [ ] If no README: prompt user for manual description
+  - [ ] Call AI to optimize user-provided description
+  - [ ] Return final description string
+- [ ] Implement provider selection workflow
+  - [ ] Call interactive_select_provider() from utils
+  - [ ] Handle cloud providers (OpenAI, Gemini)
+  - [ ] Check if API key exists via check_api_key_exists()
+  - [ ] If missing: call prompt_for_api_key()
+  - [ ] If exists: call validate_api_key()
+  - [ ] If validation fails: prompt to re-enter
+  - [ ] Handle local providers (Ollama, LM Studio)
+  - [ ] Call validate_local_provider()
+  - [ ] If not running: display instructions and retry prompt
+  - [ ] Prompt for embedding and LLM models
+  - [ ] Call prompt_for_models() to get custom models or use defaults
+  - [ ] Display final provider configuration
+- [ ] Implement extraction and indexing
+  - [ ] Generate index config JSON with all required fields
+  - [ ] chromadb_path: ~/.minerva/chromadb/
+  - [ ] collection.name: sanitized collection name
+  - [ ] collection.description: generated/prompted description
+  - [ ] collection.json_file: ~/.minerva/apps/minerva-kb/<collection>-extracted.json
+  - [ ] collection.chunk_size: 1200 (default)
+  - [ ] provider: selected provider config
+  - [ ] Generate watcher config JSON with all required fields
+  - [ ] repository_path: absolute path to repository
+  - [ ] collection_name: sanitized collection name
+  - [ ] extracted_json_path: path to extracted JSON
+  - [ ] index_config_path: path to index config
+  - [ ] debounce_seconds: 60.0
+  - [ ] include_extensions: [.md, .mdx, .markdown, .rst, .txt]
+  - [ ] ignore_patterns: [.git, node_modules, .venv, __pycache__]
+  - [ ] Save both config files to ~/.minerva/apps/minerva-kb/
+  - [ ] Call repository-doc-extractor via subprocess
+  - [ ] Pass repository path and output JSON path
+  - [ ] Display progress and capture output
+  - [ ] Handle extraction errors (exit code 3)
+  - [ ] Call minerva index --config <index-config> via subprocess
+  - [ ] Display progress and capture output
+  - [ ] Handle indexing errors (exit code 3)
+  - [ ] Display success summary with chunk count and next steps
+- [ ] Implement conflict resolution (FR-7)
+  - [ ] Query ChromaDB to check if collection name exists
+  - [ ] Use chromadb.PersistentClient to list collections
+  - [ ] Check if config files exist for this collection
+  - [ ] If collection exists but no configs (unmanaged): display conflict error
+  - [ ] Show options: 1) Abort, 2) Wipe and recreate
+  - [ ] Get user choice
+  - [ ] If abort: exit with code 1 and show existing collections
+  - [ ] If wipe: call minerva remove <chromadb> <collection> via subprocess
+  - [ ] Then proceed with normal add flow
+- [ ] Implement provider update flow (FR-9)
+  - [ ] Detect existing collection via watcher config
+  - [ ] Load index config to get current provider
+  - [ ] Display current provider (type, embedding model, LLM model)
+  - [ ] Prompt: "Change AI provider? [y/N]"
+  - [ ] If NO: exit with "No changes made"
+  - [ ] If YES: run provider selection flow
+  - [ ] Call interactive_select_provider()
+  - [ ] Handle API key setup for cloud providers
+  - [ ] Get new model selections
+  - [ ] Update index config with new provider settings
+  - [ ] Find and stop watcher process for THIS collection
+  - [ ] Use find_watcher_pid() to get PID
+  - [ ] Send SIGTERM to process
+  - [ ] Wait for graceful shutdown
+  - [ ] Call repository-doc-extractor to re-extract
+  - [ ] Call minerva index --config <config> --force-recreate to rebuild embeddings
+  - [ ] Display success with warning about stopped watcher
+  - [ ] Show command to restart: "minerva-kb watch <collection>"
+
+### Phase 3: List Command (FR-2)
+- [ ] Implement collection discovery
+  - [ ] Create src/minerva_kb/commands/list.py
+  - [ ] Implement run_list(format) function
+  - [ ] Scan ~/.minerva/apps/minerva-kb/ for *-watcher.json files
+  - [ ] Parse watcher configs to get managed collections
+  - [ ] Query ChromaDB to get all collections
+  - [ ] Create chromadb.PersistentClient with ~/.minerva/chromadb/
+  - [ ] Call client.list_collections()
+  - [ ] Match managed collections (have configs) vs unmanaged (no configs)
+- [ ] Implement status detection for each collection
+  - [ ] Read watcher config to get repository path
+  - [ ] Read index config to get provider info
+  - [ ] Query ChromaDB to get chunk count via collection.count()
+  - [ ] Get last indexed timestamp from extracted JSON file mtime
+  - [ ] Check watcher status via find_watcher_pid()
+  - [ ] Return status dict for each collection
+- [ ] Implement table format output (default)
+  - [ ] Display header: "Collections (N):"
+  - [ ] For each managed collection: display multi-line block
+  - [ ] Line 1: collection name (bold/colored)
+  - [ ] Line 2: Repository: <path>
+  - [ ] Line 3: Provider: <type> (<llm> + <embedding>)
+  - [ ] Line 4: Chunks: <count formatted with commas>
+  - [ ] Line 5: Watcher: ✓ Running (PID) or ⚠ Not running
+  - [ ] Line 6: Last indexed: <timestamp formatted>
+  - [ ] Add blank line between collections
+  - [ ] Handle unmanaged collections (in ChromaDB, no configs)
+  - [ ] Display: ⚠ Unmanaged (created outside minerva-kb)
+  - [ ] Show: Chunks: <count>
+  - [ ] Show: (No config files found)
+  - [ ] Handle broken collections (has configs, no ChromaDB)
+  - [ ] Display: ⚠ Not indexed (ChromaDB collection missing)
+  - [ ] Show: Repository: <path>
+  - [ ] Show: Last attempt: Config files exist but collection not found
+- [ ] Implement JSON format output
+  - [ ] Add --format json flag to argparse
+  - [ ] Create collections array
+  - [ ] For each collection: create dict with all fields
+  - [ ] name, repository_path, provider dict, chunks, watcher dict, last_indexed
+  - [ ] Output formatted JSON with json.dumps(indent=2)
+
+### Phase 4: Status Command (FR-3)
+- [ ] Implement detailed status display
+  - [ ] Create src/minerva_kb/commands/status.py
+  - [ ] Implement run_status(collection_name) function
+  - [ ] Validate collection exists (check for watcher config)
+  - [ ] If not found: display error with available collections list
+  - [ ] Exit with code 1
+  - [ ] Load watcher config and index config
+  - [ ] Query ChromaDB for collection metadata
+  - [ ] Check collection exists via client.get_collection()
+  - [ ] Get chunk count via collection.count()
+  - [ ] Check watcher process status via find_watcher_pid()
+  - [ ] Display comprehensive status output:
+  - [ ] Section 1: Collection name and repository path
+  - [ ] Section 2: AI Provider (type, embedding, LLM, API key status)
+  - [ ] For cloud providers: check keychain for API key
+  - [ ] Display: ✓ Stored in keychain as <KEY_NAME>
+  - [ ] Section 3: ChromaDB (collection exists, chunks, last modified)
+  - [ ] Display: ✓ Collection exists or ❌ Collection missing
+  - [ ] Section 4: Configuration Files (index, watcher, extracted)
+  - [ ] Check each file exists and display path relative to ~/
+  - [ ] Show extracted JSON file size in MB
+  - [ ] Section 5: Watcher (status, PID, watch patterns, ignore patterns)
+  - [ ] Display: ✓ Running (PID) or ⚠ Not running
+  - [ ] Handle edge cases (collection exists but has issues)
+  - [ ] Missing ChromaDB collection: exit code 2
+  - [ ] Config file mismatch: exit code 2
+  - [ ] Exit code 0 if healthy, 1 if not found, 2 if has issues
+
+### Phase 5: Sync Command (FR-4)
+- [ ] Implement manual sync
+  - [ ] Create src/minerva_kb/commands/sync.py
+  - [ ] Implement run_sync(collection_name) function
+  - [ ] Validate collection exists (check for watcher config)
+  - [ ] If not found: exit with code 1
+  - [ ] Load index config to get paths
+  - [ ] Get repository path from watcher config
+  - [ ] Get extracted JSON path from watcher config
+  - [ ] Display: "Syncing collection '<name>'..."
+  - [ ] Call repository-doc-extractor <repo> -o <extracted-json> via subprocess
+  - [ ] Display extraction progress
+  - [ ] Handle extraction errors (exit code 2)
+  - [ ] Call minerva index --config <index-config> via subprocess
+  - [ ] Display indexing progress
+  - [ ] Handle indexing errors (exit code 3)
+  - [ ] Display success message with chunk count
+  - [ ] Do NOT restart watcher (user controls watcher lifecycle)
+  - [ ] Exit code 0 on success
+
+### Phase 6: Watch Command (FR-5, FR-13)
+- [ ] Implement watcher lifecycle management
+  - [ ] Create src/minerva_kb/commands/watch.py
+  - [ ] Implement run_watch(collection_name) function
+  - [ ] Handle interactive mode if no collection name provided
+  - [ ] List all collections with watcher configs
+  - [ ] Display numbered menu
+  - [ ] Get user selection
+  - [ ] Proceed with selected collection
+  - [ ] Validate collection exists (check for watcher config)
+  - [ ] If not found: exit with code 1
+  - [ ] Get watcher config path
+  - [ ] Check if watcher already running via find_watcher_pid()
+  - [ ] If running: display "Watcher already running (PID)" and exit
+  - [ ] Validate local-repo-watcher is in PATH
+  - [ ] Check via subprocess.run(['which', 'local-repo-watcher'])
+  - [ ] If not found: display error with install instructions (exit code 2)
+  - [ ] Display: "▶️ Starting watcher for '<collection>'... Press Ctrl+C to stop."
+  - [ ] Call local-repo-watcher --config <watcher-config> via subprocess
+  - [ ] Run in foreground (no &, no nohup)
+  - [ ] User can Ctrl+C to stop gracefully
+  - [ ] Handle subprocess termination (exit code 0 on Ctrl+C)
+  - [ ] Handle watcher crashes (exit code 3)
+
+### Phase 7: Remove Command (FR-6)
+- [ ] Implement collection removal
+  - [ ] Create src/minerva_kb/commands/remove.py
+  - [ ] Implement run_remove(collection_name) function
+  - [ ] Check if collection is managed (has config files)
+  - [ ] Check if watcher config exists
+  - [ ] Check if index config exists
+  - [ ] Handle unmanaged collections (in ChromaDB, no configs)
+  - [ ] Display error: "Collection is not managed by minerva-kb"
+  - [ ] Show path where configs should be
+  - [ ] Show manual removal command: minerva remove <chromadb> <collection>
+  - [ ] Exit with code 1
+  - [ ] Handle broken collections (has configs, no ChromaDB)
+  - [ ] Display warning: "Collection not found in ChromaDB"
+  - [ ] Explain possible causes (indexing failed, manual deletion)
+  - [ ] Prompt: "Delete config files anyway? [y/N]"
+  - [ ] If YES: skip to config deletion step
+  - [ ] If NO: exit with "Deletion cancelled"
+  - [ ] Display collection details via status logic
+  - [ ] Show repository path, provider, chunks
+  - [ ] Display deletion warning
+  - [ ] List what will be deleted (ChromaDB, configs, extracted data)
+  - [ ] Note: Repository files will NOT be affected
+  - [ ] Prompt for confirmation: "Type YES to confirm deletion: "
+  - [ ] If input != "YES": exit with "Deletion cancelled" (code 2)
+  - [ ] Stop running watcher if any
+  - [ ] Find watcher process via find_watcher_pid()
+  - [ ] Send SIGTERM to process
+  - [ ] Wait for graceful shutdown (up to 5 seconds)
+  - [ ] If still running: send SIGKILL
+  - [ ] Delete configuration files
+  - [ ] Delete ~/.minerva/apps/minerva-kb/<collection>-watcher.json
+  - [ ] Delete ~/.minerva/apps/minerva-kb/<collection>-index.json
+  - [ ] Delete ~/.minerva/apps/minerva-kb/<collection>-extracted.json
+  - [ ] Handle file deletion errors (permissions, etc.)
+  - [ ] Delete ChromaDB collection
+  - [ ] Call minerva remove <chromadb-path> <collection-name> via subprocess
+  - [ ] Handle deletion errors (exit code 3)
+  - [ ] Display success message
+  - [ ] Note: API keys remain in keychain
+  - [ ] Show command to remove keys: minerva keychain delete <KEY_NAME>
+  - [ ] Exit code 0 on success, 130 on Ctrl+C during operation
+
+### Phase 8: Utility Functions
+- [ ] Implement process management utilities
+  - [ ] Create src/minerva_kb/utils/process_manager.py
+  - [ ] Implement find_watcher_pid(config_path) function (from PRD section 7.5)
+  - [ ] Run ps aux command via subprocess
+  - [ ] Parse output to find local-repo-watcher process
+  - [ ] Match config path in command line
+  - [ ] Extract PID from second column
+  - [ ] Return PID as int or None if not found
+  - [ ] Implement stop_watcher(pid) function
+  - [ ] Send SIGTERM to process via os.kill()
+  - [ ] Wait up to 5 seconds for graceful shutdown
+  - [ ] Check if process still exists
+  - [ ] If still running: send SIGKILL
+  - [ ] Return True on success, False on failure
+- [ ] Implement ChromaDB query utilities
+  - [ ] Create src/minerva_kb/utils/chromadb_query.py
+  - [ ] Implement get_chromadb_client(chromadb_path) function
+  - [ ] Create chromadb.PersistentClient with path
+  - [ ] Handle connection errors
+  - [ ] Return client instance
+  - [ ] Implement list_all_collections(client) function
+  - [ ] Call client.list_collections()
+  - [ ] Return list of collection names
+  - [ ] Implement collection_exists(client, collection_name) function
+  - [ ] Try to get collection via client.get_collection()
+  - [ ] Return True if exists, False if not found
+  - [ ] Implement get_collection_metadata(client, collection_name) function
+  - [ ] Get collection instance
+  - [ ] Get chunk count via collection.count()
+  - [ ] Get metadata dict via collection.metadata
+  - [ ] Return dict with count and metadata
+- [ ] Implement config file helpers
+  - [ ] Create src/minerva_kb/utils/config_helpers.py
+  - [ ] Implement ensure_config_dir() function
+  - [ ] Check if ~/.minerva/apps/minerva-kb/ exists
+  - [ ] Create directory if missing (with parents)
+  - [ ] Set permissions to 0700 (user-only access)
+  - [ ] Implement get_config_paths(collection_name) function
+  - [ ] Return dict with all config paths
+  - [ ] index_config, watcher_config, extracted_json, server_config
+  - [ ] Implement config_files_exist(collection_name) function
+  - [ ] Check if index config exists
+  - [ ] Check if watcher config exists
+  - [ ] Return tuple: (index_exists, watcher_exists)
+  - [ ] Implement delete_config_files(collection_name) function
+  - [ ] Delete index config, watcher config, extracted JSON
+  - [ ] Handle file not found errors gracefully
+  - [ ] Return list of deleted files
+- [ ] Implement display/formatting utilities
+  - [ ] Create src/minerva_kb/utils/display.py
+  - [ ] Implement format_file_size(bytes) function
+  - [ ] Convert bytes to KB, MB, GB with appropriate unit
+  - [ ] Implement format_timestamp(datetime) function
+  - [ ] Format as YYYY-MM-DD HH:MM:SS
+  - [ ] Implement format_chunk_count(count) function
+  - [ ] Add thousands separator (e.g., 1,234)
+  - [ ] Implement display_section_header(title) function
+  - [ ] Print formatted section header with decoration
+  - [ ] Implement display_error(message) function
+  - [ ] Print error with ❌ prefix
+  - [ ] Implement display_success(message) function
+  - [ ] Print success with ✓ prefix
+  - [ ] Implement display_warning(message) function
+  - [ ] Print warning with ⚠️ prefix
+
+### Phase 9: Error Handling & Edge Cases
+- [ ] Add comprehensive error messages
+  - [ ] Repository path invalid (does not exist or not directory)
+  - [ ] Display: "❌ Repository path does not exist: <path>"
+  - [ ] Suggest: "Please provide a valid directory path"
+  - [ ] API key validation failed
+  - [ ] Display: "❌ Failed to connect to <provider>: <error>"
+  - [ ] List possible issues (invalid key, no internet, service down)
+  - [ ] Prompt: "Try again with a different API key? [y/N]"
+  - [ ] Ollama/LM Studio not running
+  - [ ] Display: "❌ Cannot connect to <provider> at <url>"
+  - [ ] Show start command (e.g., "ollama serve")
+  - [ ] Prompt: "Retry connection? [y/N]"
+  - [ ] Collection not found
+  - [ ] Display: "❌ Collection '<name>' not found"
+  - [ ] List available collections
+  - [ ] Suggest: "Run 'minerva-kb list' to see all collections"
+  - [ ] Watcher already running
+  - [ ] Display: "⚠️ Watcher already running for '<collection>' (PID <pid>)"
+  - [ ] Suggest: "To stop the watcher: kill <pid>"
+  - [ ] Collection name conflict (unmanaged collection exists)
+  - [ ] Display: "❌ Collection '<name>' already exists in ChromaDB"
+  - [ ] Explain: "This collection was not created by minerva-kb"
+  - [ ] Show options: 1) Abort, 2) Wipe and recreate
+  - [ ] Unmanaged collection removal attempt
+  - [ ] Display: "❌ Collection '<name>' is not managed by minerva-kb"
+  - [ ] Explain: "Collection exists in ChromaDB but has no config files"
+  - [ ] Show manual removal command
+  - [ ] local-repo-watcher not in PATH
+  - [ ] Display: "❌ local-repo-watcher not found in PATH"
+  - [ ] Show install command: "pipx install tools/local-repo-watcher"
+  - [ ] Extraction/indexing subprocess failure
+  - [ ] Capture stderr from subprocess
+  - [ ] Display: "❌ <operation> failed: <error>"
+  - [ ] Show subprocess output for debugging
+- [ ] Add input validation
+  - [ ] Validate repository path is absolute after resolution
+  - [ ] Validate collection name meets ChromaDB requirements (3-512 chars)
+  - [ ] Validate provider choice is 1-4
+  - [ ] Validate API key is non-empty string
+  - [ ] Validate model names are non-empty strings
+  - [ ] Validate format flag is "table" or "json"
+  - [ ] Validate YES confirmation is exactly "YES" (case-sensitive)
+- [ ] Add safe defaults and fallbacks
+  - [ ] Default AI provider: OpenAI (most common)
+  - [ ] Default embedding model per provider (from FR-8)
+  - [ ] Default LLM model per provider (from FR-8)
+  - [ ] Default chunk_size: 1200
+  - [ ] Default debounce_seconds: 60.0
+  - [ ] Default timeout for subprocess: 600 seconds (10 minutes)
+  - [ ] Default retry count for API validation: 3 attempts
+  - [ ] Graceful handling of missing README (prompt for description)
+  - [ ] Graceful handling of Ctrl+C (exit code 130, cleanup state)
+
+### Phase 10: Server Config Management
+- [ ] Implement server config auto-creation (Open Question 9.2, Option A)
+  - [ ] Check if ~/.minerva/apps/minerva-kb/server.json exists on first add
+  - [ ] If missing: create with defaults
+  - [ ] chromadb_path: ~/.minerva/chromadb/
+  - [ ] default_max_results: 5
+  - [ ] host: 127.0.0.1
+  - [ ] port: 8337
+  - [ ] Set file permissions to 0600
+  - [ ] Display: "✓ Created server config with defaults"
+
+### Phase 11: Testing
+- [ ] Write unit tests for collection naming
+  - [ ] Create tests/test_collection_naming.py
+  - [ ] Test lowercase conversion
+  - [ ] Test space/underscore to hyphen replacement
+  - [ ] Test special character removal
+  - [ ] Test hyphen collapsing
+  - [ ] Test leading/trailing hyphen trimming
+  - [ ] Test length validation (too short, too long)
+  - [ ] Test edge cases (all special chars, empty after sanitization)
+- [ ] Write unit tests for provider selection
+  - [ ] Create tests/test_provider_selection.py
+  - [ ] Test provider menu display
+  - [ ] Test valid choice handling (1-4)
+  - [ ] Test invalid choice handling
+  - [ ] Test API key existence check (mock subprocess)
+  - [ ] Test API key validation (mock HTTP requests)
+  - [ ] Test local provider validation (mock HTTP requests)
+  - [ ] Test model customization flow
+- [ ] Write unit tests for config management
+  - [ ] Create tests/test_config_loader.py
+  - [ ] Test load_index_config with valid JSON
+  - [ ] Test load_index_config with invalid JSON
+  - [ ] Test load_watcher_config with valid JSON
+  - [ ] Test save_index_config creates file with correct permissions
+  - [ ] Test save_watcher_config creates file with correct permissions
+  - [ ] Test config path resolution (relative to home dir)
+- [ ] Write unit tests for process management
+  - [ ] Create tests/test_process_manager.py
+  - [ ] Test find_watcher_pid with running process (mock ps aux output)
+  - [ ] Test find_watcher_pid with no matching process
+  - [ ] Test stop_watcher sends SIGTERM correctly (mock os.kill)
+  - [ ] Test stop_watcher handles timeout and sends SIGKILL
+- [ ] Write integration tests for add command
+  - [ ] Create tests/test_add_command_integration.py
+  - [ ] Test add new collection (full workflow with mocked subprocesses)
+  - [ ] Test add with existing collection (provider update flow)
+  - [ ] Test add with conflicting unmanaged collection (abort option)
+  - [ ] Test add with conflicting unmanaged collection (wipe option)
+  - [ ] Test add with missing README (manual description prompt)
+  - [ ] Test add with invalid API key (retry flow)
+  - [ ] Test add with Ollama not running (retry flow)
+- [ ] Write integration tests for list command
+  - [ ] Create tests/test_list_command_integration.py
+  - [ ] Test list with no collections (empty state)
+  - [ ] Test list with managed collections (table format)
+  - [ ] Test list with managed collections (JSON format)
+  - [ ] Test list with unmanaged collections (display unmanaged marker)
+  - [ ] Test list with broken collections (display not indexed marker)
+  - [ ] Test list with running watchers (display PID)
+  - [ ] Test list with stopped watchers (display not running marker)
+- [ ] Write integration tests for remove command
+  - [ ] Create tests/test_remove_command_integration.py
+  - [ ] Test remove managed collection (full workflow)
+  - [ ] Test remove with running watcher (stops watcher)
+  - [ ] Test remove unmanaged collection (error message)
+  - [ ] Test remove broken collection (config files only)
+  - [ ] Test remove with user cancellation (abort on prompt)
+  - [ ] Test remove with wrong confirmation (not "YES")
+- [ ] Write integration tests for sync command
+  - [ ] Create tests/test_sync_command_integration.py
+  - [ ] Test sync existing collection (re-extract and re-index)
+  - [ ] Test sync non-existent collection (error)
+  - [ ] Test sync with extraction failure
+  - [ ] Test sync with indexing failure
+- [ ] Write integration tests for watch command
+  - [ ] Create tests/test_watch_command_integration.py
+  - [ ] Test watch with collection name (start watcher)
+  - [ ] Test watch without collection name (interactive mode)
+  - [ ] Test watch with already running watcher (error)
+  - [ ] Test watch with local-repo-watcher not in PATH (error)
+  - [ ] Test watch with Ctrl+C (graceful exit)
+- [ ] Write integration tests for status command
+  - [ ] Create tests/test_status_command_integration.py
+  - [ ] Test status healthy collection (all checks pass)
+  - [ ] Test status non-existent collection (error)
+  - [ ] Test status broken collection (missing ChromaDB)
+  - [ ] Test status with stopped watcher
+- [ ] Write end-to-end workflow tests
+  - [ ] Create tests/test_e2e_workflow.py
+  - [ ] Test full workflow: add → list → status → sync → watch → remove
+  - [ ] Test multi-collection workflow: add 2 collections → list → remove both
+  - [ ] Test provider update workflow: add → update provider → status
+  - [ ] Use real ChromaDB instance (test database)
+  - [ ] Use real filesystem (temp directory)
+  - [ ] Mock external subprocess calls (extractors, minerva commands)
+- [ ] Test error scenarios comprehensively
+  - [ ] Test all exit codes match specification
+  - [ ] Test error messages are helpful and actionable
+  - [ ] Test graceful handling of Ctrl+C at various stages
+  - [ ] Test concurrent operations (two adds at same time)
+  - [ ] Test filesystem permission errors (read-only configs)
+  - [ ] Test ChromaDB connection errors
+  - [ ] Test API rate limiting errors (for cloud providers)
+
+### Phase 12: Documentation
+- [ ] Write README.md for tools/minerva-kb
+  - [ ] Add overview section (what is minerva-kb)
+  - [ ] Add installation section (pipx install)
+  - [ ] Add prerequisites section (minerva, extractors, watcher)
+  - [ ] Add quick start section (first collection workflow)
+  - [ ] Add command reference with examples
+  - [ ] add: with example output
+  - [ ] list: with example output (table and JSON)
+  - [ ] status: with example output
+  - [ ] sync: with example output
+  - [ ] watch: with example output
+  - [ ] remove: with example output
+  - [ ] Add troubleshooting section
+  - [ ] Common errors and solutions
+  - [ ] API key issues
+  - [ ] Ollama/LM Studio connection issues
+  - [ ] Collection conflicts
+  - [ ] Add FAQ section
+  - [ ] How to change provider?
+  - [ ] How to rename collection?
+  - [ ] Where are configs stored?
+  - [ ] How to backup collections?
+- [ ] Create comprehensive guide in docs/
+  - [ ] Create docs/MINERVA_KB_GUIDE.md
+  - [ ] Add introduction section (problem, solution, benefits)
+  - [ ] Add concepts section (collections, providers, watchers, configs)
+  - [ ] Add workflows section (add first, add second, change provider)
+  - [ ] Add configuration section (file structure, paths, schemas)
+  - [ ] Add provider guide (OpenAI, Gemini, Ollama, LM Studio setup)
+  - [ ] Add troubleshooting section (detailed error scenarios)
+  - [ ] Add advanced topics (multiple collections, backup/restore)
+  - [ ] Add migration section (from old setup wizard)
+- [ ] Update main Minerva documentation
+  - [ ] Update CLAUDE.md to mention minerva-kb
+  - [ ] Add minerva-kb to Quick Reference section
+  - [ ] Update installation instructions to include minerva-kb
+  - [ ] Update workflows to use minerva-kb instead of setup wizard
+  - [ ] Add link to MINERVA_KB_GUIDE.md
+- [ ] Create example workflows document
+  - [ ] Create docs/MINERVA_KB_EXAMPLES.md
+  - [ ] Copy all example workflows from PRD Appendix A
+  - [ ] Add example outputs for all commands
+  - [ ] Add screenshots (optional, for visual learners)
+- [ ] Create migration guide from setup wizard
+  - [ ] Create docs/MIGRATE_TO_MINERVA_KB.md
+  - [ ] Document differences between old and new approach
+  - [ ] Explain how to adopt existing collections (if any)
+  - [ ] Provide step-by-step migration instructions
+  - [ ] Note: for Phase 1, no users exist, so this is mostly for reference
+
+### Phase 13: Setup Wizard Update (FR-14)
+- [ ] Slim down apps/local-repo-kb/setup.py
+  - [ ] Keep only prerequisite checks (Python version, pipx installed)
+  - [ ] Remove collection creation logic (1,000+ lines)
+  - [ ] Keep installation logic for core packages
+  - [ ] Install Minerva core via pipx
+  - [ ] Install repository-doc-extractor via pipx
+  - [ ] Install local-repo-watcher via pipx
+  - [ ] Install minerva-kb via pipx
+  - [ ] Update end-of-setup message
+  - [ ] Display: "✅ Installation complete!"
+  - [ ] Display: "Next step: Create your first collection"
+  - [ ] Display: "Run: minerva-kb add /path/to/your/repository"
+  - [ ] Explain what happens during add (description, provider, indexing)
+  - [ ] Link to docs: "See: apps/minerva-kb/README.md"
+  - [ ] Target: <200 lines total
+- [ ] Test slimmed setup wizard
+  - [ ] Run setup.py on clean system
+  - [ ] Verify all packages installed correctly
+  - [ ] Verify end message displays correctly
+  - [ ] Verify minerva-kb is in PATH after setup
+  - [ ] Verify first add command works after setup
+
+### Phase 14: Deprecate Watcher Manager (Open Question 9.1, Option A)
+- [ ] Remove tools/local-repo-watcher-manager package
+  - [ ] Delete tools/local-repo-watcher-manager/ directory
+  - [ ] Update main README.md to remove references
+  - [ ] Update docs to point to minerva-kb watch instead
+  - [ ] Update any scripts that reference watcher-manager
+- [ ] Update documentation references
+  - [ ] Search for "local-repo-watcher-manager" in all docs
+  - [ ] Replace with "minerva-kb watch"
+  - [ ] Update installation instructions
+  - [ ] Update troubleshooting guides
+
+### Phase 15: Polish & Final Testing
+- [ ] Add --help text for all commands
+  - [ ] minerva-kb --help: show all subcommands
+  - [ ] minerva-kb add --help: show usage, arguments, examples
+  - [ ] minerva-kb list --help: show format options, examples
+  - [ ] minerva-kb status --help: show usage, examples
+  - [ ] minerva-kb sync --help: show usage, examples
+  - [ ] minerva-kb watch --help: show usage, interactive mode, examples
+  - [ ] minerva-kb remove --help: show usage, warning, examples
+- [ ] Improve output formatting
+  - [ ] Consistent use of symbols (✓, ⚠️, ❌)
+  - [ ] Consistent section headers
+  - [ ] Proper indentation for nested information
+  - [ ] Color coding (optional, via ANSI escape codes)
+  - [ ] Green for success, yellow for warnings, red for errors
+  - [ ] Progress indicators for long-running operations
+- [ ] Add version command
+  - [ ] Implement minerva-kb --version
+  - [ ] Display current version from package metadata
+  - [ ] Display installed versions of dependencies (minerva, extractors, watcher)
+- [ ] User acceptance testing
+  - [ ] Recruit 3 test users (junior developers preferred)
+  - [ ] Task 1: Install Minerva and create first collection
+  - [ ] Measure time to completion (target: <5 minutes)
+  - [ ] Task 2: Add second collection with different provider
+  - [ ] Measure time to completion (target: <2 minutes)
+  - [ ] Task 3: Check status of all collections
+  - [ ] Task 4: Remove one collection
+  - [ ] Collect feedback on error messages and UX
+  - [ ] Iterate based on feedback
+- [ ] Performance testing
+  - [ ] Test with small repository (~10 files, <100 KB)
+  - [ ] Measure extraction time (<5 seconds)
+  - [ ] Measure indexing time (<30 seconds)
+  - [ ] Test with medium repository (~100 files, ~1 MB)
+  - [ ] Measure extraction time (<30 seconds)
+  - [ ] Measure indexing time (<2 minutes)
+  - [ ] Test with large repository (~1,000 files, ~10 MB)
+  - [ ] Measure extraction time (<2 minutes)
+  - [ ] Measure indexing time (<10 minutes)
+  - [ ] Test list command with 10 collections (<1 second)
+  - [ ] Test status command response time (<1 second)
+- [ ] Final bug fixes and edge case handling
+  - [ ] Review all TODO comments in code
+  - [ ] Review all FIXME comments in code
+  - [ ] Test on macOS (primary platform)
+  - [ ] Test on Linux (secondary platform)
+  - [ ] Test with Python 3.10, 3.11, 3.12, 3.13
+  - [ ] Verify all exit codes match specification
+  - [ ] Verify all error messages are helpful
+  - [ ] Verify all file permissions are secure (0600/0700)
+
+### Phase 16: Launch Preparation
+- [ ] Create release checklist
+  - [ ] All tests passing (unit, integration, e2e)
+  - [ ] Test coverage >80%
+  - [ ] Documentation complete (README, guide, examples)
+  - [ ] Setup wizard updated (<200 lines)
+  - [ ] Watcher manager deprecated
+  - [ ] User testing complete (3 participants)
+  - [ ] Performance benchmarks documented
+  - [ ] All acceptance criteria met (see PRD section 10)
+- [ ] Prepare announcement
+  - [ ] Write release notes highlighting key features
+  - [ ] Explain benefits over old setup wizard
+  - [ ] Provide migration instructions (if needed)
+  - [ ] Include example workflows
+  - [ ] Link to documentation
+- [ ] Plan post-launch support
+  - [ ] Monitor for bug reports
+  - [ ] Collect user feedback
+  - [ ] Plan Phase 2 features based on feedback
+  - [ ] Potential Phase 2 features from PRD section 5 (non-goals)
+  - [ ] Batch operations (sync --all, watch --all)
+  - [ ] Collection rename command
+  - [ ] MCP server management (serve command)
+  - [ ] Collection export/import for backup/restore
+  - [ ] Multi-type collections (ZIM, Bear, markdown-book)
+
+## Relevant Files
+
+### Core Package Files
+- /Users/michele/my-code/minerva/tools/minerva-kb/pyproject.toml
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/__init__.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/cli.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/constants.py
+
+### Command Implementations
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/add.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/list.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/status.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/sync.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/watch.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/remove.py
+
+### Utility Modules
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/collection_naming.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/provider_selection.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/config_loader.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/process_manager.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/chromadb_query.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/config_helpers.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/display.py
+
+### Test Files
+- /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_collection_naming.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_provider_selection.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_config_loader.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_process_manager.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_add_command_integration.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_list_command_integration.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_remove_command_integration.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_sync_command_integration.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_watch_command_integration.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_status_command_integration.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_e2e_workflow.py
+
+### Documentation Files
+- /Users/michele/my-code/minerva/tools/minerva-kb/README.md
+- /Users/michele/my-code/minerva/docs/MINERVA_KB_GUIDE.md
+- /Users/michele/my-code/minerva/docs/MINERVA_KB_EXAMPLES.md
+- /Users/michele/my-code/minerva/docs/MIGRATE_TO_MINERVA_KB.md
+
+### Files to Update
+- /Users/michele/my-code/minerva/CLAUDE.md (add minerva-kb reference)
+- /Users/michele/my-code/minerva/README.md (update with minerva-kb)
+- /Users/michele/my-code/minerva/apps/local-repo-kb/setup.py (slim down to <200 lines)
+
+### Files to Delete
+- /Users/michele/my-code/minerva/tools/local-repo-watcher-manager/ (entire directory)
+
+## Notes
+
+### Implementation Principles
+- **Clean Code**: No comments/docstrings, clear function names, single responsibility per function
+- **Delegation Pattern**: Call existing tools (minerva, extractors, watchers) via subprocess, do NOT import minerva modules directly
+- **Configuration as Source of Truth**: Derive all state from config files and ChromaDB, no central metadata database
+- **User-Friendly Errors**: All errors include next-action suggestions and relevant context
+- **Secure by Default**: File permissions 0600/0700, API keys in keychain, no logging of sensitive data
+- **Exit Codes**: 0=success, 1=not found, 2=validation/user cancelled, 3=operation failed, 130=Ctrl+C
+
+### Key Design Decisions
+- Collection name derived from folder name (not user-prompted) - ensures predictability and 1:1 mapping
+- Watcher runs in foreground (not daemon) - simpler implementation, user controls lifecycle
+- Provider update requires full re-indexing - embeddings incompatible across models
+- Config files named <collection>-index.json and <collection>-watcher.json - clear ownership and purpose
+- Shared ChromaDB instance at ~/.minerva/chromadb/ - single source of truth, easier backup
+- Auto-create server.json on first add if missing - reduces setup friction
+
+### Testing Strategy
+- Unit tests for pure functions (naming, validation, parsing)
+- Integration tests with mocked subprocesses (full command workflows)
+- E2E tests with real ChromaDB and filesystem (temp directories)
+- User acceptance testing with 3 participants (time-to-completion metrics)
+- Performance benchmarks for small/medium/large repositories
+- Target: >80% code coverage, all acceptance criteria met
+
+### Timeline and Milestones
+- **Week 1**: Phase 0-2 (setup, infrastructure, add command) - Core functionality working
+- **Week 2**: Phase 3-5 (list, status, sync commands) - Observability complete
+- **Week 3**: Phase 6-7 (watch, remove commands) - Full lifecycle management working
+- **Week 4**: Phase 8-12 (error handling, utilities, testing, docs) - Production-ready quality
+- **Week 5**: Phase 13-16 (setup wizard update, deprecation, polish, launch) - User-tested and released
+
+### Success Metrics
+- Time to second collection: <2 minutes (from 15+ minutes baseline)
+- Setup wizard complexity: <200 lines (from 1,277 lines baseline)
+- Test coverage: >80%
+- User testing: 3/3 participants complete tasks without docs
+- Performance: Medium repo (<100 files) indexes in <2 minutes
+
+### Open Questions Resolved
+- Q: Delete or deprecate watcher-manager? **A: Delete (Option A) - clean break, no existing users**
+- Q: minerva-kb manage server.json? **A: Yes (Option A) - auto-create with defaults if missing**
+- Q: Support description updates? **A: No (Option C) - defer to Phase 2, use edit command**
+- Q: Handle partial indexing failures? **A: Trust ChromaDB transactions (Option A) - Phase 1**
+- Q: Show unmanaged collections? **A: Yes (Option A) - mark as unmanaged in list output**
+- Q: Testing strategy? **A: Unit + integration (Option B) - balance speed and confidence**
+- Q: Documentation location? **A: Both (Option C) - README for quickstart, docs/ for comprehensive**
