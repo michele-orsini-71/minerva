@@ -272,47 +272,47 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Handle watcher crashes (exit code 3)
 
 ### Phase 7: Remove Command (FR-6)
-- [ ] Implement collection removal
-  - [ ] Create src/minerva_kb/commands/remove.py
-  - [ ] Implement run_remove(collection_name) function
-  - [ ] Check if collection is managed (has config files)
-  - [ ] Check if watcher config exists
-  - [ ] Check if index config exists
-  - [ ] Handle unmanaged collections (in ChromaDB, no configs)
-  - [ ] Display error: "Collection is not managed by minerva-kb"
-  - [ ] Show path where configs should be
-  - [ ] Show manual removal command: minerva remove <chromadb> <collection>
-  - [ ] Exit with code 1
-  - [ ] Handle broken collections (has configs, no ChromaDB)
-  - [ ] Display warning: "Collection not found in ChromaDB"
-  - [ ] Explain possible causes (indexing failed, manual deletion)
-  - [ ] Prompt: "Delete config files anyway? [y/N]"
-  - [ ] If YES: skip to config deletion step
-  - [ ] If NO: exit with "Deletion cancelled"
-  - [ ] Display collection details via status logic
-  - [ ] Show repository path, provider, chunks
-  - [ ] Display deletion warning
-  - [ ] List what will be deleted (ChromaDB, configs, extracted data)
-  - [ ] Note: Repository files will NOT be affected
-  - [ ] Prompt for confirmation: "Type YES to confirm deletion: "
-  - [ ] If input != "YES": exit with "Deletion cancelled" (code 2)
-  - [ ] Stop running watcher if any
-  - [ ] Find watcher process via find_watcher_pid()
-  - [ ] Send SIGTERM to process
-  - [ ] Wait for graceful shutdown (up to 5 seconds)
-  - [ ] If still running: send SIGKILL
-  - [ ] Delete configuration files
-  - [ ] Delete ~/.minerva/apps/minerva-kb/<collection>-watcher.json
-  - [ ] Delete ~/.minerva/apps/minerva-kb/<collection>-index.json
-  - [ ] Delete ~/.minerva/apps/minerva-kb/<collection>-extracted.json
-  - [ ] Handle file deletion errors (permissions, etc.)
-  - [ ] Delete ChromaDB collection
-  - [ ] Call minerva remove <chromadb-path> <collection-name> via subprocess
-  - [ ] Handle deletion errors (exit code 3)
-  - [ ] Display success message
-  - [ ] Note: API keys remain in keychain
-  - [ ] Show command to remove keys: minerva keychain delete <KEY_NAME>
-  - [ ] Exit code 0 on success, 130 on Ctrl+C during operation
+- [x] Implement collection removal
+  - [x] Create src/minerva_kb/commands/remove.py
+  - [x] Implement run_remove(collection_name) function
+  - [x] Check if collection is managed (has config files)
+  - [x] Check if watcher config exists
+  - [x] Check if index config exists
+  - [x] Handle unmanaged collections (in ChromaDB, no configs)
+  - [x] Display error: "Collection is not managed by minerva-kb"
+  - [x] Show path where configs should be
+  - [x] Show manual removal command: minerva remove <chromadb> <collection>
+  - [x] Exit with code 1
+  - [x] Handle broken collections (has configs, no ChromaDB)
+  - [x] Display warning: "Collection not found in ChromaDB"
+  - [x] Explain possible causes (indexing failed, manual deletion)
+  - [x] Prompt: "Delete config files anyway? [y/N]"
+  - [x] If YES: skip to config deletion step
+  - [x] If NO: exit with "Deletion cancelled"
+  - [x] Display collection details via status logic
+  - [x] Show repository path, provider, chunks
+  - [x] Display deletion warning
+  - [x] List what will be deleted (ChromaDB, configs, extracted data)
+  - [x] Note: Repository files will NOT be affected
+  - [x] Prompt for confirmation: "Type YES to confirm deletion: "
+  - [x] If input != "YES": exit with "Deletion cancelled" (code 2)
+  - [x] Stop running watcher if any
+  - [x] Find watcher process via find_watcher_pid()
+  - [x] Send SIGTERM to process
+  - [x] Wait for graceful shutdown (up to 5 seconds)
+  - [x] If still running: send SIGKILL
+  - [x] Delete configuration files
+  - [x] Delete ~/.minerva/apps/minerva-kb/<collection>-watcher.json
+  - [x] Delete ~/.minerva/apps/minerva-kb/<collection>-index.json
+  - [x] Delete ~/.minerva/apps/minerva-kb/<collection>-extracted.json
+  - [x] Handle file deletion errors (permissions, etc.)
+  - [x] Delete ChromaDB collection
+  - [x] Call minerva remove <chromadb-path> <collection-name> via subprocess
+  - [x] Handle deletion errors (exit code 3)
+  - [x] Display success message
+  - [x] Note: API keys remain in keychain
+  - [x] Show command to remove keys: minerva keychain delete <KEY_NAME>
+  - [x] Exit code 0 on success, 130 on Ctrl+C during operation
 
 ### Phase 8: Utility Functions
 - [ ] Implement process management utilities
@@ -722,6 +722,7 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/status.py - Shows detailed per-collection diagnostics and health information
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/sync.py - Runs manual extraction and indexing for a collection
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/watch.py - Handles watcher lifecycle (interactive selection, start/stop guards)
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/remove.py - Removes managed collections, configs, and Chroma data with confirmations
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/list.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/status.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/sync.py

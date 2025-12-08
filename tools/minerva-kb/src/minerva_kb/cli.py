@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from minerva_kb.commands import run_add, run_list, run_status, run_sync, run_watch
+from minerva_kb.commands import run_add, run_list, run_remove, run_status, run_sync, run_watch
 
 
 def main():
@@ -99,8 +99,7 @@ def main():
     elif args.command == 'watch':
         return run_watch(args.collection_name)
     elif args.command == 'remove':
-        print(f"remove command called for collection: {args.collection_name}")
-        return 0
+        return run_remove(args.collection_name)
     else:
         parser.print_help()
         return 1
