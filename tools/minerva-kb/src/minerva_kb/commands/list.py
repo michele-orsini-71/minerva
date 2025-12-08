@@ -7,10 +7,14 @@ from chromadb import PersistentClient
 
 from minerva_kb.constants import CHROMADB_DIR, MINERVA_KB_APP_DIR, PROVIDER_DISPLAY_NAMES
 from minerva_kb.utils.config_loader import WATCHER_SUFFIX, load_index_config, load_watcher_config
+from minerva_kb.utils.display import display_error
 from minerva_kb.utils.process_manager import find_watcher_pid
 
 
 def run_list(output_format: str) -> int:
+    if output_format not in {"table", "json"}:
+        display_error("Invalid format. Use 'table' or 'json'.")
+        return 2
     chroma_collections = _discover_chroma_collections()
     managed = _discover_managed_collections(chroma_collections)
     unmanaged = _discover_unmanaged_collections(chroma_collections, {entry["name"] for entry in managed})

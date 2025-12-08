@@ -3,6 +3,7 @@ from pathlib import Path
 
 MIN_LENGTH = 3
 MAX_LENGTH = 512
+VALID_PATTERN = re.compile(r"^[a-z0-9-]+$")
 
 
 def sanitize_collection_name(repo_path: str | Path) -> str:
@@ -20,3 +21,13 @@ def sanitize_collection_name(repo_path: str | Path) -> str:
     if len(cleaned) > MAX_LENGTH:
         raise ValueError("Collection name cannot exceed 512 characters")
     return cleaned
+
+
+def validate_collection_name_format(value: str) -> None:
+    name = value.strip()
+    if len(name) < MIN_LENGTH:
+        raise ValueError("Collection name must be at least 3 characters")
+    if len(name) > MAX_LENGTH:
+        raise ValueError("Collection name cannot exceed 512 characters")
+    if not VALID_PATTERN.fullmatch(name):
+        raise ValueError("Collection name may use lowercase letters, numbers, and hyphens only")

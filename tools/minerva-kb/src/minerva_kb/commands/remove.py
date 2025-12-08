@@ -4,13 +4,17 @@ from pathlib import Path
 from chromadb import PersistentClient
 
 from minerva_kb.constants import CHROMADB_DIR, MINERVA_KB_APP_DIR
+from minerva_kb.utils.collection_naming import validate_collection_name_format
 from minerva_kb.utils.config_loader import load_index_config, load_watcher_config
+from minerva_kb.utils.display import display_error
 from minerva_kb.utils.process_manager import find_watcher_pid, stop_watcher
 
 DEFAULT_TIMEOUT = 600
 
 
 def run_remove(collection_name: str) -> int:
+    if not _validate_collection_argument(collection_name):
+        return 2
     try:
         return _execute_remove(collection_name)
     except KeyboardInterrupt:
@@ -25,8 +29,9 @@ def _execute_remove(collection_name: str) -> int:
 
     managed = watcher_path.exists() or index_path.exists()
     if not managed:
-        _display_error(f"Collection '{collection_name}' is not managed by minerva-kb")
-        print("ChromaDB collections must be removed manually:")
+        display_error(f"Collection '{collection_name}' is not managed by minerva-kb")
+        print("Collection exists in ChromaDB but has no config files.")
+        print("Remove manually with:")
         print(f"  minerva remove {CHROMADB_DIR} {collection_name}")
         return 1
 
@@ -44,7 +49,7 @@ def _execute_remove(collection_name: str) -> int:
     _print_deletion_plan(collection_name, chroma_state.get("exists", False), watcher_path, index_path, extracted_path)
 
     if not _confirm_deletion(collection_name):
-        print("Deletion cancelled")
+        print("Deletion cancelled (type YES to confirm)")
         return 2
 
     pid = find_watcher_pid(watcher_path)
@@ -72,7 +77,7 @@ def _safe_load(loader, collection_name: str) -> dict | None:
     try:
         return loader(collection_name)
     except ValueError as exc:
-        _display_error(str(exc))
+        display_error(str(exc))
         return None
 
 
@@ -137,7 +142,7 @@ def _delete_file(path: Path) -> None:
             path.unlink()
             print(f"Deleted {path}")
         except OSError as exc:
-            _display_error(f"Failed to delete {path}: {exc}")
+            display_error(f"Failed to delete {path}: {exc}")
 
 
 def _remove_chroma_collection(collection_name: str) -> bool:
@@ -152,13 +157,13 @@ def _remove_chroma_collection(collection_name: str) -> bool:
         )
         return True
     except subprocess.CalledProcessError as exc:
-        _display_error(f"Failed to remove Chroma collection (exit {exc.returncode})")
+        display_error(f"Failed to remove Chroma collection (exit {exc.returncode})")
         return False
     except FileNotFoundError:
-        _display_error("'minerva' command not found")
+        display_error("'minerva' command not found")
         return False
     except subprocess.TimeoutExpired:
-        _display_error("Chroma removal timed out")
+        display_error("Chroma removal timed out")
         return False
 
 
@@ -177,5 +182,10 @@ def _print_api_key_hint(index_config: dict | None) -> None:
     print(f"To remove: minerva keychain delete {key_name}")
 
 
-def _display_error(message: str) -> None:
-    print(f"❌ {message}")
+def _validate_collection_argument(collection_name: str) -> bool:
+    try:
+        validate_collection_name_format(collection_name)
+        return True
+    except ValueError as exc:
+        display_error(str(exc))
+        return False

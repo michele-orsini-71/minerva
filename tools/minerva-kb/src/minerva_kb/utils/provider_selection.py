@@ -4,6 +4,9 @@ import urllib.request
 from typing import Any
 
 from minerva_kb.constants import DEFAULT_PROVIDER_MODELS, PROVIDER_DISPLAY_NAMES
+from minerva_kb.utils.display import display_error
+
+MAX_API_VALIDATION_ATTEMPTS = 3
 
 LOCAL_PROVIDER_ENDPOINTS = {
     "ollama": {
@@ -26,10 +29,15 @@ def interactive_select_provider() -> dict[str, Any]:
     while True:
         provider_type = _prompt_provider_choice()
         model_config = prompt_for_models(provider_type)
+        embedding_model = model_config["embedding_model"].strip()
+        llm_model = model_config["llm_model"].strip()
+        if not embedding_model or not llm_model:
+            display_error("Model names must be non-empty strings")
+            continue
         config = {
             "provider_type": provider_type,
-            "embedding_model": model_config["embedding_model"],
-            "llm_model": model_config["llm_model"],
+            "embedding_model": embedding_model,
+            "llm_model": llm_model,
         }
 
         key_name = _provider_key_name(provider_type)
@@ -45,7 +53,7 @@ def interactive_select_provider() -> dict[str, Any]:
             config["api_key_name"] = key_name
         else:
             if not validate_local_provider(provider_type):
-                retry = input("Retry provider validation? [y/N]: ").strip().lower()
+                retry = input("Retry connection? [y/N]: ").strip().lower()
                 if retry in {"y", "yes"}:
                     continue
                 raise RuntimeError(f"{PROVIDER_DISPLAY_NAMES[provider_type]} is not available")
@@ -122,10 +130,12 @@ def _prompt_provider_choice() -> str:
     valid_choices = {"1": "openai", "2": "gemini", "3": "ollama", "4": "lmstudio"}
 
     while True:
-        choice = input("Choice [1-4]: ").strip()
+        choice = input("Choice [1-4, default 1]: ").strip()
+        if not choice:
+            return valid_choices["1"]
         if choice in valid_choices:
             return valid_choices[choice]
-        print("❌ Invalid choice. Please enter 1, 2, 3, or 4.")
+        display_error("Invalid choice. Please enter 1, 2, 3, or 4.")
 
 
 def check_api_key_exists(provider_type: str) -> bool:
@@ -167,18 +177,26 @@ def validate_api_key(provider_type: str) -> bool:
 
     display_name = PROVIDER_DISPLAY_NAMES.get(provider_type, provider_type)
 
+    attempts = 0
     while True:
         api_key = _read_api_key(provider_type)
         if not api_key:
-            print(f"❌ No API key found for {display_name}")
-            return False
+            display_error(f"No API key found for {display_name}")
+            if not prompt_for_api_key(provider_type):
+                return False
+            continue
 
+        attempts += 1
         try:
             _perform_remote_validation(provider_type, api_key)
             print(f"✓ {display_name} API key is valid")
             return True
         except Exception as exc:  # noqa: BLE001
-            print(f"❌ Failed to validate {display_name} API key: {exc}")
+            display_error(f"Failed to connect to {display_name}: {exc}")
+            _print_api_key_troubleshooting(display_name)
+            if attempts >= MAX_API_VALIDATION_ATTEMPTS:
+                print("Maximum validation attempts reached.")
+                return False
             retry = input("Try again with a different API key? [y/N]: ").strip().lower()
             if retry in {"y", "yes"}:
                 if not prompt_for_api_key(provider_type):
@@ -199,7 +217,10 @@ def _read_api_key(provider_type: str) -> str | None:
     )
     if result.returncode != 0:
         return None
-    return result.stdout.strip()
+    value = result.stdout.strip()
+    if not value:
+        return None
+    return value
 
 
 def _perform_remote_validation(provider_type: str, api_key: str) -> None:
@@ -228,11 +249,16 @@ def validate_local_provider(provider_type: str) -> bool:
         with urllib.request.urlopen(details["url"], timeout=5) as response:  # noqa: S310
             if response.status < 400:
                 return True
-            print(f"❌ {PROVIDER_DISPLAY_NAMES[provider_type]} returned HTTP {response.status}")
+            display_error(
+                f"Cannot connect to {PROVIDER_DISPLAY_NAMES[provider_type]} at {details['url']}"
+            )
+            print(details["instruction"])
             return False
-    except urllib.error.URLError:
-        print(f"❌ Cannot connect to {PROVIDER_DISPLAY_NAMES[provider_type]} at {details['url']}")
+    except urllib.error.URLError as exc:
+        display_error(f"Cannot connect to {PROVIDER_DISPLAY_NAMES[provider_type]} at {details['url']}")
         print(details["instruction"])
+        if getattr(exc, "reason", None):
+            print(f"Reason: {exc.reason}")
         return False
 
 
@@ -241,3 +267,10 @@ def _provider_key_name(provider_type: str) -> str | None:
     if not defaults:
         raise ValueError(f"Unknown provider type: {provider_type}")
     return defaults.get("api_key_name")
+
+
+def _print_api_key_troubleshooting(display_name: str) -> None:
+    print("Possible issues:")
+    print("  • Invalid or expired API key")
+    print("  • No internet connection")
+    print(f"  • {display_name} service is unavailable")

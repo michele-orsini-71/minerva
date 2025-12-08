@@ -3,7 +3,14 @@ from pathlib import Path
 
 from chromadb import PersistentClient
 
-from minerva_kb.constants import CHROMADB_DIR, MINERVA_KB_APP_DIR, PROVIDER_DISPLAY_NAMES
+from minerva_kb.constants import (
+    CHROMADB_DIR,
+    DEFAULT_CHUNK_SIZE,
+    DEFAULT_DEBOUNCE_SECONDS,
+    DEFAULT_SUBPROCESS_TIMEOUT,
+    MINERVA_KB_APP_DIR,
+    PROVIDER_DISPLAY_NAMES,
+)
 from minerva_kb.utils.collection_naming import sanitize_collection_name
 from minerva_kb.utils.config_loader import (
     load_index_config,
@@ -12,11 +19,10 @@ from minerva_kb.utils.config_loader import (
     save_watcher_config,
 )
 from minerva_kb.utils.description_generator import generate_description
+from minerva_kb.utils.display import display_error, display_warning
 from minerva_kb.utils.provider_selection import interactive_select_provider
 from minerva_kb.utils.process_manager import find_watcher_pid, stop_watcher
 
-DEFAULT_CHUNK_SIZE = 1200
-DEFAULT_DEBOUNCE_SECONDS = 60.0
 INCLUDE_EXTENSIONS = [".md", ".mdx", ".markdown", ".rst", ".txt"]
 IGNORE_PATTERNS = [
     ".git",
@@ -28,10 +34,17 @@ IGNORE_PATTERNS = [
     "build",
     ".tox",
 ]
-DEFAULT_SUBPROCESS_TIMEOUT = 600
 
 
 def run_add(repo_path: str) -> int:
+    try:
+        return _execute_add(repo_path)
+    except KeyboardInterrupt:
+        print("Operation cancelled by user")
+        return 130
+
+
+def _execute_add(repo_path: str) -> int:
     repository = _resolve_repository_path(repo_path)
     if repository is None:
         return 2
@@ -56,23 +69,27 @@ def run_add(repo_path: str) -> int:
 def _resolve_repository_path(repo_path: str) -> Path | None:
     expanded = Path(repo_path).expanduser()
     if not expanded.exists():
-        _display_error(f"Repository path does not exist: {expanded}")
+        _display_repository_hint(f"Repository path does not exist: {expanded}")
         return None
     if not expanded.is_dir():
-        _display_error(f"Repository path is not a directory: {expanded}")
+        _display_repository_hint(f"Repository path is not a directory: {expanded}")
         return None
     try:
-        return expanded.resolve(strict=True)
+        resolved = expanded.resolve(strict=True)
     except FileNotFoundError:
-        _display_error(f"Repository path is invalid: {expanded}")
+        _display_repository_hint(f"Repository path is invalid: {expanded}")
         return None
+    if not resolved.is_absolute():
+        _display_repository_hint(f"Repository path must be absolute: {resolved}")
+        return None
+    return resolved
 
 
 def _derive_collection_name(repository: Path) -> str | None:
     try:
         return sanitize_collection_name(repository)
     except ValueError as exc:  # noqa: PERF203 - sanitization errors are expected
-        _display_error(str(exc))
+        display_error(str(exc))
         return None
 
 
@@ -88,13 +105,13 @@ def _run_provider_update_flow(collection_name: str, repository: Path, watcher_pa
     try:
         watcher_config = load_watcher_config(collection_name)
     except ValueError as exc:
-        _display_error(f"Invalid watcher config: {exc}")
+        display_error(f"Invalid watcher config: {exc}")
         return 3
 
     try:
         index_config = load_index_config(collection_name)
     except ValueError as exc:
-        _display_error(f"Invalid index config: {exc}")
+        display_error(f"Invalid index config: {exc}")
         return 3
 
     _display_current_provider(index_config.get("provider", {}))
@@ -115,7 +132,7 @@ def _run_provider_update_flow(collection_name: str, repository: Path, watcher_pa
     if pid is not None:
         print(f"Stopping watcher (PID {pid})...")
         if not stop_watcher(pid):
-            _display_warning("Failed to stop watcher cleanly. Proceeding with reindexing.")
+            display_warning("Failed to stop watcher cleanly. Proceeding with reindexing.")
 
     repo_path = Path(watcher_config.get("repository_path", str(repository))).expanduser()
     extracted_path = Path(
@@ -243,13 +260,14 @@ def _run_command(command: list[str], label: str) -> bool:
         _print_command_output(result.stdout, result.stderr)
         return True
     except FileNotFoundError:
-        _display_error(f"{label} command not found: {command[0]}")
+        display_error(f"{label} command not found: {command[0]}")
         return False
     except subprocess.TimeoutExpired:
-        _display_error(f"{label} timed out after {DEFAULT_SUBPROCESS_TIMEOUT} seconds")
+        display_error(f"{label} timed out after {DEFAULT_SUBPROCESS_TIMEOUT} seconds")
         return False
     except subprocess.CalledProcessError as exc:
-        _display_error(f"{label} failed (exit code {exc.returncode})")
+        error_details = _extract_error_line(exc.stdout, exc.stderr)
+        display_error(f"{label} failed: {error_details}")
         _print_command_output(exc.stdout, exc.stderr)
         return False
 
@@ -340,7 +358,7 @@ def _handle_unmanaged_collection_conflict(collection_name: str) -> str:
     if index_exists or watcher_exists:
         return "ok"
 
-    _display_error(f"Collection '{collection_name}' already exists in ChromaDB")
+    display_error(f"Collection '{collection_name}' already exists in ChromaDB")
     print("This collection was not created by minerva-kb, so it cannot be managed.")
     print()
     print("Options:")
@@ -392,17 +410,21 @@ def _wipe_existing_collection(collection_name: str) -> bool:
         print()
         return True
     except FileNotFoundError:
-        _display_error("'minerva' command not found while removing collection")
+        display_error("'minerva' command not found while removing collection")
     except subprocess.TimeoutExpired:
-        _display_error("Collection removal timed out")
+        display_error("Collection removal timed out")
     except subprocess.CalledProcessError as exc:
-        _display_error(f"Failed to remove collection (exit code {exc.returncode})")
+        display_error(f"Failed to remove collection (exit code {exc.returncode})")
     return False
 
 
-def _display_error(message: str) -> None:
-    print(f"❌ {message}")
+def _display_repository_hint(message: str) -> None:
+    display_error(message)
+    print("Please provide a valid directory path.")
 
 
-def _display_warning(message: str) -> None:
-    print(f"⚠️ {message}")
+def _extract_error_line(stdout: str | None, stderr: str | None) -> str:
+    data = (stderr or stdout or "").strip()
+    if data:
+        return data.splitlines()[-1]
+    return "see logs for details"

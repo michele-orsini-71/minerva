@@ -1,5 +1,6 @@
 from datetime import datetime
 from pathlib import Path
+from typing import Sequence
 
 
 def format_file_size(value: int | float | None) -> str:
@@ -46,3 +47,18 @@ def display_success(message: str) -> None:
 
 def display_warning(message: str) -> None:
     print(f"⚠️ {message}")
+
+
+def display_available_collections(names: Sequence[str]) -> None:
+    if not names:
+        print("No collections have been created yet.")
+        return
+    print("Available collections:")
+    for name in names:
+        print(f"  • {name}")
+
+
+def display_collection_not_found(collection_name: str, names: Sequence[str]) -> None:
+    display_error(f"Collection '{collection_name}' not found")
+    display_available_collections(names)
+    print("Run 'minerva-kb list' to see all collections.")

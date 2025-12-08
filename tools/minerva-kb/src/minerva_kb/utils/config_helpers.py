@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Dict
 
 from minerva_kb.constants import MINERVA_KB_APP_DIR
 
@@ -14,7 +13,7 @@ def ensure_config_dir() -> Path:
     return MINERVA_KB_APP_DIR
 
 
-def get_config_paths(collection_name: str) -> Dict[str, Path]:
+def get_config_paths(collection_name: str) -> dict[str, Path]:
     base = ensure_config_dir()
     return {
         "watcher": base / f"{collection_name}-watcher.json",
@@ -41,3 +40,12 @@ def delete_config_files(collection_name: str) -> list[Path]:
             except OSError:
                 continue
     return deleted
+
+
+def list_managed_collections() -> list[str]:
+    if not MINERVA_KB_APP_DIR.exists():
+        return []
+    names: list[str] = []
+    for watcher_path in sorted(MINERVA_KB_APP_DIR.glob("*-watcher.json")):
+        names.append(watcher_path.stem.replace("-watcher", ""))
+    return names

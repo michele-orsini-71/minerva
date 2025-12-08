@@ -378,61 +378,61 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Implement display_success(message) function
   - [x] Print success with ✓ prefix
   - [x] Implement display_warning(message) function
-  - [ ] Print warning with ⚠️ prefix
+  - [x] Print warning with ⚠️ prefix
 
 ### Phase 9: Error Handling & Edge Cases
-- [ ] Add comprehensive error messages
-  - [ ] Repository path invalid (does not exist or not directory)
-  - [ ] Display: "❌ Repository path does not exist: <path>"
-  - [ ] Suggest: "Please provide a valid directory path"
-  - [ ] API key validation failed
-  - [ ] Display: "❌ Failed to connect to <provider>: <error>"
-  - [ ] List possible issues (invalid key, no internet, service down)
-  - [ ] Prompt: "Try again with a different API key? [y/N]"
-  - [ ] Ollama/LM Studio not running
-  - [ ] Display: "❌ Cannot connect to <provider> at <url>"
-  - [ ] Show start command (e.g., "ollama serve")
-  - [ ] Prompt: "Retry connection? [y/N]"
-  - [ ] Collection not found
-  - [ ] Display: "❌ Collection '<name>' not found"
-  - [ ] List available collections
-  - [ ] Suggest: "Run 'minerva-kb list' to see all collections"
-  - [ ] Watcher already running
-  - [ ] Display: "⚠️ Watcher already running for '<collection>' (PID <pid>)"
-  - [ ] Suggest: "To stop the watcher: kill <pid>"
-  - [ ] Collection name conflict (unmanaged collection exists)
-  - [ ] Display: "❌ Collection '<name>' already exists in ChromaDB"
-  - [ ] Explain: "This collection was not created by minerva-kb"
-  - [ ] Show options: 1) Abort, 2) Wipe and recreate
-  - [ ] Unmanaged collection removal attempt
-  - [ ] Display: "❌ Collection '<name>' is not managed by minerva-kb"
-  - [ ] Explain: "Collection exists in ChromaDB but has no config files"
-  - [ ] Show manual removal command
-  - [ ] local-repo-watcher not in PATH
-  - [ ] Display: "❌ local-repo-watcher not found in PATH"
-  - [ ] Show install command: "pipx install tools/local-repo-watcher"
-  - [ ] Extraction/indexing subprocess failure
-  - [ ] Capture stderr from subprocess
-  - [ ] Display: "❌ <operation> failed: <error>"
-  - [ ] Show subprocess output for debugging
-- [ ] Add input validation
-  - [ ] Validate repository path is absolute after resolution
-  - [ ] Validate collection name meets ChromaDB requirements (3-512 chars)
-  - [ ] Validate provider choice is 1-4
-  - [ ] Validate API key is non-empty string
-  - [ ] Validate model names are non-empty strings
-  - [ ] Validate format flag is "table" or "json"
-  - [ ] Validate YES confirmation is exactly "YES" (case-sensitive)
-- [ ] Add safe defaults and fallbacks
-  - [ ] Default AI provider: OpenAI (most common)
-  - [ ] Default embedding model per provider (from FR-8)
-  - [ ] Default LLM model per provider (from FR-8)
-  - [ ] Default chunk_size: 1200
-  - [ ] Default debounce_seconds: 60.0
-  - [ ] Default timeout for subprocess: 600 seconds (10 minutes)
-  - [ ] Default retry count for API validation: 3 attempts
-  - [ ] Graceful handling of missing README (prompt for description)
-  - [ ] Graceful handling of Ctrl+C (exit code 130, cleanup state)
+- [x] Add comprehensive error messages
+  - [x] Repository path invalid (does not exist or not directory)
+  - [x] Display: "❌ Repository path does not exist: <path>"
+  - [x] Suggest: "Please provide a valid directory path"
+  - [x] API key validation failed
+  - [x] Display: "❌ Failed to connect to <provider>: <error>"
+  - [x] List possible issues (invalid key, no internet, service down)
+  - [x] Prompt: "Try again with a different API key? [y/N]"
+  - [x] Ollama/LM Studio not running
+  - [x] Display: "❌ Cannot connect to <provider> at <url>"
+  - [x] Show start command (e.g., "ollama serve")
+  - [x] Prompt: "Retry connection? [y/N]"
+  - [x] Collection not found
+  - [x] Display: "❌ Collection '<name>' not found"
+  - [x] List available collections
+  - [x] Suggest: "Run 'minerva-kb list' to see all collections"
+  - [x] Watcher already running
+  - [x] Display: "⚠️ Watcher already running for '<collection>' (PID <pid>)"
+  - [x] Suggest: "To stop the watcher: kill <pid>"
+  - [x] Collection name conflict (unmanaged collection exists)
+  - [x] Display: "❌ Collection '<name>' already exists in ChromaDB"
+  - [x] Explain: "This collection was not created by minerva-kb"
+  - [x] Show options: 1) Abort, 2) Wipe and recreate
+  - [x] Unmanaged collection removal attempt
+  - [x] Display: "❌ Collection '<name>' is not managed by minerva-kb"
+  - [x] Explain: "Collection exists in ChromaDB but has no config files"
+  - [x] Show manual removal command
+  - [x] local-repo-watcher not in PATH
+  - [x] Display: "❌ local-repo-watcher not found in PATH"
+  - [x] Show install command: "pipx install tools/local-repo-watcher"
+  - [x] Extraction/indexing subprocess failure
+  - [x] Capture stderr from subprocess
+  - [x] Display: "❌ <operation> failed: <error>"
+  - [x] Show subprocess output for debugging
+- [x] Add input validation
+  - [x] Validate repository path is absolute after resolution
+  - [x] Validate collection name meets ChromaDB requirements (3-512 chars)
+  - [x] Validate provider choice is 1-4
+  - [x] Validate API key is non-empty string
+  - [x] Validate model names are non-empty strings
+  - [x] Validate format flag is "table" or "json"
+  - [x] Validate YES confirmation is exactly "YES" (case-sensitive)
+- [x] Add safe defaults and fallbacks
+  - [x] Default AI provider: OpenAI (most common)
+  - [x] Default embedding model per provider (from FR-8)
+  - [x] Default LLM model per provider (from FR-8)
+  - [x] Default chunk_size: 1200
+  - [x] Default debounce_seconds: 60.0
+  - [x] Default timeout for subprocess: 600 seconds (10 minutes)
+  - [x] Default retry count for API validation: 3 attempts
+  - [x] Graceful handling of missing README (prompt for description)
+  - [x] Graceful handling of Ctrl+C (exit code 130, cleanup state)
 
 ### Phase 10: Server Config Management
 - [ ] Implement server config auto-creation (Open Question 9.2, Option A)
@@ -723,11 +723,6 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/sync.py - Runs manual extraction and indexing for a collection
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/watch.py - Handles watcher lifecycle (interactive selection, start/stop guards)
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/remove.py - Removes managed collections, configs, and Chroma data with confirmations
-- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/list.py
-- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/status.py
-- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/sync.py
-- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/watch.py
-- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/remove.py
 
 ### Utility Modules
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/__init__.py - Utility package marker
@@ -739,9 +734,6 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/chromadb_query.py - Helper functions to connect to ChromaDB and inspect collections
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/config_helpers.py - Ensures config directory and provides path/deletion helpers
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/display.py - Shared formatting and message helpers for CLI output
-- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/chromadb_query.py
-- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/config_helpers.py
-- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/display.py
 
 ### Test Files
 - /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_collection_naming.py - Unit tests covering sanitize_collection_name edge cases

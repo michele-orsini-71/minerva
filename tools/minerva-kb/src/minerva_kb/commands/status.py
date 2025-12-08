@@ -6,7 +6,10 @@ from typing import Any
 from chromadb import PersistentClient
 
 from minerva_kb.constants import CHROMADB_DIR, MINERVA_KB_APP_DIR, PROVIDER_DISPLAY_NAMES
+from minerva_kb.utils.collection_naming import validate_collection_name_format
+from minerva_kb.utils.config_helpers import list_managed_collections
 from minerva_kb.utils.config_loader import load_index_config, load_watcher_config
+from minerva_kb.utils.display import display_collection_not_found, display_error
 from minerva_kb.utils.process_manager import find_watcher_pid
 
 
@@ -18,10 +21,11 @@ COLORS = {
 
 
 def run_status(collection_name: str) -> int:
+    if not _validate_collection_argument(collection_name):
+        return 2
     watcher_path = MINERVA_KB_APP_DIR / f"{collection_name}-watcher.json"
     if not watcher_path.exists():
-        _display_error(f"Collection '{collection_name}' not found")
-        _suggest_available_collections()
+        display_collection_not_found(collection_name, list_managed_collections())
         return 1
 
     state = _gather_state(collection_name, watcher_path)
@@ -216,14 +220,10 @@ def _format_size(path: Path) -> str:
         return "-"
 
 
-def _display_error(message: str) -> None:
-    print(f"❌ {message}")
-
-
-def _suggest_available_collections() -> None:
-    if not MINERVA_KB_APP_DIR.exists():
-        return
-    print("Available collections:")
-    for watcher_path in sorted(MINERVA_KB_APP_DIR.glob("*-watcher.json")):
-        name = watcher_path.stem.replace("-watcher", "")
-        print(f"  • {name}")
+def _validate_collection_argument(collection_name: str) -> bool:
+    try:
+        validate_collection_name_format(collection_name)
+        return True
+    except ValueError as exc:
+        display_error(str(exc))
+        return False
