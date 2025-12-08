@@ -229,24 +229,24 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Exit code 0 if healthy, 1 if not found, 2 if has issues
 
 ### Phase 5: Sync Command (FR-4)
-- [ ] Implement manual sync
-  - [ ] Create src/minerva_kb/commands/sync.py
-  - [ ] Implement run_sync(collection_name) function
-  - [ ] Validate collection exists (check for watcher config)
-  - [ ] If not found: exit with code 1
-  - [ ] Load index config to get paths
-  - [ ] Get repository path from watcher config
-  - [ ] Get extracted JSON path from watcher config
-  - [ ] Display: "Syncing collection '<name>'..."
-  - [ ] Call repository-doc-extractor <repo> -o <extracted-json> via subprocess
-  - [ ] Display extraction progress
-  - [ ] Handle extraction errors (exit code 2)
-  - [ ] Call minerva index --config <index-config> via subprocess
-  - [ ] Display indexing progress
-  - [ ] Handle indexing errors (exit code 3)
-  - [ ] Display success message with chunk count
-  - [ ] Do NOT restart watcher (user controls watcher lifecycle)
-  - [ ] Exit code 0 on success
+- [x] Implement manual sync
+  - [x] Create src/minerva_kb/commands/sync.py
+  - [x] Implement run_sync(collection_name) function
+  - [x] Validate collection exists (check for watcher config)
+  - [x] If not found: exit with code 1
+  - [x] Load index config to get paths
+  - [x] Get repository path from watcher config
+  - [x] Get extracted JSON path from watcher config
+  - [x] Display: "Syncing collection '<name>'..."
+  - [x] Call repository-doc-extractor <repo> -o <extracted-json> via subprocess
+  - [x] Display extraction progress
+  - [x] Handle extraction errors (exit code 2)
+  - [x] Call minerva index --config <index-config> via subprocess
+  - [x] Display indexing progress
+  - [x] Handle indexing errors (exit code 3)
+  - [x] Display success message with chunk count
+  - [x] Do NOT restart watcher (user controls watcher lifecycle)
+  - [x] Exit code 0 on success
 
 ### Phase 6: Watch Command (FR-5, FR-13)
 - [ ] Implement watcher lifecycle management
@@ -721,6 +721,7 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/add.py - Validates repository paths and routes to add flows
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/list.py - Discovers collections, reports status, and renders table/JSON output
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/status.py - Shows detailed per-collection diagnostics and health information
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/sync.py - Runs manual extraction and indexing for a collection
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/list.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/status.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/sync.py
