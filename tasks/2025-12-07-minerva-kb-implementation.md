@@ -200,33 +200,33 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Output formatted JSON with json.dumps(indent=2)
 
 ### Phase 4: Status Command (FR-3)
-- [ ] Implement detailed status display
-  - [ ] Create src/minerva_kb/commands/status.py
-  - [ ] Implement run_status(collection_name) function
-  - [ ] Validate collection exists (check for watcher config)
-  - [ ] If not found: display error with available collections list
-  - [ ] Exit with code 1
-  - [ ] Load watcher config and index config
-  - [ ] Query ChromaDB for collection metadata
-  - [ ] Check collection exists via client.get_collection()
-  - [ ] Get chunk count via collection.count()
-  - [ ] Check watcher process status via find_watcher_pid()
-  - [ ] Display comprehensive status output:
-  - [ ] Section 1: Collection name and repository path
-  - [ ] Section 2: AI Provider (type, embedding, LLM, API key status)
-  - [ ] For cloud providers: check keychain for API key
-  - [ ] Display: ✓ Stored in keychain as <KEY_NAME>
-  - [ ] Section 3: ChromaDB (collection exists, chunks, last modified)
-  - [ ] Display: ✓ Collection exists or ❌ Collection missing
-  - [ ] Section 4: Configuration Files (index, watcher, extracted)
-  - [ ] Check each file exists and display path relative to ~/
-  - [ ] Show extracted JSON file size in MB
-  - [ ] Section 5: Watcher (status, PID, watch patterns, ignore patterns)
-  - [ ] Display: ✓ Running (PID) or ⚠ Not running
-  - [ ] Handle edge cases (collection exists but has issues)
-  - [ ] Missing ChromaDB collection: exit code 2
-  - [ ] Config file mismatch: exit code 2
-  - [ ] Exit code 0 if healthy, 1 if not found, 2 if has issues
+- [x] Implement detailed status display
+  - [x] Create src/minerva_kb/commands/status.py
+  - [x] Implement run_status(collection_name) function
+  - [x] Validate collection exists (check for watcher config)
+  - [x] If not found: display error with available collections list
+  - [x] Exit with code 1
+  - [x] Load watcher config and index config
+  - [x] Query ChromaDB for collection metadata
+  - [x] Check collection exists via client.get_collection()
+  - [x] Get chunk count via collection.count()
+  - [x] Check watcher process status via find_watcher_pid()
+  - [x] Display comprehensive status output:
+  - [x] Section 1: Collection name and repository path
+  - [x] Section 2: AI Provider (type, embedding, LLM, API key status)
+  - [x] For cloud providers: check keychain for API key
+  - [x] Display: ✓ Stored in keychain as <KEY_NAME>
+  - [x] Section 3: ChromaDB (collection exists, chunks, last modified)
+  - [x] Display: ✓ Collection exists or ❌ Collection missing
+  - [x] Section 4: Configuration Files (index, watcher, extracted)
+  - [x] Check each file exists and display path relative to ~/
+  - [x] Show extracted JSON file size in MB
+  - [x] Section 5: Watcher (status, PID, watch patterns, ignore patterns)
+  - [x] Display: ✓ Running (PID) or ⚠ Not running
+  - [x] Handle edge cases (collection exists but has issues)
+  - [x] Missing ChromaDB collection: exit code 2
+  - [x] Config file mismatch: exit code 2
+  - [x] Exit code 0 if healthy, 1 if not found, 2 if has issues
 
 ### Phase 5: Sync Command (FR-4)
 - [ ] Implement manual sync
@@ -720,6 +720,7 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/__init__.py - Exposes command entry points for import convenience
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/add.py - Validates repository paths and routes to add flows
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/list.py - Discovers collections, reports status, and renders table/JSON output
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/status.py - Shows detailed per-collection diagnostics and health information
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/list.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/status.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/sync.py

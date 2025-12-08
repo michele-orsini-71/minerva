@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from minerva_kb.commands import run_add, run_list
+from minerva_kb.commands import run_add, run_list, run_status
 
 
 def main():
@@ -93,8 +93,7 @@ def main():
     elif args.command == 'list':
         return run_list(args.format)
     elif args.command == 'status':
-        print(f"status command called for collection: {args.collection_name}")
-        return 0
+        return run_status(args.collection_name)
     elif args.command == 'sync':
         print(f"sync command called for collection: {args.collection_name}")
         return 0
