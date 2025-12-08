@@ -61,7 +61,6 @@ def _run_command(command: list[str], *, label: str) -> bool:
             command,
             capture_output=True,
             text=True,
-            timeout=DEFAULT_TIMEOUT,
             timeout=DEFAULT_SUBPROCESS_TIMEOUT,
             check=True,
         )

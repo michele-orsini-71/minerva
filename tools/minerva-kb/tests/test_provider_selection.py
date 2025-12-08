@@ -97,3 +97,21 @@ def test_validate_api_key_failure(monkeypatch):
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
 
     assert provider_selection.validate_api_key("openai") is False
+
+
+def test_prompt_provider_choice_defaults_to_openai(monkeypatch):
+    inputs = iter([""])
+    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+    assert provider_selection._prompt_provider_choice() == "openai"
+
+
+def test_prompt_provider_choice_retries_on_invalid_input(monkeypatch):
+    inputs = iter(["9", "2"])
+    prompts = []
+
+    def fake_input(prompt=""):
+        prompts.append(prompt)
+        return next(inputs)
+
+    monkeypatch.setattr("builtins.input", fake_input)
+    assert provider_selection._prompt_provider_choice() == "gemini"

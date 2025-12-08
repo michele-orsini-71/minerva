@@ -446,99 +446,99 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Display: "✓ Created server config with defaults"
 
 ### Phase 11: Testing
-- [ ] Write unit tests for collection naming
-  - [ ] Create tests/test_collection_naming.py
-  - [ ] Test lowercase conversion
-  - [ ] Test space/underscore to hyphen replacement
-  - [ ] Test special character removal
-  - [ ] Test hyphen collapsing
-  - [ ] Test leading/trailing hyphen trimming
-  - [ ] Test length validation (too short, too long)
-  - [ ] Test edge cases (all special chars, empty after sanitization)
-- [ ] Write unit tests for provider selection
-  - [ ] Create tests/test_provider_selection.py
-  - [ ] Test provider menu display
-  - [ ] Test valid choice handling (1-4)
-  - [ ] Test invalid choice handling
-  - [ ] Test API key existence check (mock subprocess)
-  - [ ] Test API key validation (mock HTTP requests)
-  - [ ] Test local provider validation (mock HTTP requests)
-  - [ ] Test model customization flow
-- [ ] Write unit tests for config management
-  - [ ] Create tests/test_config_loader.py
-  - [ ] Test load_index_config with valid JSON
-  - [ ] Test load_index_config with invalid JSON
-  - [ ] Test load_watcher_config with valid JSON
-  - [ ] Test save_index_config creates file with correct permissions
-  - [ ] Test save_watcher_config creates file with correct permissions
-  - [ ] Test config path resolution (relative to home dir)
-- [ ] Write unit tests for process management
-  - [ ] Create tests/test_process_manager.py
-  - [ ] Test find_watcher_pid with running process (mock ps aux output)
-  - [ ] Test find_watcher_pid with no matching process
-  - [ ] Test stop_watcher sends SIGTERM correctly (mock os.kill)
-  - [ ] Test stop_watcher handles timeout and sends SIGKILL
-- [ ] Write integration tests for add command
-  - [ ] Create tests/test_add_command_integration.py
-  - [ ] Test add new collection (full workflow with mocked subprocesses)
-  - [ ] Test add with existing collection (provider update flow)
-  - [ ] Test add with conflicting unmanaged collection (abort option)
-  - [ ] Test add with conflicting unmanaged collection (wipe option)
-  - [ ] Test add with missing README (manual description prompt)
-  - [ ] Test add with invalid API key (retry flow)
-  - [ ] Test add with Ollama not running (retry flow)
-- [ ] Write integration tests for list command
-  - [ ] Create tests/test_list_command_integration.py
-  - [ ] Test list with no collections (empty state)
-  - [ ] Test list with managed collections (table format)
-  - [ ] Test list with managed collections (JSON format)
-  - [ ] Test list with unmanaged collections (display unmanaged marker)
-  - [ ] Test list with broken collections (display not indexed marker)
-  - [ ] Test list with running watchers (display PID)
-  - [ ] Test list with stopped watchers (display not running marker)
-- [ ] Write integration tests for remove command
-  - [ ] Create tests/test_remove_command_integration.py
-  - [ ] Test remove managed collection (full workflow)
-  - [ ] Test remove with running watcher (stops watcher)
-  - [ ] Test remove unmanaged collection (error message)
-  - [ ] Test remove broken collection (config files only)
-  - [ ] Test remove with user cancellation (abort on prompt)
-  - [ ] Test remove with wrong confirmation (not "YES")
-- [ ] Write integration tests for sync command
-  - [ ] Create tests/test_sync_command_integration.py
-  - [ ] Test sync existing collection (re-extract and re-index)
-  - [ ] Test sync non-existent collection (error)
-  - [ ] Test sync with extraction failure
-  - [ ] Test sync with indexing failure
-- [ ] Write integration tests for watch command
-  - [ ] Create tests/test_watch_command_integration.py
-  - [ ] Test watch with collection name (start watcher)
-  - [ ] Test watch without collection name (interactive mode)
-  - [ ] Test watch with already running watcher (error)
-  - [ ] Test watch with local-repo-watcher not in PATH (error)
-  - [ ] Test watch with Ctrl+C (graceful exit)
-- [ ] Write integration tests for status command
-  - [ ] Create tests/test_status_command_integration.py
-  - [ ] Test status healthy collection (all checks pass)
-  - [ ] Test status non-existent collection (error)
-  - [ ] Test status broken collection (missing ChromaDB)
-  - [ ] Test status with stopped watcher
-- [ ] Write end-to-end workflow tests
-  - [ ] Create tests/test_e2e_workflow.py
-  - [ ] Test full workflow: add → list → status → sync → watch → remove
-  - [ ] Test multi-collection workflow: add 2 collections → list → remove both
-  - [ ] Test provider update workflow: add → update provider → status
-  - [ ] Use real ChromaDB instance (test database)
-  - [ ] Use real filesystem (temp directory)
-  - [ ] Mock external subprocess calls (extractors, minerva commands)
-- [ ] Test error scenarios comprehensively
-  - [ ] Test all exit codes match specification
-  - [ ] Test error messages are helpful and actionable
-  - [ ] Test graceful handling of Ctrl+C at various stages
-  - [ ] Test concurrent operations (two adds at same time)
-  - [ ] Test filesystem permission errors (read-only configs)
-  - [ ] Test ChromaDB connection errors
-  - [ ] Test API rate limiting errors (for cloud providers)
+- [x] Write unit tests for collection naming
+  - [x] Create tests/test_collection_naming.py
+  - [x] Test lowercase conversion
+  - [x] Test space/underscore to hyphen replacement
+  - [x] Test special character removal
+  - [x] Test hyphen collapsing
+  - [x] Test leading/trailing hyphen trimming
+  - [x] Test length validation (too short, too long)
+  - [x] Test edge cases (all special chars, empty after sanitization)
+- [x] Write unit tests for provider selection
+  - [x] Create tests/test_provider_selection.py
+  - [x] Test provider menu display
+  - [x] Test valid choice handling (1-4)
+  - [x] Test invalid choice handling
+  - [x] Test API key existence check (mock subprocess)
+  - [x] Test API key validation (mock HTTP requests)
+  - [x] Test local provider validation (mock HTTP requests)
+  - [x] Test model customization flow
+- [x] Write unit tests for config management
+  - [x] Create tests/test_config_loader.py
+  - [x] Test load_index_config with valid JSON
+  - [x] Test load_index_config with invalid JSON
+  - [x] Test load_watcher_config with valid JSON
+  - [x] Test save_index_config creates file with correct permissions
+  - [x] Test save_watcher_config creates file with correct permissions
+  - [x] Test config path resolution (relative to home dir)
+- [x] Write unit tests for process management
+  - [x] Create tests/test_process_manager.py
+  - [x] Test find_watcher_pid with running process (mock ps aux output)
+  - [x] Test find_watcher_pid with no matching process
+  - [x] Test stop_watcher sends SIGTERM correctly (mock os.kill)
+  - [x] Test stop_watcher handles timeout and sends SIGKILL
+- [x] Write integration tests for add command
+  - [x] Create tests/test_add_command_integration.py
+  - [x] Test add new collection (full workflow with mocked subprocesses)
+  - [x] Test add with existing collection (provider update flow)
+  - [x] Test add with conflicting unmanaged collection (abort option)
+  - [x] Test add with conflicting unmanaged collection (wipe option)
+  - [x] Test add with missing README (manual description prompt)
+  - [x] Test add with invalid API key (retry flow)
+  - [x] Test add with Ollama not running (retry flow)
+- [x] Write integration tests for list command
+  - [x] Create tests/test_list_command_integration.py
+  - [x] Test list with no collections (empty state)
+  - [x] Test list with managed collections (table format)
+  - [x] Test list with managed collections (JSON format)
+  - [x] Test list with unmanaged collections (display unmanaged marker)
+  - [x] Test list with broken collections (display not indexed marker)
+  - [x] Test list with running watchers (display PID)
+  - [x] Test list with stopped watchers (display not running marker)
+- [x] Write integration tests for remove command
+  - [x] Create tests/test_remove_command_integration.py
+  - [x] Test remove managed collection (full workflow)
+  - [x] Test remove with running watcher (stops watcher)
+  - [x] Test remove unmanaged collection (error message)
+  - [x] Test remove broken collection (config files only)
+  - [x] Test remove with user cancellation (abort on prompt)
+  - [x] Test remove with wrong confirmation (not "YES")
+- [x] Write integration tests for sync command
+  - [x] Create tests/test_sync_command_integration.py
+  - [x] Test sync existing collection (re-extract and re-index)
+  - [x] Test sync non-existent collection (error)
+  - [x] Test sync with extraction failure
+  - [x] Test sync with indexing failure
+- [x] Write integration tests for watch command
+  - [x] Create tests/test_watch_command_integration.py
+  - [x] Test watch with collection name (start watcher)
+  - [x] Test watch without collection name (interactive mode)
+  - [x] Test watch with already running watcher (error)
+  - [x] Test watch with local-repo-watcher not in PATH (error)
+  - [x] Test watch with Ctrl+C (graceful exit)
+- [x] Write integration tests for status command
+  - [x] Create tests/test_status_command_integration.py
+  - [x] Test status healthy collection (all checks pass)
+  - [x] Test status non-existent collection (error)
+  - [x] Test status broken collection (missing ChromaDB)
+  - [x] Test status with stopped watcher
+- [x] Write end-to-end workflow tests
+  - [x] Create tests/test_e2e_workflow.py
+  - [x] Test full workflow: add → list → status → sync → watch → remove
+  - [x] Test multi-collection workflow: add 2 collections → list → remove both
+  - [x] Test provider update workflow: add → update provider → status
+  - [x] Use real ChromaDB instance (test database)
+  - [x] Use real filesystem (temp directory)
+  - [x] Mock external subprocess calls (extractors, minerva commands)
+- [x] Test error scenarios comprehensively
+  - [x] Test all exit codes match specification
+  - [x] Test error messages are helpful and actionable
+  - [x] Test graceful handling of Ctrl+C at various stages
+  - [x] Test concurrent operations (two adds at same time)
+  - [x] Test filesystem permission errors (read-only configs)
+  - [x] Test ChromaDB connection errors
+  - [x] Test API rate limiting errors (for cloud providers)
 
 ### Phase 12: Documentation
 - [ ] Write README.md for tools/minerva-kb
