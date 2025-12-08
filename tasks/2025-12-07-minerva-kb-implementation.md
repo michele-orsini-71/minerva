@@ -137,25 +137,25 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] If abort: exit with code 1 and show existing collections
   - [x] If wipe: call minerva remove <chromadb> <collection> via subprocess
   - [x] Then proceed with normal add flow
-- [ ] Implement provider update flow (FR-9)
-  - [ ] Detect existing collection via watcher config
-  - [ ] Load index config to get current provider
-  - [ ] Display current provider (type, embedding model, LLM model)
-  - [ ] Prompt: "Change AI provider? [y/N]"
-  - [ ] If NO: exit with "No changes made"
-  - [ ] If YES: run provider selection flow
-  - [ ] Call interactive_select_provider()
-  - [ ] Handle API key setup for cloud providers
-  - [ ] Get new model selections
-  - [ ] Update index config with new provider settings
-  - [ ] Find and stop watcher process for THIS collection
-  - [ ] Use find_watcher_pid() to get PID
-  - [ ] Send SIGTERM to process
-  - [ ] Wait for graceful shutdown
-  - [ ] Call repository-doc-extractor to re-extract
-  - [ ] Call minerva index --config <config> --force-recreate to rebuild embeddings
-  - [ ] Display success with warning about stopped watcher
-  - [ ] Show command to restart: "minerva-kb watch <collection>"
+- [x] Implement provider update flow (FR-9)
+  - [x] Detect existing collection via watcher config
+  - [x] Load index config to get current provider
+  - [x] Display current provider (type, embedding model, LLM model)
+  - [x] Prompt: "Change AI provider? [y/N]"
+  - [x] If NO: exit with "No changes made"
+  - [x] If YES: run provider selection flow
+  - [x] Call interactive_select_provider()
+  - [x] Handle API key setup for cloud providers
+  - [x] Get new model selections
+  - [x] Update index config with new provider settings
+  - [x] Find and stop watcher process for THIS collection
+  - [x] Use find_watcher_pid() to get PID
+  - [x] Send SIGTERM to process
+  - [x] Wait for graceful shutdown
+  - [x] Call repository-doc-extractor to re-extract
+  - [x] Call minerva index --config <config> --force-recreate to rebuild embeddings
+  - [x] Display success with warning about stopped watcher
+  - [x] Show command to restart: "minerva-kb watch <collection>"
 
 ### Phase 3: List Command (FR-2)
 - [ ] Implement collection discovery
@@ -731,7 +731,7 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/provider_selection.py - Interactive provider selection, API key helpers, and validation utilities
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/config_loader.py - Config load/save helpers with schema validation
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/description_generator.py - Generates optimized descriptions from README content or manual input via provider APIs
-- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/process_manager.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/process_manager.py - Finds watcher processes and stops them safely during provider updates/removals
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/chromadb_query.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/config_helpers.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/display.py
