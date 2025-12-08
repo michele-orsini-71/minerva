@@ -46,7 +46,7 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Trim leading/trailing hyphens
   - [x] Validate length (3-512 chars per ChromaDB requirement)
   - [x] Write unit tests for edge cases (spaces, underscores, special chars)
-- [ ] Implement provider management (FR-8)
+- [x] Implement provider management (FR-8)
   - [x] Create src/minerva_kb/utils/provider_selection.py
   - [x] Implement interactive_select_provider() function
   - [x] Display 4-option menu (OpenAI, Gemini, Ollama, LM Studio)
@@ -71,15 +71,15 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Return provider config dict
 
 ### Phase 2: Add Command (FR-1, FR-9, FR-10)
-- [ ] Implement basic add flow
-  - [ ] Create src/minerva_kb/commands/add.py
-  - [ ] Implement run_add(repo_path) function
-  - [ ] Validate repository path exists and is directory
-  - [ ] Resolve to absolute path
-  - [ ] Derive collection name via sanitize_collection_name()
-  - [ ] Check if collection already exists (watcher config exists)
-  - [ ] If exists: enter provider update flow (FR-9)
-  - [ ] If not: enter new collection flow (FR-1)
+- [x] Implement basic add flow
+  - [x] Create src/minerva_kb/commands/add.py
+  - [x] Implement run_add(repo_path) function
+  - [x] Validate repository path exists and is directory
+  - [x] Resolve to absolute path
+  - [x] Derive collection name via sanitize_collection_name()
+  - [x] Check if collection already exists (watcher config exists)
+  - [x] If exists: enter provider update flow (FR-9)
+  - [x] If not: enter new collection flow (FR-1)
 - [ ] Implement description generation
   - [ ] Check for README.md in repository root
   - [ ] If README exists: read content
@@ -717,7 +717,8 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/constants.py - Shared filesystem path definitions
 
 ### Command Implementations
-- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/add.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/__init__.py - Exposes command entry points for import convenience
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/add.py - Validates repository paths and routes to add flows
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/list.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/status.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/sync.py

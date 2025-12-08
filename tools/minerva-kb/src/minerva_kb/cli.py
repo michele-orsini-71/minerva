@@ -1,6 +1,8 @@
 import argparse
 import sys
 
+from minerva_kb.commands import run_add
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -87,8 +89,7 @@ def main():
     args = parser.parse_args()
 
     if args.command == 'add':
-        print(f"add command called with repo_path: {args.repo_path}")
-        return 0
+        return run_add(args.repo_path)
     elif args.command == 'list':
         print(f"list command called with format: {args.format}")
         return 0
