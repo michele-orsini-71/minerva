@@ -27,7 +27,7 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 ### Phase 1: Core Infrastructure
 - [x] Implement configuration management
   - [x] Create src/minerva_kb/constants.py with paths (~/.minerva/apps/minerva-kb/, ~/.minerva/chromadb/)
-  - [x] Add provider key name constants (OPENAI_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY)
+  - [x] Add provider key name constants (OPENAI_API_KEY, GEMINI_API_KEY)
   - [x] Add provider display names mapping
   - [x] Add default model configurations for each provider
   - [x] Create src/minerva_kb/utils/config_loader.py
@@ -47,28 +47,28 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Validate length (3-512 chars per ChromaDB requirement)
   - [x] Write unit tests for edge cases (spaces, underscores, special chars)
 - [ ] Implement provider management (FR-8)
-  - [ ] Create src/minerva_kb/utils/provider_selection.py
-  - [ ] Implement interactive_select_provider() function
-  - [ ] Display 4-option menu (OpenAI, Gemini, Ollama, LM Studio)
-  - [ ] Show default models for each provider
-  - [ ] Get user choice (1-4)
-  - [ ] Implement check_api_key_exists(provider_type) function
-  - [ ] Call minerva keychain get <KEY_NAME> via subprocess
-  - [ ] Return True if key exists, False otherwise
-  - [ ] Implement prompt_for_api_key(provider_type) function
-  - [ ] Prompt user for API key
-  - [ ] Call minerva keychain set <KEY_NAME> via subprocess
-  - [ ] Implement validate_api_key(provider_type) function
-  - [ ] Make test API call to validate key works
-  - [ ] Handle validation errors with retry prompt
-  - [ ] Implement validate_local_provider(provider_type) function
-  - [ ] Check Ollama at http://localhost:11434/api/tags
-  - [ ] Check LM Studio at http://localhost:1234/v1/models
-  - [ ] Display error with instructions if not running
-  - [ ] Implement prompt_for_models(provider_type) function
-  - [ ] Show default models with option to customize
-  - [ ] Prompt for embedding model and LLM model
-  - [ ] Return provider config dict
+  - [x] Create src/minerva_kb/utils/provider_selection.py
+  - [x] Implement interactive_select_provider() function
+  - [x] Display 4-option menu (OpenAI, Gemini, Ollama, LM Studio)
+  - [x] Show default models for each provider
+  - [x] Get user choice (1-4)
+  - [x] Implement check_api_key_exists(provider_type) function
+  - [x] Call minerva keychain get <KEY_NAME> via subprocess
+  - [x] Return True if key exists, False otherwise
+  - [x] Implement prompt_for_api_key(provider_type) function
+  - [x] Prompt user for API key
+  - [x] Call minerva keychain set <KEY_NAME> via subprocess
+  - [x] Implement validate_api_key(provider_type) function
+  - [x] Make test API call to validate key works
+  - [x] Handle validation errors with retry prompt
+  - [x] Implement validate_local_provider(provider_type) function
+  - [x] Check Ollama at http://localhost:11434/api/tags
+  - [x] Check LM Studio at http://localhost:1234/v1/models
+  - [x] Display error with instructions if not running
+  - [x] Implement prompt_for_models(provider_type) function
+  - [x] Show default models with option to customize
+  - [x] Prompt for embedding model and LLM model
+  - [x] Return provider config dict
 
 ### Phase 2: Add Command (FR-1, FR-9, FR-10)
 - [ ] Implement basic add flow
@@ -727,7 +727,7 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 ### Utility Modules
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/__init__.py - Utility package marker
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/collection_naming.py - Collection name sanitization rules
-- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/provider_selection.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/provider_selection.py - Interactive provider selection, API key helpers, and validation utilities
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/config_loader.py - Config load/save helpers with schema validation
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/process_manager.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/utils/chromadb_query.py
@@ -736,7 +736,8 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 
 ### Test Files
 - /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_collection_naming.py - Unit tests covering sanitize_collection_name edge cases
-- /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_provider_selection.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_provider_selection.py - Unit tests covering provider selection utilities
+- /Users/michele/my-code/minerva/tools/minerva-kb/tests/conftest.py - Adds minerva-kb/src to sys.path for test imports
 - /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_config_loader.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_process_manager.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/tests/test_add_command_integration.py

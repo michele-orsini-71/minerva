@@ -312,7 +312,6 @@ embeddings = provider.generate_embeddings(['text1', 'text2'])
 - `ollama` - Local Ollama server
 - `lmstudio` - LM Studio desktop application (OpenAI-compatible API)
 - `openai` - OpenAI API
-- `anthropic` - Anthropic Claude API
 - `gemini` - Google Gemini API
 
 ### Logging System
@@ -385,7 +384,7 @@ Location: `configs/index/<collection-name>.json`
 
 - `chromadb_path` must be absolute after resolution; relative entries are resolved against the config file.
 - `collection.json_file` points to normalized notes exported by an extractor.
-- `provider` reuses the AI provider schema shared across commands (Ollama, LM Studio, OpenAI, Anthropic, Gemini).
+- `provider` reuses the AI provider schema shared across commands (Ollama, LM Studio, OpenAI, Gemini).
 - Environment variables may be referenced with `${NAME}` in any provider credential field; values are resolved at load time.
 
 ### Server Configuration

@@ -55,7 +55,7 @@ class AIProviderConfig:
     rate_limit: Optional[RateLimitConfig] = None
 
     def __post_init__(self):
-        valid_providers = ['ollama', 'openai', 'gemini', 'azure', 'anthropic', 'lmstudio']
+        valid_providers = ['ollama', 'openai', 'gemini', 'lmstudio']
         if self.provider_type not in valid_providers:
             raise ValueError(
                 f"Invalid provider_type: {self.provider_type}\n"
@@ -88,7 +88,7 @@ AI_PROVIDER_JSON_SCHEMA: dict[str, Any] = {
     "properties": {
         "provider_type": {
             "type": "string",
-            "enum": ['ollama', 'openai', 'gemini', 'azure', 'anthropic', 'lmstudio']
+            "enum": ['ollama', 'openai', 'gemini', 'lmstudio']
         },
         "embedding_model": {"type": "string", "minLength": 1},
         "llm_model": {"type": "string", "minLength": 1},

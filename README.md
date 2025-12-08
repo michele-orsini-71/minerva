@@ -23,7 +23,7 @@ Minerva solves the problem of **information overload** in personal knowledge man
 - **Semantic Search**: Find relevant information by meaning, not just keywords
 - **MCP Integration**: Works seamlessly with Claude Desktop and other MCP-compatible AI tools via Model Context Protocol
 - **Automatic Citations**: AI assistants automatically cite source notes when presenting information
-- **Multi-Provider AI**: Choose between local (Ollama, LM Studio) or cloud (OpenAI, Anthropic, Gemini) AI providers
+- **Multi-Provider AI**: Choose between local (Ollama, LM Studio) or cloud (OpenAI, Gemini) AI providers
 - **Transparent Storage**: All data stored locally in ChromaDB with full control
 - **Extensible**: Write custom extractors for any data source in any language
 -️ **Command-Specific Configs**: Dedicated JSON files for index and server workflows
@@ -101,7 +101,7 @@ Minerva follows a three-stage pipeline architecture:
 
 - Python 3.10 or higher
 - For local AI: [Ollama](https://ollama.ai) with `mxbai-embed-large` model, or [LM Studio](https://lmstudio.ai)
-- For cloud AI: API keys for OpenAI, Anthropic Claude, or Google Gemini
+- For cloud AI: API keys for OpenAI or Google Gemini
 
 ### Choose Your Deployment
 
@@ -253,7 +253,7 @@ Minerva provides secure API key storage using your operating system's encrypted 
 
 #### Store API Keys Securely
 
-For cloud AI providers (OpenAI, Gemini, Anthropic), store your API key once in the OS keychain:
+For cloud AI providers (OpenAI, Gemini), store your API key once in the OS keychain:
 
 ```bash
 # Store OpenAI API key (prompts securely)
@@ -261,9 +261,6 @@ minerva keychain set OPENAI_API_KEY
 
 # Store Gemini API key
 minerva keychain set GEMINI_API_KEY
-
-# Store Anthropic API key
-minerva keychain set ANTHROPIC_API_KEY
 ```
 
 Your API keys are encrypted and stored in:

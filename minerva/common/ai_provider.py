@@ -219,8 +219,6 @@ class AIProvider:
                 os.environ['GEMINI_API_KEY'] = self.api_key
             elif self.provider_type == 'azure':
                 os.environ['AZURE_API_KEY'] = self.api_key
-            elif self.provider_type == 'anthropic':
-                os.environ['ANTHROPIC_API_KEY'] = self.api_key
 
         if self.base_url:
             if self.provider_type == 'ollama':
@@ -240,10 +238,6 @@ class AIProvider:
             return f"openai/{model}" if for_embedding else model
         elif self.provider_type == 'gemini':
             return f"gemini/{model}"
-        elif self.provider_type == 'azure':
-            return f"azure/{model}"
-        elif self.provider_type == 'anthropic':
-            return f"anthropic/{model}"
         else:
             return model
 

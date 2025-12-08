@@ -9,18 +9,21 @@ All loaders share validation helpers, environment-variable substitution, and det
 
 ## Table of Contents
 
-- [Directory Layout](#directory-layout)
-- [Index Configuration](#index-configuration)
-  - [Schema Overview](#schema-overview)
-  - [Example: Ollama](#example-ollama)
-  - [Example: LM Studio](#example-lm-studio)
-- [Server Configuration](#server-configuration)
-  - [Schema Overview](#server-schema-overview)
-  - [Example Profiles](#example-profiles)
-- [AI Provider Schema](#ai-provider-schema)
-- [Environment Variables](#environment-variables)
-- [Validation Workflow](#validation-workflow)
-- [Migration Notes](#migration-notes)
+- [Command-Specific Configuration Guide](#command-specific-configuration-guide)
+  - [Table of Contents](#table-of-contents)
+  - [Directory Layout](#directory-layout)
+    - [Path Resolution Examples](#path-resolution-examples)
+  - [Index Configuration](#index-configuration)
+    - [Schema Overview](#schema-overview)
+    - [Example: Ollama](#example-ollama)
+    - [Example: LM Studio](#example-lm-studio)
+  - [Server Configuration](#server-configuration)
+    - [Server Schema Overview](#server-schema-overview)
+    - [Example Profiles](#example-profiles)
+  - [AI Provider Schema](#ai-provider-schema)
+  - [Environment Variables](#environment-variables)
+  - [Validation Workflow](#validation-workflow)
+  - [Migration Notes](#migration-notes)
 
 ## Directory Layout
 
@@ -224,7 +227,7 @@ Server configs are lightweight and affect both `minerva serve` (stdio) and `mine
 
 ## AI Provider Schema
 
-All configs share the same provider schema defined in `minerva/common/ai_config.py`. Supported `provider_type` values: `ollama`, `lmstudio`, `openai`, `anthropic`, `gemini`.
+All configs share the same provider schema defined in `minerva/common/ai_config.py`. Supported `provider_type` values: `ollama`, `lmstudio`, `openai`, `gemini`.
 
 Core fields:
 

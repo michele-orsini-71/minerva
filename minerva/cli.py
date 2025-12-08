@@ -362,7 +362,7 @@ Examples:
     set_parser.add_argument(
         'provider',
         type=str,
-        help='Provider name (e.g., openai, gemini, anthropic)'
+        help='Provider name (e.g., openai, gemini)'
     )
     set_parser.add_argument(
         '--key',
@@ -379,7 +379,7 @@ Examples:
     get_parser.add_argument(
         'provider',
         type=str,
-        help='Provider name (e.g., openai, gemini, anthropic)'
+        help='Provider name (e.g., openai, gemini)'
     )
 
     # keychain delete
@@ -391,7 +391,7 @@ Examples:
     delete_parser.add_argument(
         'provider',
         type=str,
-        help='Provider name (e.g., openai, gemini, anthropic)'
+        help='Provider name (e.g., openai, gemini)'
     )
 
     # keychain list

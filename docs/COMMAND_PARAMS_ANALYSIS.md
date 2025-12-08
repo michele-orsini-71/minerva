@@ -34,7 +34,7 @@ Command-specific configuration loaders (`IndexConfig`, `ServerConfig`) are imple
     "skip_ai_validation": false
   },
   "provider": {
-    "provider_type": "ollama|lmstudio|openai|anthropic|gemini",
+    "provider_type": "ollama|lmstudio|openai|gemini",
     "embedding_model": "<string>",
     "llm_model": "<string>",
     "base_url": "<string>",

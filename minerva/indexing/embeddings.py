@@ -20,10 +20,8 @@ DEFAULT_RETRY_DELAY = 1.0
 BATCH_SIZES = {
     'openai': 2048,      # OpenAI supports up to 2048 inputs per request
     'gemini': 250,       # Gemini Vertex AI supports up to 250 inputs
-    'azure': 16,         # Azure OpenAI has lower limit of 16
     'ollama': 1,         # Local Ollama - no batching needed (already fast)
     'lmstudio': 1,       # LM Studio - no batching needed (local)
-    'anthropic': 1,      # Anthropic doesn't provide embeddings API
 }
 
 

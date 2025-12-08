@@ -850,13 +850,11 @@ entry_points={
 PROVIDER_KEY_NAMES = {
     'openai': 'OPENAI_API_KEY',
     'gemini': 'GEMINI_API_KEY',
-    'anthropic': 'ANTHROPIC_API_KEY',
 }
 
 PROVIDER_DISPLAY_NAMES = {
     'openai': 'OpenAI',
     'gemini': 'Google Gemini',
-    'anthropic': 'Anthropic',
     'ollama': 'Ollama',
     'lmstudio': 'LM Studio',
 }
@@ -1312,9 +1310,8 @@ Which AI provider do you want to use?
 
   1. OpenAI (current: gpt-4o-mini)
   2. Google Gemini
-  3. Anthropic
-  4. Ollama
-  5. LM Studio
+  3. Ollama
+  4. LM Studio
 
 Choice [1-5]: 4
 

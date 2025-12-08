@@ -197,13 +197,11 @@ class TestSetCredential:
 
     def test_set_credential_maintains_multiple_providers(self, fake_keyring):
         credential_helper.set_credential('openai', 'sk-openai-key')
-        credential_helper.set_credential('anthropic', 'sk-anthropic-key')
         credential_helper.set_credential('gemini', 'sk-gemini-key')
 
         index = credential_helper.get_index()
-        assert len(index) == 3
+        assert len(index) == 2
         assert 'openai' in index
-        assert 'anthropic' in index
         assert 'gemini' in index
 
 
@@ -256,7 +254,7 @@ class TestDeleteCredential:
     def test_delete_credential_only_removes_specified_provider(self, fake_keyring):
         # Setup: store multiple credentials
         credential_helper.set_credential('openai', 'sk-openai-key')
-        credential_helper.set_credential('anthropic', 'sk-anthropic-key')
+        credential_helper.set_credential('gemini', 'sk-gemini-key')
 
         # Delete one
         credential_helper.delete_credential('openai')
@@ -264,13 +262,13 @@ class TestDeleteCredential:
         # Verify the other remains
         index = credential_helper.get_index()
         assert 'openai' not in index
-        assert 'anthropic' in index
+        assert 'gemini' in index
 
         stored = fake_keyring.get_password(
             credential_helper.KEYRING_SERVICE,
-            'anthropic'
+            'gemini'
         )
-        assert stored == 'sk-anthropic-key'
+        assert stored == 'sk-gemini-key'
 
     def test_delete_credential_handles_credential_not_in_index(self, fake_keyring):
         # Manually add a credential to keyring but not to index
@@ -296,25 +294,21 @@ class TestListCredentials:
 
     def test_list_credentials_returns_all_stored_credentials(self, fake_keyring):
         credential_helper.set_credential('openai', 'sk-openai-key')
-        credential_helper.set_credential('anthropic', 'sk-anthropic-key')
         credential_helper.set_credential('gemini', 'sk-gemini-key')
 
         result = credential_helper.list_credentials()
-        assert len(result) == 3
+        assert len(result) == 2
         assert 'openai' in result
-        assert 'anthropic' in result
         assert 'gemini' in result
 
     def test_list_credentials_reflects_deletions(self, fake_keyring):
         credential_helper.set_credential('openai', 'sk-openai-key')
-        credential_helper.set_credential('anthropic', 'sk-anthropic-key')
 
         credential_helper.delete_credential('openai')
 
         result = credential_helper.list_credentials()
-        assert len(result) == 1
+        assert len(result) == 0
         assert 'openai' not in result
-        assert 'anthropic' in result
 
 
 class TestIntegration:
@@ -326,7 +320,7 @@ class TestIntegration:
 
         # Add multiple credentials
         credential_helper.set_credential('openai', 'sk-openai-key')
-        credential_helper.set_credential('anthropic', 'sk-anthropic-key')
+        credential_helper.set_credential('gemini', 'sk-gemini-key')
 
         # List them
         credentials = credential_helper.list_credentials()
@@ -335,7 +329,7 @@ class TestIntegration:
         # Retrieve them
         with patch.dict('os.environ', {}, clear=True):
             assert credential_helper.get_credential('openai') == 'sk-openai-key'
-            assert credential_helper.get_credential('anthropic') == 'sk-anthropic-key'
+            assert credential_helper.get_credential('gemini') == 'sk-gemini-key'
 
         # Update one
         credential_helper.set_credential('openai', 'sk-new-openai-key')
@@ -346,7 +340,7 @@ class TestIntegration:
         credential_helper.delete_credential('openai')
         credentials = credential_helper.list_credentials()
         assert len(credentials) == 1
-        assert 'anthropic' in credentials
+        assert 'gemini' in credentials
         assert 'openai' not in credentials
 
     def test_environment_variable_override_workflow(self, fake_keyring):

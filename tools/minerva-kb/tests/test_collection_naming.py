@@ -1,9 +1,4 @@
-import sys
-from pathlib import Path
-
 import pytest
-
-sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
 
 from minerva_kb.utils.collection_naming import sanitize_collection_name
 

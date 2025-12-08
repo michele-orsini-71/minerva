@@ -317,7 +317,6 @@ minerva keychain set OPENAI_API_KEY
 All API requests use HTTPS by default:
 - OpenAI: `https://api.openai.com`
 - Gemini: `https://generativelanguage.googleapis.com`
-- Anthropic: `https://api.anthropic.com`
 
 Local providers (Ollama, LM Studio) use HTTP on localhost only.
 
