@@ -127,16 +127,16 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Display progress and capture output
   - [x] Handle indexing errors (exit code 3)
   - [x] Display success summary with chunk count and next steps
-- [ ] Implement conflict resolution (FR-7)
-  - [ ] Query ChromaDB to check if collection name exists
-  - [ ] Use chromadb.PersistentClient to list collections
-  - [ ] Check if config files exist for this collection
-  - [ ] If collection exists but no configs (unmanaged): display conflict error
-  - [ ] Show options: 1) Abort, 2) Wipe and recreate
-  - [ ] Get user choice
-  - [ ] If abort: exit with code 1 and show existing collections
-  - [ ] If wipe: call minerva remove <chromadb> <collection> via subprocess
-  - [ ] Then proceed with normal add flow
+- [x] Implement conflict resolution (FR-7)
+  - [x] Query ChromaDB to check if collection name exists
+  - [x] Use chromadb.PersistentClient to list collections
+  - [x] Check if config files exist for this collection
+  - [x] If collection exists but no configs (unmanaged): display conflict error
+  - [x] Show options: 1) Abort, 2) Wipe and recreate
+  - [x] Get user choice
+  - [x] If abort: exit with code 1 and show existing collections
+  - [x] If wipe: call minerva remove <chromadb> <collection> via subprocess
+  - [x] Then proceed with normal add flow
 - [ ] Implement provider update flow (FR-9)
   - [ ] Detect existing collection via watcher config
   - [ ] Load index config to get current provider

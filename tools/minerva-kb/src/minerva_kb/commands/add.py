@@ -37,6 +37,13 @@ def run_add(repo_path: str) -> int:
     watcher_config_path = _watcher_config_path(collection_name)
     if watcher_config_path.exists():
         return _run_provider_update_flow(collection_name, repository, watcher_config_path)
+
+    conflict_result = _handle_unmanaged_collection_conflict(collection_name)
+    if conflict_result == "abort":
+        return 1
+    if conflict_result == "error":
+        return 3
+
     return _run_new_collection_flow(collection_name, repository)
 
 
@@ -65,6 +72,10 @@ def _derive_collection_name(repository: Path) -> str | None:
 
 def _watcher_config_path(collection_name: str) -> Path:
     return MINERVA_KB_APP_DIR / f"{collection_name}-watcher.json"
+
+
+def _index_config_path(collection_name: str) -> Path:
+    return MINERVA_KB_APP_DIR / f"{collection_name}-index.json"
 
 
 def _run_provider_update_flow(collection_name: str, repository: Path, watcher_path: Path) -> int:
@@ -242,6 +253,76 @@ def _display_provider_summary(provider_config: dict[str, str]) -> None:
     print(f"  • Embedding: {embedding}")
     print(f"  • LLM:       {llm_model}")
     print()
+
+
+def _handle_unmanaged_collection_conflict(collection_name: str) -> str:
+    collections = _list_chromadb_collections()
+    if collection_name not in collections:
+        return "ok"
+
+    index_exists = _index_config_path(collection_name).exists()
+    watcher_exists = _watcher_config_path(collection_name).exists()
+    if index_exists or watcher_exists:
+        return "ok"
+
+    _display_error(f"Collection '{collection_name}' already exists in ChromaDB")
+    print("This collection was not created by minerva-kb, so it cannot be managed.")
+    print()
+    print("Options:")
+    print("  1) Abort (keep existing collection)")
+    print("  2) Wipe and recreate (delete existing collection)")
+
+    while True:
+        choice = input("Choice [1-2]: ").strip()
+        if choice == "1":
+            _print_available_collections(collections)
+            return "abort"
+        if choice == "2":
+            if _wipe_existing_collection(collection_name):
+                return "ok"
+            return "error"
+        print("❌ Invalid choice. Enter 1 or 2.")
+
+
+def _list_chromadb_collections() -> list[str]:
+    try:
+        client = PersistentClient(path=str(CHROMADB_DIR))
+        return sorted(collection.name for collection in client.list_collections())
+    except Exception:  # noqa: BLE001 - listing is best effort
+        return []
+
+
+def _print_available_collections(collections: list[str]) -> None:
+    if not collections:
+        print("No collections currently in ChromaDB.")
+        return
+    print("Existing collections:")
+    for name in collections:
+        print(f"  • {name}")
+
+
+def _wipe_existing_collection(collection_name: str) -> bool:
+    print()
+    print(f"⚠️  Wiping existing ChromaDB collection '{collection_name}'...")
+    confirmation = f"YES\n{collection_name}\n"
+    try:
+        subprocess.run(
+            ["minerva", "remove", str(CHROMADB_DIR), collection_name],
+            input=confirmation,
+            text=True,
+            check=True,
+            timeout=DEFAULT_SUBPROCESS_TIMEOUT,
+        )
+        print("✓ Existing collection removed")
+        print()
+        return True
+    except FileNotFoundError:
+        _display_error("'minerva' command not found while removing collection")
+    except subprocess.TimeoutExpired:
+        _display_error("Collection removal timed out")
+    except subprocess.CalledProcessError as exc:
+        _display_error(f"Failed to remove collection (exit code {exc.returncode})")
+    return False
 
 
 def _display_error(message: str) -> None:
