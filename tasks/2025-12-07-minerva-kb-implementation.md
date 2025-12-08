@@ -11,18 +11,18 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 ## Implementation Phases
 
 ### Phase 0: Project Setup
-- [ ] Create tools/minerva-kb package structure
-  - [ ] Create pyproject.toml with dependencies and entry points
-  - [ ] Create src/minerva_kb/ directory structure
-  - [ ] Create src/minerva_kb/__init__.py
-  - [ ] Create README.md with quickstart guide
-  - [ ] Create tests/ directory
-- [ ] Set up entry point and CLI skeleton
-  - [ ] Create src/minerva_kb/cli.py with argparse setup
-  - [ ] Add main() function with subparser framework
-  - [ ] Add subcommands: add, list, status, sync, watch, remove
-  - [ ] Wire up entry point in pyproject.toml: minerva-kb=minerva_kb.cli:main
-  - [ ] Test CLI skeleton with --help flag
+- [x] Create tools/minerva-kb package structure
+  - [x] Create pyproject.toml with dependencies and entry points
+  - [x] Create src/minerva_kb/ directory structure
+  - [x] Create src/minerva_kb/__init__.py
+  - [x] Create README.md with quickstart guide
+  - [x] Create tests/ directory
+- [x] Set up entry point and CLI skeleton
+  - [x] Create src/minerva_kb/cli.py with argparse setup
+  - [x] Add main() function with subparser framework
+  - [x] Add subcommands: add, list, status, sync, watch, remove
+  - [x] Wire up entry point in pyproject.toml: minerva-kb=minerva_kb.cli:main
+  - [x] Test CLI skeleton with --help flag
 
 ### Phase 1: Core Infrastructure
 - [ ] Implement configuration management
@@ -709,9 +709,11 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 ## Relevant Files
 
 ### Core Package Files
-- /Users/michele/my-code/minerva/tools/minerva-kb/pyproject.toml
-- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/__init__.py
-- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/cli.py
+- /Users/michele/my-code/minerva/tools/minerva-kb/pyproject.toml - Project configuration with dependencies and entry points
+- /Users/michele/my-code/minerva/tools/minerva-kb/README.md - Package quickstart guide and documentation
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/__init__.py - Package initialization with version
+- /Users/michele/my-code/minerva/tools/minerva-kb/tests/__init__.py - Test package marker
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/cli.py - Main CLI entry point with argparse and subcommands
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/constants.py
 
 ### Command Implementations

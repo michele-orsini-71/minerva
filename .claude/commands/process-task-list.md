@@ -11,7 +11,8 @@ Guidelines for managing task lists in markdown files to track progress on comple
     - **First**: Run the full test suite (`pytest`, `npm test`, `bin/rails test`, etc.)
     - **Only if all tests pass**: Stage changes (`git add .`)
     - **Clean up**: Remove any temporary files and temporary code before committing
-    - **Stop** wait for the user's go‑ahead.
+    - **DO NOT** commit
+    - **Stop** wait for the user's review, commit and go‑ahead instruction before processing the next task.
 
 ## Task List Maintenance
 

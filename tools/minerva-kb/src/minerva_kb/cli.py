@@ -1,0 +1,116 @@
+import argparse
+import sys
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog='minerva-kb',
+        description='Orchestrator tool for managing Minerva repository-based knowledge base collections',
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+
+    parser.add_argument(
+        '--version',
+        action='version',
+        version='%(prog)s 1.0.0'
+    )
+
+    subparsers = parser.add_subparsers(
+        dest='command',
+        help='Available commands',
+        required=True
+    )
+
+    add_parser = subparsers.add_parser(
+        'add',
+        help='Create a new collection or update an existing collection\'s AI provider',
+        description='Create a new collection or update an existing collection\'s AI provider'
+    )
+    add_parser.add_argument(
+        'repo_path',
+        help='Path to repository to index'
+    )
+
+    list_parser = subparsers.add_parser(
+        'list',
+        help='Display all managed collections with status information',
+        description='Display all managed collections with status information'
+    )
+    list_parser.add_argument(
+        '--format',
+        choices=['table', 'json'],
+        default='table',
+        help='Output format (default: table)'
+    )
+
+    status_parser = subparsers.add_parser(
+        'status',
+        help='Display detailed status for a specific collection',
+        description='Display detailed status for a specific collection'
+    )
+    status_parser.add_argument(
+        'collection_name',
+        help='Name of the collection to check'
+    )
+
+    sync_parser = subparsers.add_parser(
+        'sync',
+        help='Manually trigger re-indexing for a collection',
+        description='Manually trigger re-indexing for a collection'
+    )
+    sync_parser.add_argument(
+        'collection_name',
+        help='Name of the collection to sync'
+    )
+
+    watch_parser = subparsers.add_parser(
+        'watch',
+        help='Start file watcher for a collection',
+        description='Start file watcher for a collection (or interactively select one)'
+    )
+    watch_parser.add_argument(
+        'collection_name',
+        nargs='?',
+        help='Name of the collection to watch (optional, will prompt if not provided)'
+    )
+
+    remove_parser = subparsers.add_parser(
+        'remove',
+        help='Delete collection and all associated data',
+        description='Delete collection and all associated data'
+    )
+    remove_parser.add_argument(
+        'collection_name',
+        help='Name of the collection to remove'
+    )
+
+    args = parser.parse_args()
+
+    if args.command == 'add':
+        print(f"add command called with repo_path: {args.repo_path}")
+        return 0
+    elif args.command == 'list':
+        print(f"list command called with format: {args.format}")
+        return 0
+    elif args.command == 'status':
+        print(f"status command called for collection: {args.collection_name}")
+        return 0
+    elif args.command == 'sync':
+        print(f"sync command called for collection: {args.collection_name}")
+        return 0
+    elif args.command == 'watch':
+        if args.collection_name:
+            print(f"watch command called for collection: {args.collection_name}")
+        else:
+            print("watch command called (interactive mode)")
+        return 0
+    elif args.command == 'remove':
+        print(f"remove command called for collection: {args.collection_name}")
+        return 0
+    else:
+        parser.print_help()
+        return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())
