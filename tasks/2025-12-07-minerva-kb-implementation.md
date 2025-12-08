@@ -102,31 +102,31 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Prompt for embedding and LLM models
   - [x] Call prompt_for_models() to get custom models or use defaults
   - [x] Display final provider configuration
-- [ ] Implement extraction and indexing
-  - [ ] Generate index config JSON with all required fields
-  - [ ] chromadb_path: ~/.minerva/chromadb/
-  - [ ] collection.name: sanitized collection name
-  - [ ] collection.description: generated/prompted description
-  - [ ] collection.json_file: ~/.minerva/apps/minerva-kb/<collection>-extracted.json
-  - [ ] collection.chunk_size: 1200 (default)
-  - [ ] provider: selected provider config
-  - [ ] Generate watcher config JSON with all required fields
-  - [ ] repository_path: absolute path to repository
-  - [ ] collection_name: sanitized collection name
-  - [ ] extracted_json_path: path to extracted JSON
-  - [ ] index_config_path: path to index config
-  - [ ] debounce_seconds: 60.0
-  - [ ] include_extensions: [.md, .mdx, .markdown, .rst, .txt]
-  - [ ] ignore_patterns: [.git, node_modules, .venv, __pycache__]
-  - [ ] Save both config files to ~/.minerva/apps/minerva-kb/
-  - [ ] Call repository-doc-extractor via subprocess
-  - [ ] Pass repository path and output JSON path
-  - [ ] Display progress and capture output
-  - [ ] Handle extraction errors (exit code 3)
-  - [ ] Call minerva index --config <index-config> via subprocess
-  - [ ] Display progress and capture output
-  - [ ] Handle indexing errors (exit code 3)
-  - [ ] Display success summary with chunk count and next steps
+- [x] Implement extraction and indexing
+  - [x] Generate index config JSON with all required fields
+  - [x] chromadb_path: ~/.minerva/chromadb/
+  - [x] collection.name: sanitized collection name
+  - [x] collection.description: generated/prompted description
+  - [x] collection.json_file: ~/.minerva/apps/minerva-kb/<collection>-extracted.json
+  - [x] collection.chunk_size: 1200 (default)
+  - [x] provider: selected provider config
+  - [x] Generate watcher config JSON with all required fields
+  - [x] repository_path: absolute path to repository
+  - [x] collection_name: sanitized collection name
+  - [x] extracted_json_path: path to extracted JSON
+  - [x] index_config_path: path to index config
+  - [x] debounce_seconds: 60.0
+  - [x] include_extensions: [.md, .mdx, .markdown, .rst, .txt]
+  - [x] ignore_patterns: [.git, node_modules, .venv, __pycache__]
+  - [x] Save both config files to ~/.minerva/apps/minerva-kb/
+  - [x] Call repository-doc-extractor via subprocess
+  - [x] Pass repository path and output JSON path
+  - [x] Display progress and capture output
+  - [x] Handle extraction errors (exit code 3)
+  - [x] Call minerva index --config <index-config> via subprocess
+  - [x] Display progress and capture output
+  - [x] Handle indexing errors (exit code 3)
+  - [x] Display success summary with chunk count and next steps
 - [ ] Implement conflict resolution (FR-7)
   - [ ] Query ChromaDB to check if collection name exists
   - [ ] Use chromadb.PersistentClient to list collections
