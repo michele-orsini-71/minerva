@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from minerva_kb.commands import run_add
+from minerva_kb.commands import run_add, run_list
 
 
 def main():
@@ -91,8 +91,7 @@ def main():
     if args.command == 'add':
         return run_add(args.repo_path)
     elif args.command == 'list':
-        print(f"list command called with format: {args.format}")
-        return 0
+        return run_list(args.format)
     elif args.command == 'status':
         print(f"status command called for collection: {args.collection_name}")
         return 0

@@ -158,46 +158,46 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Show command to restart: "minerva-kb watch <collection>"
 
 ### Phase 3: List Command (FR-2)
-- [ ] Implement collection discovery
-  - [ ] Create src/minerva_kb/commands/list.py
-  - [ ] Implement run_list(format) function
-  - [ ] Scan ~/.minerva/apps/minerva-kb/ for *-watcher.json files
-  - [ ] Parse watcher configs to get managed collections
-  - [ ] Query ChromaDB to get all collections
-  - [ ] Create chromadb.PersistentClient with ~/.minerva/chromadb/
-  - [ ] Call client.list_collections()
-  - [ ] Match managed collections (have configs) vs unmanaged (no configs)
-- [ ] Implement status detection for each collection
-  - [ ] Read watcher config to get repository path
-  - [ ] Read index config to get provider info
-  - [ ] Query ChromaDB to get chunk count via collection.count()
-  - [ ] Get last indexed timestamp from extracted JSON file mtime
-  - [ ] Check watcher status via find_watcher_pid()
-  - [ ] Return status dict for each collection
-- [ ] Implement table format output (default)
-  - [ ] Display header: "Collections (N):"
-  - [ ] For each managed collection: display multi-line block
-  - [ ] Line 1: collection name (bold/colored)
-  - [ ] Line 2: Repository: <path>
-  - [ ] Line 3: Provider: <type> (<llm> + <embedding>)
-  - [ ] Line 4: Chunks: <count formatted with commas>
-  - [ ] Line 5: Watcher: ✓ Running (PID) or ⚠ Not running
-  - [ ] Line 6: Last indexed: <timestamp formatted>
-  - [ ] Add blank line between collections
-  - [ ] Handle unmanaged collections (in ChromaDB, no configs)
-  - [ ] Display: ⚠ Unmanaged (created outside minerva-kb)
-  - [ ] Show: Chunks: <count>
-  - [ ] Show: (No config files found)
-  - [ ] Handle broken collections (has configs, no ChromaDB)
-  - [ ] Display: ⚠ Not indexed (ChromaDB collection missing)
-  - [ ] Show: Repository: <path>
-  - [ ] Show: Last attempt: Config files exist but collection not found
-- [ ] Implement JSON format output
-  - [ ] Add --format json flag to argparse
-  - [ ] Create collections array
-  - [ ] For each collection: create dict with all fields
-  - [ ] name, repository_path, provider dict, chunks, watcher dict, last_indexed
-  - [ ] Output formatted JSON with json.dumps(indent=2)
+- [x] Implement collection discovery
+  - [x] Create src/minerva_kb/commands/list.py
+  - [x] Implement run_list(format) function
+  - [x] Scan ~/.minerva/apps/minerva-kb/ for *-watcher.json files
+  - [x] Parse watcher configs to get managed collections
+  - [x] Query ChromaDB to get all collections
+  - [x] Create chromadb.PersistentClient with ~/.minerva/chromadb/
+  - [x] Call client.list_collections()
+  - [x] Match managed collections (have configs) vs unmanaged (no configs)
+- [x] Implement status detection for each collection
+  - [x] Read watcher config to get repository path
+  - [x] Read index config to get provider info
+  - [x] Query ChromaDB to get chunk count via collection.count()
+  - [x] Get last indexed timestamp from extracted JSON file mtime
+  - [x] Check watcher status via find_watcher_pid()
+  - [x] Return status dict for each collection
+- [x] Implement table format output (default)
+  - [x] Display header: "Collections (N):"
+  - [x] For each managed collection: display multi-line block
+  - [x] Line 1: collection name (bold/colored)
+  - [x] Line 2: Repository: <path>
+  - [x] Line 3: Provider: <type> (<llm> + <embedding>)
+  - [x] Line 4: Chunks: <count formatted with commas>
+  - [x] Line 5: Watcher: ✓ Running (PID) or ⚠ Not running
+  - [x] Line 6: Last indexed: <timestamp formatted>
+  - [x] Add blank line between collections
+  - [x] Handle unmanaged collections (in ChromaDB, no configs)
+  - [x] Display: ⚠ Unmanaged (created outside minerva-kb)
+  - [x] Show: Chunks: <count>
+  - [x] Show: (No config files found)
+  - [x] Handle broken collections (has configs, no ChromaDB)
+  - [x] Display: ⚠ Not indexed (ChromaDB collection missing)
+  - [x] Show: Repository: <path>
+  - [x] Show: Last attempt: Config files exist but collection not found
+- [x] Implement JSON format output
+  - [x] Add --format json flag to argparse
+  - [x] Create collections array
+  - [x] For each collection: create dict with all fields
+  - [x] name, repository_path, provider dict, chunks, watcher dict, last_indexed
+  - [x] Output formatted JSON with json.dumps(indent=2)
 
 ### Phase 4: Status Command (FR-3)
 - [ ] Implement detailed status display
@@ -719,6 +719,7 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 ### Command Implementations
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/__init__.py - Exposes command entry points for import convenience
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/add.py - Validates repository paths and routes to add flows
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/list.py - Discovers collections, reports status, and renders table/JSON output
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/list.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/status.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/sync.py
