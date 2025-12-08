@@ -248,29 +248,28 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Do NOT restart watcher (user controls watcher lifecycle)
   - [x] Exit code 0 on success
 
-### Phase 6: Watch Command (FR-5, FR-13)
-- [ ] Implement watcher lifecycle management
-  - [ ] Create src/minerva_kb/commands/watch.py
-  - [ ] Implement run_watch(collection_name) function
-  - [ ] Handle interactive mode if no collection name provided
-  - [ ] List all collections with watcher configs
-  - [ ] Display numbered menu
-  - [ ] Get user selection
-  - [ ] Proceed with selected collection
-  - [ ] Validate collection exists (check for watcher config)
-  - [ ] If not found: exit with code 1
-  - [ ] Get watcher config path
-  - [ ] Check if watcher already running via find_watcher_pid()
-  - [ ] If running: display "Watcher already running (PID)" and exit
-  - [ ] Validate local-repo-watcher is in PATH
-  - [ ] Check via subprocess.run(['which', 'local-repo-watcher'])
-  - [ ] If not found: display error with install instructions (exit code 2)
-  - [ ] Display: "▶️ Starting watcher for '<collection>'... Press Ctrl+C to stop."
-  - [ ] Call local-repo-watcher --config <watcher-config> via subprocess
-  - [ ] Run in foreground (no &, no nohup)
-  - [ ] User can Ctrl+C to stop gracefully
-  - [ ] Handle subprocess termination (exit code 0 on Ctrl+C)
-  - [ ] Handle watcher crashes (exit code 3)
+- [x] Implement watcher lifecycle management
+  - [x] Create src/minerva_kb/commands/watch.py
+  - [x] Implement run_watch(collection_name) function
+  - [x] Handle interactive mode if no collection name provided
+  - [x] List all collections with watcher configs
+  - [x] Display numbered menu
+  - [x] Get user selection
+  - [x] Proceed with selected collection
+  - [x] Validate collection exists (check for watcher config)
+  - [x] If not found: exit with code 1
+  - [x] Get watcher config path
+  - [x] Check if watcher already running via find_watcher_pid()
+  - [x] If running: display "Watcher already running (PID)" and exit
+  - [x] Validate local-repo-watcher is in PATH
+  - [x] Check via subprocess.run(['which', 'local-repo-watcher'])
+  - [x] If not found: display error with install instructions (exit code 2)
+  - [x] Display: "▶️ Starting watcher for '<collection>'... Press Ctrl+C to stop."
+  - [x] Call local-repo-watcher --config <watcher-config> via subprocess
+  - [x] Run in foreground (no &, no nohup)
+  - [x] User can Ctrl+C to stop gracefully
+  - [x] Handle subprocess termination (exit code 0 on Ctrl+C)
+  - [x] Handle watcher crashes (exit code 3)
 
 ### Phase 7: Remove Command (FR-6)
 - [ ] Implement collection removal
@@ -722,6 +721,7 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/list.py - Discovers collections, reports status, and renders table/JSON output
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/status.py - Shows detailed per-collection diagnostics and health information
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/sync.py - Runs manual extraction and indexing for a collection
+- /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/watch.py - Handles watcher lifecycle (interactive selection, start/stop guards)
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/list.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/status.py
 - /Users/michele/my-code/minerva/tools/minerva-kb/src/minerva_kb/commands/sync.py

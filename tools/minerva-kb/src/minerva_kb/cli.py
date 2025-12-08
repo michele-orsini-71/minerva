@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from minerva_kb.commands import run_add, run_list, run_status, run_sync
+from minerva_kb.commands import run_add, run_list, run_status, run_sync, run_watch
 
 
 def main():
@@ -97,11 +97,7 @@ def main():
     elif args.command == 'sync':
         return run_sync(args.collection_name)
     elif args.command == 'watch':
-        if args.collection_name:
-            print(f"watch command called for collection: {args.collection_name}")
-        else:
-            print("watch command called (interactive mode)")
-        return 0
+        return run_watch(args.collection_name)
     elif args.command == 'remove':
         print(f"remove command called for collection: {args.collection_name}")
         return 0
