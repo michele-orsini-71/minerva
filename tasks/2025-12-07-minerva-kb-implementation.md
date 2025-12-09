@@ -615,16 +615,16 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Verify first add command works after setup
 
 ### Phase 14: Deprecate Watcher Manager (Open Question 9.1, Option A)
-- [ ] Remove tools/local-repo-watcher-manager package
-  - [ ] Delete tools/local-repo-watcher-manager/ directory
-  - [ ] Update main README.md to remove references
-  - [ ] Update docs to point to minerva-kb watch instead
-  - [ ] Update any scripts that reference watcher-manager
-- [ ] Update documentation references
-  - [ ] Search for "local-repo-watcher-manager" in all docs
-  - [ ] Replace with "minerva-kb watch"
-  - [ ] Update installation instructions
-  - [ ] Update troubleshooting guides
+- [x] Remove tools/local-repo-watcher-manager package
+  - [x] Delete tools/local-repo-watcher-manager/ directory
+  - [x] Update main README.md to remove references (no references found)
+  - [x] Update docs to point to minerva-kb watch instead (already done in migration docs)
+  - [x] Update any scripts that reference watcher-manager (no scripts found)
+- [x] Update documentation references
+  - [x] Search for "local-repo-watcher-manager" in all docs
+  - [x] Replace with "minerva-kb watch" (kept references in migration guide as historical context)
+  - [x] Update installation instructions (already updated in Phase 13)
+  - [x] Update troubleshooting guides (already updated in Phase 12)
 
 ### Phase 15: Polish & Final Testing
 - [ ] Add --help text for all commands
@@ -760,8 +760,8 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 - /Users/michele/my-code/minerva/README.md (update with minerva-kb)
 - /Users/michele/my-code/minerva/apps/local-repo-kb/setup.py - Slimmed from 1,276 to 151 lines, now only installs packages and guides to minerva-kb
 
-### Files to Delete
-- /Users/michele/my-code/minerva/tools/local-repo-watcher-manager/ (entire directory)
+### Files Deleted
+- /Users/michele/my-code/minerva/tools/local-repo-watcher-manager/ - Deprecated watcher manager tool (replaced by minerva-kb watch)
 
 ## Notes
 
