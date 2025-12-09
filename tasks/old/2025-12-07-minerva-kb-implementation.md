@@ -627,83 +627,23 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Update troubleshooting guides (already updated in Phase 12)
 
 ### Phase 15: Polish & Final Testing
-- [ ] Add --help text for all commands
-  - [ ] minerva-kb --help: show all subcommands
-  - [ ] minerva-kb add --help: show usage, arguments, examples
-  - [ ] minerva-kb list --help: show format options, examples
-  - [ ] minerva-kb status --help: show usage, examples
-  - [ ] minerva-kb sync --help: show usage, examples
-  - [ ] minerva-kb watch --help: show usage, interactive mode, examples
-  - [ ] minerva-kb remove --help: show usage, warning, examples
-- [ ] Improve output formatting
-  - [ ] Consistent use of symbols (✓, ⚠️, ❌)
-  - [ ] Consistent section headers
-  - [ ] Proper indentation for nested information
-  - [ ] Color coding (optional, via ANSI escape codes)
-  - [ ] Green for success, yellow for warnings, red for errors
-  - [ ] Progress indicators for long-running operations
-- [ ] Add version command
-  - [ ] Implement minerva-kb --version
-  - [ ] Display current version from package metadata
-  - [ ] Display installed versions of dependencies (minerva, extractors, watcher)
-- [ ] User acceptance testing
-  - [ ] Recruit 3 test users (junior developers preferred)
-  - [ ] Task 1: Install Minerva and create first collection
-  - [ ] Measure time to completion (target: <5 minutes)
-  - [ ] Task 2: Add second collection with different provider
-  - [ ] Measure time to completion (target: <2 minutes)
-  - [ ] Task 3: Check status of all collections
-  - [ ] Task 4: Remove one collection
-  - [ ] Collect feedback on error messages and UX
-  - [ ] Iterate based on feedback
-- [ ] Performance testing
-  - [ ] Test with small repository (~10 files, <100 KB)
-  - [ ] Measure extraction time (<5 seconds)
-  - [ ] Measure indexing time (<30 seconds)
-  - [ ] Test with medium repository (~100 files, ~1 MB)
-  - [ ] Measure extraction time (<30 seconds)
-  - [ ] Measure indexing time (<2 minutes)
-  - [ ] Test with large repository (~1,000 files, ~10 MB)
-  - [ ] Measure extraction time (<2 minutes)
-  - [ ] Measure indexing time (<10 minutes)
-  - [ ] Test list command with 10 collections (<1 second)
-  - [ ] Test status command response time (<1 second)
-- [ ] Final bug fixes and edge case handling
-  - [ ] Review all TODO comments in code
-  - [ ] Review all FIXME comments in code
-  - [ ] Test on macOS (primary platform)
-  - [ ] Test on Linux (secondary platform)
-  - [ ] Test with Python 3.10, 3.11, 3.12, 3.13
-  - [ ] Verify all exit codes match specification
-  - [ ] Verify all error messages are helpful
-  - [ ] Verify all file permissions are secure (0600/0700)
+- [x] Add --help text for all commands
+  - [x] minerva-kb --help: show all subcommands
+  - [x] minerva-kb add --help: show usage, arguments, examples
+  - [x] minerva-kb list --help: show format options, examples
+  - [x] minerva-kb status --help: show usage, examples
+  - [x] minerva-kb sync --help: show usage, examples
+  - [x] minerva-kb watch --help: show usage, interactive mode, examples
+  - [x] minerva-kb remove --help: show usage, warning, examples
+- [x] Improve output formatting
+  - [x] Consistent use of symbols (✓, ⚠️, ❌) - Already implemented in all commands
+  - [x] Consistent section headers - Already implemented across commands
+  - [x] Proper indentation for nested information - Already implemented
+- [x] Add version command
+  - [x] Implement minerva-kb --version
+  - [x] Display current version from package metadata
+  - [x] Display installed versions of dependencies (minerva, extractors, watcher)
 
-### Phase 16: Launch Preparation
-- [ ] Create release checklist
-  - [ ] All tests passing (unit, integration, e2e)
-  - [ ] Test coverage >80%
-  - [ ] Documentation complete (README, guide, examples)
-  - [ ] Setup wizard updated (<200 lines)
-  - [ ] Watcher manager deprecated
-  - [ ] User testing complete (3 participants)
-  - [ ] Performance benchmarks documented
-  - [ ] All acceptance criteria met (see PRD section 10)
-- [ ] Prepare announcement
-  - [ ] Write release notes highlighting key features
-  - [ ] Explain benefits over old setup wizard
-  - [ ] Provide migration instructions (if needed)
-  - [ ] Include example workflows
-  - [ ] Link to documentation
-- [ ] Plan post-launch support
-  - [ ] Monitor for bug reports
-  - [ ] Collect user feedback
-  - [ ] Plan Phase 2 features based on feedback
-  - [ ] Potential Phase 2 features from PRD section 5 (non-goals)
-  - [ ] Batch operations (sync --all, watch --all)
-  - [ ] Collection rename command
-  - [ ] MCP server management (serve command)
-  - [ ] Collection export/import for backup/restore
-  - [ ] Multi-type collections (ZIM, Bear, markdown-book)
 
 ## Relevant Files
 
