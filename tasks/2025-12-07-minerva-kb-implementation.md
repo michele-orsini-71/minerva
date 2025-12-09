@@ -592,27 +592,27 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
   - [x] Note: for Phase 1, no users exist, so this is mostly for reference
 
 ### Phase 13: Setup Wizard Update (FR-14)
-- [ ] Slim down apps/local-repo-kb/setup.py
-  - [ ] Keep only prerequisite checks (Python version, pipx installed)
-  - [ ] Remove collection creation logic (1,000+ lines)
-  - [ ] Keep installation logic for core packages
-  - [ ] Install Minerva core via pipx
-  - [ ] Install repository-doc-extractor via pipx
-  - [ ] Install local-repo-watcher via pipx
-  - [ ] Install minerva-kb via pipx
-  - [ ] Update end-of-setup message
-  - [ ] Display: "✅ Installation complete!"
-  - [ ] Display: "Next step: Create your first collection"
-  - [ ] Display: "Run: minerva-kb add /path/to/your/repository"
-  - [ ] Explain what happens during add (description, provider, indexing)
-  - [ ] Link to docs: "See: apps/minerva-kb/README.md"
-  - [ ] Target: <200 lines total
-- [ ] Test slimmed setup wizard
-  - [ ] Run setup.py on clean system
-  - [ ] Verify all packages installed correctly
-  - [ ] Verify end message displays correctly
-  - [ ] Verify minerva-kb is in PATH after setup
-  - [ ] Verify first add command works after setup
+- [x] Slim down apps/local-repo-kb/setup.py
+  - [x] Keep only prerequisite checks (Python version, pipx installed)
+  - [x] Remove collection creation logic (1,000+ lines)
+  - [x] Keep installation logic for core packages
+  - [x] Install Minerva core via pipx
+  - [x] Install repository-doc-extractor via pipx
+  - [x] Install local-repo-watcher via pipx
+  - [x] Install minerva-kb via pipx
+  - [x] Update end-of-setup message
+  - [x] Display: "✅ Installation complete!"
+  - [x] Display: "Next step: Create your first collection"
+  - [x] Display: "Run: minerva-kb add /path/to/your/repository"
+  - [x] Explain what happens during add (description, provider, indexing)
+  - [x] Link to docs: "See: apps/minerva-kb/README.md"
+  - [x] Target: <200 lines total (achieved: 151 lines)
+- [x] Test slimmed setup wizard
+  - [x] Run setup.py on clean system
+  - [x] Verify all packages installed correctly
+  - [x] Verify end message displays correctly
+  - [x] Verify minerva-kb is in PATH after setup
+  - [x] Verify first add command works after setup
 
 ### Phase 14: Deprecate Watcher Manager (Open Question 9.1, Option A)
 - [ ] Remove tools/local-repo-watcher-manager package
@@ -756,9 +756,9 @@ minerva-kb is a standalone orchestrator tool that manages the complete lifecycle
 - /Users/michele/my-code/minerva/docs/MIGRATE_TO_MINERVA_KB.md
 
 ### Files to Update
-- /Users/michele/my-code/minerva/CLAUDE.md (add minerva-kb reference)
+- /Users/michele/my-code/minerva/CLAUDE.md - Updated with minerva-kb commands and workflows
 - /Users/michele/my-code/minerva/README.md (update with minerva-kb)
-- /Users/michele/my-code/minerva/apps/local-repo-kb/setup.py (slim down to <200 lines)
+- /Users/michele/my-code/minerva/apps/local-repo-kb/setup.py - Slimmed from 1,276 to 151 lines, now only installs packages and guides to minerva-kb
 
 ### Files to Delete
 - /Users/michele/my-code/minerva/tools/local-repo-watcher-manager/ (entire directory)
