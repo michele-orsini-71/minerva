@@ -28,7 +28,7 @@ pip install -e /path/to/minerva/tools/local-repo-watcher
 minerva-local-watcher --collection my-project
 
 # Direct invocation (if you prefer to run the watcher binary yourself)
-local-repo-watcher --config ~/.minerva/apps/local-repo-kb/my-project-watcher.json
+local-repo-watcher --config ~/.minerva/collections/my-project-watcher.json
 
 # With verbose logging
 local-repo-watcher --config watcher.json --verbose
@@ -51,8 +51,8 @@ The watcher uses a JSON configuration file:
 {
   "repository_path": "/Users/you/code/my-project",
   "collection_name": "my-project",
-  "extracted_json_path": "/Users/you/.minerva/apps/local-repo-kb/my-project-extracted.json",
-  "index_config_path": "/Users/you/.minerva/apps/local-repo-kb/my-project-index.json",
+  "extracted_json_path": "/Users/you/.minerva/collections/my-project-extracted.json",
+  "index_config_path": "/Users/you/.minerva/collections/my-project-index.json",
   "debounce_seconds": 2.0,
   "include_extensions": [".md", ".py", ".js", ".ts"],
   "ignore_patterns": [".git", "node_modules", ".venv", "__pycache__"]
@@ -134,7 +134,7 @@ Create `~/Library/LaunchAgents/com.minerva.local-repo-watcher.my-project.plist`:
     <array>
         <string>/Users/you/.local/bin/local-repo-watcher</string>
         <string>--config</string>
-        <string>/Users/you/.minerva/apps/local-repo-kb/my-project-watcher.json</string>
+        <string>/Users/you/.minerva/collections/my-project-watcher.json</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
@@ -165,7 +165,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=%h/.local/bin/local-repo-watcher --config %h/.minerva/apps/local-repo-kb/%i-watcher.json
+ExecStart=%h/.local/bin/local-repo-watcher --config %h/.minerva/collections/%i-watcher.json
 Restart=always
 RestartSec=10
 
@@ -299,14 +299,14 @@ The watcher waits for new changes after errors:
 2. Make any file change in the repository
 3. Pipeline will automatically retry
 
-## Integration with Setup Wizard
+## Integration with minerva-kb
 
-This watcher is automatically installed and configured by the `apps/local-repo-kb/setup.py` wizard. The wizard:
+This watcher is automatically installed and configured by the `minerva-kb` tool. The tool:
 
-1. Installs the watcher via pipx
-2. Generates the watcher configuration file
-3. Provides instructions for running the watcher
-4. Shows how to set up as a background service
+1. Installs the watcher via pipx (during initial setup with `tools/minerva-kb/install.sh`)
+2. Generates the watcher configuration file (when you run `minerva-kb add`)
+3. Manages watcher lifecycle with `minerva-kb watch` command
+4. Provides status information with `minerva-kb list` and `minerva-kb status`
 
 ## License
 

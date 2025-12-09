@@ -110,17 +110,22 @@ Minerva supports multiple deployment scenarios depending on your needs:
 #### 🎯 Option A: Personal Local Knowledge Base (Easiest)
 
 **Use case:** Index your code repositories for use with Claude Desktop
-**Guide:** See [`apps/local-repo-kb/README.md`](apps/local-repo-kb/README.md)
+**Guide:** See [`tools/minerva-kb/README.md`](tools/minerva-kb/README.md)
 
-This automated setup wizard:
-- Installs Minerva via pipx
-- Configures AI provider (OpenAI, Gemini, Ollama, LM Studio)
-- Stores API keys securely in OS keychain
-- Indexes a repository and generates optimized descriptions
-- Sets up Claude Desktop MCP integration
+This automated installer:
+- Installs Minerva and minerva-kb via pipx
+- Installs repository extractor and file watcher
+- Guides you to create your first collection with `minerva-kb add`
 
 ```bash
-./apps/local-repo-kb/setup.py
+./tools/minerva-kb/install.sh
+```
+
+After installation, manage collections with simple commands:
+```bash
+minerva-kb add /path/to/your/repository    # Create collection
+minerva-kb list                            # View all collections
+minerva-kb watch my-project                # Start auto-updates
 ```
 
 #### 🔧 Option B: Custom Setup (Full Control)
@@ -324,8 +329,6 @@ OPENAI_API_KEY="sk-..." minerva index --config config.json
 - **Rotate keys regularly**: Update with `minerva keychain set <provider>`
 - **Set rate limits**: Prevent abuse with config-based rate limiting
 - **Dedicated keys**: Use separate keys for dev/prod environments
-
-See [`apps/local-repo-kb/SECURITY.md`](apps/local-repo-kb/SECURITY.md) for comprehensive security guidance.
 
 ### Basic Workflow
 
