@@ -4,7 +4,7 @@ Orchestrator tool for managing Minerva repository-based knowledge base collectio
 
 ## Overview
 
-`minerva-kb` is a unified CLI for the complete lifecycle of repository-based knowledge base collections. It replaces the monolithic setup wizard and provides simple commands for adding, listing, updating, watching, and removing collections.
+`minerva-kb` is a unified CLI for the complete lifecycle of repository-based knowledge base collections.
 
 ## Installation
 

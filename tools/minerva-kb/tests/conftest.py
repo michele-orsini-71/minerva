@@ -74,6 +74,8 @@ class FakeSubprocessRunner:
             if not self.watcher_available:
                 return SimpleNamespace(returncode=1, stdout="", stderr="not found")
             return SimpleNamespace(returncode=0, stdout="/usr/bin/local-repo-watcher\n", stderr="")
+        if binary == "ps":
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
 
         raise AssertionError(f"Unexpected subprocess command: {command}")
 

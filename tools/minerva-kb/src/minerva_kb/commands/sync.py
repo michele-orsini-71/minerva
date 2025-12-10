@@ -6,6 +6,7 @@ from minerva_kb.utils.collection_naming import validate_collection_name_format
 from minerva_kb.utils.config_helpers import list_managed_collections
 from minerva_kb.utils.config_loader import load_watcher_config
 from minerva_kb.utils.display import display_collection_not_found, display_error
+from minerva_kb.utils.process_manager import find_watcher_pid
 
 
 def run_sync(collection_name: str) -> int:
@@ -22,6 +23,14 @@ def _execute_sync(collection_name: str) -> int:
     watcher_path = MINERVA_KB_APP_DIR / f"{collection_name}-watcher.json"
     if not watcher_path.exists():
         display_collection_not_found(collection_name, list_managed_collections())
+        return 1
+
+    watcher_pid = find_watcher_pid(watcher_path)
+    if watcher_pid is not None:
+        display_error(
+            f"Cannot sync: watcher is running for this collection (PID {watcher_pid}). "
+            "Stop the watcher first with Ctrl+C or kill the process."
+        )
         return 1
 
     try:
