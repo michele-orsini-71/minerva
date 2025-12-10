@@ -2,11 +2,11 @@
 
 A unified RAG system for personal knowledge management
 
-Minerva is a powerful tool that transforms your markdown notes, articles, and documents into an intelligent, searchable knowledge base. It extracts content from various sources, indexes them with AI-powered embeddings, and makes them accessible through semantic search via the Model Context Protocol (MCP).
-
 ---
 
 ## What is Minerva?
+
+Minerva is a tool that transforms your markdown notes, articles, and documents into a searchable knowledge base. It extracts content from various sources, indexes them with AI-powered embeddings, and makes them accessible through semantic search via the Model Context Protocol (MCP).
 
 Minerva solves the problem of **information overload** in personal knowledge management. If you have:
 
@@ -42,10 +42,10 @@ Minerva follows a three-stage pipeline architecture:
 └────────┬────────┘
          │
          ▼
-┌─────────────────┐      ┌──────────────────┐
+┌─────────────────┐      ┌─────────────────-─┐
 │   EXTRACTORS    │──────▶ Standardized JSON │
 │ (Independent    │      │  (Note Schema)    │
-│   packages)     │      └─────────┬──────────┘
+│   packages)     │      └─────────┬─────────┘
 └─────────────────┘                │
                                    ▼
                          ┌──────────────────┐
@@ -65,10 +65,10 @@ Minerva follows a three-stage pipeline architecture:
   ┌──────────────────────────────────┐
   │       Vector Database            │
   │       (ChromaDB)                 │
-  │  ┌──────────┐  ┌──────────┐    │
-  │  │Collection│  │Collection│    │
-  │  │  #1      │  │  #2      │    │
-  │  └──────────┘  └──────────┘    │
+  │  ┌──────────┐  ┌──────────┐      │
+  │  │Collection│  │Collection│      │
+  │  │  #1      │  │  #2      │      │
+  │  └──────────┘  └──────────┘      │
   └────────────────┬─────────────────┘
                    │
                    ▼
@@ -100,7 +100,7 @@ Minerva follows a three-stage pipeline architecture:
 ### Prerequisites
 
 - Python 3.10 or higher
-- For local AI: [Ollama](https://ollama.ai) with `mxbai-embed-large` model, or [LM Studio](https://lmstudio.ai)
+- For local AI: [Ollama](https://ollama.ai) or [LM Studio](https://lmstudio.ai)
 - For cloud AI: API keys for OpenAI or Google Gemini
 
 ### Choose Your Deployment
@@ -113,6 +113,7 @@ Minerva supports multiple deployment scenarios depending on your needs:
 **Guide:** See [`tools/minerva-kb/README.md`](tools/minerva-kb/README.md)
 
 This automated installer:
+
 - Installs Minerva and minerva-kb via pipx
 - Installs repository extractor and file watcher
 - Guides you to create your first collection with `minerva-kb add`
@@ -122,6 +123,7 @@ This automated installer:
 ```
 
 After installation, manage collections with simple commands:
+
 ```bash
 minerva-kb add /path/to/your/repository    # Create collection
 minerva-kb list                            # View all collections
@@ -134,27 +136,15 @@ minerva-kb watch my-project                # Start auto-updates
 **Guide:** Continue reading this README for manual installation and configuration
 
 Install Minerva as a library and configure everything yourself:
+
 - Choose your own directory structure
 - Manage credentials your way (env vars, keychain, envchain, etc.)
 - Create custom indexing workflows
 - Deploy as HTTP server for team access
 
-#### 🏢 Option C: Server Deployment (Team/Enterprise)
-
-**Use case:** Centralized knowledge base accessible by multiple users
-**Guide:** See deployment documentation (coming soon)
-
-Deploy Minerva as a service:
-- HTTP MCP server with network access
-- Centralized ChromaDB instance
-- Shared collections across team
-- Docker/container deployment
-
 ---
 
 ### Installation
-
-Both installation methods make the `minerva` command globally available without needing to activate any virtual environment.
 
 #### Method 1: pipx (Recommended)
 
@@ -209,20 +199,6 @@ deactivate
 minerva --help
 ```
 
-**Important:** Replace `/path/to/your/project` with the actual absolute path to this project directory.
-
-**For macOS/Linux users**, get the full path with:
-
-```bash
-echo "alias minerva=\"$(pwd)/.venv/bin/minerva\"" >> ~/.zshrc
-```
-
-**For Windows users**, add to your PowerShell profile:
-
-```powershell
-function minerva { & "C:\path\to\project\.venv\Scripts\minerva.exe" $args }
-```
-
 #### You Don't Need to Activate the Virtual Environment!
 
 **Important concept:** Once Minerva is installed using either method above, you do **NOT** need to activate any virtual environment to use it. The `minerva` command will be available in any terminal session.
@@ -269,6 +245,7 @@ minerva keychain set GEMINI_API_KEY
 ```
 
 Your API keys are encrypted and stored in:
+
 - **macOS**: Keychain Access (AES-256, Touch ID/Face ID support)
 - **Linux**: GNOME Keyring / KWallet (Secret Service)
 - **Windows**: Credential Manager (DPAPI, Windows Hello support)
@@ -306,6 +283,7 @@ Reference stored keys in your config files:
 ```
 
 Minerva resolves `${OPENAI_API_KEY}` by checking:
+
 1. Environment variable `OPENAI_API_KEY` (highest priority)
 2. OS keychain entry for `OPENAI_API_KEY` (fallback)
 3. Error if not found (with helpful suggestions)
@@ -321,14 +299,6 @@ export OPENAI_API_KEY="sk-your-key-here"
 # Or inline for single command
 OPENAI_API_KEY="sk-..." minerva index --config config.json
 ```
-
-#### Security Best Practices
-
-- **Use keychain for workstations**: Secure, persistent, encrypted
-- **Use environment variables for CI/CD**: No keychain available in pipelines
-- **Rotate keys regularly**: Update with `minerva keychain set <provider>`
-- **Set rate limits**: Prevent abuse with config-based rate limiting
-- **Dedicated keys**: Use separate keys for dev/prod environments
 
 ### Basic Workflow
 
@@ -375,11 +345,13 @@ minerva index --config configs/index/bear-notes-ollama.json --verbose
 minerva peek bear_notes --chromadb ./chromadb_data
 
 # 6. Query the collection directly (optional)
+
+
+C'E' QUERY?!?! oppure no?
 minerva query ./chromadb_data "search term" --collection bear_notes --max-results 5
 
 # 7. Start the MCP server (for Claude Desktop integration)
 minerva serve --config configs/server/local.json
-```
 
 ---
 
@@ -659,13 +631,6 @@ minerva index --config configs/index/research-papers.json
 minerva serve --config configs/server/local.json
 ```
 
-### Example 4: Validate Configurations Quickly
-
-```bash
-python -c "from minerva.common.index_config import load_index_config; load_index_config('configs/index/bear-notes-ollama.json')"
-python -c "from minerva.common.server_config import load_server_config; load_server_config('configs/server/local.json')"
-```
-
 ---
 
 ## Extending Minerva
@@ -726,25 +691,6 @@ pytest tests/test_ai_provider.py -v              # Provider tests
 pytest tests/test_index_command.py -v            # Index command and config loader tests
 ```
 
-### Validate Configuration
-
-```bash
-# Validate sample configs
-python -c "from minerva.common.index_config import load_index_config; load_index_config('configs/index/bear-notes-ollama.json')"
-python -c "from minerva.common.server_config import load_server_config; load_server_config('configs/server/local.json')"
-```
-
-### Continuous Integration
-
-The project includes GitHub Actions CI that automatically:
-
-- Runs all tests with coverage
-- Validates sample configurations
-- Lints code with black, isort, and flake8
-- Tests on Python 3.10, 3.11, 3.12, and 3.13
-
----
-
 ## Documentation
 
 - [Configuration Guide](docs/configuration.md) - Command-specific configuration reference for index and server
@@ -755,20 +701,6 @@ The project includes GitHub Actions CI that automatically:
 - [Release Notes v2.0](docs/RELEASE_NOTES_v2.0.md) - What's new in version 2.0
 - [Upgrade Guide v2.0](docs/UPGRADE_v2.0.md) - How to upgrade from v1.x
 - [CLAUDE.md](CLAUDE.md) - Developer guide for working with this codebase
-
----
-
-## Contributing
-
-Contributions are welcome! Here are some ways you can help:
-
-- Report bugs and request features via [GitHub Issues](https://github.com/yourusername/minerva/issues)
-- Write extractors for new data sources
-- Improve documentation
-- Add tests and improve code coverage
-- Share your use cases and workflows
-
----
 
 ## License
 
@@ -784,14 +716,6 @@ Minerva builds upon these excellent open-source projects:
 - [LangChain](https://www.langchain.com/) - Document chunking
 - [Ollama](https://ollama.ai/) - Local AI models
 - [FastMCP](https://github.com/jlowin/fastmcp) - MCP server framework
-
----
-
-## Support
-
-- Check the [documentation](docs/)
-- Report issues on [GitHub](https://github.com/yourusername/minerva/issues)
-- Join discussions in [GitHub Discussions](https://github.com/yourusername/minerva/discussions)
 
 ---
 
