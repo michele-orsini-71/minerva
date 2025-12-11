@@ -63,12 +63,7 @@ def handle_get(args):
             logger.error(f"No credential found for '{provider}'")
             return 1
 
-        if len(credential) <= 8:
-            masked = credential
-        else:
-            masked = f"{credential[:4]}...{credential[-4:]}"
-
-        print(f"API key for '{provider}': {masked}")
+        print(credential)
         return 0
 
     except Exception as e:

@@ -295,9 +295,7 @@ def _display_success_summary(
     print(f"   Provider:   {PROVIDER_DISPLAY_NAMES.get(provider_config.get('provider_type'), 'Unknown')}")
     print(f"   Chunks:     {formatted_chunks}")
     print()
-    print("Next steps:")
-    print(f"  • Start watcher: minerva-kb watch {collection_name}")
-    print(f"  • Inspect config: {index_config_path}")
+    print("Next steps: start watcher with the command minerva-kb watch {collection_name}")
     print()
 
 
