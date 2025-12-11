@@ -84,7 +84,7 @@ Create a new collection or update an existing collection's AI provider.
 ```
 $ minerva-kb add ~/code/my-project
 
-Collection name: my-project
+Collection name: my-project-kb
 
 ✓ Found README.md
 ✓ Generated description: A Python library for data processing and analysis
@@ -111,11 +111,11 @@ Use default models?
 ✓ Indexing collection...
   Created 127 chunks
 
-✓ Collection 'my-project' created successfully!
+✓ Collection 'my-project-kb' created successfully!
 
 Next steps:
-  - Start watcher: minerva-kb watch my-project
-  - Check status: minerva-kb status my-project
+  - Start watcher: minerva-kb watch my-project-kb
+  - Check status: minerva-kb status my-project-kb
 ```
 
 ### `minerva-kb list [--format table|json]`
@@ -140,21 +140,21 @@ $ minerva-kb list
 
 Collections (3):
 
-my-project
+my-project-kb
   Repository: /Users/michele/code/my-project
   Provider: openai (gpt-4o-mini + text-embedding-3-small)
   Chunks: 1,247
   Watcher: ✓ Running (PID 12345)
   Last indexed: 2025-12-08 14:32:15
 
-docs-collection
+docs-collection-kb
   Repository: /Users/michele/documents/notes
   Provider: ollama (llama3.1:8b + mxbai-embed-large:latest)
   Chunks: 523
   Watcher: ⚠ Not running
   Last indexed: 2025-12-07 09:15:42
 
-legacy-kb
+legacy-kb-kb
   Repository: /Users/michele/old-project
   Provider: gemini (gemini-1.5-flash + text-embedding-004)
   Chunks: 2,891
@@ -169,7 +169,7 @@ $ minerva-kb list --format json
 
 [
   {
-    "name": "my-project",
+    "name": "my-project-kb",
     "repository_path": "/Users/michele/code/my-project",
     "provider": {
       "type": "openai",
@@ -184,7 +184,7 @@ $ minerva-kb list --format json
     "last_indexed": "2025-12-08T14:32:15Z"
   },
   {
-    "name": "docs-collection",
+    "name": "docs-collection-kb",
     "repository_path": "/Users/michele/documents/notes",
     "provider": {
       "type": "ollama",
@@ -216,9 +216,9 @@ Display detailed status for a specific collection.
 **Example output:**
 
 ```
-$ minerva-kb status my-project
+$ minerva-kb status my-project-kb
 
-Collection: my-project
+Collection: my-project-kb
 Repository: /Users/michele/code/my-project
 
 AI Provider:
@@ -233,9 +233,9 @@ ChromaDB:
   Last modified: 2025-12-08 14:32:15
 
 Configuration Files:
-  Index config: ~/.minerva/apps/minerva-kb/my-project-index.json
-  Watcher config: ~/.minerva/apps/minerva-kb/my-project-watcher.json
-  Extracted data: ~/.minerva/apps/minerva-kb/my-project-extracted.json (2.3 MB)
+  Index config: ~/.minerva/apps/minerva-kb/my-project-kb-index.json
+  Watcher config: ~/.minerva/apps/minerva-kb/my-project-kb-watcher.json
+  Extracted data: ~/.minerva/apps/minerva-kb/my-project-kb-extracted.json (2.3 MB)
 
 Watcher:
   Status: ✓ Running (PID 12345)
@@ -253,9 +253,9 @@ Manually trigger re-indexing for a collection.
 **Example output:**
 
 ```
-$ minerva-kb sync my-project
+$ minerva-kb sync my-project-kb
 
-Syncing collection 'my-project'...
+Syncing collection 'my-project-kb'...
 
 ✓ Extracting repository documentation...
   Processed 45 files (3 new, 2 modified, 1 deleted)
@@ -263,7 +263,7 @@ Syncing collection 'my-project'...
 ✓ Indexing collection...
   Updated 137 chunks (127 existing, 8 new, 2 removed)
 
-✓ Collection 'my-project' synced successfully!
+✓ Collection 'my-project-kb' synced successfully!
 ```
 
 ### `minerva-kb watch [<collection-name>]`
@@ -278,9 +278,9 @@ Start file watcher for a collection.
 **Example output:**
 
 ```
-$ minerva-kb watch my-project
+$ minerva-kb watch my-project-kb
 
-▶️ Starting watcher for 'my-project'... Press Ctrl+C to stop.
+▶️ Starting watcher for 'my-project-kb'... Press Ctrl+C to stop.
 
 Watching: /Users/michele/code/my-project
 Patterns: .md, .mdx, .markdown, .rst, .txt
@@ -309,9 +309,9 @@ Delete collection and all associated data.
 **Example output:**
 
 ```
-$ minerva-kb remove my-project
+$ minerva-kb remove my-project-kb
 
-Collection: my-project
+Collection: my-project-kb
 Repository: /Users/michele/code/my-project
 Provider: openai (gpt-4o-mini + text-embedding-3-small)
 Chunks: 1,247
@@ -319,7 +319,7 @@ Chunks: 1,247
 ⚠️ WARNING: This will delete:
   - ChromaDB collection and all embeddings
   - Configuration files (~/.minerva/apps/minerva-kb/)
-  - Extracted data (~/.minerva/apps/minerva-kb/my-project-extracted.json)
+  - Extracted data (~/.minerva/apps/minerva-kb/my-project-kb-extracted.json)
 
 Your repository files will NOT be affected.
 
@@ -327,12 +327,12 @@ Type YES to confirm deletion: YES
 
 ✓ Stopping watcher (PID 12345)...
 ✓ Deleting configuration files...
-  - my-project-index.json
-  - my-project-watcher.json
-  - my-project-extracted.json
+  - my-project-kb-index.json
+  - my-project-kb-watcher.json
+  - my-project-kb-extracted.json
 ✓ Deleting ChromaDB collection...
 
-✓ Collection 'my-project' removed successfully!
+✓ Collection 'my-project-kb' removed successfully!
 
 Note: API keys remain in keychain
 To remove: minerva keychain delete OPENAI_API_KEY
@@ -351,17 +351,20 @@ ChromaDB data is stored in `~/.minerva/chromadb/`.
 
 ## Collection Naming
 
-Collection names are automatically derived from repository folder names:
+Collection names are automatically derived from repository folder names with a `-kb` suffix:
 
 - Converted to lowercase
 - Spaces → hyphens
 - Only alphanumeric characters and hyphens
+- `-kb` suffix automatically appended (ensures namespace separation)
 - 3-512 characters (ChromaDB requirement)
 
 **Examples:**
-- `/code/minerva` → `minerva`
-- `/code/My Cool Project` → `my-cool-project`
-- `/code/React_Component-Library` → `react-component-library`
+- `/code/minerva` → `minerva-kb`
+- `/code/b4` → `b4-kb` (short names now supported!)
+- `/code/My Cool Project` → `my-cool-project-kb`
+- `/code/React_Component-Library` → `react-component-library-kb`
+- `/code/project-kb` → `project-kb-kb` (edge case: suffix is always added)
 
 ## AI Providers
 

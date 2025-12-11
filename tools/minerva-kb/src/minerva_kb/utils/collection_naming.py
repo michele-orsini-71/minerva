@@ -16,8 +16,10 @@ def sanitize_collection_name(repo_path: str | Path) -> str:
     cleaned = re.sub(r"-+", "-", cleaned).strip("-")
     if not cleaned:
         raise ValueError("Collection name cannot be empty after sanitization")
-    if len(cleaned) < MIN_LENGTH:
-        raise ValueError("Collection name must be at least 3 characters")
+
+    # Always append -kb suffix for namespace separation and minimum length guarantee
+    cleaned = f"{cleaned}-kb"
+
     if len(cleaned) > MAX_LENGTH:
         raise ValueError("Collection name cannot exceed 512 characters")
     return cleaned
