@@ -1,5 +1,4 @@
 import getpass
-import sys
 import keyring
 
 from minerva.common.logger import get_logger

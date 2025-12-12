@@ -98,7 +98,9 @@
       "Bash(~/.local/pipx/venvs/repository-doc-extractor/bin/python:*)",
       "Bash(PYTHONPATH=src python:*)",
       "Bash(minerva-kb:*)",
-      "Bash(/Users/michele/my-code/minerva/tools/minerva-kb/install.sh)"
+      "Bash(/Users/michele/my-code/minerva/tools/minerva-kb/install.sh)",
+      "Bash(pip index:*)",
+      "Bash(pipx runpip:*)"
     ],
     "deny": [],
     "ask": []

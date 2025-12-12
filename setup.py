@@ -34,7 +34,7 @@ setup(
     python_requires=">=3.10",
     install_requires=[
         # Vector database and AI providers
-        "chromadb>=0.4.0",
+        "chromadb>=1.3.6",  # Pinned to 1.3.6+ to avoid corruption bugs in earlier versions
         "ollama>=0.1.0",
         "litellm>=1.79.0",
         "httpx>=0.28.0",

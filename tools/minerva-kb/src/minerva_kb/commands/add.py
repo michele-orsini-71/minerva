@@ -34,6 +34,7 @@ IGNORE_PATTERNS = [
     "dist",
     "build",
     ".tox",
+    "*.egg-info",
 ]
 
 
