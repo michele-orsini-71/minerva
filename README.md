@@ -100,8 +100,11 @@ Minerva follows a three-stage pipeline architecture:
 ### Prerequisites
 
 - Python 3.10 or higher
+- ChromaDB 1.3.6 or higher (installed automatically with Minerva)
 - For local AI: [Ollama](https://ollama.ai) or [LM Studio](https://lmstudio.ai)
 - For cloud AI: API keys for OpenAI or Google Gemini
+
+> **Note:** ChromaDB 1.3.6+ is required to prevent database corruption issues. Earlier versions (including 1.1.0) have known bugs that can corrupt the database during concurrent operations.
 
 ### Choose Your Deployment
 
@@ -344,13 +347,12 @@ minerva index --config configs/index/bear-notes-ollama.json --verbose
 # 5. Peek at the indexed data
 minerva peek bear_notes --chromadb ./chromadb_data
 
-# 6. Query the collection directly (optional)
 
+# 6. Start the MCP server (for Claude Desktop integration)
+# Using minerva-kb (recommended - auto-managed config):
+minerva-kb serve
 
-C'E' QUERY?!?! oppure no?
-minerva query ./chromadb_data "search term" --collection bear_notes --max-results 5
-
-# 7. Start the MCP server (for Claude Desktop integration)
+# Or using minerva directly with manual config:
 minerva serve --config configs/server/local.json
 
 ---

@@ -2,7 +2,7 @@ import argparse
 import sys
 import subprocess
 
-from minerva_kb.commands import run_add, run_list, run_remove, run_status, run_sync, run_watch
+from minerva_kb.commands import run_add, run_list, run_remove, run_serve, run_status, run_sync, run_watch
 
 
 def get_version_info():
@@ -225,6 +225,37 @@ Examples:
         help='Name of the collection to remove'
     )
 
+    serve_parser = subparsers.add_parser(
+        'serve',
+        help='Start the Minerva MCP server',
+        description='''Start the Minerva MCP server with auto-managed configuration.
+
+Uses the server config automatically created by minerva-kb at:
+  ~/.minerva/apps/minerva-kb/server.json
+
+This config is automatically updated as you add/remove collections.
+
+The server provides:
+  - Semantic search across all managed collections
+  - MCP (Model Context Protocol) integration
+  - Compatible with Claude Desktop and other MCP clients
+
+Examples:
+  minerva-kb serve                    # Start server (stdio mode)
+
+Configuration for Claude Desktop:
+  Add to ~/Library/Application Support/Claude/claude_desktop_config.json:
+  {
+    "mcpServers": {
+      "minerva": {
+        "command": "minerva-kb",
+        "args": ["serve"]
+      }
+    }
+  }''',
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+
     args = parser.parse_args()
 
     if args.command == 'add':
@@ -239,6 +270,8 @@ Examples:
         return run_watch(args.collection_name)
     elif args.command == 'remove':
         return run_remove(args.collection_name)
+    elif args.command == 'serve':
+        return run_serve()
     else:
         parser.print_help()
         return 1

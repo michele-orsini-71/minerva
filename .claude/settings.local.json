@@ -100,7 +100,8 @@
       "Bash(minerva-kb:*)",
       "Bash(/Users/michele/my-code/minerva/tools/minerva-kb/install.sh)",
       "Bash(pip index:*)",
-      "Bash(pipx runpip:*)"
+      "Bash(pipx runpip:*)",
+      "Bash(timeout 2 minerva-kb serve:*)"
     ],
     "deny": [],
     "ask": []

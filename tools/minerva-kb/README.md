@@ -64,6 +64,12 @@ minerva-kb sync <collection-name>
 minerva-kb remove <collection-name>
 ```
 
+### Start MCP Server
+
+```bash
+minerva-kb serve
+```
+
 ## Command Reference
 
 ### `minerva-kb add <repo-path>`
@@ -337,6 +343,54 @@ Type YES to confirm deletion: YES
 Note: API keys remain in keychain
 To remove: minerva keychain delete OPENAI_API_KEY
 ```
+
+### `minerva-kb serve`
+
+Start the Minerva MCP server with auto-managed configuration.
+
+**What it does:**
+- Starts the MCP server using the shared server config at `~/.minerva/apps/minerva-kb/server.json`
+- Makes all managed collections available for semantic search
+- Runs in stdio mode for integration with Claude Desktop and other MCP clients
+
+**Example output:**
+
+```
+$ minerva-kb serve
+
+Starting Minerva MCP server with config: /Users/michele/.minerva/apps/minerva-kb/server.json
+Press Ctrl+C to stop the server
+
+Minerva MCP Server
+============================================================
+ChromaDB: /Users/michele/.minerva/chromadb
+Collections found: 3
+  • minerva-kb (2,165 chunks)
+  • b4-kb (434 chunks)
+  • my-project-kb (1,247 chunks)
+
+✓ Server ready
+```
+
+**Claude Desktop Configuration:**
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "minerva": {
+      "command": "minerva-kb",
+      "args": ["serve"]
+    }
+  }
+}
+```
+
+After updating the config:
+1. Restart Claude Desktop
+2. Look for the 🔌 icon in the input field
+3. Your collections are now searchable!
 
 ## Configuration
 
