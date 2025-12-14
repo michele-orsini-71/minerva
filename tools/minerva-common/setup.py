@@ -13,5 +13,11 @@ setup(
         "openai>=1.0.0",
         "google-generativeai>=0.8.3",
     ],
+    extras_require={
+        "test": [
+            "pytest>=7.0.0",
+            "pytest-cov>=4.0.0",
+        ],
+    },
     entry_points={},
 )

@@ -27,21 +27,21 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - [x] Define `APPS_DIR` constant (`~/.minerva/apps`)
 
 ### Task 1.3: Implement init.py
-- [ ] Create `src/minerva_common/init.py`
-- [ ] Implement `ensure_shared_dirs()` function
-  - [ ] Create `.minerva/` if not exists
-  - [ ] Create `chromadb/` if not exists
-  - [ ] Set permissions 0o700 on directories
-  - [ ] Handle PermissionError gracefully
-- [ ] Implement `ensure_server_config()` function
-  - [ ] Check if `server.json` exists
-  - [ ] Return (path, False) if exists
-  - [ ] Create default config if not exists
-  - [ ] Use atomic write (temp file + replace)
-  - [ ] Set permissions 0o600 on file
-  - [ ] Return (path, True) if created
-- [ ] Write unit tests for `ensure_shared_dirs()`
-- [ ] Write unit tests for `ensure_server_config()`
+- [x] Create `src/minerva_common/init.py`
+- [x] Implement `ensure_shared_dirs()` function
+  - [x] Create `.minerva/` if not exists
+  - [x] Create `chromadb/` if not exists
+  - [x] Set permissions 0o700 on directories
+  - [x] Handle PermissionError gracefully
+- [x] Implement `ensure_server_config()` function
+  - [x] Check if `server.json` exists
+  - [x] Return (path, False) if exists
+  - [x] Create default config if not exists
+  - [x] Use atomic write (temp file + replace)
+  - [x] Set permissions 0o600 on file
+  - [x] Return (path, True) if created
+- [x] Write unit tests for `ensure_shared_dirs()`
+- [x] Write unit tests for `ensure_server_config()`
 
 ### Task 1.4: Implement registry.py
 - [ ] Create `src/minerva_common/registry.py`
@@ -440,7 +440,9 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - `tools/minerva-common/requirements.txt` - Package dependencies (Task 1.1 ✓)
 - `tools/minerva-common/src/minerva_common/__init__.py` - Package initialization (Task 1.1 ✓)
 - `tools/minerva-common/src/minerva_common/paths.py` - Shared path constants (Task 1.2 ✓)
-- `tools/minerva-common/src/minerva_common/init.py` - Infrastructure initialization
+- `tools/minerva-common/src/minerva_common/init.py` - Infrastructure initialization (Task 1.3 ✓)
+- `tools/minerva-common/tests/__init__.py` - Test package initialization (Task 1.3 ✓)
+- `tools/minerva-common/tests/test_init.py` - Unit tests for init module (Task 1.3 ✓)
 - `tools/minerva-common/src/minerva_common/registry.py` - Collection registry management
 - `tools/minerva-common/src/minerva_common/config_builder.py` - Index config generation
 - `tools/minerva-common/src/minerva_common/minerva_runner.py` - Subprocess wrapper for minerva CLI
