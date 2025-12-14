@@ -121,14 +121,14 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - [x] Write unit tests (mocked AI calls)
 
 ### Task 1.9: Implement server_manager.py
-- [ ] Create `src/minerva_common/server_manager.py`
-- [ ] Implement `start_server()` function
-  - [ ] Load server.json config
-  - [ ] Call `run_serve()` from minerva_runner
-  - [ ] Display available collections (query ChromaDB)
-  - [ ] Show server URL and port
-  - [ ] Return subprocess handle
-- [ ] Write unit tests
+- [x] Create `src/minerva_common/server_manager.py`
+- [x] Implement `start_server()` function
+  - [x] Load server.json config
+  - [x] Call `run_serve()` from minerva_runner
+  - [x] Display available collections (query ChromaDB)
+  - [x] Show server URL and port
+  - [x] Return subprocess handle
+- [x] Write unit tests
 
 ### Task 1.10: Implement collection_ops.py
 - [ ] Create `src/minerva_common/collection_ops.py`
@@ -453,7 +453,8 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - `tools/minerva-common/tests/test_provider_setup.py` - Unit tests for provider_setup module (Task 1.7 ✓)
 - `tools/minerva-common/src/minerva_common/description_generator.py` - AI description generation (Task 1.8 ✓)
 - `tools/minerva-common/tests/test_description_generator.py` - Unit tests for description_generator module (Task 1.8 ✓)
-- `tools/minerva-common/src/minerva_common/server_manager.py` - MCP server management
+- `tools/minerva-common/src/minerva_common/server_manager.py` - MCP server management (Task 1.9 ✓)
+- `tools/minerva-common/tests/test_server_manager.py` - Unit tests for server_manager module (Task 1.9 ✓)
 - `tools/minerva-common/src/minerva_common/collection_ops.py` - ChromaDB operations
 - `tools/minerva-common/src/minerva_common/collision.py` - Collection name collision detection
 - `tools/minerva-doc/` - Document orchestrator package
