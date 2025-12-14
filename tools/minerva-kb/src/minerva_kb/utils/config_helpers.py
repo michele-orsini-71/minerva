@@ -1,8 +1,8 @@
-import json
 import os
 from pathlib import Path
 
-from minerva_kb.constants import CHROMADB_DIR, MINERVA_KB_APP_DIR
+from minerva_common.init import ensure_server_config as _ensure_server_config_shared
+from minerva_kb.constants import MINERVA_KB_APP_DIR
 
 
 def ensure_config_dir() -> Path:
@@ -20,7 +20,6 @@ def get_config_paths(collection_name: str) -> dict[str, Path]:
         "watcher": base / f"{collection_name}-watcher.json",
         "index": base / f"{collection_name}-index.json",
         "extracted": base / f"{collection_name}-extracted.json",
-        "server": base / "server.json",
     }
 
 
@@ -53,23 +52,4 @@ def list_managed_collections() -> list[str]:
 
 
 def ensure_server_config() -> tuple[Path, bool]:
-    base = ensure_config_dir()
-    path = base / "server.json"
-    if path.exists():
-        return path, False
-    config = {
-        "chromadb_path": str(CHROMADB_DIR),
-        "default_max_results": 5,
-        "host": "127.0.0.1",
-        "port": 8337,
-    }
-    temp_path = path.with_suffix(".tmp")
-    with temp_path.open("w", encoding="utf-8") as handle:
-        json.dump(config, handle, indent=2)
-        handle.write("\n")
-    temp_path.replace(path)
-    try:
-        os.chmod(path, 0o600)
-    except PermissionError:
-        pass
-    return path, True
+    return _ensure_server_config_shared()

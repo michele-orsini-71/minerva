@@ -157,20 +157,21 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - [x] Write unit tests
 
 ### Task 1.12: Package minerva-common
-- [ ] Install minerva-common in development mode: `pip install -e tools/minerva-common`
-- [ ] Verify all modules import correctly
-- [ ] Run full test suite: `pytest tools/minerva-common/tests`
-- [ ] Ensure all tests pass
+- [x] Install minerva-common in development mode: `pip install -e tools/minerva-common`
+- [x] Verify all modules import correctly
+- [x] Run full test suite: `pytest tools/minerva-common/tests`
+- [x] Ensure all tests pass
 
 ### Task 1.13: Refactor minerva-kb to use minerva-common
-- [ ] Update `tools/minerva-kb/requirements.txt` to include minerva-common
-- [ ] Replace `constants.py` imports with `minerva_common.paths`
-- [ ] Replace `ensure_server_config()` with `minerva_common.init.ensure_server_config()`
-- [ ] Replace provider selection logic with `minerva_common.provider_setup`
-- [ ] Update `serve` command to use `minerva_common.server_manager`
-- [ ] Update collision checks to use `minerva_common.collision.check_collection_exists()`
-- [ ] Run minerva-kb test suite: `pytest tools/minerva-kb/tests`
-- [ ] Ensure all tests pass
+- [x] Update `tools/minerva-kb/pyproject.toml` to include minerva-common
+- [x] Replace `constants.py` imports with `minerva_common.paths`
+- [x] Replace `ensure_server_config()` with `minerva_common.init.ensure_server_config()`
+- [x] Update `serve` command to use `minerva_common.server_manager`
+- [x] Install minerva-kb in development mode
+- [x] Run minerva-kb test suite: 42 passing, 25 failing (integration tests need updates)
+- [ ] Fix integration tests (test failures due to architectural change: server config moved to shared location)
+- [ ] Replace provider selection logic with `minerva_common.provider_setup` (deferred - separate refactoring)
+- [ ] Update collision checks to use `minerva_common.collision.check_collection_exists()` (deferred - will implement in minerva-doc)
 - [ ] Test minerva-kb commands manually (add, list, serve, remove)
 
 ---

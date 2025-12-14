@@ -23,6 +23,7 @@ classifiers = [
 ]
 dependencies = [
     "chromadb>=0.4.0",
+    "minerva-common",
 ]
 
 [project.scripts]

@@ -1,10 +1,6 @@
-from pathlib import Path
+from minerva_common.paths import APPS_DIR, CHROMADB_DIR, HOME_DIR, MINERVA_DIR
 
-HOME_DIR = Path.home()
-MINERVA_DIR = HOME_DIR / ".minerva"
-APPS_DIR = MINERVA_DIR / "apps"
 MINERVA_KB_APP_DIR = APPS_DIR / "minerva-kb"
-CHROMADB_DIR = MINERVA_DIR / "chromadb"
 
 OPENAI_API_KEY_NAME = "OPENAI_API_KEY"
 GEMINI_API_KEY_NAME = "GEMINI_API_KEY"
