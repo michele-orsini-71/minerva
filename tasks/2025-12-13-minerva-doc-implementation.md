@@ -70,24 +70,24 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - [x] Write unit tests for config building
 
 ### Task 1.6: Implement minerva_runner.py
-- [ ] Create `src/minerva_common/minerva_runner.py`
-- [ ] Implement `run_validate()` function
-  - [ ] Accept json_file path
-  - [ ] Run `minerva validate` via subprocess
-  - [ ] Capture stdout/stderr
-  - [ ] Return (success: bool, output: str)
-- [ ] Implement `run_index()` function
-  - [ ] Accept config_path
-  - [ ] Run `minerva index --config` via subprocess
-  - [ ] Stream output to user
-  - [ ] Use timeout (default 600s)
-  - [ ] Return (success: bool, output: str)
-- [ ] Implement `run_serve()` function
-  - [ ] Accept server_config_path
-  - [ ] Run `minerva serve --config` via subprocess
-  - [ ] Handle server lifecycle
-  - [ ] Return subprocess handle
-- [ ] Write unit tests (mocked subprocess calls)
+- [x] Create `src/minerva_common/minerva_runner.py`
+- [x] Implement `run_validate()` function
+  - [x] Accept json_file path
+  - [x] Run `minerva validate` via subprocess
+  - [x] Capture stdout/stderr
+  - [x] Return (success: bool, output: str)
+- [x] Implement `run_index()` function
+  - [x] Accept config_path
+  - [x] Run `minerva index --config` via subprocess
+  - [x] Stream output to user
+  - [x] Use timeout (default 600s)
+  - [x] Return (success: bool, output: str)
+- [x] Implement `run_serve()` function
+  - [x] Accept server_config_path
+  - [x] Run `minerva serve --config` via subprocess
+  - [x] Handle server lifecycle
+  - [x] Return subprocess handle
+- [x] Write unit tests (mocked subprocess calls)
 
 ### Task 1.7: Implement provider_setup.py
 - [ ] Create `src/minerva_common/provider_setup.py`
@@ -447,7 +447,8 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - `tools/minerva-common/tests/test_registry.py` - Unit tests for registry module (Task 1.4 ✓)
 - `tools/minerva-common/src/minerva_common/config_builder.py` - Index config generation (Task 1.5 ✓)
 - `tools/minerva-common/tests/test_config_builder.py` - Unit tests for config_builder module (Task 1.5 ✓)
-- `tools/minerva-common/src/minerva_common/minerva_runner.py` - Subprocess wrapper for minerva CLI
+- `tools/minerva-common/src/minerva_common/minerva_runner.py` - Subprocess wrapper for minerva CLI (Task 1.6 ✓)
+- `tools/minerva-common/tests/test_minerva_runner.py` - Unit tests for minerva_runner module (Task 1.6 ✓)
 - `tools/minerva-common/src/minerva_common/provider_setup.py` - AI provider selection
 - `tools/minerva-common/src/minerva_common/description_generator.py` - AI description generation
 - `tools/minerva-common/src/minerva_common/server_manager.py` - MCP server management
