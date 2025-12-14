@@ -131,20 +131,20 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - [x] Write unit tests
 
 ### Task 1.10: Implement collection_ops.py
-- [ ] Create `src/minerva_common/collection_ops.py`
-- [ ] Implement `list_chromadb_collections()` function
-  - [ ] Connect to ChromaDB
-  - [ ] Query all collections
-  - [ ] Return list with metadata (name, count)
-- [ ] Implement `remove_chromadb_collection()` function
-  - [ ] Connect to ChromaDB
-  - [ ] Delete collection by name
-  - [ ] Handle errors gracefully
-- [ ] Implement `get_collection_count()` function
-  - [ ] Connect to ChromaDB
-  - [ ] Get chunk count for collection
-  - [ ] Return count or None
-- [ ] Write unit tests (mocked ChromaDB)
+- [x] Create `src/minerva_common/collection_ops.py`
+- [x] Implement `list_chromadb_collections()` function
+  - [x] Connect to ChromaDB
+  - [x] Query all collections
+  - [x] Return list with metadata (name, count)
+- [x] Implement `remove_chromadb_collection()` function
+  - [x] Connect to ChromaDB
+  - [x] Delete collection by name
+  - [x] Handle errors gracefully
+- [x] Implement `get_collection_count()` function
+  - [x] Connect to ChromaDB
+  - [x] Get chunk count for collection
+  - [x] Return count or None
+- [x] Write unit tests (mocked ChromaDB)
 
 ### Task 1.11: Implement collision detection
 - [ ] Create `src/minerva_common/collision.py`
@@ -455,7 +455,8 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - `tools/minerva-common/tests/test_description_generator.py` - Unit tests for description_generator module (Task 1.8 ✓)
 - `tools/minerva-common/src/minerva_common/server_manager.py` - MCP server management (Task 1.9 ✓)
 - `tools/minerva-common/tests/test_server_manager.py` - Unit tests for server_manager module (Task 1.9 ✓)
-- `tools/minerva-common/src/minerva_common/collection_ops.py` - ChromaDB operations
+- `tools/minerva-common/src/minerva_common/collection_ops.py` - ChromaDB operations (Task 1.10 ✓)
+- `tools/minerva-common/tests/test_collection_ops.py` - Unit tests for collection_ops module (Task 1.10 ✓)
 - `tools/minerva-common/src/minerva_common/collision.py` - Collection name collision detection
 - `tools/minerva-doc/` - Document orchestrator package
 - `tools/minerva-doc/src/minerva_doc/cli.py` - CLI entry point
