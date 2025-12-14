@@ -5,10 +5,11 @@ def test_status_displays_collection_details(kb_env, capsys):
     repo = kb_env.create_repo("alpha")
     kb_env.queue_provider()
     run_add(str(repo))
+    collection_name = kb_env.collection_name(repo)
 
-    assert run_status("alpha") == 0
+    assert run_status(collection_name) == 0
     output = capsys.readouterr().out
-    assert "alpha" in output
+    assert collection_name in output
     assert "Repository" in output
 
 
@@ -20,17 +21,19 @@ def test_status_detects_missing_chromadb_collection(kb_env):
     repo = kb_env.create_repo("bravo")
     kb_env.queue_provider()
     run_add(str(repo))
+    collection_name = kb_env.collection_name(repo)
     client = kb_env.chroma_client()
-    client.delete_collection("bravo")
+    client.delete_collection(collection_name)
 
-    assert run_status("bravo") == 2
+    assert run_status(collection_name) == 2
 
 
 def test_status_reports_stopped_watcher(kb_env, capsys):
     repo = kb_env.create_repo("charlie")
     kb_env.queue_provider()
     run_add(str(repo))
+    collection_name = kb_env.collection_name(repo)
 
-    assert run_status("charlie") == 0
+    assert run_status(collection_name) == 0
     output = capsys.readouterr().out
     assert "Watcher: ⚠ Not running" in output

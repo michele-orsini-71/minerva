@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import urllib.error
 import urllib.request
@@ -91,7 +92,7 @@ def _call_provider(prompt: str, provider_config: dict[str, Any]) -> str:
 
 
 def _call_openai(prompt: str, model: str, provider_config: dict[str, Any]) -> str:
-    api_key = _read_key(provider_config.get("api_key_name"))
+    api_key = _resolve_api_key(provider_config)
     payload = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
@@ -110,7 +111,7 @@ def _call_openai(prompt: str, model: str, provider_config: dict[str, Any]) -> st
 
 
 def _call_gemini(prompt: str, model: str, provider_config: dict[str, Any]) -> str:
-    api_key = _read_key(provider_config.get("api_key_name"))
+    api_key = _resolve_api_key(provider_config)
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
@@ -205,17 +206,35 @@ def _sanitize_description(value: str) -> str:
     return cleaned
 
 
-def _read_key(key_name: str | None) -> str:
-    if not key_name:
-        raise RuntimeError("Provider requires API key but none configured")
+def _resolve_api_key(provider_config: dict[str, Any]) -> str:
+    reference = provider_config.get("api_key")
+    if not reference:
+        key_name = provider_config.get("api_key_name")
+        if not key_name:
+            raise RuntimeError("Provider requires API key but none configured")
+        reference = key_name
+
+    env_var = _extract_env_var_name(reference)
+    secret = os.environ.get(env_var)
+    if secret:
+        return secret
+
     result = subprocess.run(
-        ["minerva", "keychain", "get", key_name],
+        ["minerva", "keychain", "get", env_var],
         capture_output=True,
         text=True,
     )
     output = result.stdout.strip()
     if result.returncode != 0 or not output:
         raise RuntimeError(
-            f"Missing API key '{key_name}' in keychain. Run 'minerva keychain set {key_name}'."
+            f"Missing API key '{env_var}' in keychain. Run 'minerva keychain set {env_var}'."
         )
+    os.environ[env_var] = output
     return output
+
+
+def _extract_env_var_name(reference: str) -> str:
+    value = reference.strip()
+    if value.startswith("${") and value.endswith("}"):
+        return value[2:-1]
+    return value

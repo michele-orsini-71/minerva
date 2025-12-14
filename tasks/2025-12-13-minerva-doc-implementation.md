@@ -169,9 +169,9 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - [x] Update `serve` command to use `minerva_common.server_manager`
 - [x] Install minerva-kb in development mode
 - [x] Run minerva-kb test suite: 42 passing, 25 failing (integration tests need updates)
-- [ ] Fix integration tests (test failures due to architectural change: server config moved to shared location)
-- [ ] Replace provider selection logic with `minerva_common.provider_setup` (deferred - separate refactoring)
-- [ ] Update collision checks to use `minerva_common.collision.check_collection_exists()` (deferred - will implement in minerva-doc)
+- [x] Fix integration tests (test failures due to architectural change: server config moved to shared location)
+- [x] Replace provider selection logic with `minerva_common.provider_setup` (deferred - separate refactoring)
+- [x] Update collision checks to use `minerva_common.collision.check_collection_exists()` (deferred - will implement in minerva-doc)
 - [ ] Test minerva-kb commands manually (add, list, serve, remove)
 
 ---
@@ -473,6 +473,19 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 
 ### Modified Files
 - `tools/minerva-kb/src/minerva_kb/constants.py` - Updated to use minerva_common.paths
-- `tools/minerva-kb/src/minerva_kb/commands/add.py` - Added collision detection
+- `tools/minerva-kb/src/minerva_kb/commands/add.py` - Uses shared provider + collision detection logic across tools
 - `tools/minerva-kb/src/minerva_kb/commands/serve.py` - Refactored to use minerva_common
 - `README.md` - Added minerva-doc overview and tool ecosystem explanation
+- `tools/minerva-kb/tests/conftest.py` - Test harness patches shared paths for minerva-common integration
+- `tools/minerva-kb/tests/test_add_command_integration.py` - Validates '-kb' naming, provider reuse, and cross-tool collision handling
+- `tools/minerva-kb/tests/test_remove_command_integration.py` - Validated removal flows with sanitized collection names
+- `tools/minerva-kb/tests/test_watch_command_integration.py` - Ensured watcher tests target sanitized collection identifiers
+- `tools/minerva-kb/tests/test_sync_command_integration.py` - Synced reindex tests with new collection naming scheme
+- `tools/minerva-kb/tests/test_status_command_integration.py` - Adjusted status checks for '-kb' names and shared config
+- `tools/minerva-kb/tests/test_list_command_integration.py` - Reflected sanitized names in list output assertions
+- `tools/minerva-kb/tests/test_e2e_workflow.py` - Updated end-to-end scenarios for renamed collections
+- `tools/minerva-kb/src/minerva_kb/utils/provider_selection.py` - Delegates provider selection to minerva-common with keychain/env bridging
+- `tools/minerva-kb/src/minerva_kb/utils/description_generator.py` - Resolved provider API keys via env vars or keychain for shared config
+- `tools/minerva-kb/tests/test_provider_selection.py` - Covers new provider selection wrapper behavior
+- `tools/minerva-kb/tests/test_add_command_integration.py` - Validates '-kb' naming, provider reuse, and cross-tool collision handling
+- `tools/minerva-kb/tests/conftest.py` - Patches minerva-common helpers for shared collision detection

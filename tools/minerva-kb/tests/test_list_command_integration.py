@@ -7,12 +7,13 @@ def test_list_shows_managed_collections(kb_env, capsys):
     repo = kb_env.create_repo("alpha")
     kb_env.queue_provider()
     run_add(str(repo))
-    kb_env.set_watcher_pid("alpha", 4321)
+    collection_name = kb_env.collection_name(repo)
+    kb_env.set_watcher_pid(collection_name, 4321)
 
     assert run_list("table") == 0
     output = capsys.readouterr().out
     assert "Collections (1)" in output
-    assert "alpha" in output
+    assert collection_name in output
     assert "PID 4321" in output
 
 
@@ -20,10 +21,11 @@ def test_list_outputs_json_format(kb_env, capsys):
     repo = kb_env.create_repo("bravo")
     kb_env.queue_provider()
     run_add(str(repo))
+    collection_name = kb_env.collection_name(repo)
     capsys.readouterr()
     assert run_list("json") == 0
     data = json.loads(capsys.readouterr().out)
-    assert data["managed_collections"][0]["name"] == "bravo"
+    assert data["managed_collections"][0]["name"] == collection_name
 
 
 def test_list_includes_unmanaged_collections(kb_env, capsys):
@@ -40,8 +42,9 @@ def test_list_flags_broken_collections(kb_env, capsys):
     repo = kb_env.create_repo("broken")
     kb_env.queue_provider()
     run_add(str(repo))
+    collection_name = kb_env.collection_name(repo)
     client = kb_env.chroma_client()
-    client.delete_collection("broken")
+    client.delete_collection(collection_name)
 
     capsys.readouterr()
     assert run_list("table") == 0
@@ -53,6 +56,7 @@ def test_list_shows_stopped_watcher(kb_env, capsys):
     repo = kb_env.create_repo("idle")
     kb_env.queue_provider()
     run_add(str(repo))
+    collection_name = kb_env.collection_name(repo)
 
     assert run_list("table") == 0
     output = capsys.readouterr().out

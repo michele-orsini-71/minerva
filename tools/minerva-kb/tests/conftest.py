@@ -11,6 +11,10 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from minerva_common import collection_ops as common_collection_ops
+from minerva_common import collision as common_collision
+from minerva_common import init as common_init
+from minerva_common import paths as common_paths
 from minerva_kb import constants as constants_mod
 from minerva_kb.commands import add as add_cmd
 from minerva_kb.commands import list as list_cmd
@@ -18,7 +22,9 @@ from minerva_kb.commands import remove as remove_cmd
 from minerva_kb.commands import status as status_cmd
 from minerva_kb.commands import sync as sync_cmd
 from minerva_kb.commands import watch as watch_cmd
+from minerva_kb.commands import serve as serve_cmd
 from minerva_kb.utils import config_helpers, config_loader, description_generator
+from minerva_kb.utils.collection_naming import sanitize_collection_name
 
 
 class FakeCollection:
@@ -133,9 +139,12 @@ class KBTestEnv:
     def __init__(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         self.tmp_path = tmp_path
         self.monkeypatch = monkeypatch
-        self.app_dir = tmp_path / "app"
-        self.chroma_dir = tmp_path / "chromadb"
+        self.minerva_dir = tmp_path / ".minerva"
+        self.app_dir = tmp_path / ".minerva" / "apps" / "minerva-kb"
+        self.chroma_dir = tmp_path / ".minerva" / "chromadb"
         self.repos_dir = tmp_path / "repositories"
+        self.server_config_path = tmp_path / ".minerva" / "server.json"
+        self.minerva_dir.mkdir(parents=True, exist_ok=True)
         self.app_dir.mkdir(parents=True, exist_ok=True)
         self.chroma_dir.mkdir(parents=True, exist_ok=True)
         self.repos_dir.mkdir()
@@ -154,6 +163,29 @@ class KBTestEnv:
         self._patch_subprocesses()
 
     def _patch_constants(self) -> None:
+        # Patch minerva_common.paths first
+        apps_dir = self.minerva_dir / "apps"
+        self.monkeypatch.setattr(common_paths, "MINERVA_DIR", self.minerva_dir)
+        self.monkeypatch.setattr(common_paths, "CHROMADB_DIR", self.chroma_dir)
+        self.monkeypatch.setattr(common_paths, "APPS_DIR", apps_dir)
+        self.monkeypatch.setattr(common_paths, "SERVER_CONFIG_PATH", self.server_config_path)
+        self.monkeypatch.setattr(common_init, "MINERVA_DIR", self.minerva_dir)
+        self.monkeypatch.setattr(common_init, "CHROMADB_DIR", self.chroma_dir)
+        self.monkeypatch.setattr(common_init, "SERVER_CONFIG_PATH", self.server_config_path)
+        self.monkeypatch.setattr(common_collision, "APPS_DIR", apps_dir)
+        self.monkeypatch.setattr(common_collision, "CHROMADB_DIR", self.chroma_dir)
+        self.monkeypatch.setattr(
+            common_collision,
+            "get_collection_count",
+            lambda chroma_path, name, self=self: self._collection_doc_count(name),
+        )
+        self.monkeypatch.setattr(
+            common_collection_ops,
+            "get_collection_count",
+            lambda chroma_path, name, self=self: self._collection_doc_count(name),
+        )
+
+        # Patch minerva-kb modules
         modules = [
             constants_mod,
             config_loader,
@@ -164,6 +196,7 @@ class KBTestEnv:
             sync_cmd,
             watch_cmd,
             remove_cmd,
+            serve_cmd,
         ]
         for module in modules:
             if hasattr(module, "MINERVA_KB_APP_DIR"):
@@ -218,6 +251,7 @@ class KBTestEnv:
             "provider_type": "openai",
             "embedding_model": "text-embedding-3-small",
             "llm_model": "gpt-4o-mini",
+            "api_key": "${OPENAI_API_KEY}",
         }
 
     def queue_provider(self, provider: dict[str, str] | None = None) -> None:
@@ -230,6 +264,24 @@ class KBTestEnv:
             (repo / "README.md").write_text(f"# {name}\n")
         return repo
 
+    def collection_name(self, repo: Path | str) -> str:
+        return sanitize_collection_name(repo)
+
+    def register_collection_owner(self, app_name: str, collection_name: str) -> None:
+        registry_dir = self.minerva_dir / "apps" / app_name
+        registry_dir.mkdir(parents=True, exist_ok=True)
+        registry_path = registry_dir / "collections.json"
+        if registry_path.exists():
+            try:
+                data = json.loads(registry_path.read_text() or "{}")
+            except json.JSONDecodeError:
+                data = {}
+        else:
+            data = {}
+        collections = data.setdefault("collections", {})
+        collections[collection_name] = {"name": collection_name}
+        registry_path.write_text(json.dumps(data))
+
     def next_pid(self) -> int:
         self.pid_counter += 1
         return self.pid_counter
@@ -240,6 +292,12 @@ class KBTestEnv:
 
     def chroma_client(self) -> FakePersistentClient:
         return self.fake_client
+
+    def _collection_doc_count(self, collection_name: str) -> int | None:
+        try:
+            return self.fake_client.get_collection(collection_name).count()
+        except ValueError:
+            return None
 
 
 @pytest.fixture

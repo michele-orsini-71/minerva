@@ -8,25 +8,26 @@ from minerva_kb.utils import config_helpers
 def test_add_creates_new_collection(kb_env):
     repo = kb_env.create_repo("alpha")
     kb_env.queue_provider()
+    collection_name = kb_env.collection_name(repo)
 
     result = run_add(str(repo))
     assert result == 0
 
-    index_path = kb_env.app_dir / "alpha-index.json"
-    watcher_path = kb_env.app_dir / "alpha-watcher.json"
-    server_path = kb_env.app_dir / "server.json"
+    index_path = kb_env.app_dir / f"{collection_name}-index.json"
+    watcher_path = kb_env.app_dir / f"{collection_name}-watcher.json"
 
     assert index_path.exists()
     assert watcher_path.exists()
-    assert server_path.exists()
+    assert kb_env.server_config_path.exists()
 
     config = json.loads(index_path.read_text())
-    assert config["collection"]["name"] == "alpha"
+    assert config["collection"]["name"] == collection_name
 
 
 def test_add_existing_collection_enters_provider_update_flow(kb_env, monkeypatch):
     repo = kb_env.create_repo("bravo")
     kb_env.queue_provider()
+    collection_name = kb_env.collection_name(repo)
     assert run_add(str(repo)) == 0
 
     def fake_input(prompt=""):
@@ -37,41 +38,57 @@ def test_add_existing_collection_enters_provider_update_flow(kb_env, monkeypatch
         "provider_type": "gemini",
         "embedding_model": "text-embedding-004",
         "llm_model": "gemini-1.5-flash",
+        "api_key": "${GEMINI_API_KEY}",
     })
 
     assert run_add(str(repo)) == 0
-    updated = json.loads((kb_env.app_dir / "bravo-index.json").read_text())
+    updated = json.loads((kb_env.app_dir / f"{collection_name}-index.json").read_text())
     assert updated["provider"]["provider_type"] == "gemini"
 
 
 def test_add_aborts_on_unmanaged_conflict(kb_env, monkeypatch):
     client = kb_env.chroma_client()
-    client.get_or_create_collection("charlie")
+    existing_name = kb_env.collection_name("charlie")
+    client.get_or_create_collection(existing_name)
 
     def fake_input(prompt=""):
         return "1"
 
     monkeypatch.setattr("builtins.input", fake_input)
     repo = kb_env.create_repo("charlie")
+    collection_name = kb_env.collection_name(repo)
     kb_env.queue_provider()
 
     result = run_add(str(repo))
     assert result == 1
-    assert not (kb_env.app_dir / "charlie-index.json").exists()
+    assert not (kb_env.app_dir / f"{collection_name}-index.json").exists()
 
 
 def test_add_wipes_unmanaged_conflict_when_requested(kb_env, monkeypatch):
     client = kb_env.chroma_client()
-    client.get_or_create_collection("delta")
+    existing_name = kb_env.collection_name("delta")
+    client.get_or_create_collection(existing_name)
 
     responses = iter(["2"])
     monkeypatch.setattr("builtins.input", lambda prompt="": next(responses))
     repo = kb_env.create_repo("delta")
+    collection_name = kb_env.collection_name(repo)
     kb_env.queue_provider()
 
     result = run_add(str(repo))
     assert result == 0
-    assert (kb_env.app_dir / "delta-index.json").exists()
+    assert (kb_env.app_dir / f"{collection_name}-index.json").exists()
+
+
+def test_add_blocks_cross_tool_collision(kb_env):
+    repo = kb_env.create_repo("hotel")
+    kb_env.queue_provider()
+    collection_name = kb_env.collection_name(repo)
+    kb_env.chroma_client().get_or_create_collection(collection_name)
+    kb_env.register_collection_owner("minerva-doc", collection_name)
+
+    result = run_add(str(repo))
+    assert result == 1
 
 
 def test_add_handles_missing_readme_by_prompting(kb_env, monkeypatch):

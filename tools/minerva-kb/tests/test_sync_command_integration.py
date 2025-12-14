@@ -7,8 +7,9 @@ def test_sync_reindexes_collection(kb_env):
     repo = kb_env.create_repo("alpha")
     kb_env.queue_provider()
     run_add(str(repo))
+    collection_name = kb_env.collection_name(repo)
 
-    assert run_sync("alpha") == 0
+    assert run_sync(collection_name) == 0
 
 
 def test_sync_handles_missing_collection(kb_env):
@@ -19,26 +20,29 @@ def test_sync_reports_extraction_failure(kb_env):
     repo = kb_env.create_repo("bravo")
     kb_env.queue_provider()
     run_add(str(repo))
+    collection_name = kb_env.collection_name(repo)
     kb_env.fail_extraction = True
 
-    assert run_sync("bravo") == 2
+    assert run_sync(collection_name) == 2
 
 
 def test_sync_reports_indexing_failure(kb_env):
     repo = kb_env.create_repo("charlie")
     kb_env.queue_provider()
     run_add(str(repo))
+    collection_name = kb_env.collection_name(repo)
     kb_env.fail_indexing = True
 
-    assert run_sync("charlie") == 3
+    assert run_sync(collection_name) == 3
 
 
 def test_sync_blocks_when_watcher_running(kb_env):
     repo = kb_env.create_repo("delta")
     kb_env.queue_provider()
     run_add(str(repo))
+    collection_name = kb_env.collection_name(repo)
 
     with patch("minerva_kb.commands.sync.find_watcher_pid", return_value=12345):
-        result = run_sync("delta")
+        result = run_sync(collection_name)
 
     assert result == 1

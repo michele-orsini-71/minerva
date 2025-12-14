@@ -16,24 +16,27 @@ def test_watch_reports_existing_process(kb_env):
     repo = kb_env.create_repo("bravo")
     kb_env.queue_provider()
     run_add(str(repo))
-    kb_env.set_watcher_pid("bravo", 9001)
+    collection_name = kb_env.collection_name(repo)
+    kb_env.set_watcher_pid(collection_name, 9001)
 
-    assert run_watch("bravo") == 2
+    assert run_watch(collection_name) == 2
 
 
 def test_watch_reports_missing_binary(kb_env):
     repo = kb_env.create_repo("charlie")
     kb_env.queue_provider()
     run_add(str(repo))
+    collection_name = kb_env.collection_name(repo)
     kb_env.subprocess_runner.watcher_available = False
 
-    assert run_watch("charlie") == 2
+    assert run_watch(collection_name) == 2
 
 
 def test_watch_handles_keyboard_interrupt(kb_env, monkeypatch):
     repo = kb_env.create_repo("delta")
     kb_env.queue_provider()
     run_add(str(repo))
+    collection_name = kb_env.collection_name(repo)
 
     class InterruptWatcher:
         def __init__(self, *args, **kwargs):  # noqa: ARG002
@@ -48,4 +51,4 @@ def test_watch_handles_keyboard_interrupt(kb_env, monkeypatch):
         lambda *args, **kwargs: InterruptWatcher(),
     )
 
-    assert run_watch("delta") == 130
+    assert run_watch(collection_name) == 130

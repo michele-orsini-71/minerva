@@ -3,6 +3,7 @@ from pathlib import Path
 
 from chromadb import PersistentClient
 
+from minerva_common.collision import check_collection_exists
 from minerva_kb.constants import (
     CHROMADB_DIR,
     DEFAULT_CHUNK_SIZE,
@@ -214,9 +215,16 @@ def _provider_entry_from_config(provider_config: dict[str, str]) -> dict[str, st
         "embedding_model": provider_config.get("embedding_model"),
         "llm_model": provider_config.get("llm_model"),
     }
-    key_name = provider_config.get("api_key_name")
-    if key_name:
-        entry["api_key"] = f"${{{key_name}}}"
+    api_key_reference = provider_config.get("api_key")
+    if api_key_reference:
+        entry["api_key"] = api_key_reference
+    else:
+        key_name = provider_config.get("api_key_name")
+        if key_name:
+            entry["api_key"] = f"${{{key_name}}}"
+    base_url = provider_config.get("base_url")
+    if base_url:
+        entry["base_url"] = base_url
     return entry
 
 
@@ -350,15 +358,24 @@ def _display_provider_summary(provider_config: dict[str, str]) -> None:
 
 
 def _handle_unmanaged_collection_conflict(collection_name: str) -> str:
-    collections = _list_chromadb_collections()
-    if collection_name not in collections:
-        return "ok"
-
     index_exists = _index_config_path(collection_name).exists()
     watcher_exists = _watcher_config_path(collection_name).exists()
     if index_exists or watcher_exists:
         return "ok"
 
+    exists, owner = check_collection_exists(collection_name, CHROMADB_DIR)
+    if not exists:
+        return "ok"
+
+    if owner and owner != "minerva-kb":
+        _display_cross_tool_collision(collection_name, owner)
+        return "abort"
+
+    return _prompt_unmanaged_collision_resolution(collection_name)
+
+
+def _prompt_unmanaged_collision_resolution(collection_name: str) -> str:
+    collections = _list_chromadb_collections()
     display_error(f"Collection '{collection_name}' already exists in ChromaDB")
     print("This collection was not created by minerva-kb, so it cannot be managed.")
     print()
@@ -376,6 +393,17 @@ def _handle_unmanaged_collection_conflict(collection_name: str) -> str:
                 return "ok"
             return "error"
         print("❌ Invalid choice. Enter 1 or 2.")
+
+
+def _display_cross_tool_collision(collection_name: str, owner: str) -> None:
+    display_error(
+        f"Collection '{collection_name}' is already managed by {owner}."
+    )
+    if owner == "minerva-doc":
+        print("Use minerva-doc to update or remove this collection (e.g. 'minerva-doc remove').")
+    else:
+        print(f"Use the {owner} tool to manage or delete this collection before retrying.")
+    print()
 
 
 def _list_chromadb_collections() -> list[str]:
