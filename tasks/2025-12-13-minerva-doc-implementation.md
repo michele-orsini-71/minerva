@@ -104,21 +104,21 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - [x] Write unit tests for provider selection
 
 ### Task 1.8: Implement description_generator.py
-- [ ] Create `src/minerva_common/description_generator.py`
-- [ ] Implement `generate_description_from_records()` function
-  - [ ] Accept json_file path and provider config
-  - [ ] Sample representative records (e.g., first 10-20)
-  - [ ] Format prompt for AI: "Generate a concise description for this collection..."
-  - [ ] Call AI provider's LLM
-  - [ ] Return generated description
-- [ ] Implement `prompt_for_description()` function
-  - [ ] Display: "Collection description (press Enter to auto-generate):"
-  - [ ] If user enters text: return it
-  - [ ] If empty: call `generate_description_from_records()`
-  - [ ] Show generated description
-  - [ ] Confirm with user: "Use this description? (Y/n)"
-  - [ ] Return final description
-- [ ] Write unit tests (mocked AI calls)
+- [x] Create `src/minerva_common/description_generator.py`
+- [x] Implement `generate_description_from_records()` function
+  - [x] Accept json_file path and provider config
+  - [x] Sample representative records (e.g., first 10-20)
+  - [x] Format prompt for AI: "Generate a concise description for this collection..."
+  - [x] Call AI provider's LLM
+  - [x] Return generated description
+- [x] Implement `prompt_for_description()` function
+  - [x] Display: "Collection description (press Enter to auto-generate):"
+  - [x] If user enters text: return it
+  - [x] If empty: call `generate_description_from_records()`
+  - [x] Show generated description
+  - [x] Confirm with user: "Use this description? (Y/n)"
+  - [x] Return final description
+- [x] Write unit tests (mocked AI calls)
 
 ### Task 1.9: Implement server_manager.py
 - [ ] Create `src/minerva_common/server_manager.py`
@@ -451,7 +451,8 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - `tools/minerva-common/tests/test_minerva_runner.py` - Unit tests for minerva_runner module (Task 1.6 ✓)
 - `tools/minerva-common/src/minerva_common/provider_setup.py` - AI provider selection (Task 1.7 ✓)
 - `tools/minerva-common/tests/test_provider_setup.py` - Unit tests for provider_setup module (Task 1.7 ✓)
-- `tools/minerva-common/src/minerva_common/description_generator.py` - AI description generation
+- `tools/minerva-common/src/minerva_common/description_generator.py` - AI description generation (Task 1.8 ✓)
+- `tools/minerva-common/tests/test_description_generator.py` - Unit tests for description_generator module (Task 1.8 ✓)
 - `tools/minerva-common/src/minerva_common/server_manager.py` - MCP server management
 - `tools/minerva-common/src/minerva_common/collection_ops.py` - ChromaDB operations
 - `tools/minerva-common/src/minerva_common/collision.py` - Collection name collision detection
