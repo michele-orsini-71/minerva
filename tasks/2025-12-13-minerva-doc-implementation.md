@@ -1,0 +1,463 @@
+# minerva-doc Implementation Task List
+
+Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
+
+**Status**: Not started
+**Started**: [Date TBD]
+**Completed**: [Date TBD]
+
+---
+
+## Phase 1: Shared Library (minerva-common)
+
+### Task 1.1: Create minerva-common Package Structure
+- [ ] Create `tools/minerva-common/` directory
+- [ ] Create `tools/minerva-common/src/minerva_common/` directory
+- [ ] Create `tools/minerva-common/tests/` directory
+- [ ] Create `tools/minerva-common/setup.py` with package metadata
+- [ ] Create `tools/minerva-common/README.md` with library overview
+- [ ] Create `tools/minerva-common/requirements.txt`
+
+### Task 1.2: Implement paths.py
+- [ ] Create `src/minerva_common/paths.py`
+- [ ] Define `HOME_DIR` constant
+- [ ] Define `MINERVA_DIR` constant (`~/.minerva`)
+- [ ] Define `CHROMADB_DIR` constant (`~/.minerva/chromadb`)
+- [ ] Define `SERVER_CONFIG_PATH` constant (`~/.minerva/server.json`)
+- [ ] Define `APPS_DIR` constant (`~/.minerva/apps`)
+
+### Task 1.3: Implement init.py
+- [ ] Create `src/minerva_common/init.py`
+- [ ] Implement `ensure_shared_dirs()` function
+  - [ ] Create `.minerva/` if not exists
+  - [ ] Create `chromadb/` if not exists
+  - [ ] Set permissions 0o700 on directories
+  - [ ] Handle PermissionError gracefully
+- [ ] Implement `ensure_server_config()` function
+  - [ ] Check if `server.json` exists
+  - [ ] Return (path, False) if exists
+  - [ ] Create default config if not exists
+  - [ ] Use atomic write (temp file + replace)
+  - [ ] Set permissions 0o600 on file
+  - [ ] Return (path, True) if created
+- [ ] Write unit tests for `ensure_shared_dirs()`
+- [ ] Write unit tests for `ensure_server_config()`
+
+### Task 1.4: Implement registry.py
+- [ ] Create `src/minerva_common/registry.py`
+- [ ] Implement `Registry` class
+  - [ ] `__init__(registry_path: Path)`
+  - [ ] `load() -> dict` - load registry from JSON
+  - [ ] `save(data: dict) -> None` - save registry with atomic write
+  - [ ] `add_collection(name: str, metadata: dict) -> None`
+  - [ ] `get_collection(name: str) -> dict | None`
+  - [ ] `update_collection(name: str, metadata: dict) -> None`
+  - [ ] `remove_collection(name: str) -> None`
+  - [ ] `list_collections() -> list[dict]`
+  - [ ] `collection_exists(name: str) -> bool`
+- [ ] Write unit tests for Registry class
+
+### Task 1.5: Implement config_builder.py
+- [ ] Create `src/minerva_common/config_builder.py`
+- [ ] Implement `build_index_config()` function
+  - [ ] Accept parameters: collection_name, json_file, chromadb_path, provider, description, chunk_size, force_recreate
+  - [ ] Generate index config dict matching minerva's schema
+  - [ ] Return config dict
+- [ ] Implement `save_index_config()` function
+  - [ ] Accept config dict and output path
+  - [ ] Use atomic write (temp file + replace)
+  - [ ] Set permissions 0o600
+- [ ] Write unit tests for config building
+
+### Task 1.6: Implement minerva_runner.py
+- [ ] Create `src/minerva_common/minerva_runner.py`
+- [ ] Implement `run_validate()` function
+  - [ ] Accept json_file path
+  - [ ] Run `minerva validate` via subprocess
+  - [ ] Capture stdout/stderr
+  - [ ] Return (success: bool, output: str)
+- [ ] Implement `run_index()` function
+  - [ ] Accept config_path
+  - [ ] Run `minerva index --config` via subprocess
+  - [ ] Stream output to user
+  - [ ] Use timeout (default 600s)
+  - [ ] Return (success: bool, output: str)
+- [ ] Implement `run_serve()` function
+  - [ ] Accept server_config_path
+  - [ ] Run `minerva serve --config` via subprocess
+  - [ ] Handle server lifecycle
+  - [ ] Return subprocess handle
+- [ ] Write unit tests (mocked subprocess calls)
+
+### Task 1.7: Implement provider_setup.py
+- [ ] Create `src/minerva_common/provider_setup.py`
+- [ ] Implement `select_provider_interactive()` function
+  - [ ] Prompt for provider type (OpenAI, Gemini, Ollama, LM Studio)
+  - [ ] Prompt for embedding model (with defaults per provider)
+  - [ ] Prompt for LLM model (with defaults per provider)
+  - [ ] Validate API keys if needed (cloud providers)
+  - [ ] Return provider config dict
+- [ ] Implement `validate_provider_config()` function
+  - [ ] Check required fields are present
+  - [ ] Validate API keys exist in environment if needed
+  - [ ] Return (valid: bool, error: str | None)
+- [ ] Write unit tests for provider selection
+
+### Task 1.8: Implement description_generator.py
+- [ ] Create `src/minerva_common/description_generator.py`
+- [ ] Implement `generate_description_from_records()` function
+  - [ ] Accept json_file path and provider config
+  - [ ] Sample representative records (e.g., first 10-20)
+  - [ ] Format prompt for AI: "Generate a concise description for this collection..."
+  - [ ] Call AI provider's LLM
+  - [ ] Return generated description
+- [ ] Implement `prompt_for_description()` function
+  - [ ] Display: "Collection description (press Enter to auto-generate):"
+  - [ ] If user enters text: return it
+  - [ ] If empty: call `generate_description_from_records()`
+  - [ ] Show generated description
+  - [ ] Confirm with user: "Use this description? (Y/n)"
+  - [ ] Return final description
+- [ ] Write unit tests (mocked AI calls)
+
+### Task 1.9: Implement server_manager.py
+- [ ] Create `src/minerva_common/server_manager.py`
+- [ ] Implement `start_server()` function
+  - [ ] Load server.json config
+  - [ ] Call `run_serve()` from minerva_runner
+  - [ ] Display available collections (query ChromaDB)
+  - [ ] Show server URL and port
+  - [ ] Return subprocess handle
+- [ ] Write unit tests
+
+### Task 1.10: Implement collection_ops.py
+- [ ] Create `src/minerva_common/collection_ops.py`
+- [ ] Implement `list_chromadb_collections()` function
+  - [ ] Connect to ChromaDB
+  - [ ] Query all collections
+  - [ ] Return list with metadata (name, count)
+- [ ] Implement `remove_chromadb_collection()` function
+  - [ ] Connect to ChromaDB
+  - [ ] Delete collection by name
+  - [ ] Handle errors gracefully
+- [ ] Implement `get_collection_count()` function
+  - [ ] Connect to ChromaDB
+  - [ ] Get chunk count for collection
+  - [ ] Return count or None
+- [ ] Write unit tests (mocked ChromaDB)
+
+### Task 1.11: Implement collision detection
+- [ ] Create `src/minerva_common/collision.py`
+- [ ] Implement `check_collection_exists()` function
+  - [ ] Accept collection name
+  - [ ] Check ChromaDB for existing collection
+  - [ ] Check minerva-kb registry if exists (`~/.minerva/apps/minerva-kb/`)
+  - [ ] Check minerva-doc registry if exists (`~/.minerva/apps/minerva-doc/`)
+  - [ ] Return (exists: bool, owner: str | None) where owner is "minerva-kb", "minerva-doc", or None
+- [ ] Write unit tests
+
+### Task 1.12: Package minerva-common
+- [ ] Install minerva-common in development mode: `pip install -e tools/minerva-common`
+- [ ] Verify all modules import correctly
+- [ ] Run full test suite: `pytest tools/minerva-common/tests`
+- [ ] Ensure all tests pass
+
+### Task 1.13: Refactor minerva-kb to use minerva-common
+- [ ] Update `tools/minerva-kb/requirements.txt` to include minerva-common
+- [ ] Replace `constants.py` imports with `minerva_common.paths`
+- [ ] Replace `ensure_server_config()` with `minerva_common.init.ensure_server_config()`
+- [ ] Replace provider selection logic with `minerva_common.provider_setup`
+- [ ] Update `serve` command to use `minerva_common.server_manager`
+- [ ] Update collision checks to use `minerva_common.collision.check_collection_exists()`
+- [ ] Run minerva-kb test suite: `pytest tools/minerva-kb/tests`
+- [ ] Ensure all tests pass
+- [ ] Test minerva-kb commands manually (add, list, serve, remove)
+
+---
+
+## Phase 2: minerva-doc Tool
+
+### Task 2.1: Create minerva-doc Package Structure
+- [ ] Create `tools/minerva-doc/` directory
+- [ ] Create `tools/minerva-doc/src/minerva_doc/` directory
+- [ ] Create `tools/minerva-doc/src/minerva_doc/commands/` directory
+- [ ] Create `tools/minerva-doc/src/minerva_doc/utils/` directory
+- [ ] Create `tools/minerva-doc/tests/` directory
+- [ ] Create `tools/minerva-doc/setup.py` with package metadata
+- [ ] Create `tools/minerva-doc/README.md`
+- [ ] Create `tools/minerva-doc/requirements.txt` (include minerva-common)
+
+### Task 2.2: Implement constants and paths
+- [ ] Create `src/minerva_doc/constants.py`
+- [ ] Import shared paths from minerva_common.paths
+- [ ] Define `MINERVA_DOC_APP_DIR = APPS_DIR / "minerva-doc"`
+- [ ] Define `COLLECTIONS_REGISTRY_PATH = MINERVA_DOC_APP_DIR / "collections.json"`
+
+### Task 2.3: Implement app initialization
+- [ ] Create `src/minerva_doc/utils/init.py`
+- [ ] Implement `ensure_app_dir()` function
+  - [ ] Call `minerva_common.init.ensure_shared_dirs()`
+  - [ ] Create `apps/minerva-doc/` if not exists
+  - [ ] Set permissions 0o700
+  - [ ] Return app dir path
+- [ ] Implement `ensure_registry()` function
+  - [ ] Create empty collections.json if not exists
+  - [ ] Use atomic write
+  - [ ] Set permissions 0o600
+- [ ] Write unit tests
+
+### Task 2.4: Implement CLI entry point
+- [ ] Create `src/minerva_doc/cli.py`
+- [ ] Set up argparse with subcommands: add, update, list, status, remove, serve
+- [ ] Implement main() function
+- [ ] Add console_scripts entry point in setup.py: `minerva-doc = minerva_doc.cli:main`
+
+### Task 2.5: Implement add command
+- [ ] Create `src/minerva_doc/commands/add.py`
+- [ ] Implement `run_add()` function
+  - [ ] Parse arguments: json_file, --name
+  - [ ] Validate json_file exists and is readable
+  - [ ] Check collection name collision (use minerva_common.collision)
+  - [ ] Run `minerva validate` on json_file
+  - [ ] Prompt for AI provider selection
+  - [ ] Prompt for collection description (with auto-generate option)
+  - [ ] Build index config (use minerva_common.config_builder)
+  - [ ] Save index config to temp file
+  - [ ] Run `minerva index` via subprocess
+  - [ ] Register collection in collections.json
+  - [ ] Display success message
+  - [ ] Clean up temp config file
+- [ ] Write integration tests
+
+### Task 2.6: Implement update command
+- [ ] Create `src/minerva_doc/commands/update.py`
+- [ ] Implement `run_update()` function
+  - [ ] Parse arguments: collection_name, json_file
+  - [ ] Look up collection in registry
+  - [ ] Error if not found: "Collection not managed by minerva-doc"
+  - [ ] Validate new json_file
+  - [ ] Prompt: "Change AI provider? (current: [provider])"
+  - [ ] If provider change: set force_recreate=true, re-prompt for description
+  - [ ] If provider unchanged: use existing description, force_recreate=false
+  - [ ] Build index config with updated settings
+  - [ ] Save index config to temp file
+  - [ ] Run `minerva index` via subprocess
+  - [ ] Update registry (indexed_at timestamp, records_path)
+  - [ ] Display success message with diff stats
+  - [ ] Clean up temp config file
+- [ ] Write integration tests
+
+### Task 2.7: Implement list command
+- [ ] Create `src/minerva_doc/commands/list.py`
+- [ ] Implement `run_list()` function
+  - [ ] Parse arguments: --format (table|json)
+  - [ ] Query ChromaDB for all collections
+  - [ ] Load collections.json registry
+  - [ ] Identify managed vs unmanaged collections
+  - [ ] Format output (table or JSON)
+  - [ ] Display managed collections with full details
+  - [ ] Display unmanaged collections with warning
+- [ ] Write integration tests
+
+### Task 2.8: Implement status command
+- [ ] Create `src/minerva_doc/commands/status.py`
+- [ ] Implement `run_status()` function
+  - [ ] Parse arguments: collection_name
+  - [ ] Look up collection in registry
+  - [ ] Error if not found
+  - [ ] Query ChromaDB for chunk count
+  - [ ] Display detailed info: name, description, provider, chunks, dates
+- [ ] Write integration tests
+
+### Task 2.9: Implement remove command
+- [ ] Create `src/minerva_doc/commands/remove.py`
+- [ ] Implement `run_remove()` function
+  - [ ] Parse arguments: collection_name
+  - [ ] Look up collection in registry
+  - [ ] If not in registry: check ChromaDB and error with helpful message
+  - [ ] Prompt for confirmation
+  - [ ] Remove from ChromaDB
+  - [ ] Remove from registry
+  - [ ] Remove generated config files
+  - [ ] Display success message
+- [ ] Write integration tests
+
+### Task 2.10: Implement serve command
+- [ ] Create `src/minerva_doc/commands/serve.py`
+- [ ] Implement `run_serve()` function
+  - [ ] Call `minerva_common.server_manager.start_server()`
+  - [ ] Display collections available (managed + unmanaged)
+  - [ ] Show server URL/port
+  - [ ] Keep server running until interrupt
+- [ ] Write integration tests
+
+### Task 2.11: Package minerva-doc
+- [ ] Install minerva-doc in development mode: `pip install -e tools/minerva-doc`
+- [ ] Verify CLI is accessible: `minerva-doc --help`
+- [ ] Run full test suite: `pytest tools/minerva-doc/tests`
+- [ ] Ensure all tests pass
+
+### Task 2.12: End-to-End Testing
+- [ ] Test complete workflow:
+  - [ ] `minerva-doc add test.json --name test`
+  - [ ] `minerva-doc list`
+  - [ ] `minerva-doc status test`
+  - [ ] `minerva-doc update test test-updated.json`
+  - [ ] `minerva-doc serve` (start and verify collections visible)
+  - [ ] `minerva-doc remove test`
+- [ ] Test collision prevention:
+  - [ ] Create collection with minerva-kb
+  - [ ] Try to create same name with minerva-doc (should error)
+- [ ] Test cross-tool visibility:
+  - [ ] Create collection with minerva-kb
+  - [ ] Run `minerva-doc list` (should show as unmanaged)
+  - [ ] Run `minerva-doc serve` (should expose both collections)
+
+---
+
+## Phase 3: Collision Prevention in minerva-kb
+
+### Task 3.1: Update minerva-kb add command
+- [ ] Modify `tools/minerva-kb/src/minerva_kb/commands/add.py`
+- [ ] Before extraction, call `minerva_common.collision.check_collection_exists()`
+- [ ] If collection exists, error with message: "Collection '[name]' already exists"
+- [ ] Display owner info if available
+- [ ] Write test for collision detection
+
+### Task 3.2: Test collision prevention
+- [ ] Create doc collection with minerva-doc
+- [ ] Try to create repo with same name in minerva-kb (should error)
+- [ ] Verify error message is helpful
+
+---
+
+## Phase 4: Documentation & Polish
+
+### Task 4.1: Write MINERVA_DOC_GUIDE.md
+- [ ] Create `docs/MINERVA_DOC_GUIDE.md`
+- [ ] Write introduction for beginners
+- [ ] Write "What is minerva-doc?" section
+- [ ] Write "When to use minerva-doc vs minerva-kb" section
+- [ ] Write installation instructions
+- [ ] Write quick start guide (<2 min to first collection)
+- [ ] Write complete command reference
+  - [ ] add command with examples
+  - [ ] update command with examples
+  - [ ] list command with examples
+  - [ ] status command with examples
+  - [ ] remove command with examples
+  - [ ] serve command with examples
+- [ ] Write examples section:
+  - [ ] Bear notes workflow
+  - [ ] Zim dumps workflow
+  - [ ] Markdown books workflow
+- [ ] Write troubleshooting section
+  - [ ] Common errors and solutions
+  - [ ] FAQ
+- [ ] Write advanced usage section
+  - [ ] Provider selection tips
+  - [ ] Description best practices
+  - [ ] Multi-collection management
+
+### Task 4.2: Update main README.md
+- [ ] Add minerva-doc overview to README
+- [ ] Add "Tools Ecosystem" section explaining:
+  - [ ] minerva (core CLI)
+  - [ ] minerva-kb (repo orchestrator)
+  - [ ] minerva-doc (doc orchestrator)
+- [ ] Add quick comparison table: minerva-kb vs minerva-doc
+- [ ] Update directory structure diagram
+- [ ] Add links to MINERVA_KB_GUIDE.md and MINERVA_DOC_GUIDE.md
+- [ ] Update installation instructions
+
+### Task 4.3: Create MINERVA_COMMON.md
+- [ ] Create `docs/MINERVA_COMMON.md`
+- [ ] Write architecture overview
+- [ ] Document shared infrastructure (`~/.minerva/` structure)
+- [ ] Document each module:
+  - [ ] paths.py API reference
+  - [ ] init.py API reference
+  - [ ] registry.py API reference
+  - [ ] config_builder.py API reference
+  - [ ] minerva_runner.py API reference
+  - [ ] provider_setup.py API reference
+  - [ ] description_generator.py API reference
+  - [ ] server_manager.py API reference
+  - [ ] collection_ops.py API reference
+  - [ ] collision.py API reference
+- [ ] Explain how both tools consume the library
+- [ ] Add examples of using minerva-common directly
+
+### Task 4.4: Improve error messages
+- [ ] Review all error messages in minerva-doc
+- [ ] Ensure wrong-tool errors are helpful (e.g., "Use minerva-kb for repo collections")
+- [ ] Ensure missing dependency errors are clear
+- [ ] Ensure permission errors have guidance
+- [ ] Add suggestions to all error messages
+
+### Task 4.5: Add comprehensive help text
+- [ ] Add `--help` text for main command
+- [ ] Add `--help` text for each subcommand
+- [ ] Include examples in help text
+- [ ] Test help text formatting and clarity
+
+### Task 4.6: Write comprehensive tests
+- [ ] Ensure >80% code coverage for minerva-common
+- [ ] Ensure >80% code coverage for minerva-doc
+- [ ] Add edge case tests:
+  - [ ] Empty JSON files
+  - [ ] Malformed JSON
+  - [ ] Missing permissions
+  - [ ] ChromaDB connection failures
+  - [ ] Invalid provider configs
+  - [ ] Name collision edge cases
+- [ ] Add performance tests (indexing speed)
+
+### Task 4.7: Final integration testing
+- [ ] Test on clean system (fresh `~/.minerva/`)
+- [ ] Test with both tools installed
+- [ ] Test with only minerva-doc installed
+- [ ] Test upgrade scenario (existing minerva-kb collections)
+- [ ] Test all example workflows from documentation
+- [ ] Verify all help text is accurate
+- [ ] Check for typos and formatting issues
+
+### Task 4.8: Run full test suite
+- [ ] Run `pytest tools/minerva-common/tests -v --cov`
+- [ ] Run `pytest tools/minerva-kb/tests -v --cov`
+- [ ] Run `pytest tools/minerva-doc/tests -v --cov`
+- [ ] Verify all tests pass
+- [ ] Verify coverage meets targets (>80%)
+
+---
+
+## Relevant Files
+
+### Created Files
+- `tools/minerva-common/` - Shared library package
+- `tools/minerva-common/src/minerva_common/paths.py` - Shared path constants
+- `tools/minerva-common/src/minerva_common/init.py` - Infrastructure initialization
+- `tools/minerva-common/src/minerva_common/registry.py` - Collection registry management
+- `tools/minerva-common/src/minerva_common/config_builder.py` - Index config generation
+- `tools/minerva-common/src/minerva_common/minerva_runner.py` - Subprocess wrapper for minerva CLI
+- `tools/minerva-common/src/minerva_common/provider_setup.py` - AI provider selection
+- `tools/minerva-common/src/minerva_common/description_generator.py` - AI description generation
+- `tools/minerva-common/src/minerva_common/server_manager.py` - MCP server management
+- `tools/minerva-common/src/minerva_common/collection_ops.py` - ChromaDB operations
+- `tools/minerva-common/src/minerva_common/collision.py` - Collection name collision detection
+- `tools/minerva-doc/` - Document orchestrator package
+- `tools/minerva-doc/src/minerva_doc/cli.py` - CLI entry point
+- `tools/minerva-doc/src/minerva_doc/commands/add.py` - Add command implementation
+- `tools/minerva-doc/src/minerva_doc/commands/update.py` - Update command implementation
+- `tools/minerva-doc/src/minerva_doc/commands/list.py` - List command implementation
+- `tools/minerva-doc/src/minerva_doc/commands/status.py` - Status command implementation
+- `tools/minerva-doc/src/minerva_doc/commands/remove.py` - Remove command implementation
+- `tools/minerva-doc/src/minerva_doc/commands/serve.py` - Serve command implementation
+- `docs/MINERVA_DOC_GUIDE.md` - Complete guide for minerva-doc
+- `docs/MINERVA_COMMON.md` - Shared library documentation
+
+### Modified Files
+- `tools/minerva-kb/src/minerva_kb/constants.py` - Updated to use minerva_common.paths
+- `tools/minerva-kb/src/minerva_kb/commands/add.py` - Added collision detection
+- `tools/minerva-kb/src/minerva_kb/commands/serve.py` - Refactored to use minerva_common
+- `README.md` - Added minerva-doc overview and tool ecosystem explanation
