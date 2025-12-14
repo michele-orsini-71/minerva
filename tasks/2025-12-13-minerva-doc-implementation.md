@@ -44,18 +44,18 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - [x] Write unit tests for `ensure_server_config()`
 
 ### Task 1.4: Implement registry.py
-- [ ] Create `src/minerva_common/registry.py`
-- [ ] Implement `Registry` class
-  - [ ] `__init__(registry_path: Path)`
-  - [ ] `load() -> dict` - load registry from JSON
-  - [ ] `save(data: dict) -> None` - save registry with atomic write
-  - [ ] `add_collection(name: str, metadata: dict) -> None`
-  - [ ] `get_collection(name: str) -> dict | None`
-  - [ ] `update_collection(name: str, metadata: dict) -> None`
-  - [ ] `remove_collection(name: str) -> None`
-  - [ ] `list_collections() -> list[dict]`
-  - [ ] `collection_exists(name: str) -> bool`
-- [ ] Write unit tests for Registry class
+- [x] Create `src/minerva_common/registry.py`
+- [x] Implement `Registry` class
+  - [x] `__init__(registry_path: Path)`
+  - [x] `load() -> dict` - load registry from JSON
+  - [x] `save(data: dict) -> None` - save registry with atomic write
+  - [x] `add_collection(name: str, metadata: dict) -> None`
+  - [x] `get_collection(name: str) -> dict | None`
+  - [x] `update_collection(name: str, metadata: dict) -> None`
+  - [x] `remove_collection(name: str) -> None`
+  - [x] `list_collections() -> list[dict]`
+  - [x] `collection_exists(name: str) -> bool`
+- [x] Write unit tests for Registry class
 
 ### Task 1.5: Implement config_builder.py
 - [ ] Create `src/minerva_common/config_builder.py`
@@ -443,7 +443,8 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - `tools/minerva-common/src/minerva_common/init.py` - Infrastructure initialization (Task 1.3 ✓)
 - `tools/minerva-common/tests/__init__.py` - Test package initialization (Task 1.3 ✓)
 - `tools/minerva-common/tests/test_init.py` - Unit tests for init module (Task 1.3 ✓)
-- `tools/minerva-common/src/minerva_common/registry.py` - Collection registry management
+- `tools/minerva-common/src/minerva_common/registry.py` - Collection registry management (Task 1.4 ✓)
+- `tools/minerva-common/tests/test_registry.py` - Unit tests for registry module (Task 1.4 ✓)
 - `tools/minerva-common/src/minerva_common/config_builder.py` - Index config generation
 - `tools/minerva-common/src/minerva_common/minerva_runner.py` - Subprocess wrapper for minerva CLI
 - `tools/minerva-common/src/minerva_common/provider_setup.py` - AI provider selection
