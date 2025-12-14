@@ -58,16 +58,16 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - [x] Write unit tests for Registry class
 
 ### Task 1.5: Implement config_builder.py
-- [ ] Create `src/minerva_common/config_builder.py`
-- [ ] Implement `build_index_config()` function
-  - [ ] Accept parameters: collection_name, json_file, chromadb_path, provider, description, chunk_size, force_recreate
-  - [ ] Generate index config dict matching minerva's schema
-  - [ ] Return config dict
-- [ ] Implement `save_index_config()` function
-  - [ ] Accept config dict and output path
-  - [ ] Use atomic write (temp file + replace)
-  - [ ] Set permissions 0o600
-- [ ] Write unit tests for config building
+- [x] Create `src/minerva_common/config_builder.py`
+- [x] Implement `build_index_config()` function
+  - [x] Accept parameters: collection_name, json_file, chromadb_path, provider, description, chunk_size, force_recreate
+  - [x] Generate index config dict matching minerva's schema
+  - [x] Return config dict
+- [x] Implement `save_index_config()` function
+  - [x] Accept config dict and output path
+  - [x] Use atomic write (temp file + replace)
+  - [x] Set permissions 0o600
+- [x] Write unit tests for config building
 
 ### Task 1.6: Implement minerva_runner.py
 - [ ] Create `src/minerva_common/minerva_runner.py`
@@ -445,7 +445,8 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - `tools/minerva-common/tests/test_init.py` - Unit tests for init module (Task 1.3 ✓)
 - `tools/minerva-common/src/minerva_common/registry.py` - Collection registry management (Task 1.4 ✓)
 - `tools/minerva-common/tests/test_registry.py` - Unit tests for registry module (Task 1.4 ✓)
-- `tools/minerva-common/src/minerva_common/config_builder.py` - Index config generation
+- `tools/minerva-common/src/minerva_common/config_builder.py` - Index config generation (Task 1.5 ✓)
+- `tools/minerva-common/tests/test_config_builder.py` - Unit tests for config_builder module (Task 1.5 ✓)
 - `tools/minerva-common/src/minerva_common/minerva_runner.py` - Subprocess wrapper for minerva CLI
 - `tools/minerva-common/src/minerva_common/provider_setup.py` - AI provider selection
 - `tools/minerva-common/src/minerva_common/description_generator.py` - AI description generation
