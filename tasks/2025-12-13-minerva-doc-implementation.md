@@ -147,14 +147,14 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - [x] Write unit tests (mocked ChromaDB)
 
 ### Task 1.11: Implement collision detection
-- [ ] Create `src/minerva_common/collision.py`
-- [ ] Implement `check_collection_exists()` function
-  - [ ] Accept collection name
-  - [ ] Check ChromaDB for existing collection
-  - [ ] Check minerva-kb registry if exists (`~/.minerva/apps/minerva-kb/`)
-  - [ ] Check minerva-doc registry if exists (`~/.minerva/apps/minerva-doc/`)
-  - [ ] Return (exists: bool, owner: str | None) where owner is "minerva-kb", "minerva-doc", or None
-- [ ] Write unit tests
+- [x] Create `src/minerva_common/collision.py`
+- [x] Implement `check_collection_exists()` function
+  - [x] Accept collection name
+  - [x] Check ChromaDB for existing collection
+  - [x] Check minerva-kb registry if exists (`~/.minerva/apps/minerva-kb/`)
+  - [x] Check minerva-doc registry if exists (`~/.minerva/apps/minerva-doc/`)
+  - [x] Return (exists: bool, owner: str | None) where owner is "minerva-kb", "minerva-doc", or None
+- [x] Write unit tests
 
 ### Task 1.12: Package minerva-common
 - [ ] Install minerva-common in development mode: `pip install -e tools/minerva-common`
@@ -457,7 +457,8 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - `tools/minerva-common/tests/test_server_manager.py` - Unit tests for server_manager module (Task 1.9 ✓)
 - `tools/minerva-common/src/minerva_common/collection_ops.py` - ChromaDB operations (Task 1.10 ✓)
 - `tools/minerva-common/tests/test_collection_ops.py` - Unit tests for collection_ops module (Task 1.10 ✓)
-- `tools/minerva-common/src/minerva_common/collision.py` - Collection name collision detection
+- `tools/minerva-common/src/minerva_common/collision.py` - Collection name collision detection (Task 1.11 ✓)
+- `tools/minerva-common/tests/test_collision.py` - Unit tests for collision module (Task 1.11 ✓)
 - `tools/minerva-doc/` - Document orchestrator package
 - `tools/minerva-doc/src/minerva_doc/cli.py` - CLI entry point
 - `tools/minerva-doc/src/minerva_doc/commands/add.py` - Add command implementation
