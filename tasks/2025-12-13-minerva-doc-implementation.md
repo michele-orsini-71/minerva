@@ -19,12 +19,12 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - [x] Create `tools/minerva-common/requirements.txt`
 
 ### Task 1.2: Implement paths.py
-- [ ] Create `src/minerva_common/paths.py`
-- [ ] Define `HOME_DIR` constant
-- [ ] Define `MINERVA_DIR` constant (`~/.minerva`)
-- [ ] Define `CHROMADB_DIR` constant (`~/.minerva/chromadb`)
-- [ ] Define `SERVER_CONFIG_PATH` constant (`~/.minerva/server.json`)
-- [ ] Define `APPS_DIR` constant (`~/.minerva/apps`)
+- [x] Create `src/minerva_common/paths.py`
+- [x] Define `HOME_DIR` constant
+- [x] Define `MINERVA_DIR` constant (`~/.minerva`)
+- [x] Define `CHROMADB_DIR` constant (`~/.minerva/chromadb`)
+- [x] Define `SERVER_CONFIG_PATH` constant (`~/.minerva/server.json`)
+- [x] Define `APPS_DIR` constant (`~/.minerva/apps`)
 
 ### Task 1.3: Implement init.py
 - [ ] Create `src/minerva_common/init.py`
@@ -439,7 +439,7 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - `tools/minerva-common/README.md` - Library overview and documentation (Task 1.1 ✓)
 - `tools/minerva-common/requirements.txt` - Package dependencies (Task 1.1 ✓)
 - `tools/minerva-common/src/minerva_common/__init__.py` - Package initialization (Task 1.1 ✓)
-- `tools/minerva-common/src/minerva_common/paths.py` - Shared path constants
+- `tools/minerva-common/src/minerva_common/paths.py` - Shared path constants (Task 1.2 ✓)
 - `tools/minerva-common/src/minerva_common/init.py` - Infrastructure initialization
 - `tools/minerva-common/src/minerva_common/registry.py` - Collection registry management
 - `tools/minerva-common/src/minerva_common/config_builder.py` - Index config generation
