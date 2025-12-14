@@ -90,18 +90,18 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - [x] Write unit tests (mocked subprocess calls)
 
 ### Task 1.7: Implement provider_setup.py
-- [ ] Create `src/minerva_common/provider_setup.py`
-- [ ] Implement `select_provider_interactive()` function
-  - [ ] Prompt for provider type (OpenAI, Gemini, Ollama, LM Studio)
-  - [ ] Prompt for embedding model (with defaults per provider)
-  - [ ] Prompt for LLM model (with defaults per provider)
-  - [ ] Validate API keys if needed (cloud providers)
-  - [ ] Return provider config dict
-- [ ] Implement `validate_provider_config()` function
-  - [ ] Check required fields are present
-  - [ ] Validate API keys exist in environment if needed
-  - [ ] Return (valid: bool, error: str | None)
-- [ ] Write unit tests for provider selection
+- [x] Create `src/minerva_common/provider_setup.py`
+- [x] Implement `select_provider_interactive()` function
+  - [x] Prompt for provider type (OpenAI, Gemini, Ollama, LM Studio)
+  - [x] Prompt for embedding model (with defaults per provider)
+  - [x] Prompt for LLM model (with defaults per provider)
+  - [x] Validate API keys if needed (cloud providers)
+  - [x] Return provider config dict
+- [x] Implement `validate_provider_config()` function
+  - [x] Check required fields are present
+  - [x] Validate API keys exist in environment if needed
+  - [x] Return (valid: bool, error: str | None)
+- [x] Write unit tests for provider selection
 
 ### Task 1.8: Implement description_generator.py
 - [ ] Create `src/minerva_common/description_generator.py`
@@ -449,7 +449,8 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - `tools/minerva-common/tests/test_config_builder.py` - Unit tests for config_builder module (Task 1.5 ✓)
 - `tools/minerva-common/src/minerva_common/minerva_runner.py` - Subprocess wrapper for minerva CLI (Task 1.6 ✓)
 - `tools/minerva-common/tests/test_minerva_runner.py` - Unit tests for minerva_runner module (Task 1.6 ✓)
-- `tools/minerva-common/src/minerva_common/provider_setup.py` - AI provider selection
+- `tools/minerva-common/src/minerva_common/provider_setup.py` - AI provider selection (Task 1.7 ✓)
+- `tools/minerva-common/tests/test_provider_setup.py` - Unit tests for provider_setup module (Task 1.7 ✓)
 - `tools/minerva-common/src/minerva_common/description_generator.py` - AI description generation
 - `tools/minerva-common/src/minerva_common/server_manager.py` - MCP server management
 - `tools/minerva-common/src/minerva_common/collection_ops.py` - ChromaDB operations
