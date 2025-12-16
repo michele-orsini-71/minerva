@@ -172,7 +172,29 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - [x] Fix integration tests (test failures due to architectural change: server config moved to shared location)
 - [x] Replace provider selection logic with `minerva_common.provider_setup` (deferred - separate refactoring)
 - [x] Update collision checks to use `minerva_common.collision.check_collection_exists()` (deferred - will implement in minerva-doc)
-- [ ] Test minerva-kb commands manually (add, list, serve, remove)
+- [x] Test minerva-kb commands manually (add, list, serve, remove)
+
+### Task 1.14: Fix pipx packaging for minerva-common dependency
+**Problem**: minerva-kb depends on minerva-common (local library), but pipx only installs CLI applications, not libraries. When pipx tried to install minerva-kb, pip couldn't find minerva-common on PyPI and installation failed.
+
+**Solution**: Use `pipx inject` to bundle minerva-common into minerva-kb's isolated venv (like static linking in C or bundling in JS).
+
+**Implementation**:
+- [x] Remove `minerva-common` from minerva-kb's `dependencies` in pyproject.toml
+- [x] Add comment explaining minerva-common is injected, not a pip dependency
+- [x] Update `tools/minerva-kb/install.sh`:
+  - [x] Install minerva-kb first (without minerva-common dependency)
+  - [x] Inject minerva-common into minerva-kb's venv: `pipx inject minerva-kb /path/to/minerva-common`
+- [x] Update `tools/minerva-kb/uninstall.sh` (minerva-common auto-removed with minerva-kb)
+- [x] Test installation: `./tools/minerva-kb/uninstall.sh && ./tools/minerva-kb/install.sh`
+- [x] Verify minerva-common is bundled: `pipx runpip minerva-kb list | grep minerva-common`
+- [x] Verify minerva-kb works: `minerva-kb --version`
+
+**Key learnings**:
+- pipx is for applications (with CLI entry points), not libraries (no entry points)
+- `pipx inject` is the standard way to add library dependencies to pipx-installed apps
+- minerva-common is shared code, but NOT a separate PyPI package - it's bundled into each tool that needs it
+- When minerva-doc is implemented, use the same pattern: `pipx install minerva-doc` then `pipx inject minerva-doc /path/to/minerva-common`
 
 ---
 
@@ -475,6 +497,9 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - `tools/minerva-kb/src/minerva_kb/constants.py` - Updated to use minerva_common.paths
 - `tools/minerva-kb/src/minerva_kb/commands/add.py` - Uses shared provider + collision detection logic across tools
 - `tools/minerva-kb/src/minerva_kb/commands/serve.py` - Refactored to use minerva_common
+- `tools/minerva-kb/pyproject.toml` - Removed minerva-common from dependencies (now injected via pipx)
+- `tools/minerva-kb/install.sh` - Updated to use `pipx inject` for bundling minerva-common into minerva-kb's venv
+- `tools/minerva-kb/uninstall.sh` - Removed minerva-common (auto-removed when minerva-kb is uninstalled)
 - `README.md` - Added minerva-doc overview and tool ecosystem explanation
 - `tools/minerva-kb/tests/conftest.py` - Test harness patches shared paths for minerva-common integration
 - `tools/minerva-kb/tests/test_add_command_integration.py` - Validates '-kb' naming, provider reuse, and cross-tool collision handling
@@ -487,5 +512,4 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - `tools/minerva-kb/src/minerva_kb/utils/provider_selection.py` - Delegates provider selection to minerva-common with keychain/env bridging
 - `tools/minerva-kb/src/minerva_kb/utils/description_generator.py` - Resolved provider API keys via env vars or keychain for shared config
 - `tools/minerva-kb/tests/test_provider_selection.py` - Covers new provider selection wrapper behavior
-- `tools/minerva-kb/tests/test_add_command_integration.py` - Validates '-kb' naming, provider reuse, and cross-tool collision handling
 - `tools/minerva-kb/tests/conftest.py` - Patches minerva-common helpers for shared collision detection

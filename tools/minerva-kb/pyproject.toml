@@ -23,7 +23,7 @@ classifiers = [
 ]
 dependencies = [
     "chromadb>=0.4.0",
-    "minerva-common",
+    # minerva-common is injected via: pipx inject minerva-kb /path/to/minerva-common
 ]
 
 [project.scripts]

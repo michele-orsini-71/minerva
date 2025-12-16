@@ -101,7 +101,13 @@
       "Bash(/Users/michele/my-code/minerva/tools/minerva-kb/install.sh)",
       "Bash(pip index:*)",
       "Bash(pipx runpip:*)",
-      "Bash(timeout 2 minerva-kb serve:*)"
+      "Bash(timeout 2 minerva-kb serve:*)",
+      "Bash(pip uninstall:*)",
+      "Bash(./tools/minerva-kb/uninstall.sh:*)",
+      "Bash(./tools/minerva-kb/install.sh:*)",
+      "Bash(~/.local/pipx/venvs/minerva-kb/bin/pip list:*)",
+      "Bash(shiv:*)",
+      "Bash(./minerva-kb.pyz:*)"
     ],
     "deny": [],
     "ask": []

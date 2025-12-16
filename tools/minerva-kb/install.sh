@@ -67,14 +67,14 @@ install_packages() {
     echo "📦 Installing Minerva packages..."
     echo ""
 
-    packages=(
+    # Install CLI applications
+    apps=(
         "Minerva core:$minerva_repo"
         "repository-doc-extractor:$minerva_repo/extractors/repository-doc-extractor"
         "local-repo-watcher:$minerva_repo/tools/local-repo-watcher"
-        "minerva-kb:$minerva_repo/tools/minerva-kb"
     )
 
-    for pkg in "${packages[@]}"; do
+    for pkg in "${apps[@]}"; do
         name="${pkg%%:*}"
         path="${pkg##*:}"
 
@@ -93,6 +93,28 @@ install_packages() {
         echo "✓ $name installed"
         echo ""
     done
+
+    # Install minerva-kb (CLI app)
+    echo "Installing minerva-kb..."
+
+    if ! pipx install --force "$minerva_repo/tools/minerva-kb" > /dev/null 2>&1; then
+        echo "❌ Failed to install minerva-kb"
+        exit 1
+    fi
+
+    echo "✓ minerva-kb installed"
+    echo ""
+
+    # Inject minerva-common (shared library) into minerva-kb's venv
+    echo "Bundling minerva-common into minerva-kb..."
+
+    if ! pipx inject minerva-kb "$minerva_repo/tools/minerva-common" --force > /dev/null 2>&1; then
+        echo "❌ Failed to inject minerva-common"
+        exit 1
+    fi
+
+    echo "✓ minerva-common bundled"
+    echo ""
 }
 
 # Show completion message
