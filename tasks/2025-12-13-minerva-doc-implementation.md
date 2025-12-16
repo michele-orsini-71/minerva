@@ -236,20 +236,20 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - [x] Add console_scripts entry point in pyproject.toml: `minerva-doc = minerva_doc.cli:main`
 
 ### Task 2.5: Implement add command
-- [ ] Create `src/minerva_doc/commands/add.py`
-- [ ] Implement `run_add()` function
-  - [ ] Parse arguments: json_file, --name
-  - [ ] Validate json_file exists and is readable
-  - [ ] Check collection name collision (use minerva_common.collision)
-  - [ ] Run `minerva validate` on json_file
-  - [ ] Prompt for AI provider selection
-  - [ ] Prompt for collection description (with auto-generate option)
-  - [ ] Build index config (use minerva_common.config_builder)
-  - [ ] Save index config to temp file
-  - [ ] Run `minerva index` via subprocess
-  - [ ] Register collection in collections.json
-  - [ ] Display success message
-  - [ ] Clean up temp config file
+- [x] Create `src/minerva_doc/commands/add.py`
+- [x] Implement `run_add()` function
+  - [x] Parse arguments: json_file, --name
+  - [x] Validate json_file exists and is readable
+  - [x] Check collection name collision (use minerva_common.collision)
+  - [x] Run `minerva validate` on json_file
+  - [x] Prompt for AI provider selection
+  - [x] Prompt for collection description (with auto-generate option)
+  - [x] Build index config (use minerva_common.config_builder)
+  - [x] Save index config to temp file
+  - [x] Run `minerva index` via subprocess
+  - [x] Register collection in collections.json
+  - [x] Display success message
+  - [x] Clean up temp config file
 - [ ] Write integration tests
 
 ### Task 2.6: Implement update command
