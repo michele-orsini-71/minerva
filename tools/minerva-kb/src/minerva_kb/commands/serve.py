@@ -13,7 +13,8 @@ def run_serve() -> int:
         print(f"✓ Created server config: {server_config_path}", file=sys.stderr)
 
     try:
-        start_server(server_config_path, CHROMADB_DIR)
+        server_process = start_server(server_config_path, CHROMADB_DIR)
+        server_process.wait()  # Wait for server to exit (keeps process alive)
         return 0
     except FileNotFoundError as e:
         print(f"❌ Server config not found: {e}", file=sys.stderr)

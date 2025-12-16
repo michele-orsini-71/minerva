@@ -47,32 +47,34 @@ def list_available_collections(chromadb_path: str | Path) -> list[dict]:
 
 
 def display_server_info(config: dict, collections: list[dict]) -> None:
-    print()
-    print("=" * 60)
-    print("🚀 Starting Minerva MCP Server")
-    print("=" * 60)
-    print()
+    import sys
 
-    print(f"📁 ChromaDB Path: {config.get('chromadb_path', 'N/A')}")
-    print(f"🔢 Default Max Results: {config.get('default_max_results', 'N/A')}")
+    print(file=sys.stderr)
+    print("=" * 60, file=sys.stderr)
+    print("🚀 Starting Minerva MCP Server", file=sys.stderr)
+    print("=" * 60, file=sys.stderr)
+    print(file=sys.stderr)
+
+    print(f"📁 ChromaDB Path: {config.get('chromadb_path', 'N/A')}", file=sys.stderr)
+    print(f"🔢 Default Max Results: {config.get('default_max_results', 'N/A')}", file=sys.stderr)
 
     host = config.get("host")
     port = config.get("port")
     if host and port:
-        print(f"🌐 Server URL: http://{host}:{port}")
+        print(f"🌐 Server URL: http://{host}:{port}", file=sys.stderr)
 
-    print()
-    print(f"📚 Available Collections: {len(collections)}")
+    print(file=sys.stderr)
+    print(f"📚 Available Collections: {len(collections)}", file=sys.stderr)
 
     if collections:
-        print()
+        print(file=sys.stderr)
         for col in collections:
-            print(f"  • {col['name']}: {col['count']:,} chunks")
+            print(f"  • {col['name']}: {col['count']:,} chunks", file=sys.stderr)
     else:
-        print("  (No collections found)")
+        print("  (No collections found)", file=sys.stderr)
 
-    print()
-    print("=" * 60)
-    print("Server is running. Press Ctrl+C to stop.")
-    print("=" * 60)
-    print()
+    print(file=sys.stderr)
+    print("=" * 60, file=sys.stderr)
+    print("Server is running. Press Ctrl+C to stop.", file=sys.stderr)
+    print("=" * 60, file=sys.stderr)
+    print(file=sys.stderr)
