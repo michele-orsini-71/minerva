@@ -253,72 +253,72 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 - [ ] Write integration tests
 
 ### Task 2.6: Implement update command
-- [ ] Create `src/minerva_doc/commands/update.py`
-- [ ] Implement `run_update()` function
-  - [ ] Parse arguments: collection_name, json_file
-  - [ ] Look up collection in registry
-  - [ ] Error if not found: "Collection not managed by minerva-doc"
-  - [ ] Validate new json_file
-  - [ ] Prompt: "Change AI provider? (current: [provider])"
-  - [ ] If provider change: set force_recreate=true, re-prompt for description
-  - [ ] If provider unchanged: use existing description, force_recreate=false
-  - [ ] Build index config with updated settings
-  - [ ] Save index config to temp file
-  - [ ] Run `minerva index` via subprocess
-  - [ ] Update registry (indexed_at timestamp, records_path)
-  - [ ] Display success message with diff stats
-  - [ ] Clean up temp config file
+- [x] Create `src/minerva_doc/commands/update.py`
+- [x] Implement `run_update()` function
+  - [x] Parse arguments: collection_name, json_file
+  - [x] Look up collection in registry
+  - [x] Error if not found: "Collection not managed by minerva-doc"
+  - [x] Validate new json_file
+  - [x] Prompt: "Change AI provider? (current: [provider])"
+  - [x] If provider change: set force_recreate=true, re-prompt for description
+  - [x] If provider unchanged: use existing description, force_recreate=false
+  - [x] Build index config with updated settings
+  - [x] Save index config to temp file
+  - [x] Run `minerva index` via subprocess
+  - [x] Update registry (indexed_at timestamp, records_path)
+  - [x] Display success message with diff stats
+  - [x] Clean up temp config file
 - [ ] Write integration tests
 
 ### Task 2.7: Implement list command
-- [ ] Create `src/minerva_doc/commands/list.py`
-- [ ] Implement `run_list()` function
-  - [ ] Parse arguments: --format (table|json)
-  - [ ] Query ChromaDB for all collections
-  - [ ] Load collections.json registry
-  - [ ] Identify managed vs unmanaged collections
-  - [ ] Format output (table or JSON)
-  - [ ] Display managed collections with full details
-  - [ ] Display unmanaged collections with warning
+- [x] Create `src/minerva_doc/commands/list.py`
+- [x] Implement `run_list()` function
+  - [x] Parse arguments: --format (table|json)
+  - [x] Query ChromaDB for all collections
+  - [x] Load collections.json registry
+  - [x] Identify managed vs unmanaged collections
+  - [x] Format output (table or JSON)
+  - [x] Display managed collections with full details
+  - [x] Display unmanaged collections with warning
 - [ ] Write integration tests
 
 ### Task 2.8: Implement status command
-- [ ] Create `src/minerva_doc/commands/status.py`
-- [ ] Implement `run_status()` function
-  - [ ] Parse arguments: collection_name
-  - [ ] Look up collection in registry
-  - [ ] Error if not found
-  - [ ] Query ChromaDB for chunk count
-  - [ ] Display detailed info: name, description, provider, chunks, dates
+- [x] Create `src/minerva_doc/commands/status.py`
+- [x] Implement `run_status()` function
+  - [x] Parse arguments: collection_name
+  - [x] Look up collection in registry
+  - [x] Error if not found
+  - [x] Query ChromaDB for chunk count
+  - [x] Display detailed info: name, description, provider, chunks, dates
 - [ ] Write integration tests
 
 ### Task 2.9: Implement remove command
-- [ ] Create `src/minerva_doc/commands/remove.py`
-- [ ] Implement `run_remove()` function
-  - [ ] Parse arguments: collection_name
-  - [ ] Look up collection in registry
-  - [ ] If not in registry: check ChromaDB and error with helpful message
-  - [ ] Prompt for confirmation
-  - [ ] Remove from ChromaDB
-  - [ ] Remove from registry
-  - [ ] Remove generated config files
-  - [ ] Display success message
+- [x] Create `src/minerva_doc/commands/remove.py`
+- [x] Implement `run_remove()` function
+  - [x] Parse arguments: collection_name
+  - [x] Look up collection in registry
+  - [x] If not in registry: check ChromaDB and error with helpful message
+  - [x] Prompt for confirmation
+  - [x] Remove from ChromaDB
+  - [x] Remove from registry
+  - [x] Remove generated config files
+  - [x] Display success message
 - [ ] Write integration tests
 
 ### Task 2.10: Implement serve command
-- [ ] Create `src/minerva_doc/commands/serve.py`
-- [ ] Implement `run_serve()` function
-  - [ ] Call `minerva_common.server_manager.start_server()`
-  - [ ] Display collections available (managed + unmanaged)
-  - [ ] Show server URL/port
-  - [ ] Keep server running until interrupt
+- [x] Create `src/minerva_doc/commands/serve.py`
+- [x] Implement `run_serve()` function
+  - [x] Call `minerva_common.server_manager.start_server()`
+  - [x] Display collections available (managed + unmanaged)
+  - [x] Show server URL/port
+  - [x] Keep server running until interrupt
 - [ ] Write integration tests
 
 ### Task 2.11: Package minerva-doc
-- [ ] Install minerva-doc in development mode: `pip install -e tools/minerva-doc`
-- [ ] Verify CLI is accessible: `minerva-doc --help`
-- [ ] Run full test suite: `pytest tools/minerva-doc/tests`
-- [ ] Ensure all tests pass
+- [x] Install minerva-doc in development mode: `pip install -e tools/minerva-doc`
+- [x] Verify CLI is accessible: `minerva-doc --help`
+- [x] Run full test suite: `pytest tools/minerva-doc/tests`
+- [x] Ensure all tests pass
 
 ### Task 2.12: End-to-End Testing
 - [ ] Test complete workflow:
