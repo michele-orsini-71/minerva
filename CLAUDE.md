@@ -178,6 +178,9 @@ docs/                          # Documentation
 ├── MINERVA_KB_EXAMPLES.md    # Example workflows
 └── MIGRATE_TO_MINERVA_KB.md  # Migration guide
 
+tools/minerva-kb/docs/         # minerva-kb specific docs
+└── DEPLOY.md                 # Deployment, distribution, and packaging guide
+
 chromadb_data/                 # ChromaDB storage (persistent)
 test-data/                     # Test files and sample data
 ```
@@ -885,6 +888,7 @@ except Exception as e:
 - **docs/CONFIGURATION_GUIDE.md**: Legacy per-command configuration (deprecated)
 - **docs/RELEASE_NOTES_v2.0.md**: Version 2.0 release notes
 - **docs/UPGRADE_v2.0.md**: Version 2.0 upgrade guide
+- **tools/minerva-kb/docs/DEPLOY.md**: Deployment, packaging, and distribution guide
 
 ### External Links
 
