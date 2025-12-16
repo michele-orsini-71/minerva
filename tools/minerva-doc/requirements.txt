@@ -1,0 +1,17 @@
+# Note: minerva-common is NOT listed here
+# It's injected via pipx inject during installation
+# See install.sh for the injection command
+
+# Core dependencies
+chromadb>=0.5.23
+langchain-text-splitters>=0.3.4
+
+# AI provider SDKs
+openai>=1.59.7
+anthropic>=0.40.0
+google-generativeai>=0.8.3
+
+# Development dependencies (install separately)
+# pytest>=7.4.0
+# pytest-cov>=4.1.0
+# pytest-mock>=3.11.1

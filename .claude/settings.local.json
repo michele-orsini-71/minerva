@@ -108,7 +108,8 @@
       "Bash(~/.local/pipx/venvs/minerva-kb/bin/pip list:*)",
       "Bash(shiv:*)",
       "Bash(./minerva-kb.pyz:*)",
-      "Bash(pipx inject:*)"
+      "Bash(pipx inject:*)",
+      "Bash(minerva-doc:*)"
     ],
     "deny": [],
     "ask": []

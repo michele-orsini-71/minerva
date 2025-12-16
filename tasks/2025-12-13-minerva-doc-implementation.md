@@ -201,39 +201,39 @@ Implementation tracking for PRD: `2025-12-13-prd-minerva-doc.md`
 ## Phase 2: minerva-doc Tool
 
 ### Task 2.1: Create minerva-doc Package Structure
-- [ ] Create `tools/minerva-doc/` directory
-- [ ] Create `tools/minerva-doc/src/minerva_doc/` directory
-- [ ] Create `tools/minerva-doc/src/minerva_doc/commands/` directory
-- [ ] Create `tools/minerva-doc/src/minerva_doc/utils/` directory
-- [ ] Create `tools/minerva-doc/tests/` directory
-- [ ] Create `tools/minerva-doc/setup.py` with package metadata
-- [ ] Create `tools/minerva-doc/README.md`
-- [ ] Create `tools/minerva-doc/requirements.txt` (include minerva-common)
+- [x] Create `tools/minerva-doc/` directory
+- [x] Create `tools/minerva-doc/src/minerva_doc/` directory
+- [x] Create `tools/minerva-doc/src/minerva_doc/commands/` directory
+- [x] Create `tools/minerva-doc/src/minerva_doc/utils/` directory
+- [x] Create `tools/minerva-doc/tests/` directory
+- [x] Create `tools/minerva-doc/pyproject.toml` with package metadata
+- [x] Create `tools/minerva-doc/README.md`
+- [x] Create `tools/minerva-doc/requirements.txt` (include minerva-common)
 
 ### Task 2.2: Implement constants and paths
-- [ ] Create `src/minerva_doc/constants.py`
-- [ ] Import shared paths from minerva_common.paths
-- [ ] Define `MINERVA_DOC_APP_DIR = APPS_DIR / "minerva-doc"`
-- [ ] Define `COLLECTIONS_REGISTRY_PATH = MINERVA_DOC_APP_DIR / "collections.json"`
+- [x] Create `src/minerva_doc/constants.py`
+- [x] Import shared paths from minerva_common.paths
+- [x] Define `MINERVA_DOC_APP_DIR = APPS_DIR / "minerva-doc"`
+- [x] Define `COLLECTIONS_REGISTRY_PATH = MINERVA_DOC_APP_DIR / "collections.json"`
 
 ### Task 2.3: Implement app initialization
-- [ ] Create `src/minerva_doc/utils/init.py`
-- [ ] Implement `ensure_app_dir()` function
-  - [ ] Call `minerva_common.init.ensure_shared_dirs()`
-  - [ ] Create `apps/minerva-doc/` if not exists
-  - [ ] Set permissions 0o700
-  - [ ] Return app dir path
-- [ ] Implement `ensure_registry()` function
-  - [ ] Create empty collections.json if not exists
-  - [ ] Use atomic write
-  - [ ] Set permissions 0o600
-- [ ] Write unit tests
+- [x] Create `src/minerva_doc/utils/init.py`
+- [x] Implement `ensure_app_dir()` function
+  - [x] Call `minerva_common.init.ensure_shared_dirs()`
+  - [x] Create `apps/minerva-doc/` if not exists
+  - [x] Set permissions 0o700
+  - [x] Return app dir path
+- [x] Implement `ensure_registry()` function
+  - [x] Create empty collections.json if not exists
+  - [x] Use atomic write
+  - [x] Set permissions 0o600
+- [x] Write unit tests
 
 ### Task 2.4: Implement CLI entry point
-- [ ] Create `src/minerva_doc/cli.py`
-- [ ] Set up argparse with subcommands: add, update, list, status, remove, serve
-- [ ] Implement main() function
-- [ ] Add console_scripts entry point in setup.py: `minerva-doc = minerva_doc.cli:main`
+- [x] Create `src/minerva_doc/cli.py`
+- [x] Set up argparse with subcommands: add, update, list, status, remove, serve
+- [x] Implement main() function
+- [x] Add console_scripts entry point in pyproject.toml: `minerva-doc = minerva_doc.cli:main`
 
 ### Task 2.5: Implement add command
 - [ ] Create `src/minerva_doc/commands/add.py`
