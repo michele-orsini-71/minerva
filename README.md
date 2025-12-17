@@ -17,6 +17,82 @@ Minerva solves the problem of **information overload** in personal knowledge man
 
 ...then Minerva is for you.
 
+---
+
+## Tools Ecosystem
+
+Minerva provides a core CLI (`minerva`) plus specialized orchestrator tools that simplify common workflows:
+
+### minerva (Core CLI)
+
+The foundation of the Minerva system. Provides low-level commands for:
+
+- **Validation**: Check JSON files against the note schema
+- **Indexing**: Load notes into ChromaDB with AI embeddings
+- **Inspection**: Peek at indexed collections
+- **Querying**: Direct semantic search against collections
+- **Serving**: Start MCP server for Claude Desktop integration
+
+**Use minerva directly when you need:**
+- Complete control over indexing configuration
+- Custom workflows and automation scripts
+- Integration with other tools and pipelines
+
+### minerva-kb (Repository Knowledge Base Orchestrator)
+
+High-level orchestrator for **code repository** collections. Automates the complete lifecycle:
+
+- Extracts markdown documentation from repositories
+- Manages collection metadata and registry
+- Provides collision detection across tools
+- Handles AI provider configuration interactively
+- Supports file watching for automatic updates
+
+**Use minerva-kb when working with:**
+- Code repositories and their documentation
+- Projects with markdown files (README, docs/, etc.)
+- Development workflows requiring up-to-date code context
+
+**Quick start:** `minerva-kb add /path/to/repository`
+
+### minerva-doc (Document Collection Orchestrator)
+
+High-level orchestrator for **document-based** collections (Bear notes, Zim archives, markdown books).
+
+- Validates JSON files from extractors
+- Manages document collection metadata
+- Provides collision detection across tools
+- Handles AI provider configuration interactively
+- Supports collection updates and provider changes
+
+**Use minerva-doc when working with:**
+- Bear notes exports (personal knowledge management)
+- Zim Wikipedia/Kiwix dumps (reference articles)
+- Markdown books and long-form documentation
+- Any custom JSON extracts following the note schema
+
+**Quick start:** `minerva-doc add notes.json --name my-notes`
+
+### Comparison: minerva-kb vs minerva-doc
+
+| Feature | minerva-kb | minerva-doc |
+|---------|------------|-------------|
+| **Input** | Repository path | JSON file |
+| **Extraction** | Automatic (built-in) | Manual (via extractors) |
+| **Use Case** | Code repositories | Documents, notes, articles |
+| **File Watching** | Built-in auto-update | Manual re-indexing |
+| **Typical Source** | Git repositories | Bear, Zim, books |
+| **Examples** | `~/code/my-project` | `bear-notes.json` |
+
+Both tools:
+- Share the same ChromaDB storage (`~/.minerva/chromadb`)
+- Use the same MCP server infrastructure
+- Support the same AI providers (Ollama, LM Studio, OpenAI, Gemini)
+- Provide collision detection to prevent duplicate collection names
+- Can be used together in the same Minerva installation
+
+---
+
 ### Key Features
 
 - **Multi-Source Support**: Extract notes from Bear, Zim articles, markdown books, or any source via custom extractors
@@ -133,7 +209,33 @@ minerva-kb list                            # View all collections
 minerva-kb watch my-project                # Start auto-updates
 ```
 
-#### 🔧 Option B: Custom Setup (Full Control)
+#### 📚 Option B: Document Collection Management
+
+**Use case:** Index personal notes, Bear exports, Zim archives, or markdown books
+**Guide:** See [`docs/MINERVA_DOC_GUIDE.md`](docs/MINERVA_DOC_GUIDE.md)
+
+Install minerva-doc to manage document-based collections:
+
+```bash
+./tools/minerva-doc/install.sh
+```
+
+After installation, manage document collections with simple commands:
+
+```bash
+# First extract notes using an extractor (Bear, Zim, books)
+bear-extractor "Bear Notes.bear2bk" -o notes.json
+
+# Add as a collection
+minerva-doc add notes.json --name my-notes
+
+# List and manage collections
+minerva-doc list
+minerva-doc status my-notes
+minerva-doc update my-notes updated-notes.json
+```
+
+#### 🔧 Option C: Custom Setup (Full Control)
 
 **Use case:** Custom indexing pipelines, multiple collections, advanced configuration
 **Guide:** Continue reading this README for manual installation and configuration
@@ -305,6 +407,34 @@ OPENAI_API_KEY="sk-..." minerva index --config config.json
 
 ### Basic Workflow
 
+#### Option 1: Using minerva-kb (Repositories)
+
+```bash
+# One-command workflow for repositories
+minerva-kb add /path/to/your/repository
+
+# Start file watcher for auto-updates
+minerva-kb watch my-project
+
+# Serve collections
+minerva-kb serve
+```
+
+#### Option 2: Using minerva-doc (Documents)
+
+```bash
+# Extract notes from a source (example: Bear Notes)
+bear-extractor "Bear Notes.bear2bk" -o bear-notes.json
+
+# Add as a collection (handles validation, provider selection, and indexing)
+minerva-doc add bear-notes.json --name my-notes
+
+# Serve collections
+minerva-doc serve
+```
+
+#### Option 3: Using minerva (Manual)
+
 ```bash
 # 1. Extract notes from a source (example: Bear Notes)
 cd extractors/bear-notes-extractor
@@ -347,12 +477,7 @@ minerva index --config configs/index/bear-notes-ollama.json --verbose
 # 5. Peek at the indexed data
 minerva peek bear_notes --chromadb ./chromadb_data
 
-
 # 6. Start the MCP server (for Claude Desktop integration)
-# Using minerva-kb (recommended - auto-managed config):
-minerva-kb serve
-
-# Or using minerva directly with manual config:
 minerva serve --config configs/server/local.json
 
 ---
@@ -695,13 +820,20 @@ pytest tests/test_index_command.py -v            # Index command and config load
 
 ## Documentation
 
+### User Guides
+
+- [minerva-kb Guide](docs/MINERVA_KB_GUIDE.md) - Complete guide for repository knowledge base management
+- [minerva-doc Guide](docs/MINERVA_DOC_GUIDE.md) - Complete guide for document collection management
 - [Configuration Guide](docs/configuration.md) - Command-specific configuration reference for index and server
 - [LM Studio Setup Guide](docs/LMSTUDIO_SETUP.md) - Installing and configuring LM Studio
 - [Note Schema](docs/NOTE_SCHEMA.md) - Complete JSON schema specification
 - [Extractor Guide](docs/EXTRACTOR_GUIDE.md) - How to write custom extractors
-- [Legacy Config Guide](docs/CONFIGURATION_GUIDE.md) - Archived reference for the pre-v3 unified system
+
+### Release Notes and Developer Docs
+
 - [Release Notes v2.0](docs/RELEASE_NOTES_v2.0.md) - What's new in version 2.0
 - [Upgrade Guide v2.0](docs/UPGRADE_v2.0.md) - How to upgrade from v1.x
+- [Legacy Config Guide](docs/CONFIGURATION_GUIDE.md) - Archived reference for the pre-v3 unified system
 - [CLAUDE.md](CLAUDE.md) - Developer guide for working with this codebase
 
 ## License

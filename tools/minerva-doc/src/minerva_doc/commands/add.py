@@ -83,10 +83,13 @@ def validate_json_file(json_file: str) -> Path | None:
 
     if not path.exists():
         print(f"Error: JSON file does not exist: {path}")
+        print(f"  Check that the path is correct and the file exists")
+        print(f"  Hint: Use an absolute path or ensure you're in the right directory")
         return None
 
     if not path.is_file():
         print(f"Error: Path is not a file: {path}")
+        print(f"  The path exists but points to a directory, not a file")
         return None
 
     if not path.suffix == ".json":
@@ -96,6 +99,7 @@ def validate_json_file(json_file: str) -> Path | None:
         resolved = path.resolve(strict=True)
     except Exception as e:
         print(f"Error: Cannot resolve path {path}: {e}")
+        print(f"  Check file permissions and that the path is accessible")
         return None
 
     return resolved
@@ -104,15 +108,22 @@ def validate_json_file(json_file: str) -> Path | None:
 def validate_collection_name(name: str) -> bool:
     if not name:
         print("Error: Collection name cannot be empty")
+        print("  Provide a name using --name flag")
+        print("  Example: minerva-doc add notes.json --name my-notes")
         return False
 
     if len(name) > 100:
         print("Error: Collection name too long (max 100 characters)")
+        print(f"  Your name has {len(name)} characters")
+        print("  Use a shorter, more concise name")
         return False
 
     invalid_chars = set('<>:"/\\|?*')
     if any(c in name for c in invalid_chars):
-        print(f"Error: Collection name contains invalid characters: {invalid_chars}")
+        print(f"Error: Collection name contains invalid characters")
+        print(f"  Invalid characters: < > : \" / \\ | ? *")
+        print(f"  Use only letters, numbers, hyphens, and underscores")
+        print(f"  Example: my-notes, bear_notes, docs-2025")
         return False
 
     return True
@@ -195,8 +206,14 @@ def create_temp_index_config(config: dict) -> Path | None:
         save_index_config(config, temp_path)
         return temp_path
 
+    except PermissionError as e:
+        print(f"Error: Permission denied creating temp config file: {e}")
+        print(f"  Check that you have write permissions to: {MINERVA_DOC_APP_DIR}")
+        print(f"  Try: chmod 700 {MINERVA_DOC_APP_DIR}")
+        return None
     except Exception as e:
         print(f"Error: Failed to create temp config file: {e}")
+        print(f"  This may be due to disk space or filesystem issues")
         return None
 
 

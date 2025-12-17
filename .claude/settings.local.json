@@ -109,7 +109,9 @@
       "Bash(shiv:*)",
       "Bash(./minerva-kb.pyz:*)",
       "Bash(pipx inject:*)",
-      "Bash(minerva-doc:*)"
+      "Bash(minerva-doc:*)",
+      "Bash(for cmd in add update list status remove serve)",
+      "Bash(do echo \"=== $cmd ===\")"
     ],
     "deny": [],
     "ask": []

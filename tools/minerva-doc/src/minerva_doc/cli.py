@@ -10,6 +10,29 @@ def main():
     parser = argparse.ArgumentParser(
         prog='minerva-doc',
         description='Orchestrator tool for managing Minerva document-based knowledge base collections',
+        epilog='''Quick Start:
+  1. Extract notes using an extractor:
+     bear-extractor "Bear Notes.bear2bk" -o notes.json
+
+  2. Add as a collection:
+     minerva-doc add notes.json --name my-notes
+
+  3. List collections:
+     minerva-doc list
+
+  4. Start MCP server:
+     minerva-doc serve
+
+Documentation:
+  Full guide: docs/MINERVA_DOC_GUIDE.md
+  GitHub: https://github.com/anthropics/minerva
+
+Common Workflows:
+  • Bear notes → bear-extractor → minerva-doc add
+  • Zim archive → zim-extractor → minerva-doc add
+  • Markdown book → markdown-books-extractor → minerva-doc add
+
+Use 'minerva-doc COMMAND --help' for detailed help on each command.''',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
 

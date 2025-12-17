@@ -58,6 +58,9 @@ def get_chromadb_collections() -> list[dict]:
         return list_chromadb_collections(CHROMADB_DIR)
     except Exception as e:
         print(f"Error: Failed to query ChromaDB: {e}")
+        print(f"  ChromaDB path: {CHROMADB_DIR}")
+        print(f"  Check that ChromaDB is accessible and not corrupted")
+        print(f"  Try: ls -la {CHROMADB_DIR}")
         return []
 
 
