@@ -111,7 +111,11 @@
       "Bash(pipx inject:*)",
       "Bash(minerva-doc:*)",
       "Bash(for cmd in add update list status remove serve)",
-      "Bash(do echo \"=== $cmd ===\")"
+      "Bash(do echo \"=== $cmd ===\")",
+      "Bash(~/.local/bin/minerva-kb:*)",
+      "Bash(~/.local/pipx/venvs/minerva-kb/bin/python:*)",
+      "Bash(./install.sh:*)",
+      "Bash(~/.local/pipx/venvs/minerva-doc/bin/python:*)"
     ],
     "deny": [],
     "ask": []

@@ -20,7 +20,7 @@ from minerva_kb.utils.config_loader import (
     save_index_config,
     save_watcher_config,
 )
-from minerva_kb.utils.description_generator import generate_description
+from minerva_kb.utils.description_generator_repo import generate_description
 from minerva_kb.utils.display import display_error, display_success, display_warning
 from minerva_kb.utils.provider_selection import interactive_select_provider
 from minerva_kb.utils.process_manager import find_watcher_pid, stop_watcher
