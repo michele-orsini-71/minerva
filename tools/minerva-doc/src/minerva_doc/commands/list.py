@@ -101,10 +101,6 @@ def display_table(managed: list[dict], unmanaged: list[dict]) -> None:
             print(f"  - {collection['name']} ({collection['count']:,} chunks)")
 
         print()
-        print("To manage these collections, use the appropriate tool:")
-        print("  minerva-kb list        # For repository-based collections")
-        print("  minerva-doc list       # For document-based collections")
-        print()
 
     print("=" * 80)
     print(f"Total: {len(managed)} managed, {len(unmanaged)} unmanaged")

@@ -150,6 +150,14 @@ def initialize_and_validate_provider(
             validation_result = provider.validate_description(collection.description)
             score = validation_result.get('score', 0)
             feedback = validation_result.get('feedback', 'No feedback available')
+            error = validation_result.get('error')
+
+            if error:
+                logger.error(f"   ❌ Validation error: {error}")
+                if verbose:
+                    logger.info(f"   Description score: {score}/10")
+                    logger.info(f"   Feedback: {feedback}")
+                raise AIProviderError(f"Description validation failed: {error}")
 
             if verbose:
                 logger.info(f"   Description score: {score}/10")

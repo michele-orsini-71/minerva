@@ -41,8 +41,13 @@ def run_list(output_format: str) -> int:
 
     _print_managed_table(managed)
     if unmanaged:
-        print()
         _print_unmanaged_table(unmanaged)
+
+    # Print summary
+    print("=" * 80)
+    print(f"Total: {len(managed)} managed, {len(unmanaged)} unmanaged")
+    print("=" * 80)
+    print()
     return 0
 
 
@@ -153,11 +158,22 @@ def _discover_unmanaged_collections(
 
 
 def _print_managed_table(entries: list[dict[str, Any]]) -> None:
-    print(f"Collections ({len(entries)}):")
     if not entries:
-        print("  (No managed collections found)")
+        print()
+        print("=" * 80)
+        print("No collections found")
+        print("=" * 80)
+        print()
+        print("Get started:")
+        print("  minerva-kb add /path/to/repository")
         return
+
     print()
+    print("=" * 80)
+    print("Managed Collections (minerva-kb)")
+    print("=" * 80)
+    print()
+
     for entry in entries:
         _print_managed_entry(entry)
         print()
@@ -170,29 +186,33 @@ def _print_managed_entry(entry: dict[str, Any]) -> None:
     last_indexed = entry["last_indexed"] or "unknown"
     watcher_line = _watcher_label(entry["watcher"])
 
-    print(name)
-    print(f"  Repository: {entry['repository_path']}")
+    print(f"Collection: {name}")
+    print(f"  Repository:   {entry['repository_path']}")
     if entry["status"] == "not_indexed":
         print("  ⚠ Not indexed (ChromaDB collection missing)")
-    print(f"  Provider:   {provider_label}")
+    print(f"  Provider:     {provider_label}")
     if entry["status"] != "not_indexed":
-        print(f"  Chunks:     {chunk_label}")
-    print(f"  Watcher:    {watcher_line}")
+        print(f"  Chunks:       {chunk_label}")
+    print(f"  Watcher:      {watcher_line}")
     print(f"  Last indexed: {last_indexed}")
     for note in entry["notes"]:
         print(f"  ⚠ {note}")
 
 
 def _print_unmanaged_table(entries: list[dict[str, Any]]) -> None:
-    print(f"Unmanaged collections ({len(entries)}):")
+    print("=" * 80)
+    print("Unmanaged Collections")
+    print("=" * 80)
     print()
+    print("⚠️  These collections exist in ChromaDB but are not managed by minerva-kb.")
+    print("    They may be managed by minerva-doc or created directly via minerva CLI.")
+    print()
+
     for entry in entries:
         chunk_label = _format_chunk_display(entry.get("chunk_count"))
-        print(entry["name"])
-        print("  ⚠ Unmanaged (created outside minerva-kb)")
-        print(f"  Chunks: {chunk_label}")
-        print("  (No config files found)")
-        print()
+        print(f"  - {entry['name']} ({chunk_label} chunks)")
+
+    print()
 
 
 def _provider_label(provider: dict[str, Any]) -> str:
