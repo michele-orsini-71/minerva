@@ -60,61 +60,175 @@ get_repo_path() {
     echo "$minerva_repo"
 }
 
+# Get version from source package
+get_source_version() {
+    local pkg_path="$1"
+    local version=""
+
+    # Try pyproject.toml first (for minerva-kb, minerva-doc)
+    if [ -f "$pkg_path/pyproject.toml" ]; then
+        version=$(grep -E "^version\s*=" "$pkg_path/pyproject.toml" | sed 's/.*"\(.*\)".*/\1/' | head -1)
+    fi
+
+    # Try __init__.py (handle both hyphens and underscores in package names)
+    if [ -z "$version" ] && [ -f "$pkg_path/setup.py" ]; then
+        local pkg_name=$(basename "$pkg_path")
+        local pkg_name_underscore="${pkg_name//-/_}"  # Replace hyphens with underscores
+
+        # Try with hyphens first, then underscores
+        if [ -f "$pkg_path/$pkg_name/__init__.py" ]; then
+            version=$(grep -E "^__version__" "$pkg_path/$pkg_name/__init__.py" | sed 's/.*"\(.*\)".*/\1/' | head -1)
+        elif [ -f "$pkg_path/$pkg_name_underscore/__init__.py" ]; then
+            version=$(grep -E "^__version__" "$pkg_path/$pkg_name_underscore/__init__.py" | sed 's/.*"\(.*\)".*/\1/' | head -1)
+        fi
+    fi
+
+    # Try setup.py directly as fallback (less reliable for dynamic versions)
+    if [ -z "$version" ] && [ -f "$pkg_path/setup.py" ]; then
+        version=$(grep -E "^\s*version\s*=" "$pkg_path/setup.py" | sed 's/.*"\(.*\)".*/\1/' | head -1)
+    fi
+
+    echo "$version"
+}
+
+# Get installed version from pipx
+get_installed_version() {
+    local pkg_name="$1"
+    local version=""
+
+    if command -v jq &> /dev/null; then
+        # Use jq if available (more reliable)
+        version=$(pipx list --json 2>/dev/null | jq -r ".venvs[\"$pkg_name\"].metadata.main_package.package_version // empty" 2>/dev/null)
+    else
+        # Fallback to text parsing
+        version=$(pipx list 2>/dev/null | grep -A 5 "package $pkg_name " | grep "version" | sed 's/.*version \(.*\),.*/\1/' | xargs)
+    fi
+
+    echo "$version"
+}
+
+# Check if package is installed
+is_installed() {
+    local pkg_name="$1"
+    pipx list 2>/dev/null | grep -q "package $pkg_name "
+}
+
+# Smart install: only reinstall if version changed
+smart_install() {
+    local display_name="$1"
+    local pkg_name="$2"
+    local install_path="$3"
+    local force="${4:-false}"
+
+    local source_version=$(get_source_version "$install_path")
+
+    if [ -z "$source_version" ]; then
+        echo "⚠️  Cannot determine version for $display_name, installing anyway..."
+        if ! pipx install --force "$install_path" > /dev/null 2>&1; then
+            echo "❌ Failed to install $display_name"
+            exit 1
+        fi
+        echo "✓ $display_name installed"
+        echo ""
+        return 0
+    fi
+
+    if is_installed "$pkg_name"; then
+        local installed_version=$(get_installed_version "$pkg_name")
+
+        if [ "$installed_version" = "$source_version" ] && [ "$force" = "false" ]; then
+            echo "✓ $display_name v$installed_version already installed (skipping)"
+            echo ""
+            return 0
+        fi
+
+        if [ "$installed_version" != "$source_version" ]; then
+            echo "⟳ $display_name: upgrading $installed_version → $source_version..."
+        else
+            echo "⟳ $display_name: reinstalling v$source_version..."
+        fi
+
+        if ! pipx install --force "$install_path" > /dev/null 2>&1; then
+            echo "❌ Failed to install $display_name"
+            exit 1
+        fi
+        echo "✓ $display_name v$source_version installed"
+        echo ""
+    else
+        echo "Installing $display_name v$source_version..."
+        if ! pipx install "$install_path" > /dev/null 2>&1; then
+            echo "❌ Failed to install $display_name"
+            exit 1
+        fi
+        echo "✓ $display_name v$source_version installed"
+        echo ""
+    fi
+}
+
+# Get version of injected package
+get_injected_version() {
+    local main_pkg="$1"
+    local injected_pkg="$2"
+    local version=""
+
+    if command -v jq &> /dev/null; then
+        version=$(pipx list --json 2>/dev/null | jq -r ".venvs[\"$main_pkg\"].metadata.injected_packages[\"$injected_pkg\"].package_version // empty" 2>/dev/null)
+    fi
+
+    echo "$version"
+}
+
+# Smart inject: only inject if needed
+smart_inject() {
+    local main_pkg="$1"
+    local inject_pkg_name="$2"
+    local inject_pkg_path="$3"
+    local force="${4:-false}"
+
+    local source_version=$(get_source_version "$inject_pkg_path")
+    local injected_version=$(get_injected_version "$main_pkg" "$inject_pkg_name")
+
+    if [ -n "$injected_version" ] && [ "$injected_version" = "$source_version" ] && [ "$force" = "false" ]; then
+        echo "✓ $inject_pkg_name v$injected_version already bundled (skipping)"
+        echo ""
+        return 0
+    fi
+
+    if [ -n "$injected_version" ] && [ "$injected_version" != "$source_version" ]; then
+        echo "⟳ $inject_pkg_name: upgrading $injected_version → $source_version..."
+    else
+        echo "Bundling $inject_pkg_name into $main_pkg..."
+    fi
+
+    if ! pipx inject "$main_pkg" "$inject_pkg_path" --force > /dev/null 2>&1; then
+        echo "❌ Failed to inject $inject_pkg_name"
+        exit 1
+    fi
+
+    echo "✓ $inject_pkg_name v$source_version bundled"
+    echo ""
+}
+
 # Install packages
 install_packages() {
     local minerva_repo="$1"
+    local force="${2:-false}"
 
     echo "📦 Installing Minerva packages..."
     echo ""
 
-    # Install CLI applications
-    apps=(
-        "Minerva core:$minerva_repo"
-        "repository-doc-extractor:$minerva_repo/extractors/repository-doc-extractor"
-        "local-repo-watcher:$minerva_repo/tools/local-repo-watcher"
-    )
+    # Install minerva as standalone CLI tool (needed for subprocess calls)
+    smart_install "Minerva core" "minerva" "$minerva_repo" "$force"
 
-    for pkg in "${apps[@]}"; do
-        name="${pkg%%:*}"
-        path="${pkg##*:}"
+    # Install minerva-kb (main tool)
+    smart_install "minerva-kb" "minerva-kb" "$minerva_repo/tools/minerva-kb" "$force"
 
-        echo "Installing $name..."
+    # Install dependency tools
+    smart_install "repository-doc-extractor" "repository-doc-extractor" "$minerva_repo/extractors/repository-doc-extractor" "$force"
+    smart_install "local-repo-watcher" "local-repo-watcher" "$minerva_repo/tools/local-repo-watcher" "$force"
 
-        if [ ! -d "$path" ]; then
-            echo "❌ Package not found at: $path"
-            exit 1
-        fi
-
-        if ! pipx install --force "$path" > /dev/null 2>&1; then
-            echo "❌ Failed to install $name"
-            exit 1
-        fi
-
-        echo "✓ $name installed"
-        echo ""
-    done
-
-    # Install minerva-kb (CLI app)
-    echo "Installing minerva-kb..."
-
-    if ! pipx install --force "$minerva_repo/tools/minerva-kb" > /dev/null 2>&1; then
-        echo "❌ Failed to install minerva-kb"
-        exit 1
-    fi
-
-    echo "✓ minerva-kb installed"
-    echo ""
-
-    # Inject minerva-common (shared library) into minerva-kb's venv
-    echo "Bundling minerva-common into minerva-kb..."
-
-    if ! pipx inject minerva-kb "$minerva_repo/tools/minerva-common" --force > /dev/null 2>&1; then
-        echo "❌ Failed to inject minerva-common"
-        exit 1
-    fi
-
-    echo "✓ minerva-common bundled"
-    echo ""
+    # Inject minerva-common shared library
+    smart_inject "minerva-kb" "minerva-common" "$minerva_repo/tools/minerva-common" "$force"
 }
 
 # Show completion message
@@ -161,12 +275,37 @@ show_completion() {
 
 # Main execution
 main() {
+    local force="false"
+
+    # Parse command line arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --force)
+                force="true"
+                shift
+                ;;
+            -h|--help)
+                echo "Usage: $0 [--force]"
+                echo ""
+                echo "Options:"
+                echo "  --force    Force reinstall even if versions match"
+                echo "  --help     Show this help message"
+                exit 0
+                ;;
+            *)
+                echo "Unknown option: $1"
+                echo "Use --help for usage information"
+                exit 1
+                ;;
+        esac
+    done
+
     check_python
     check_pipx
 
     minerva_repo=$(get_repo_path)
 
-    install_packages "$minerva_repo"
+    install_packages "$minerva_repo" "$force"
 
     show_completion
 }
@@ -174,4 +313,4 @@ main() {
 # Handle Ctrl+C
 trap 'echo ""; echo "Installation cancelled by user"; exit 130' INT
 
-main
+main "$@"

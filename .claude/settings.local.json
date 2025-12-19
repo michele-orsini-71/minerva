@@ -115,7 +115,10 @@
       "Bash(~/.local/bin/minerva-kb:*)",
       "Bash(~/.local/pipx/venvs/minerva-kb/bin/python:*)",
       "Bash(./install.sh:*)",
-      "Bash(~/.local/pipx/venvs/minerva-doc/bin/python:*)"
+      "Bash(~/.local/pipx/venvs/minerva-doc/bin/python:*)",
+      "Bash(bash:*)",
+      "Bash(xargs -I {} sh -c \"{} list | grep -E ''^\\(minerva|chromadb\\)''\")",
+      "Bash(xargs -I {} sh -c \"dirname {} | xargs -I @ sh -c ''@/pip list | grep minerva''\")"
     ],
     "deny": [],
     "ask": []

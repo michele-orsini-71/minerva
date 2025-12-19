@@ -12,7 +12,7 @@ setup(
         "chromadb>=0.6.4",
         "openai>=1.0.0",
         "google-generativeai>=0.8.3",
-        "minerva",
+        # NOTE: minerva is NOT a dependency - tools call it via subprocess
     ],
     extras_require={
         "test": [

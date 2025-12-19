@@ -9,7 +9,7 @@ echo ""
 echo "Removing installed packages..."
 echo ""
 
-# Check if minerva-doc is installed
+# Remove minerva-doc (this also removes injected minerva-common)
 if pipx list | grep -q "minerva-doc"; then
     echo "Uninstalling minerva-doc..."
     pipx uninstall minerva-doc
@@ -20,14 +20,15 @@ fi
 
 echo ""
 
-# Check if minerva core is installed
-if pipx list | grep -q "^   package minerva "; then
-    echo "Uninstalling Minerva core..."
-    pipx uninstall minerva
-    echo "✓ Minerva core removed"
-else
-    echo "⚠ Minerva core not found (already uninstalled)"
-fi
+# Note: We don't uninstall minerva (shared dependency)
+# Reasons:
+#   - minerva might be used by other tools (e.g., minerva-kb)
+#   - User might have installed it standalone
+#   - Avoids complexity of tracking dependencies across tools
+echo "Note: minerva not removed (may be used by other tools or standalone)"
+echo ""
+echo "To remove minerva manually:"
+echo "  pipx uninstall minerva"
 
 echo ""
 echo "============================================================"
