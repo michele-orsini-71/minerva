@@ -129,6 +129,7 @@ def _run_provider_update_flow(collection_name: str, repository: Path, watcher_pa
 
     updated_index_config = dict(index_config)
     updated_index_config["provider"] = _provider_entry_from_config(provider_config)
+    updated_index_config.setdefault("collection", {})["force_recreate"] = True
     index_config_path = save_index_config(collection_name, updated_index_config)
 
     pid = find_watcher_pid(watcher_path)
@@ -147,8 +148,12 @@ def _run_provider_update_flow(collection_name: str, repository: Path, watcher_pa
 
     if not _run_repository_extractor(repo_path, extracted_path):
         return 3
-    if not _run_indexing(index_config_path, force_recreate=True):
+    if not _run_indexing(index_config_path):
         return 3
+
+    # Remove force_recreate so future incremental updates work normally
+    updated_index_config["collection"].pop("force_recreate", None)
+    save_index_config(collection_name, updated_index_config)
 
     _display_update_summary(collection_name, provider_config)
     return 0
@@ -251,11 +256,9 @@ def _run_repository_extractor(repository: Path, output_path: Path) -> bool:
     return _run_command(command, "Extraction")
 
 
-def _run_indexing(index_config_path: Path, *, force_recreate: bool = False) -> bool:
+def _run_indexing(index_config_path: Path) -> bool:
     print("🔍 Indexing collection (this may take a few minutes)...")
     command = ["minerva", "index", "--config", str(index_config_path)]
-    if force_recreate:
-        command.append("--force-recreate")
     return _run_command(command, "Indexing")
 
 
