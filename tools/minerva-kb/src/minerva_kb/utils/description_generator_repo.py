@@ -85,9 +85,9 @@ def _call_provider(prompt: str, provider_config: dict[str, Any]) -> str:
     if provider_type == "gemini":
         return _call_gemini(prompt, llm_model, provider_config)
     if provider_type == "ollama":
-        return _call_ollama(prompt, llm_model)
+        return _call_ollama(prompt, llm_model, provider_config)
     if provider_type == "lmstudio":
-        return _call_lmstudio(prompt, llm_model)
+        return _call_lmstudio(prompt, llm_model, provider_config)
     raise RuntimeError(f"Unsupported provider type: {provider_type}")
 
 
@@ -128,21 +128,23 @@ def _call_gemini(prompt: str, model: str, provider_config: dict[str, Any]) -> st
     return _extract_gemini_response(_perform_request(request))
 
 
-def _call_ollama(prompt: str, model: str) -> str:
+def _call_ollama(prompt: str, model: str, provider_config: dict[str, Any]) -> str:
+    base_url = provider_config.get("base_url", "http://localhost:11434").rstrip("/")
     payload = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
         "stream": False,
     }
     request = urllib.request.Request(
-        "http://localhost:11434/api/chat",
+        f"{base_url}/api/chat",
         data=json.dumps(payload).encode("utf-8"),
         headers={"Content-Type": "application/json"},
     )
     return _extract_ollama_response(_perform_request(request))
 
 
-def _call_lmstudio(prompt: str, model: str) -> str:
+def _call_lmstudio(prompt: str, model: str, provider_config: dict[str, Any]) -> str:
+    base_url = _normalize_base_url(provider_config.get("base_url", "http://localhost:1234"))
     payload = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
@@ -150,11 +152,18 @@ def _call_lmstudio(prompt: str, model: str) -> str:
         "max_tokens": 320,
     }
     request = urllib.request.Request(
-        "http://localhost:1234/v1/chat/completions",
+        f"{base_url}/v1/chat/completions",
         data=json.dumps(payload).encode("utf-8"),
         headers={"Content-Type": "application/json"},
     )
     return _extract_openai_response(_perform_request(request))
+
+
+def _normalize_base_url(url: str) -> str:
+    url = url.rstrip("/")
+    if url.endswith("/v1"):
+        url = url[:-3]
+    return url
 
 
 def _perform_request(request: urllib.request.Request) -> dict[str, Any]:

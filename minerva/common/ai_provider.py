@@ -85,7 +85,11 @@ class RateLimiter:
 
 class LMStudioClient:
     def __init__(self, base_url: str):
-        self.base_url = base_url.rstrip('/')
+        base_url = base_url.rstrip('/')
+        # Strip /v1 suffix since all endpoint methods already include it
+        if base_url.endswith('/v1'):
+            base_url = base_url[:-3]
+        self.base_url = base_url
 
     def embeddings(self, model: str, texts: List[str]) -> Dict[str, Any]:
         payload = {
