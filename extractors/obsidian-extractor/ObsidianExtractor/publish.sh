@@ -1,0 +1,1 @@
+dotnet publish ObsidianExtractor.csproj -c Release -p:PublishSingleFile=true -p:SelfContained=false -r osx-arm64 -o publish

@@ -9,7 +9,7 @@ Extractors are independent tools that transform data from specific sources (apps
 ### Why Separate Extractors?
 
 - **Independence**: No dependency on Minerva core - just output JSON
-- **Language Freedom**: Write extractors in any language (all official extractors happen to be Python)
+- **Language Freedom**: Write extractors in any language (official packages now include Python and .NET tools)
 - **Focused Scope**: Each extractor handles one source type very well
 - **Easy Testing**: Validate output with `minerva validate` before indexing
 - **Distribution**: Install only the extractors you need
@@ -125,6 +125,38 @@ minerva validate book.json
 
 ---
 
+### 🗂️ Obsidian Extractor
+
+**Project**: `obsidian-extractor`
+**Command**: `dotnet run --project extractors/obsidian-extractor/src/ObsidianExtractor/ObsidianExtractor.csproj`
+**Source**: Obsidian vault directories (markdown files on disk)
+
+Obsidian stores every note as markdown. This extractor traverses a vault, skips plugin/config folders, and emits Minerva-ready notes.
+
+**Features**:
+
+- Recursively collects `.md`, `.mdx`, and `.markdown` files.
+- Skips `.obsidian`, `.git`, `node_modules`, `venv`, etc., with additional `--exclude` patterns when needed.
+- `--scan-only` mode lists candidate directories before exporting.
+- Preserves titles, content, UTC timestamps, and vault-relative paths.
+
+**Requirements**:
+
+- .NET 8 SDK or newer. If only newer runtimes are available locally, prepend commands with `DOTNET_ROLL_FORWARD=LatestMajor`.
+
+**Build & Quick Start**:
+
+```bash
+cd extractors/obsidian-extractor
+DOTNET_ROLL_FORWARD=LatestMajor dotnet build src/ObsidianExtractor/ObsidianExtractor.csproj
+DOTNET_ROLL_FORWARD=LatestMajor dotnet run --project src/ObsidianExtractor/ObsidianExtractor.csproj -- ~/Vault -o notes.json -v
+minerva validate notes.json --verbose
+```
+
+[📖 Full Documentation](obsidian-extractor/README.md)
+
+---
+
 ## Quick Comparison
 
 | Extractor                    | Source Type             | Dependencies        | Output Size    | Use Case                   |
@@ -132,6 +164,7 @@ minerva validate book.json
 | **bear-extractor**           | Bear backups (.bear2bk) | None                | 100-10K notes  | Personal note-taking       |
 | **zim-extractor**            | ZIM archives            | libzim, markdownify | 1K-1M articles | Wikipedia, offline content |
 | **markdown-books-extractor** | Markdown files          | None                | 1-100 books    | Literature, documentation  |
+| **obsidian-extractor**       | Obsidian vault folders  | .NET SDK (>=8.0)    | 10-100K notes  | Personal knowledge bases   |
 
 ---
 
@@ -155,6 +188,11 @@ done
 bear-extractor --help
 zim-extractor --help
 markdown-books-extractor --help
+
+# Build the Obsidian extractor (dotnet-based)
+cd obsidian-extractor
+DOTNET_ROLL_FORWARD=LatestMajor dotnet build src/ObsidianExtractor/ObsidianExtractor.csproj
+cd ..
 ```
 
 ### Install Individual Extractor
@@ -171,6 +209,13 @@ pip install .
 
 # Or use pipx for isolation
 pipx install .
+```
+
+For the .NET Obsidian extractor:
+
+```bash
+cd extractors/obsidian-extractor
+DOTNET_ROLL_FORWARD=LatestMajor dotnet build src/ObsidianExtractor/ObsidianExtractor.csproj
 ```
 
 ---
