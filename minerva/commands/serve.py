@@ -5,7 +5,7 @@ from minerva.common.server_config import load_server_config
 from minerva.server.mcp_server import main as mcp_main
 from minerva.common.exceptions import ConfigError
 
-logger = get_logger(__name__, simple=True, mode="cli")
+logger = get_logger(__name__, simple=True, mode="server")
 
 
 def run_serve(args: Namespace) -> int:
