@@ -29,7 +29,7 @@ cd extractors/bear-notes-extractor
 pip install -e .
 
 # Verify installation
-bear-extractor --help
+bear-notes-extractor --help
 ```
 
 ### Method 2: Install with pipx (Isolated)
@@ -39,7 +39,7 @@ cd extractors/bear-notes-extractor
 pipx install .
 
 # Now available globally
-bear-extractor --help
+bear-notes-extractor --help
 ```
 
 ### Requirements
@@ -51,7 +51,7 @@ bear-extractor --help
 
 ```bash
 # Extract notes from a Bear backup
-bear-extractor "Bear Notes 2025-10-20.bear2bk" -o my-notes.json
+bear-notes-extractor "Bear Notes 2025-10-20.bear2bk" -o my-notes.json
 
 # Validate the output
 minerva validate my-notes.json
@@ -65,7 +65,7 @@ minerva index --config config.json --verbose
 ### Basic Command
 
 ```bash
-bear-extractor BACKUP_FILE [OPTIONS]
+bear-notes-extractor BACKUP_FILE [OPTIONS]
 ```
 
 ### Options
@@ -80,19 +80,19 @@ bear-extractor BACKUP_FILE [OPTIONS]
 #### Extract to File
 
 ```bash
-bear-extractor "Bear Notes 2025-10-20.bear2bk" -o notes.json
+bear-notes-extractor "Bear Notes 2025-10-20.bear2bk" -o notes.json
 ```
 
 #### Extract to Stdout (for Piping)
 
 ```bash
-bear-extractor backup.bear2bk | jq '.[] | .title'
+bear-notes-extractor backup.bear2bk | jq '.[] | .title'
 ```
 
 #### Verbose Mode (Show Progress)
 
 ```bash
-bear-extractor backup.bear2bk -v -o notes.json
+bear-notes-extractor backup.bear2bk -v -o notes.json
 # Output on stderr:
 # Parsing Bear backup from backup.bear2bk
 # Processed 1234/1234 notes (100.0%)
@@ -103,7 +103,7 @@ bear-extractor backup.bear2bk -v -o notes.json
 
 ```bash
 # Extract
-bear-extractor backup.bear2bk -o notes.json
+bear-notes-extractor backup.bear2bk -o notes.json
 
 # Validate
 minerva validate notes.json --verbose
@@ -207,7 +207,7 @@ If a note has no title in `info.json`, the extractor uses the TextBundle directo
 ### Example 1: Basic Extraction
 
 ```bash
-bear-extractor "Bear Notes.bear2bk" -o notes.json
+bear-notes-extractor "Bear Notes.bear2bk" -o notes.json
 ```
 
 **Input**: Bear backup with 500 notes
@@ -217,7 +217,7 @@ bear-extractor "Bear Notes.bear2bk" -o notes.json
 
 ```bash
 # Extract with progress
-bear-extractor backup.bear2bk -v -o notes.json
+bear-notes-extractor backup.bear2bk -v -o notes.json
 
 # Validate schema
 minerva validate notes.json --verbose
@@ -240,13 +240,13 @@ jq '.[0]' notes.json
 
 ```bash
 # Extract and analyze titles
-bear-extractor backup.bear2bk | jq -r '.[] | .title' | sort
+bear-notes-extractor backup.bear2bk | jq -r '.[] | .title' | sort
 
 # Count notes by size range
-bear-extractor backup.bear2bk | jq '[.[] | .size] | length'
+bear-notes-extractor backup.bear2bk | jq '[.[] | .size] | length'
 
 # Find large notes (>10KB)
-bear-extractor backup.bear2bk | jq '.[] | select(.size > 10000) | .title'
+bear-notes-extractor backup.bear2bk | jq '.[] | select(.size > 10000) | .title'
 ```
 
 ### Example 4: Complete Workflow
@@ -256,7 +256,7 @@ bear-extractor backup.bear2bk | jq '.[] | select(.size > 10000) | .title'
 # In Bear: File → Export Notes → Bear Backup → Save as "Bear Notes.bear2bk"
 
 # Step 2: Extract notes
-bear-extractor "Bear Notes.bear2bk" -v -o bear-notes.json
+bear-notes-extractor "Bear Notes.bear2bk" -v -o bear-notes.json
 # Parsing Bear backup from Bear Notes.bear2bk
 # Processed 1234/1234 notes (100.0%)
 # Exported 1234 notes
@@ -317,10 +317,10 @@ To extract notes, you first need a Bear backup file:
 ls -lh "Bear Notes.bear2bk"
 
 # Use absolute path
-bear-extractor "/Users/yourname/Downloads/Bear Notes.bear2bk" -o notes.json
+bear-notes-extractor "/Users/yourname/Downloads/Bear Notes.bear2bk" -o notes.json
 
 # Use quotes for paths with spaces
-bear-extractor "Bear Notes 2025-10-20.bear2bk" -o notes.json
+bear-notes-extractor "Bear Notes 2025-10-20.bear2bk" -o notes.json
 ```
 
 ### Issue: "Failed to extract backup file: Bad zip file"
@@ -442,15 +442,15 @@ Use jq to filter before indexing:
 
 ```bash
 # Extract only recent notes (modified in last 30 days)
-bear-extractor backup.bear2bk | \
+bear-notes-extractor backup.bear2bk | \
   jq '[.[] | select(.modificationDate > "2025-09-20T00:00:00Z")]' > recent.json
 
 # Extract only large notes (>5KB)
-bear-extractor backup.bear2bk | \
+bear-notes-extractor backup.bear2bk | \
   jq '[.[] | select(.size > 5000)]' > large-notes.json
 
 # Extract notes with specific text in title
-bear-extractor backup.bear2bk | \
+bear-notes-extractor backup.bear2bk | \
   jq '[.[] | select(.title | contains("Project"))]' > project-notes.json
 ```
 
@@ -463,7 +463,7 @@ Process multiple backups:
 for backup in ~/Bear-Backups/*.bear2bk; do
     name=$(basename "$backup" .bear2bk)
     echo "Processing $name..."
-    bear-extractor "$backup" -v -o "${name}.json"
+    bear-notes-extractor "$backup" -v -o "${name}.json"
     minerva validate "${name}.json"
 done
 ```
@@ -474,7 +474,7 @@ Compare with previous extraction to find new/modified notes:
 
 ```bash
 # Extract current backup
-bear-extractor new-backup.bear2bk -o new.json
+bear-notes-extractor new-backup.bear2bk -o new.json
 
 # Compare with previous
 jq -r '.[] | "\(.title)|\(.modificationDate)"' old.json > old-index.txt
@@ -492,7 +492,7 @@ cd extractors/bear-notes-extractor
 pytest tests/
 
 # Manual test with sample data
-bear-extractor test-data/sample.bear2bk -v -o /tmp/test.json
+bear-notes-extractor test-data/sample.bear2bk -v -o /tmp/test.json
 minerva validate /tmp/test.json
 ```
 
@@ -500,11 +500,11 @@ minerva validate /tmp/test.json
 
 ```
 bear-notes-extractor/
-├── bear_extractor/
+├── bear_notes_extractor/
 │   ├── __init__.py         # Package init
 │   ├── cli.py              # Command-line interface
 │   └── parser.py           # Core extraction logic
-├── setup.py                # Package configuration
+├── pyproject.toml          # Package configuration
 └── README.md              # This file
 ```
 

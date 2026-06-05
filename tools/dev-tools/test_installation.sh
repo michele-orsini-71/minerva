@@ -140,8 +140,8 @@ test_extractors() {
     log_info "Installing bear-notes-extractor..."
     pip install -e "$PROJECT_ROOT/extractors/bear-notes-extractor" > /dev/null 2>&1
 
-    log_info "Testing bear-extractor command..."
-    bear-extractor --help > /dev/null
+    log_info "Testing bear-notes-extractor command..."
+    bear-notes-extractor --help > /dev/null
 
     log_info "Installing zim-extractor..."
     pip install -e "$PROJECT_ROOT/extractors/zim-extractor" > /dev/null 2>&1

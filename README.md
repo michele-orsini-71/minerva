@@ -224,7 +224,7 @@ After installation, manage document collections with simple commands:
 
 ```bash
 # First extract notes using an extractor (Bear, Zim, books)
-bear-extractor "Bear Notes.bear2bk" -o notes.json
+bear-notes-extractor "Bear Notes.bear2bk" -o notes.json
 
 # Add as a collection
 minerva-doc add notes.json --name my-notes
@@ -424,7 +424,7 @@ minerva-kb serve
 
 ```bash
 # Extract notes from a source (example: Bear Notes)
-bear-extractor "Bear Notes.bear2bk" -o bear-notes.json
+bear-notes-extractor "Bear Notes.bear2bk" -o bear-notes.json
 
 # Add as a collection (handles validation, provider selection, and indexing)
 minerva-doc add bear-notes.json --name my-notes
@@ -439,7 +439,7 @@ minerva-doc serve
 # 1. Extract notes from a source (example: Bear Notes)
 cd extractors/bear-notes-extractor
 pip install -e .
-bear-extractor "Bear Notes 2025-10-20.bear2bk" -o bear-notes.json
+bear-notes-extractor "Bear Notes 2025-10-20.bear2bk" -o bear-notes.json
 
 # 2. Validate the extracted JSON
 minerva validate bear-notes.json
@@ -684,7 +684,7 @@ minerva serve-http --config configs/server/remote.json
 
 ```bash
 # Extract Bear notes
-bear-extractor "Bear Backup.bear2bk" -o bear-notes.json
+bear-notes-extractor "Bear Backup.bear2bk" -o bear-notes.json
 
 # Create collection-specific config
 mkdir -p configs/index

@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "minerva"
+dynamic = ["version"]
+description = "A unified RAG system for personal knowledge management"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "Michele Orsini"}]
+keywords = ["rag", "vector-database", "embeddings", "markdown", "knowledge-management", "mcp", "ai"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Markup :: Markdown",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    # Vector database and AI providers
+    "chromadb>=1.3.6",  # Pinned to 1.3.6+ to avoid corruption bugs in earlier versions
+    "ollama>=0.1.0",
+    "litellm>=1.79.0",
+    "httpx>=0.28.0",
+    # Text processing and embeddings
+    "numpy>=1.21.0",
+    "tiktoken>=0.4.0",
+    "nltk>=3.8",
+    # LangChain for document chunking
+    "langchain>=0.1.0",
+    "langchain-text-splitters>=0.0.1",
+    # FastMCP for MCP server
+    "mcp>=0.1.0",
+    # JSON schema validation
+    "jsonschema>=4.0.0",
+    # OS keychain integration
+    "keyring>=24.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+]
+
+[project.scripts]
+minerva = "minerva.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/minerva"
+Documentation = "https://github.com/yourusername/minerva/blob/main/README.md"
+Source = "https://github.com/yourusername/minerva"
+Tracker = "https://github.com/yourusername/minerva/issues"
+
+[tool.setuptools.dynamic]
+version = {attr = "minerva.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["minerva", "minerva.*"]

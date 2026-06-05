@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "markdown-books-extractor"
+dynamic = ["version"]
+description = "Standalone CLI for extracting metadata from markdown book files"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [{name = "Minerva Contributors"}]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers",
+    "Topic :: Utilities",
+    "Topic :: Text Processing",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "black>=23.0",
+    "flake8>=6.0",
+]
+
+[project.scripts]
+markdown-books-extractor = "markdown_books_extractor.cli:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "markdown_books_extractor.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["markdown_books_extractor", "markdown_books_extractor.*"]

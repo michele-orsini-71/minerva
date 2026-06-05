@@ -51,8 +51,8 @@ get_repo_path() {
     script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     minerva_repo="$(cd "$script_dir/../.." && pwd)"
 
-    if [ ! -f "$minerva_repo/setup.py" ]; then
-        echo "❌ Cannot find minerva setup.py at: $minerva_repo/setup.py"
+    if [ ! -f "$minerva_repo/pyproject.toml" ]; then
+        echo "❌ Cannot find minerva pyproject.toml at: $minerva_repo/pyproject.toml"
         echo "   Make sure this script is in minerva/tools/minerva-kb/"
         exit 1
     fi
@@ -65,27 +65,27 @@ get_source_version() {
     local pkg_path="$1"
     local version=""
 
-    # Try pyproject.toml first (for minerva-kb, minerva-doc)
+    # Static version declared directly in pyproject.toml, if any. Require a
+    # quote after '=' so this does not match a dynamic 'version = {attr = ...}'.
     if [ -f "$pkg_path/pyproject.toml" ]; then
-        version=$(grep -E "^version\s*=" "$pkg_path/pyproject.toml" | sed 's/.*"\(.*\)".*/\1/' | head -1)
+        version=$(grep -E '^version[[:space:]]*=[[:space:]]*"' "$pkg_path/pyproject.toml" | sed 's/.*"\(.*\)".*/\1/' | head -1)
     fi
 
-    # Try __init__.py (handle both hyphens and underscores in package names)
-    if [ -z "$version" ] && [ -f "$pkg_path/setup.py" ]; then
-        local pkg_name=$(basename "$pkg_path")
-        local pkg_name_underscore="${pkg_name//-/_}"  # Replace hyphens with underscores
-
-        # Try with hyphens first, then underscores
-        if [ -f "$pkg_path/$pkg_name/__init__.py" ]; then
-            version=$(grep -E "^__version__" "$pkg_path/$pkg_name/__init__.py" | sed 's/.*"\(.*\)".*/\1/' | head -1)
-        elif [ -f "$pkg_path/$pkg_name_underscore/__init__.py" ]; then
-            version=$(grep -E "^__version__" "$pkg_path/$pkg_name_underscore/__init__.py" | sed 's/.*"\(.*\)".*/\1/' | head -1)
+    # Otherwise read __version__ from the package __init__.py — the single
+    # source of truth for every Minerva package (covers dynamic pyproject and
+    # any remaining setup.py). Handles both flat and src/ layouts.
+    if [ -z "$version" ]; then
+        local pkg_module
+        pkg_module="$(basename "$pkg_path" | tr '-' '_')"
+        local init_file=""
+        if [ -f "$pkg_path/$pkg_module/__init__.py" ]; then
+            init_file="$pkg_path/$pkg_module/__init__.py"
+        elif [ -f "$pkg_path/src/$pkg_module/__init__.py" ]; then
+            init_file="$pkg_path/src/$pkg_module/__init__.py"
         fi
-    fi
-
-    # Try setup.py directly as fallback (less reliable for dynamic versions)
-    if [ -z "$version" ] && [ -f "$pkg_path/setup.py" ]; then
-        version=$(grep -E "^\s*version\s*=" "$pkg_path/setup.py" | sed 's/.*"\(.*\)".*/\1/' | head -1)
+        if [ -n "$init_file" ]; then
+            version=$(grep -E "^__version__" "$init_file" | sed 's/.*"\(.*\)".*/\1/' | head -1)
+        fi
     fi
 
     echo "$version"

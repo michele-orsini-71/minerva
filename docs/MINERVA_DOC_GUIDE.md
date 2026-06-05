@@ -138,7 +138,7 @@ Extract documents to JSON using Minerva extractors:
 
 ```bash
 # Example: Bear notes
-bear-extractor "Bear Notes.bear2bk" -o notes.json
+bear-notes-extractor "Bear Notes.bear2bk" -o notes.json
 
 # Example: Zim archive
 zim-extractor wikipedia.zim -l 1000 -o wiki.json
@@ -457,7 +457,7 @@ Or use minerva-kb (both work):
 
 ```bash
 # 1. Extract notes to JSON
-bear-extractor "Bear Notes.bear2bk" -v -o bear-notes.json
+bear-notes-extractor "Bear Notes.bear2bk" -v -o bear-notes.json
 
 # 2. Validate (optional)
 minerva validate bear-notes.json
@@ -480,7 +480,7 @@ minerva-doc serve
 **Update workflow:**
 ```bash
 # When you have new notes
-bear-extractor "Bear Notes New.bear2bk" -o updated-notes.json
+bear-notes-extractor "Bear Notes New.bear2bk" -o updated-notes.json
 minerva-doc update bear-notes updated-notes.json
 # Answer 'n' to keep same provider
 ```

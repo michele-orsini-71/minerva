@@ -89,7 +89,7 @@ This checklist tracks integration testing status for minerva-doc implementation.
 ### Test Example Workflows from Documentation
 
 #### Workflow 1: Bear Notes (from MINERVA_DOC_GUIDE.md)
-- [ ] Extract Bear notes: `bear-extractor "Bear Notes.bear2bk" -o notes.json`
+- [ ] Extract Bear notes: `bear-notes-extractor "Bear Notes.bear2bk" -o notes.json`
 - [ ] Add collection: `minerva-doc add notes.json --name bear-notes`
 - [ ] Select AI provider (test with Ollama if available)
 - [ ] Verify provider validation (check Ollama is running)

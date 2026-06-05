@@ -610,7 +610,7 @@ repository-doc-extractor/
 │   ├── __init__.py         # Package init with version
 │   ├── cli.py              # Command-line interface
 │   └── parser.py           # Directory walking and parsing logic
-├── setup.py                # Package configuration
+├── pyproject.toml          # Package configuration
 └── README.md              # This file
 ```
 

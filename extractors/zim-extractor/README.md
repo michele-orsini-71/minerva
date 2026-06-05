@@ -636,7 +636,7 @@ zim-extractor/
 │   ├── __init__.py         # Package init
 │   ├── cli.py              # Command-line interface
 │   └── parser.py           # Core extraction logic
-├── setup.py                # Package configuration
+├── pyproject.toml          # Package configuration
 └── README.md              # This file
 ```
 

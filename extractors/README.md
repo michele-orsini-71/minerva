@@ -21,7 +21,7 @@ Extractors are independent tools that transform data from specific sources (apps
 ### 📝 Bear Notes Extractor
 
 **Package**: `bear-notes-extractor`
-**Command**: `bear-extractor`
+**Command**: `bear-notes-extractor`
 **Source**: Bear app backup files (.bear2bk format)
 
 Extract notes from Bear app backups into Minerva-compatible JSON.
@@ -44,7 +44,7 @@ pip install -e .
 **Quick Start**:
 
 ```bash
-bear-extractor "Bear Notes 2025-10-20.bear2bk" -o notes.json
+bear-notes-extractor "Bear Notes 2025-10-20.bear2bk" -o notes.json
 minerva validate notes.json
 ```
 
@@ -161,7 +161,7 @@ minerva validate notes.json --verbose
 
 | Extractor                    | Source Type             | Dependencies        | Output Size    | Use Case                   |
 | ---------------------------- | ----------------------- | ------------------- | -------------- | -------------------------- |
-| **bear-extractor**           | Bear backups (.bear2bk) | None                | 100-10K notes  | Personal note-taking       |
+| **bear-notes-extractor**           | Bear backups (.bear2bk) | None                | 100-10K notes  | Personal note-taking       |
 | **zim-extractor**            | ZIM archives            | libzim, markdownify | 1K-1M articles | Wikipedia, offline content |
 | **markdown-books-extractor** | Markdown files          | None                | 1-100 books    | Literature, documentation  |
 | **obsidian-extractor**       | Obsidian vault folders  | .NET SDK (>=8.0)    | 10-100K notes  | Personal knowledge bases   |
@@ -185,7 +185,7 @@ for extractor in bear-notes-extractor zim-extractor markdown-books-extractor; do
 done
 
 # Verify installations
-bear-extractor --help
+bear-notes-extractor --help
 zim-extractor --help
 markdown-books-extractor --help
 
@@ -230,7 +230,7 @@ Run the extractor to convert your source data:
 
 ```bash
 # Example with Bear extractor
-bear-extractor "backup.bear2bk" -o notes.json
+bear-notes-extractor "backup.bear2bk" -o notes.json
 ```
 
 ### 2. Validate
@@ -300,7 +300,7 @@ Extract from multiple sources and index them separately:
 
 ```bash
 # Extract from different sources
-bear-extractor "Bear Backup.bear2bk" -o bear.json
+bear-notes-extractor "Bear Backup.bear2bk" -o bear.json
 zim-extractor "wikipedia_history.zim" -o wiki.json
 markdown-books-extractor ~/books/ -o books.json
 
@@ -386,7 +386,7 @@ Each extractor follows this structure:
 ```
 extractor-name/
 ├── README.md                    # Usage documentation
-├── setup.py                     # Package configuration
+├── pyproject.toml          # Package configuration
 ├── extractor_package/           # Source code
 │   ├── __init__.py
 │   ├── cli.py                   # Command-line interface
@@ -436,7 +436,7 @@ cd extractors/bear-notes-extractor
 pip install -e .
 
 # Check if command is in PATH
-which bear-extractor
+which bear-notes-extractor
 ```
 
 ### Validation Fails
@@ -455,7 +455,7 @@ minerva validate notes.json --verbose
 
 ```bash
 # Run with verbose flag to see details
-bear-extractor backup.bear2bk -v -o notes.json
+bear-notes-extractor backup.bear2bk -v -o notes.json
 
 # Check input file exists and is readable
 ls -lh backup.bear2bk
@@ -469,7 +469,7 @@ file backup.bear2bk
 ### Adding a New Official Extractor
 
 1. Create directory: `extractors/your-extractor/`
-2. Follow the structure: `setup.py`, `your_package/`, `README.md`
+2. Follow the structure: `pyproject.toml`, `your_package/`, `README.md`
 3. Ensure zero Minerva dependencies
 4. Add comprehensive README with examples
 5. Test thoroughly with `minerva validate`

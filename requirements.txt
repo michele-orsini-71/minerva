@@ -1,5 +1,5 @@
 # Core RAG Pipeline Dependencies
-# Generated from minerva/setup.py
+# Generated from pyproject.toml
 # Install with: pip install -r requirements.txt
 
 # Vector database and AI providers

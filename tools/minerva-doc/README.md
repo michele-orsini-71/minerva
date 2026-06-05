@@ -18,7 +18,7 @@ Orchestrator for managing document-based knowledge base collections in Minerva.
 ## Use Cases
 
 Use minerva-doc when you have structured documents in JSON format:
-- **Bear notes** (exported via `bear-extractor`)
+- **Bear notes** (exported via `bear-notes-extractor`)
 - **Zim archives** (extracted via `zim-extractor`)
 - **Markdown books** (processed via `markdown-books-extractor`)
 - **Custom document collections** (following Minerva's note schema)
@@ -69,7 +69,7 @@ minerva-doc --help
 
 ```bash
 # Extract notes (using Bear as example)
-bear-extractor "Bear Notes.bear2bk" -o notes.json
+bear-notes-extractor "Bear Notes.bear2bk" -o notes.json
 
 # Add to minerva-doc
 minerva-doc add notes.json --name my-notes
@@ -192,7 +192,7 @@ minerva-doc works alongside minerva-kb:
 
 ```bash
 # 1. Extract Bear notes
-bear-extractor "Bear Notes.bear2bk" -o bear-notes.json
+bear-notes-extractor "Bear Notes.bear2bk" -o bear-notes.json
 
 # 2. Add to minerva-doc
 minerva-doc add bear-notes.json --name bear-notes

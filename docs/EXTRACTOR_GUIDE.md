@@ -965,7 +965,7 @@ def extract_incremental(source, cache_file='extractor-cache.json'):
 
 ```
 my-extractor/
-├── setup.py
+├── pyproject.toml
 ├── README.md
 ├── LICENSE
 ├── my_extractor/
@@ -976,25 +976,37 @@ my-extractor/
     └── test_parser.py
 ```
 
-**setup.py**:
+**pyproject.toml**:
+
+```toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "my-extractor"
+dynamic = ["version"]
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    # Your dependencies here
+]
+
+[project.scripts]
+my-extractor = "my_extractor.cli:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "my_extractor.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["my_extractor", "my_extractor.*"]
+```
+
+The version is read from `my_extractor/__init__.py`, which is the single
+source of truth:
 
 ```python
-from setuptools import setup, find_packages
-
-setup(
-    name="my-extractor",
-    version="1.0.0",
-    packages=find_packages(),
-    install_requires=[
-        # Your dependencies here
-    ],
-    entry_points={
-        "console_scripts": [
-            "my-extractor=my_extractor.cli:main",
-        ],
-    },
-    python_requires=">=3.8",
-)
+__version__ = "1.0.0"
 ```
 
 ### Installation

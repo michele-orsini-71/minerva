@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "repository-doc-extractor"
+dynamic = ["version"]
+description = "Standalone CLI for extracting markdown documentation from repository hierarchies"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "Minerva Contributors"}]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers",
+    "Topic :: Utilities",
+    "Topic :: Text Processing",
+    "Topic :: Software Development :: Documentation",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "black>=23.0",
+    "flake8>=6.0",
+]
+
+[project.scripts]
+repository-doc-extractor = "repository_doc_extractor.cli:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "repository_doc_extractor.__version__"}
+
+[tool.setuptools.packages.find]
+include = ["repository_doc_extractor", "repository_doc_extractor.*"]

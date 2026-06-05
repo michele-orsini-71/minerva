@@ -79,7 +79,7 @@ minerva-kb remove <collection-name>
 
 ```bash
 # Extract Bear notes
-bear-extractor "Bear Notes.bear2bk" -o notes.json [-v]
+bear-notes-extractor "Bear Notes.bear2bk" -o notes.json [-v]
 
 # Extract from ZIM archive
 zim-extractor wikipedia.zim -o wiki.json [-l LIMIT] [-v]
@@ -137,25 +137,25 @@ minerva/                     # Core package
 
 extractors/                    # Independent extractor packages
 ├── bear-notes-extractor/
-│   ├── bear_extractor/
+│   ├── bear_notes_extractor/
 │   │   ├── cli.py
 │   │   └── parser.py
-│   └── setup.py
+│   └── pyproject.toml
 ├── zim-extractor/
 │   ├── zim_extractor/
 │   │   ├── cli.py
 │   │   └── parser.py
-│   └── setup.py
+│   └── pyproject.toml
 ├── markdown-books-extractor/
 │   ├── markdown_books_extractor/
 │   │   ├── cli.py
 │   │   └── parser.py
-│   └── setup.py
+│   └── pyproject.toml
 └── repository-doc-extractor/
     ├── repository_doc_extractor/
     │   ├── cli.py
     │   └── parser.py
-    └── setup.py
+    └── pyproject.toml
 
 tools/                         # Orchestrator and utility tools
 ├── minerva-kb/               # Repository knowledge base orchestrator
@@ -169,7 +169,7 @@ tools/                         # Orchestrator and utility tools
     ├── local_repo_watcher/
     │   ├── cli.py
     │   └── watcher.py
-    └── setup.py
+    └── pyproject.toml
 
 docs/                          # Documentation
 ├── NOTE_SCHEMA.md            # Schema specification
@@ -230,7 +230,7 @@ minerva-kb add ~/docs/notes
 
 ```bash
 # 1. Extract notes from Bear
-bear-extractor "Bear Notes 2025-10-20.bear2bk" -v -o bear-notes.json
+bear-notes-extractor "Bear Notes 2025-10-20.bear2bk" -v -o bear-notes.json
 
 # 2. Validate
 minerva validate bear-notes.json --verbose
@@ -279,7 +279,7 @@ minerva serve --config configs/server/local.json
 
 ```bash
 # Extract from different sources
-bear-extractor "Bear.bear2bk" -o bear.json
+bear-notes-extractor "Bear.bear2bk" -o bear.json
 zim-extractor "wikipedia_history.zim" -l 1000 -o wiki.json
 markdown-books-extractor "alice.md" -o alice.json
 
@@ -598,7 +598,7 @@ See `.github/workflows/ci.yml` for complete CI configuration.
 
 ```bash
 # Test complete workflow with sample data
-bear-extractor test-data/sample.bear2bk -o /tmp/test.json
+bear-notes-extractor test-data/sample.bear2bk -o /tmp/test.json
 minerva validate /tmp/test.json
 minerva index --config configs/index/bear-notes-ollama.json --dry-run
 ```
@@ -650,13 +650,13 @@ extractors/my-extractor/
 │   ├── __init__.py
 │   ├── cli.py
 │   └── parser.py
-├── setup.py
+├── pyproject.toml
 └── README.md
 ```
 
 3. Implement extraction logic in `parser.py`
 4. Create CLI in `cli.py`
-5. Add console_scripts entry point in `setup.py`
+5. Declare the console script under `[project.scripts]` in `pyproject.toml`
 6. Test: `pip install -e . && my-extractor input -o output.json`
 7. Validate: `minerva validate output.json`
 

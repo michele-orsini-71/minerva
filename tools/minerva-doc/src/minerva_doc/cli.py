@@ -12,7 +12,7 @@ def main():
         description='Orchestrator tool for managing Minerva document-based knowledge base collections',
         epilog='''Quick Start:
   1. Extract notes using an extractor:
-     bear-extractor "Bear Notes.bear2bk" -o notes.json
+     bear-notes-extractor "Bear Notes.bear2bk" -o notes.json
 
   2. Add as a collection:
      minerva-doc add notes.json --name my-notes
@@ -28,7 +28,7 @@ Documentation:
   GitHub: https://github.com/anthropics/minerva
 
 Common Workflows:
-  • Bear notes → bear-extractor → minerva-doc add
+  • Bear notes → bear-notes-extractor → minerva-doc add
   • Zim archive → zim-extractor → minerva-doc add
   • Markdown book → markdown-books-extractor → minerva-doc add
 
@@ -54,7 +54,7 @@ Use 'minerva-doc COMMAND --help' for detailed help on each command.''',
         description='''Create a new collection from pre-extracted JSON documents.
 
 Accepts JSON files following Minerva's note schema (from extractors like
-bear-extractor, zim-extractor, markdown-books-extractor, or custom tools).
+bear-notes-extractor, zim-extractor, markdown-books-extractor, or custom tools).
 
 Interactive workflow:
   - Validates JSON file format

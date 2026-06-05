@@ -3,15 +3,12 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "minerva-kb"
+name = "local-repo-watcher"
 dynamic = ["version"]
-description = "Orchestrator tool for managing Minerva repository-based knowledge base collections"
+description = "Local repository watcher for Minerva - triggers indexing on file changes"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
-authors = [
-    {name = "Minerva Project"}
-]
+authors = [{name = "Minerva Contributors"}]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -22,24 +19,14 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    "chromadb>=0.4.0",
-    # minerva-common is injected via: pipx inject minerva-kb /path/to/minerva-common
+    "watchdog>=3.0.0",
 ]
 
 [project.scripts]
-minerva-kb = "minerva_kb.cli:main"
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-]
-
-[tool.setuptools]
-package-dir = {"" = "src"}
+local-repo-watcher = "local_repo_watcher.cli:main"
 
 [tool.setuptools.dynamic]
-version = {attr = "minerva_kb.__version__"}
+version = {attr = "local_repo_watcher.__version__"}
 
 [tool.setuptools.packages.find]
-where = ["src"]
+include = ["local_repo_watcher", "local_repo_watcher.*"]

@@ -369,7 +369,7 @@ Use separate collections for:
 
 ```bash
 # Extract from different sources
-bear-extractor "Bear.bear2bk" -o bear.json
+bear-notes-extractor "Bear.bear2bk" -o bear.json
 zim-extractor "wikipedia_history.zim" -l 5000 -o wiki.json
 markdown-books-extractor "alice.md" -o alice.json
 
@@ -485,7 +485,7 @@ Benefits:
 ollama serve &
 
 # 2. Extract notes
-bear-extractor "Bear Notes.bear2bk" -o notes.json -v
+bear-notes-extractor "Bear Notes.bear2bk" -o notes.json -v
 
 # 3. Validate
 minerva validate notes.json
@@ -526,7 +526,7 @@ ollama serve &
 export OPENAI_API_KEY="sk-your-key"
 
 # Extract from sources
-bear-extractor "Bear.bear2bk" -o bear.json
+bear-notes-extractor "Bear.bear2bk" -o bear.json
 zim-extractor "wikipedia.zim" -l 1000 -o wiki.json
 
 # Config 1: Bear notes with Ollama (free)
