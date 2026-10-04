@@ -1,5 +1,7 @@
 # Minerva
 
+> **Superseded by [Minerva](https://github.com/michele-orsini-71/minerva2)**, the C# / .NET rewrite. This repository is no longer maintained.
+
 A unified RAG system for personal knowledge management
 
 ---
